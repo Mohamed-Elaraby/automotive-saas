@@ -1,0 +1,70 @@
+name: Deploy to Vultr (main)
+
+on:
+  push:
+    branches: [ "main" ]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.VULTR_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.VULTR_PORT }} -H ${{ secrets.VULTR_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.VULTR_HOST }}
+          USER: ${{ secrets.VULTR_USER }}
+          PORT: ${{ secrets.VULTR_PORT }}
+        run: |
+          ssh -p "$PORT" "$USER@$HOST" 'bash -s' <<'EOF'
+          set -euo pipefail
+
+          APP_DIR="/var/www/automotive"
+          cd "$APP_DIR"
+
+          echo "==> Pull latest code"
+          git fetch --all --prune
+          git reset --hard origin/main
+
+          echo "==> Install PHP deps"
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+          echo "==> Maintenance ON"
+          php artisan down || true
+
+          echo "==> Central migrations only"
+          php artisan migrate --force
+
+          echo "==> Build frontend"
+          npm ci
+          npm run build
+
+          echo "==> Optimize caches"
+          php artisan config:cache
+          php artisan route:cache || true
+          php artisan view:cache || true
+
+          echo "==> Restart queue workers gracefully"
+          php artisan queue:restart || true
+
+          echo "==> Maintenance OFF"
+          php artisan up || true
+
+          echo "✅ Deploy done"
+          EOF
