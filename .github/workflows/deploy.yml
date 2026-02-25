@@ -65,7 +65,7 @@ jobs:
 
           echo "==> Restart workers"
           php artisan queue:restart || true
-          sudo supervisorctl restart automotive-worker || true
+          sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00
 
           echo "==> Maintenance OFF"
           php artisan up || true
