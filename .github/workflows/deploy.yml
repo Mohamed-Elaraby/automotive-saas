@@ -1,31 +1,3 @@
-name: Deploy to Vultr (main)
-
-on:
-  push:
-    branches: [ "main" ]
-
-concurrency:
-  group: deploy-main
-  cancel-in-progress: true
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.VULTR_SSH_KEY }}
-
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.VULTR_PORT }} -H ${{ secrets.VULTR_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy
         env:
           HOST: ${{ secrets.VULTR_HOST }}
@@ -51,17 +23,20 @@ jobs:
           echo "==> Central migrations only"
           php artisan migrate --force
 
-          echo "==> Build frontend"
+          echo "==> Frontend build"
           npm ci
           npm run build
 
           echo "==> Optimize caches"
+          php artisan optimize:clear
           php artisan config:cache
           php artisan route:cache || true
           php artisan view:cache || true
+          php artisan event:cache || true
 
-          echo "==> Restart queue workers gracefully"
+          echo "==> Restart workers"
           php artisan queue:restart || true
+          sudo supervisorctl restart automotive-worker || true
 
           echo "==> Maintenance OFF"
           php artisan up || true
