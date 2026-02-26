@@ -39,6 +39,8 @@ jobs:
           APP_DIR="/var/www/automotive"
           cd "$APP_DIR"
 
+          trap 'php artisan up || true' EXIT
+
           echo "==> Pull latest code"
           git fetch --all --prune
           git reset --hard origin/main
@@ -47,7 +49,7 @@ jobs:
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
           echo "==> Maintenance ON"
-          php artisan down || true
+          php artisan down --render="errors::503" || true
 
           echo "==> Central migrations only"
           php artisan migrate --force
