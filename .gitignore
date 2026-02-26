@@ -69,3 +69,5 @@ Homestead.yaml
 # ===============================
 
 *.log
+node_modules/
+vendor/
