@@ -33,7 +33,12 @@ jobs:
           USER: ${{ secrets.VULTR_USER }}
           PORT: ${{ secrets.VULTR_PORT }}
         run: |
-          ssh -p "$PORT" "$USER@$HOST" 'bash -s' <<'EOF'
+          ssh -p "$PORT" \
+          -o ServerAliveInterval=30 \
+          -o ServerAliveCountMax=10 \
+          -o TCPKeepAlive=yes \
+          -o ConnectTimeout=30 \
+          "$USER@$HOST" 'bash -s' <<'EOF'
           set -euo pipefail
 
           APP_DIR="/var/www/automotive"
