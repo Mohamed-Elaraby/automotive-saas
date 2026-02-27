@@ -8,7 +8,7 @@
                 <div class="col-lg-6">
                     <div class="d-flex flex-column align-items-center justify-content-center">
                         <div class="error-images mb-3">
-                            <img src="{{URL::asset('build/img/under-construction.svg')}}" alt="image" class="img-fluid">
+                            <img src="{{ asset('theme/img/under-construction.svg')}}" alt="image" class="img-fluid">
                         </div>
                         <div class="text-center">
                             <h4 class="mb-3">We are Under Construction</h4>

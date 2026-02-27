@@ -10,7 +10,7 @@
                     <p class="mb-2">Original For Recipient</p>
                 </div>
                 <div class="invoice-logo">
-                    <img src="{{URL::asset('build/img/logo.svg')}}" alt="User Img">
+                    <img src="{{ asset('theme/img/logo.svg')}}" alt="User Img">
                 </div>
             </div>
         </div>
@@ -232,7 +232,7 @@
                 </div>
                 <div class="text-center mb-3">
                     <p class="mb-1">For Dreamguys</p>
-                    <span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt="User Img"></span>
+                    <span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt="User Img"></span>
                 </div>
             </div>
         </div>

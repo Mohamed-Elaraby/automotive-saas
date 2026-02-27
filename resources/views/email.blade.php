@@ -19,7 +19,7 @@
                         <div class="border bg-white rounded p-2 mb-3">
                             <div class="d-flex align-items-center">
                                 <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                    <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" class="rounded-circle" alt="Img">
+                                    <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" class="rounded-circle" alt="Img">
                                 </a>
                                 <div>
                                     <h6 class="mb-1 fs-16 fw-medium"><a href="javascript:void(0);">James Hong</a></h6>
@@ -255,7 +255,7 @@
                                         </div>
                                         <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                             <a href="{{url('email-reply')}}" class="avatar avatar-md avatar-rounded me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img">
                                             </a>
                                             <div class="flex-fill">
                                                 <div class="d-flex align-items-start justify-content-between">
@@ -312,7 +312,7 @@
                                         </div>
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between">
-                                        <a href="javascript:void(0);"><img src="{{URL::asset('build/img/icons/google-meet.svg')}}" alt="Img"></a>
+                                        <a href="javascript:void(0);"><img src="{{ asset('theme/img/icons/google-meet.svg')}}" alt="Img"></a>
                                         <div class="d-flex align-items-center">
                                             <span><i class="ti ti-star-filled text-warning"></i></span>
                                             <span class="badge badge-soft-primary  d-inline-flex align-items-center p-1 mx-2"><i class="ti ti-square me-1"></i>Applications</span>
@@ -330,7 +330,7 @@
                                         </div>
                                         <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                             <a href="{{url('email-reply')}}" class="avatar avatar-md avatar-rounded me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="Img">
                                             </a>
                                             <div class="flex-fill">
                                                 <div class="d-flex align-items-start justify-content-between">
@@ -407,7 +407,7 @@
                                         </div>
                                         <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                             <a href="{{url('email-reply')}}" class="avatar avatar-md avatar-rounded me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="Img">
                                             </a>
                                             <div class="flex-fill">
                                                 <div class="d-flex align-items-start justify-content-between">
@@ -482,7 +482,7 @@
                                         </div>
                                         <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                             <a href="{{url('email-reply')}}" class="avatar avatar-md avatar-rounded me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="Img">
                                             </a>
                                             <div class="flex-fill">
                                                 <div class="d-flex align-items-start justify-content-between">
@@ -558,7 +558,7 @@
                                         </div>
                                         <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                             <a href="{{url('email-reply')}}" class="avatar avatar-md avatar-rounded me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" alt="Img">
                                             </a>
                                             <div class="flex-fill">
                                                 <div class="d-flex align-items-start justify-content-between">
@@ -709,7 +709,7 @@
                                         </div>
                                         <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                             <a href="{{url('email-reply')}}" class="avatar avatar-md avatar-rounded me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" alt="Img">
                                             </a>
                                             <div class="flex-fill">
                                                 <div class="d-flex align-items-start justify-content-between">

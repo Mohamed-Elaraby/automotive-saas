@@ -21,7 +21,7 @@
 
                         </div>
                         <div>
-                            <img src="{{URL::asset('build/img/logo-white.svg')}}" alt="">
+                            <img src="{{ asset('theme/img/logo-white.svg')}}" alt="">
                         </div>
                     </div>
                 </div>

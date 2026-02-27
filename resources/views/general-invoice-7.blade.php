@@ -17,7 +17,7 @@
 					<div class="border-bottom mb-3 pb-3">
 						<div class="bg-gradient-primary d-flex align-items-center justify-content-between rounded p-3">
 							<h5>Invoice</h5>
-							<div><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+							<div><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
 						</div>
 					</div>
 					<div class="border-bottom mb-3">
@@ -184,7 +184,7 @@
 					<div class="d-flex align-items-center justify-content-between flex-wrap border-bottom">
 						<div class="d-flex align-items-start mb-3">
 							<div class="me-4">
-								<span class="d-block mb-2"><img src="{{URL::asset('build/img/icons/qr.png')}}" alt=""></span>
+								<span class="d-block mb-2"><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
 								<p class="text-dark">Scan to View Receipt</p>
 							</div>
 							<div>

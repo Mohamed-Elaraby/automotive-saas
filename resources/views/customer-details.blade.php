@@ -58,11 +58,11 @@
                             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-3">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                     <div class="avatar avatar-xxl rounded-circle flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/users/user-08.jpg')}}" alt="user-01" class="img-fluid rounded-circle border border-white border-2">
+                                        <img src="{{ asset('theme/img/users/user-08.jpg')}}" alt="user-01" class="img-fluid rounded-circle border border-white border-2">
                                     </div>
                                     <div class="">
                                         <p class="text-primary fs-14 fw-medium mb-1">Cl-12345</p>
-                                        <h6 class="mb-2"> Robert George <img src="{{URL::asset('build/img/icons/confirme.svg')}}" alt="confirme" class="ms-1">  </h6>
+                                        <h6 class="mb-2"> Robert George <img src="{{ asset('theme/img/icons/confirme.svg')}}" alt="confirme" class="ms-1">  </h6>
                                         <p class="fs-14 fw-regular"><i class="isax isax-location fs-14 me-1 text-gray-9"></i> 4712 Cherry Ridge Drive Rochester, NY 14620.</p>
                                     </div>
                                 </div>
@@ -92,7 +92,7 @@
                                 </div>
                             </div>
                         </div><!-- end card body -->
-                        <img src="{{URL::asset('build/img/icons/elements-01.svg')}}" alt="elements-01" class="img-fluid customer-details-bg">
+                        <img src="{{ asset('theme/img/icons/elements-01.svg')}}" alt="elements-01" class="img-fluid customer-details-bg">
                     </div><!-- end card -->
                     <!-- End User -->
 
@@ -524,7 +524,7 @@
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/icons/transaction-01.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/transaction-01.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-semibold mb-1"><a href="javascript:void(0);">Andrew James</a></h6>
@@ -543,7 +543,7 @@
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/icons/transaction-02.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/transaction-02.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-semibold mb-1"><a href="javascript:void(0);">Andrew James</a></h6>
@@ -562,7 +562,7 @@
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/icons/transaction-01.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/transaction-01.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-semibold mb-1"><a href="javascript:void(0);">Andrew James</a></h6>
@@ -581,7 +581,7 @@
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/icons/transaction-02.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/transaction-02.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-semibold mb-1"><a href="javascript:void(0);">Andrew James</a></h6>
@@ -600,7 +600,7 @@
                             <div class="d-flex align-items-center justify-content-between mb-0">
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/icons/transaction-01.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/transaction-01.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-semibold mb-1"><a href="javascript:void(0);">Andrew James</a></h6>

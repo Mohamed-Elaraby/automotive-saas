@@ -164,7 +164,7 @@
                                                     <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                         <div class="d-flex align-items-center">
                                                             <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                                <img src="{{URL::asset('./build/img/profiles/avatar-01.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                                <img src="{{URL::asset('./theme/img/profiles/avatar-01.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                             </a>
                                                             <span class="text-info d-flex align-items-center"><i
                                                                 class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -213,7 +213,7 @@
                                                     <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                         <div class="d-flex align-items-center">
                                                             <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                                <img src="{{URL::asset('./build/img/profiles/avatar-02.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                                <img src="{{URL::asset('./theme/img/profiles/avatar-02.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                             </a>
                                                             <span class="text-success d-flex align-items-center"><i
                                                                 class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>
@@ -262,7 +262,7 @@
                                                     <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                         <div class="d-flex align-items-center">
                                                             <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                                <img src="{{URL::asset('./build/img/profiles/avatar-03.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                                <img src="{{URL::asset('./theme/img/profiles/avatar-03.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                             </a>
                                                             <span class="text-info d-flex align-items-center"><i
                                                                 class="fas fa-square square-rotate fs-10 me-1"></i>Social</span>
@@ -312,7 +312,7 @@
                                                     <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                         <div class="d-flex align-items-center">
                                                             <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                                <img src="{{URL::asset('./build/img/profiles/avatar-01.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                                <img src="{{URL::asset('./theme/img/profiles/avatar-01.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                             </a>
                                                             <span class="text-info d-flex align-items-center"><i
                                                                 class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -361,7 +361,7 @@
                                                     <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                         <div class="d-flex align-items-center">
                                                             <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                                <img src="{{URL::asset('./build/img/profiles/avatar-02.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                                <img src="{{URL::asset('./theme/img/profiles/avatar-02.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                             </a>
                                                             <span class="text-success d-flex align-items-center"><i
                                                                 class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>
@@ -416,7 +416,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-05.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-05.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-info d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -467,7 +467,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-06.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-06.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-success d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>
@@ -520,7 +520,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-07.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-07.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-warning d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Social</span>
@@ -574,7 +574,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-08.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-08.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-warning d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Social</span>
@@ -627,7 +627,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-09.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-09.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-info d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -681,7 +681,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-10.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-10.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-success d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>
@@ -739,7 +739,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-05.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-05.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-info d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -787,7 +787,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-06.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-06.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-success d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>
@@ -835,7 +835,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-07.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-07.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-warning d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Social</span>
@@ -884,7 +884,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-08.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-08.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-warning d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Social</span>
@@ -932,7 +932,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-09.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-09.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-info d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -981,7 +981,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-10.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-10.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-success d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>
@@ -1043,7 +1043,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-08.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-08.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-warning d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Social</span>
@@ -1091,7 +1091,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-09.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-09.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-info d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Personal</span>
@@ -1140,7 +1140,7 @@
                                             <div class="d-flex align-items-center justify-content-between border-top pt-3">
                                                 <div class="d-flex align-items-center">
                                                     <a href="javascript:void(0);" class="avatar avatar-md me-2">
-                                                        <img src="{{URL::asset('./build/img/profiles/avatar-10.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
+                                                        <img src="{{URL::asset('./theme/img/profiles/avatar-10.jpg')}}" alt="Profile" class="img-fluid rounded-circle">
                                                     </a>
                                                     <span class="text-success d-flex align-items-center"><i
                                                         class="fas fa-square square-rotate fs-10 me-1"></i>Work</span>

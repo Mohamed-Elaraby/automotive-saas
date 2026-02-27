@@ -67,7 +67,7 @@
                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                     <a href="javascript:void(0);" class="btn btn-outline-white d-inline-flex align-items-center me-2 fw-normal"><i class="isax isax-arrow-left me-1"></i>Back to Translations</a>
                                     <a href="javascript:void(0);" class="btn btn-sm btn-outline-white me-2 fw-normal d-inline-flex align-items-center">
-                                        <img src="{{URL::asset('build/img/flags/ae.svg')}}" alt="img" class="avatar avatar-xs rounded-circle me-1"> Arabic
+                                        <img src="{{ asset('theme/img/flags/ae.svg')}}" alt="img" class="avatar avatar-xs rounded-circle me-1"> Arabic
                                     </a>
                                     <div class="progress-percent">
                                         <span class="text-gray-9 fs-10">Progress</span>

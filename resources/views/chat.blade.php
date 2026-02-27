@@ -33,7 +33,7 @@
                             <div>
                                 <div class="d-flex align-items-center justify-content-between border border-end-0 p-3">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="user"></span>
+                                        <span class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="user"></span>
                                         <div>
                                             <h6 class="fs-14 mb-1">James Hong </h6>
                                             <p class="mb-0">Admin</p>
@@ -50,7 +50,7 @@
                                         <h6 class="mb-3">All Messages</h6>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list active mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Mark Smith</a></h6>
                                                     <p class="mb-0 text-truncate">Hey Sam! Did you Ch...</p>
@@ -63,7 +63,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-03.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-03.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Eugene Sikora</a></h6>
                                                     <p class="mb-0 text-truncate">How are your Today</p>
@@ -76,7 +76,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-04.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-04.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Robert Fassett</a></h6>
                                                     <p class="mb-0 text-truncate">Here are some of ve...</p>
@@ -89,7 +89,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-05.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-05.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Andrew Fletcher</a></h6>
                                                     <p class="mb-0 text-truncate">Use tools like Trello...</p>
@@ -115,7 +115,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-06.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-06.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Anna Johnson</a></h6>
                                                     <p class="mb-0 text-truncate">How are your Today</p>
@@ -128,7 +128,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-07.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-07.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Emily Davis</a></h6>
                                                     <p class="mb-0 text-truncate">Sure, I can help with...</p>
@@ -141,7 +141,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list mb-1">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-08.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-08.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">Susan Denton</a></h6>
                                                     <p class="mb-0 text-truncate">I'll share the meeting...</p>
@@ -154,7 +154,7 @@
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between rounded p-3 user-list">
                                             <div class="d-flex align-items-center">
-                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-09.jpg')}}" alt="user"></a>
+                                                <a href="#" class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-09.jpg')}}" alt="user"></a>
                                                 <div>
                                                     <h6 class="fs-14 mb-1"><a href="#">David Cruz</a></h6>
                                                     <p class="mb-0 text-truncate">Let me know if you...</p>
@@ -176,7 +176,7 @@
 
                                 <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3 p-3">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-10.jpg')}}" alt="user"></span>
+                                        <span class="avatar me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-10.jpg')}}" alt="user"></span>
                                         <div>
                                             <h6 class="fs-14 fw-semibold mb-1">Mark Smith</h6>
                                             <p class="mb-0 d-inline-flex align-items-center"><i class="ti ti-point-filled text-success"></i>Online</p>
@@ -194,7 +194,7 @@
                                     <div class="message-body p-4" data-simplebar>
                                         <div class="chat-list mb-3">
                                             <div class="d-flex align-items-start">
-                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-10.jpg')}}" alt="user"></span>
+                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-10.jpg')}}" alt="user"></span>
                                                 <div>
                                                     <div class="d-flex align-items-center mb-1">
                                                         <h6 class="fs-14 mb-0">Mark Smith</h6>
@@ -247,12 +247,12 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <span class="avatar ms-2 online flex-shrink-0"><img src="{{URL::asset('build/img/users/user-11.jpg')}}" alt="user"></span>
+                                                <span class="avatar ms-2 online flex-shrink-0"><img src="{{ asset('theme/img/users/user-11.jpg')}}" alt="user"></span>
                                             </div>
                                         </div>
                                         <div class="chat-list mb-3">
                                             <div class="d-flex align-items-start">
-                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-10.jpg')}}" alt="user"></span>
+                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-10.jpg')}}" alt="user"></span>
                                                 <div>
                                                     <div class="d-flex align-items-center mb-1">
                                                         <h6 class="fs-14 mb-0">Mark Smith</h6>
@@ -262,8 +262,8 @@
                                                         <div class="message-box receive-message p-3">
                                                             <p class="mb-2 fs-16">Sure! Please check the below logo Attached!!!</p>
                                                             <div class="d-flex align-items-center gap-2 d-none">
-                                                                <span class="bg-white d-block rounded p-1"><img src="{{URL::asset('build/img/favicon.png')}}" class="rounded" alt="attachment"></span>
-                                                                <span class="bg-white d-block rounded p-1"><img src="{{URL::asset('build/img/favicon.png')}}" class="rounded" alt="attachment"></span>
+                                                                <span class="bg-white d-block rounded p-1"><img src="{{ asset('theme/img/favicon.png')}}" class="rounded" alt="attachment"></span>
+                                                                <span class="bg-white d-block rounded p-1"><img src="{{ asset('theme/img/favicon.png')}}" class="rounded" alt="attachment"></span>
                                                             </div>
                                                         </div>
                                                         <div class="ms-2">
@@ -310,12 +310,12 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <span class="avatar ms-2 online flex-shrink-0"><img src="{{URL::asset('build/img/users/user-11.jpg')}}" alt="user"></span>
+                                                <span class="avatar ms-2 online flex-shrink-0"><img src="{{ asset('theme/img/users/user-11.jpg')}}" alt="user"></span>
                                             </div>
                                         </div>
                                         <div class="chat-list mb-3">
                                             <div class="d-flex align-items-start">
-                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-10.jpg')}}" alt="user"></span>
+                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-10.jpg')}}" alt="user"></span>
                                                 <div>
                                                     <div class="d-flex align-items-center mb-1">
                                                         <h6 class="fs-14 mb-0">Mark Smith</h6>
@@ -368,12 +368,12 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <span class="avatar ms-2 online flex-shrink-0"><img src="{{URL::asset('build/img/users/user-11.jpg')}}" alt="user"></span>
+                                                <span class="avatar ms-2 online flex-shrink-0"><img src="{{ asset('theme/img/users/user-11.jpg')}}" alt="user"></span>
                                             </div>
                                         </div>
                                         <div class="chat-list">
                                             <div class="d-flex align-items-start">
-                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-10.jpg')}}" alt="user"></span>
+                                                <span class="avatar online me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-10.jpg')}}" alt="user"></span>
                                                 <div>
                                                     <div class="d-flex align-items-center mb-1">
                                                         <h6 class="fs-14 mb-0">Mark Smith</h6>

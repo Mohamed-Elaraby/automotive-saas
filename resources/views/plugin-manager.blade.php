@@ -33,7 +33,7 @@ c<?php $page = 'plugin-manager'; ?>
                                             <div class="card-body">
                                                 <div class="d-flex align-items-center justify-content-between border-0 mb-3 pb-0 flex-wrap gap-2">
                                                     <div class="d-flex align-items-center">
-                                                        <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/paypal.svg')}}" alt="Img"></span>
+                                                        <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/paypal.svg')}}" alt="Img"></span>
                                                         <p class="fw-medium text-gray-9">PayPal</p>
                                                     </div>
                                                     <span class="badge badge-soft-primary">Version : 8.78.1</span>
@@ -56,7 +56,7 @@ c<?php $page = 'plugin-manager'; ?>
                                             <div class="card-body">
                                                 <div class="d-flex align-items-center justify-content-between border-0 mb-3 pb-0 flex-wrap gap-2">
                                                     <div class="d-flex align-items-center">
-                                                        <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/google-analytics.svg')}}" alt="Img"></span>
+                                                        <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/google-analytics.svg')}}" alt="Img"></span>
                                                         <p class="fw-medium text-gray-9">Google Analytics</p>
                                                     </div>
                                                     <span class="badge badge-soft-primary">Version : GA4</span>

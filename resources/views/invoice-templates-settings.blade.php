@@ -69,7 +69,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-01.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-01.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_1"><i class="isax isax-eye"></i></a>
 																</div>
@@ -87,7 +87,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-02.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-02.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_2"><i class="isax isax-eye"></i></a>
 																</div>
@@ -105,7 +105,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-03.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-03.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_3"><i class="isax isax-eye"></i></a>
 																</div>
@@ -123,7 +123,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-04.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-04.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_4"><i class="isax isax-eye"></i></a>
 																</div>
@@ -141,7 +141,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-05.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-05.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_5"><i class="isax isax-eye"></i></a>
 																</div>
@@ -159,7 +159,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-06.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-06.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_6"><i class="isax isax-eye"></i></a>
 																</div>
@@ -177,7 +177,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-07.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-07.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_7"><i class="isax isax-eye"></i></a>
 																</div>
@@ -195,7 +195,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-08.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-08.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_8"><i class="isax isax-eye"></i></a>
 																</div>
@@ -213,7 +213,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-09.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-09.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_9"><i class="isax isax-eye"></i></a>
 																</div>
@@ -231,7 +231,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-10.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-10.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_10"><i class="isax isax-eye"></i></a>
 																</div>
@@ -253,7 +253,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-11.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-11.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_11"><i class="isax isax-eye"></i></a>
 																</div>
@@ -271,7 +271,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-12.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-12.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_12"><i class="isax isax-eye"></i></a>
 																</div>
@@ -289,7 +289,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-13.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-13.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_13"><i class="isax isax-eye"></i></a>
 																</div>
@@ -307,7 +307,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-14.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-14.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_14"><i class="isax isax-eye"></i></a>
 																</div>
@@ -325,7 +325,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-15.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-15.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_15"><i class="isax isax-eye"></i></a>
 																</div>
@@ -343,7 +343,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-16.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-16.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_16"><i class="isax isax-eye"></i></a>
 																</div>
@@ -361,7 +361,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-17.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-17.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_17"><i class="isax isax-eye"></i></a>
 																</div>
@@ -379,7 +379,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-18.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-18.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_18"><i class="isax isax-eye"></i></a>
 																</div>
@@ -397,7 +397,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-19.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-19.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_19"><i class="isax isax-eye"></i></a>
 																</div>
@@ -415,7 +415,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-20.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-20.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_20"><i class="isax isax-eye"></i></a>
 																</div>
@@ -433,7 +433,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-21.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-21.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_21"><i class="isax isax-eye"></i></a>
 																</div>
@@ -451,7 +451,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-22.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-22.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_22"><i class="isax isax-eye"></i></a>
 																</div>
@@ -469,7 +469,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-23.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-23.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_23"><i class="isax isax-eye"></i></a>
 																</div>
@@ -487,7 +487,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-24.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-24.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_24"><i class="isax isax-eye"></i></a>
 																</div>
@@ -505,7 +505,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-25.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-25.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_25"><i class="isax isax-eye"></i></a>
 																</div>
@@ -527,7 +527,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-26.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-26.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_26"><i class="isax isax-eye"></i></a>
 																</div>
@@ -545,7 +545,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-27.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-27.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_27"><i class="isax isax-eye"></i></a>
 																</div>
@@ -563,7 +563,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-28.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-28.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_28"><i class="isax isax-eye"></i></a>
 																</div>
@@ -581,7 +581,7 @@
 															<div class="card-body p-2">
 																<div class="invoice-img">
 																	<a href="#">
-																		<img src="{{URL::asset('build/img/invoice/general-invoice-29.svg')}}" alt="invoice" class="w-100">
+																		<img src="{{ asset('theme/img/invoice/general-invoice-29.svg')}}" alt="invoice" class="w-100">
 																	</a>
 																	<a href="#" class="invoice-view-icon" data-bs-toggle="modal" data-bs-target="#invoice_view_29"><i class="isax isax-eye"></i></a>
 																</div>

@@ -9,7 +9,7 @@
     <div class="card m-auto shadow-none">
         <div class="card-body">
             <div class="bg-light p-2 text-center mb-2">
-                <img src="{{URL::asset('build/img/receipt-logo.svg')}}" alt="User Img">
+                <img src="{{ asset('theme/img/receipt-logo.svg')}}" alt="User Img">
             </div>
             <div class="p-2 text-center mb-2">
                 <h6 class="fs-16">Cash Receipt</h6>
@@ -139,7 +139,7 @@
                     </tbody>
                 </table>
                 <p class="text-center mb-2">12332345698234592384</p>
-                <img src="{{URL::asset('build/img/barcode.svg')}}" class="img-fluid mb-2 pb-2 border-dashed" alt="img">
+                <img src="{{ asset('theme/img/barcode.svg')}}" class="img-fluid mb-2 pb-2 border-dashed" alt="img">
                 <p class="text-center pb-2 border-dashed">Thank You</p>
             </div>
         </div><!-- end card body -->

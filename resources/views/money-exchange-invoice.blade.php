@@ -10,14 +10,14 @@
                 <div class="pb-3 mb-3">
                     <div class="d-flex align-items-center justify-content-between bg-light flex-wrap p-3 rounded">
                         <div>
-                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="mb-2" alt="">
+                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="mb-2" alt="">
                             <p class="mb-1">Original For Recipient</p>
                             <p class="mb-1">Invoice No: <span class="text-dark">INV 00001</span></p>
                             <p class="mb-1">Date: <span class="text-dark">05/12/2024</span></p>
                         </div>
                         <div class="text-end">
                             <h6 class="mb-1">TAX INVOICE</h6>
-                            <img src="{{URL::asset('build/img/icons/money-exchange.svg')}}" class="mb-1" alt="">
+                            <img src="{{ asset('theme/img/icons/money-exchange.svg')}}" class="mb-1" alt="">
                             <div>
                                 <h6 class="mb-1">Dreamstechnologies Cineplex</h6>
                                 <div> 

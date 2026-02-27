@@ -14,12 +14,12 @@
                         <div class="d-inline-block inv-medical position-relative">
                             <p class="mb-0 text-white">Address : 15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom.</p>
                             <span class="position-absolute end-0 top-0">
-                                <img src="{{URL::asset('build/img/bg/inv-medical-bg.png')}}" alt="bg">
+                                <img src="{{ asset('theme/img/bg/inv-medical-bg.png')}}" alt="bg">
                             </span>
                         </div>
                     </div>
                     <div>
-                        <div class="mb-1"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+                        <div class="mb-1"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
                         <p class="mb-1 fs-13 text-end">Original For Recipient</p>
                         <h5 class="fs-20 font-bold text-end">Dreams Medicals</h5>
                     </div>

@@ -55,7 +55,7 @@
                                 </p>
                             </div>
                             <span class="position-absolute start-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/income-report-1.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/income-report-1.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -80,7 +80,7 @@
                                 </p>
                             </div>
                             <span class="position-absolute start-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/income-report-2.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/income-report-2.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -105,7 +105,7 @@
                                 </p>
                             </div>
                             <span class="position-absolute start-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/income-report-3.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/income-report-3.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -130,7 +130,7 @@
                                 </p>
                             </div>
                             <span class="position-absolute start-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/income-report-4.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/income-report-4.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->

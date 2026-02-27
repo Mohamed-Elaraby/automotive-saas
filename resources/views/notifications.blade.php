@@ -21,7 +21,7 @@
                     <div class="d-flex align-items-center">
                         <div class="d-flex me-2">
                             <a href="{{url('profile')}}" class="avatar avatar-lg avatar-rounded">
-                                <img src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="Elwis Mathew">
+                                <img src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="Elwis Mathew">
                             </a>
                         </div>
                         <div class="flex-fill ml-3">
@@ -37,7 +37,7 @@
                     <div class="d-flex align-items-center">
                         <div class="d-flex me-2">
                             <a href="{{url('profile')}}" class="avatar avatar-lg avatar-rounded">
-                                <img src="{{URL::asset('build/img/profiles/avatar-18.jpg')}}" alt="Elizabeth Olsen">
+                                <img src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" alt="Elizabeth Olsen">
                             </a>
                         </div>
                         <div class="flex-fill ml-3">
@@ -53,7 +53,7 @@
                     <div class="d-flex align-items-center">
                         <div class="d-flex me-2">
                             <a href="{{url('profile')}}" class="avatar avatar-lg avatar-rounded">
-                                <img src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" alt="William Smith">
+                                <img src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" alt="William Smith">
                             </a>
                         </div>
                         <div class="flex-fill ml-3">
@@ -69,7 +69,7 @@
                     <div class="d-flex align-items-center">
                         <div class="d-flex me-2">
                             <a href="{{url('profile')}}" class="avatar avatar-lg avatar-rounded">
-                                <img src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="Lesley Grauer">
+                                <img src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="Lesley Grauer">
                             </a>
                         </div>
                         <div class="flex-fill ml-3">

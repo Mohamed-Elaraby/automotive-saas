@@ -50,63 +50,63 @@
                     <!-- start row -->
                     <div class="row g-3">
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-15.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-15.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-15.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-15.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-16.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-16.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-16.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-16.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-17.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-17.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-17.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-17.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-18.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-18.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-18.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-18.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-19.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-19.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-19.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-19.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-20.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-20.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-20.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-20.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-21.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-21.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-21.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-21.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-22.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-22.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-22.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-22.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-23.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-23.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-23.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-23.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-24.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-24.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-24.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-24.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-25.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-25.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-25.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-25.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                         <div class="col-xl-2 col-md-4 col-6">
-                            <a href="{{URL::asset('build/img/media/media-26.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                <img src="{{URL::asset('build/img/media/media-26.jpg')}}" class="rounded" alt="img">
+                            <a href="{{ asset('theme/img/media/media-26.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                <img src="{{ asset('theme/img/media/media-26.jpg')}}" class="rounded" alt="img">
                             </a>
                         </div><!-- end col -->
                     </div>

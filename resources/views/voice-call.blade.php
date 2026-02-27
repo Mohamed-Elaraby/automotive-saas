@@ -15,7 +15,7 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center">
                                 <span class="avatar avatar-lg avatar-rounded me-2">
-                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                 </span>
                                 <div>
                                     <h6 class="mb-1"><a href="#">Anthony Lewis</a></h6>
@@ -29,11 +29,11 @@
                     </div> <!-- end card-header -->
                     <div class="card-body position-relative text-center d-flex flex-column justify-content-center">
                         <div class="voice-call-img mb-3">
-                            <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                            <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
                         </div>
                         <h5>Anthony Lewis</h5>
                         <p>00:24</p>
-                        <a href="#" class="avatar avatar-xl position-absolute end-0 bottom-0 m-3"><img src="{{URL::asset('build/img/users/user-05.jpg')}}" alt="Img"></a>
+                        <a href="#" class="avatar avatar-xl position-absolute end-0 bottom-0 m-3"><img src="{{ asset('theme/img/users/user-05.jpg')}}" alt="Img"></a>
                     </div> <!-- end card-body -->
                     <div class="card-footer bg-white">
                         <div class="d-flex align-items-center justify-content-center">

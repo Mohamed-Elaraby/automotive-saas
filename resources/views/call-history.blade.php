@@ -67,7 +67,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Anthony Lewis</a></p>
@@ -99,7 +99,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-09.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-09.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Brian Villalobos</a></p>
@@ -131,7 +131,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-02.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-02.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Harvey Smith</a></p>
@@ -163,7 +163,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-03.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-03.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">peral@example.com</a></p>
@@ -194,7 +194,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details"><img src="{{URL::asset('build/img/users/user-10.jpg')}}" class="img-fluid rounded-circle" alt="img"></a>
+                                        <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details"><img src="{{ asset('theme/img/users/user-10.jpg')}}" class="img-fluid rounded-circle" alt="img"></a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Doglas Martini</a></p>
                                             <span class="fs-12">martniwr@example.com</span>
@@ -225,7 +225,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-04.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-04.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Linda Ray</a></p>
@@ -257,7 +257,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-05.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-05.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Elliot Murray</a></p>
@@ -289,7 +289,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-06.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-06.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Rebecca Smtih</a></p>
@@ -320,7 +320,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details"><img src="{{URL::asset('build/img/users/user-07.jpg')}}" class="img-fluid rounded-circle" alt="img"></a>
+                                        <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details"><img src="{{ asset('theme/img/users/user-07.jpg')}}" class="img-fluid rounded-circle" alt="img"></a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Connie Waters</a></p>
                                             <span class="fs-12">connie@example.com</span>
@@ -351,7 +351,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <a href="#" class="avatar avatar-md" data-bs-toggle="modal" data-bs-target="#view_details">
-                                            <img src="{{URL::asset('build/img/users/user-08.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-08.jpg')}}" class="img-fluid rounded-circle" alt="img">
                                         </a>
                                         <div class="ms-2">
                                             <p class="text-dark fw-medium mb-0"><a href="#" data-bs-toggle="modal" data-bs-target="#view_details">Lori Broaddus</a></p>

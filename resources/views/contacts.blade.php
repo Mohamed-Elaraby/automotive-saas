@@ -85,7 +85,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-33.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-33.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Carl Evans</a>
                                 </div>
@@ -117,7 +117,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Minerva Rameriz</a>
                                 </div>
@@ -149,7 +149,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-34.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-34.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Robert Lamon</a>
                                 </div>
@@ -181,7 +181,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-35.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-35.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Patricia Lewis</a>
                                 </div>
@@ -213,7 +213,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm  me-2">
-                                        <img src="{{URL::asset('build/img/users/user-36.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-36.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Mark Joslyn</a>
                                 </div>
@@ -245,7 +245,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-37.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-37.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Marsha Betts</a>
                                 </div>
@@ -277,7 +277,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-28.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-28.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Daniel Jude</a>
                                 </div>
@@ -309,7 +309,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-38.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-38.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Emma Bates</a>
                                 </div>
@@ -341,7 +341,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-39.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-39.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Richard Fralick</a>
                                 </div>
@@ -373,7 +373,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm me-2">
-                                        <img src="{{URL::asset('build/img/users/user-03.jpg')}}" alt="product" class="rounded-circle">
+                                        <img src="{{ asset('theme/img/users/user-03.jpg')}}" alt="product" class="rounded-circle">
                                     </a>
                                     <a href="javascript:void(0);">Michelle Robison</a>
                                 </div>

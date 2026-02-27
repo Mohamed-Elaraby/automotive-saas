@@ -60,7 +60,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-success"><i class="isax isax-send text-success me-1"></i>5.62%</span>from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-01.svg')}}" alt="">
+                                <img src="{{ asset('theme/img/bg/card-overlay-01.svg')}}" alt="">
                             </span>
                         </div>
                     </div>
@@ -81,7 +81,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-success"><i class="isax isax-send text-success me-1"></i>11.4%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-02.svg')}}" alt="">
+                                <img src="{{ asset('theme/img/bg/card-overlay-02.svg')}}" alt="">
                             </span>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-success"><i class="isax isax-send text-success me-1"></i>8.52%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-03.svg')}}" alt="">
+                                <img src="{{ asset('theme/img/bg/card-overlay-03.svg')}}" alt="">
                             </span>
                         </div>
                     </div>
@@ -123,7 +123,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-danger"><i class="isax isax-received text-danger me-1"></i>7.45%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-04.svg')}}" alt="">
+                                <img src="{{ asset('theme/img/bg/card-overlay-04.svg')}}" alt="">
                             </span>
                         </div>
                     </div>
@@ -392,25 +392,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                             </ul>

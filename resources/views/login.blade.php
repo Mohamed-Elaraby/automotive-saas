@@ -13,7 +13,7 @@
                     <form action="{{url('index')}}" class="d-flex justify-content-center align-items-center">
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class=" mx-auto mb-5 text-center">
-                                <img src="{{URL::asset('build/img/logo.svg')}}" class="img-fluid" alt="Logo">
+                                <img src="{{ asset('theme/img/logo.svg')}}" class="img-fluid" alt="Logo">
                             </div>
                             <div class="card border-0 p-lg-3 shadow-lg">
                                 <div class="card-body">
@@ -62,13 +62,13 @@
                                             <div class="text-center me-2 flex-fill">
                                                 <a href="javascript:void(0);"
                                                     class="br-10 p-1 btn btn-light d-flex align-items-center justify-content-center">
-                                                    <img class="img-fluid m-1" src="{{URL::asset('build/img/icons/facebook-logo.svg')}}" alt="Facebook">
+                                                    <img class="img-fluid m-1" src="{{ asset('theme/img/icons/facebook-logo.svg')}}" alt="Facebook">
                                                 </a>
                                             </div>
                                             <div class="text-center me-2 flex-fill">
                                                 <a href="javascript:void(0);"
                                                     class="br-10 p-1 btn btn-light d-flex align-items-center justify-content-center">
-                                                    <img class="img-fluid m-1" src="{{URL::asset('build/img/icons/google-logo.svg')}}" alt="Google">
+                                                    <img class="img-fluid m-1" src="{{ asset('theme/img/icons/google-logo.svg')}}" alt="Google">
                                                 </a>
                                             </div>
                                         </div>

@@ -67,7 +67,7 @@
 														<div class="card-body">
 															<div class="d-flex align-items-center mb-3">
 																<a href="javascript:void(0);">
-																	<img src="{{URL::asset('build/img/settings/payment-icon-01.svg')}}" class="img-fluid me-2" alt="clock">
+																	<img src="{{ asset('theme/img/settings/payment-icon-01.svg')}}" class="img-fluid me-2" alt="clock">
 																</a>
 																<div>
 																	<p class="mb-1">James Peterson</p>
@@ -89,7 +89,7 @@
 														<div class="card-body">
 															<div class="d-flex align-items-center mb-3">
 																<a href="javascript:void(0);">
-																	<img src="{{URL::asset('build/img/settings/payment-icon-02.svg')}}" class="img-fluid me-2" alt="clock">
+																	<img src="{{ asset('theme/img/settings/payment-icon-02.svg')}}" class="img-fluid me-2" alt="clock">
 																</a>
 																<div>
 																	<p class="mb-1">Raymond Rowley</p>

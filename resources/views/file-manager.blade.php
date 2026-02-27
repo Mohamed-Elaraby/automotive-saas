@@ -60,7 +60,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{URL::asset('build/img/icons/dropbox.svg')}}" alt="img">
+                                    <img src="{{ asset('theme/img/icons/dropbox.svg')}}" alt="img">
                                     <h5 class="ms-2">Dropbox</h5>
                                 </div>
                                 <div class="dropdown">
@@ -98,7 +98,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{URL::asset('build/img/icons/drive.svg')}}" alt="img">
+                                    <img src="{{ asset('theme/img/icons/drive.svg')}}" alt="img">
                                     <h5 class="ms-2">Google Drive</h5>
                                 </div>
                                 <div class="dropdown">
@@ -136,7 +136,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{URL::asset('build/img/icons/cloud.svg')}}" alt="img">
+                                    <img src="{{ asset('theme/img/icons/cloud.svg')}}" alt="img">
                                     <h5 class="ms-2">Cloud Storage</h5>
                                 </div>
                                 <div class="dropdown">
@@ -174,7 +174,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{URL::asset('build/img/icons/storage.svg')}}" alt="img">
+                                    <img src="{{ asset('theme/img/icons/storage.svg')}}" alt="img">
                                     <h5 class="ms-2">Internal Storage</h5>
                                 </div>
                                 <div class="dropdown">
@@ -218,7 +218,7 @@
                                 <div class="d-flex align-items-center justify-content-between">
                                     <div class="d-flex align-items-center overflow-hidden">
                                         <span class="avatar flex-shrink-0">
-                                            <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img" class="rounded-circle">
+                                            <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img" class="rounded-circle">
                                         </span>
                                         <div class="overflow-hidden ms-2">
                                             <h5 class="text-truncate mb-1">James Hong</h5>
@@ -348,7 +348,7 @@
                             <div class="col d-flex">
                                 <div class="card access-wrap flex-fill">
                                     <div class="card-body text-center">
-                                        <img src="{{URL::asset('build/img/icons/file.svg')}}" alt="img" class="mb-3">
+                                        <img src="{{ asset('theme/img/icons/file.svg')}}" alt="img" class="mb-3">
                                         <h6 class="mb-2 fw-medium"><a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preview">Final.doc</a></h6>
                                         <span class="badge badge-soft-primary">2.4 GB</span>
                                     </div>
@@ -358,7 +358,7 @@
                             <div class="col d-flex">
                                 <div class="card access-wrap flex-fill">
                                     <div class="card-body text-center">
-                                        <img src="{{URL::asset('build/img/icons/pdf-icon.svg')}}" alt="img" class="mb-3">
+                                        <img src="{{ asset('theme/img/icons/pdf-icon.svg')}}" alt="img" class="mb-3">
                                         <h6 class="mb-2 fw-medium"><a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preview">Marklist.pdf</a></h6>
                                         <span class="badge badge-soft-primary">2.4 GB</span>
                                     </div>
@@ -368,7 +368,7 @@
                             <div class="col d-flex">
                                 <div class="card access-wrap flex-fill">
                                     <div class="card-body text-center">
-                                        <img src="{{URL::asset('build/img/icons/image.svg')}}" alt="img" class="mb-3">
+                                        <img src="{{ asset('theme/img/icons/image.svg')}}" alt="img" class="mb-3">
                                         <h6 class="mb-2 fw-medium"><a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preview">Nature.png</a></h6>
                                         <span class="badge badge-soft-primary">2.4 GB</span>
                                     </div>
@@ -378,7 +378,7 @@
                             <div class="col d-flex">
                                 <div class="card access-wrap flex-fill">
                                     <div class="card-body text-center">
-                                        <img src="{{URL::asset('build/img/icons/xls-icon.svg')}}" alt="img" class="mb-3">
+                                        <img src="{{ asset('theme/img/icons/xls-icon.svg')}}" alt="img" class="mb-3">
                                         <h6 class="mb-2 fw-medium"><a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preview">List.xlsx</a></h6>
                                         <span class="badge badge-soft-primary">2.4 GB</span>
                                     </div>
@@ -388,7 +388,7 @@
                             <div class="col d-flex">
                                 <div class="card access-wrap flex-fill">
                                     <div class="card-body text-center">
-                                        <img src="{{URL::asset('build/img/icons/folder-icon.svg')}}" alt="img" class="mb-3">
+                                        <img src="{{ asset('theme/img/icons/folder-icon.svg')}}" alt="img" class="mb-3">
                                         <h6 class="mb-2 fw-medium"><a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preview">Group Photos</a></h6>
                                         <span class="badge badge-soft-primary">2.4 GB</span>
                                     </div>
@@ -437,10 +437,10 @@
                                 <div class="d-flex align-items-center">
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                     <div class="dropdown ms-2">
@@ -495,10 +495,10 @@
                                 <div class="d-flex align-items-center">
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                     <div class="dropdown ms-2">
@@ -841,7 +841,7 @@
                                     <td>
                                         <div class="d-flex align-items-center file-name-icon">
                                             <a href="#" class="avatar avatar-md bg-light" data-bs-toggle="offcanvas" data-bs-target="#preview">
-                                                <img src="{{URL::asset('build/img/icons/file-01.svg')}}" class="img-fluid" alt="img"></a>
+                                                <img src="{{ asset('theme/img/icons/file-01.svg')}}" class="img-fluid" alt="img"></a>
                                             <div class="ms-2">
                                                 <p class="text-dark fw-medium  mb-0"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#preview">Secret</a></p>
                                             </div>
@@ -856,13 +856,13 @@
                                     <td>
                                         <div class="avatar-list-stacked avatar-group-sm">
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                                             </span>
                                         </div>
                                     </td>
@@ -900,7 +900,7 @@
                                     <td>
                                         <div class="d-flex align-items-center file-name-icon">
                                             <a href="#" class="avatar avatar-md bg-light" data-bs-toggle="offcanvas" data-bs-target="#preview">
-                                                <img src="{{URL::asset('build/img/icons/file-02.svg')}}" class="img-fluid" alt="img"></a>
+                                                <img src="{{ asset('theme/img/icons/file-02.svg')}}" class="img-fluid" alt="img"></a>
                                             <div class="ms-2">
                                                 <p class="text-dark fw-medium  mb-0"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#preview">Sophie Headrick</a></p>
                                             </div>
@@ -915,10 +915,10 @@
                                     <td>
                                         <div class="avatar-list-stacked avatar-group-sm">
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                             </span>
                                         </div>
                                     </td>
@@ -956,7 +956,7 @@
                                     <td>
                                         <div class="d-flex align-items-center file-name-icon">
                                             <a href="#" class="avatar avatar-md bg-light" data-bs-toggle="offcanvas" data-bs-target="#preview">
-                                                <img src="{{URL::asset('build/img/icons/file-03.svg')}}" class="img-fluid" alt="img"></a>
+                                                <img src="{{ asset('theme/img/icons/file-03.svg')}}" class="img-fluid" alt="img"></a>
                                             <div class="ms-2">
                                                 <p class="text-dark fw-medium  mb-0"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#preview">Gallery</a></p>
                                             </div>
@@ -971,16 +971,16 @@
                                     <td>
                                         <div class="avatar-list-stacked avatar-group-sm">
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                             </span>
                                             <a class="avatar bg-primary avatar-rounded text-fixed-white" href="javascript:void(0);">
                                                 +1
@@ -1021,7 +1021,7 @@
                                     <td>
                                         <div class="d-flex align-items-center file-name-icon">
                                             <a href="#" class="avatar avatar-md bg-light" data-bs-toggle="offcanvas" data-bs-target="#preview">
-                                                <img src="{{URL::asset('build/img/icons/file-04.svg')}}" class="img-fluid" alt="img"></a>
+                                                <img src="{{ asset('theme/img/icons/file-04.svg')}}" class="img-fluid" alt="img"></a>
                                             <div class="ms-2">
                                                 <p class="text-dark fw-medium  mb-0"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#preview">Doris Crowley</a></p>
                                             </div>
@@ -1036,13 +1036,13 @@
                                     <td>
                                         <div class="avatar-list-stacked avatar-group-sm">
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="img">
                                             </span>
                                         </div>
                                     </td>
@@ -1080,7 +1080,7 @@
                                     <td>
                                         <div class="d-flex align-items-center file-name-icon">
                                             <a href="#" class="avatar avatar-md bg-light" data-bs-toggle="offcanvas" data-bs-target="#preview">
-                                                <img src="{{URL::asset('build/img/icons/file-05.svg')}}" class="img-fluid" alt="img"></a>
+                                                <img src="{{ asset('theme/img/icons/file-05.svg')}}" class="img-fluid" alt="img"></a>
                                             <div class="ms-2">
                                                 <p class="text-dark fw-medium  mb-0"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#preview">Cheat_codez</a></p>
                                             </div>
@@ -1095,16 +1095,16 @@
                                     <td>
                                         <div class="avatar-list-stacked avatar-group-sm">
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                                             </span>
                                             <span class="avatar avatar-rounded">
-                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="img">
+                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="img">
                                             </span>
                                         </div>
                                     </td>

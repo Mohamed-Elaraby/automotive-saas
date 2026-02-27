@@ -18,7 +18,7 @@
                             
                         </div>
                         <div class="text-end">
-                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt="User Img">
+                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="User Img">
                         </div>
                     </div>
                 </div>
@@ -189,7 +189,7 @@
                     </div>
                     <div class="text-center mb-3">
                         <p class="mb-1">For Dreamguys</p>
-                        <span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt="User Img"></span>
+                        <span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt="User Img"></span>
                     </div>
                 </div>
                 <div class="border-bottom mb-3 p-3">

@@ -16,7 +16,7 @@
                 <div class="mb-3 p-2 bg-light">
                     <div class="d-flex align-items-center justify-content-between flex-wrap p-3 rounded">
                         <div class="">
-                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="mb-2" alt=""> 
+                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="mb-2" alt=""> 
                         </div>
                         <div class="text-end">
                             <h6 class="mb-2 text-primary">INVOICE</h6>
@@ -228,14 +228,14 @@
                                 <p class="mb-0">BRANCH :  <span class="text-dark">RS Puram</span></p>
                             </div>
                             <div class="me-4">
-                                <span class="d-block mb-2"><img src="{{URL::asset('build/img/icons/qr.png')}}" alt=""></span>
+                                <span class="d-block mb-2"><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
                                 <p class="text-dark">Scan to View Receipt</p>
                             </div>
                         </div>
                     </div>
                     <div class="text-center mb-3">
                         <p class="mb-1">For Dreamstechnologies</p>
-                        <span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt=""></span>
+                        <span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt=""></span>
                     </div>
                 </div>
                 <div class="d-flex align-items-center flex-wrap border-bottom mb-3">

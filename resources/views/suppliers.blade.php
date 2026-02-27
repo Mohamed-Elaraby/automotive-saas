@@ -149,7 +149,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -192,7 +192,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -237,7 +237,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -281,7 +281,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -325,7 +325,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-32.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-32.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -369,7 +369,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-32.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-32.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -413,7 +413,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-34.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-34.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -457,7 +457,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -501,7 +501,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -545,7 +545,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-36.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-36.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -589,7 +589,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-36.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-36.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -633,7 +633,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-38.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-38.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -677,7 +677,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-39.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-39.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -721,7 +721,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-40.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-40.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0">
@@ -813,7 +813,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2"><img
-                                                src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}"
+                                                src="{{ asset('theme/img/profiles/avatar-17.jpg')}}"
                                                 class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
                                     </label>
                                 </li>
@@ -821,7 +821,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2"><img
-                                                src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}"
+                                                src="{{ asset('theme/img/profiles/avatar-05.jpg')}}"
                                                 class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
                                     </label>
                                 </li>
@@ -829,7 +829,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2"><img
-                                                src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}"
+                                                src="{{ asset('theme/img/profiles/avatar-12.jpg')}}"
                                                 class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
                                     </label>
                                 </li>
@@ -837,7 +837,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2"><img
-                                                src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}"
+                                                src="{{ asset('theme/img/profiles/avatar-29.jpg')}}"
                                                 class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
                                     </label>
                                 </li>

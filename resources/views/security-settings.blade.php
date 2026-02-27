@@ -60,7 +60,7 @@
                                 <div class="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">										
                                     <div class="d-flex align-items-center">
                                         <span class="avatar avatar-lg border bg-light me-2">
-                                            <img src="{{URL::asset('build/img/icons/google-icon.svg')}}" class="w-75" alt="icon">
+                                            <img src="{{ asset('theme/img/icons/google-icon.svg')}}" class="w-75" alt="icon">
                                         </span>
                                         <div>
                                             <h5 class="fs-16 fw-semibold mb-1">Google Authentication</h5>

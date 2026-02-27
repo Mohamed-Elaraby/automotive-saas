@@ -197,13 +197,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -253,13 +253,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -309,13 +309,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -397,13 +397,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -449,13 +449,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-09.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-09.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -535,13 +535,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -625,13 +625,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -677,13 +677,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -729,13 +729,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -819,13 +819,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -871,13 +871,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-09.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-09.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">
@@ -961,13 +961,13 @@
                                                                 <div class="d-flex align-items-center">
                                                                     <div class="avatar-list-stacked avatar-group-sm">
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                                     </span>
                                                                         <span class="avatar avatar-rounded">
-                                                                        <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                        <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                                     </span>
                                                                     </div>
                                                                     <div class="dropdown ms-2">

@@ -27,7 +27,7 @@
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                                 <div class="position-relative d-flex align-items-center">
-                                                    <img src="{{URL::asset('build/img/products/product-05.jpg')}}" class="avatar avatar-xl " alt="User Img">
+                                                    <img src="{{ asset('theme/img/products/product-05.jpg')}}" class="avatar avatar-xl " alt="User Img">
                                                     <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                                 </div>
                                             </div>
@@ -173,15 +173,15 @@
                                                 </div>
                                                 <div class="d-flex align-items-center gap-3">
                                                     <div class="avatar avatar-xl border gallery-img p-1 ">
-                                                        <img src="{{URL::asset('build/img/products/product-10.jpg')}}" alt="User Img">
+                                                        <img src="{{ asset('theme/img/products/product-10.jpg')}}" alt="User Img">
                                                         <a href="javascript:void(0);" class="rounded-trash gallery-trash d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                                     </div>
                                                     <div class="avatar avatar-xl border gallery-img p-1 ">
-                                                        <img src="{{URL::asset('build/img/products/product-11.jpg')}}" alt="User Img">
+                                                        <img src="{{ asset('theme/img/products/product-11.jpg')}}" alt="User Img">
                                                         <a href="javascript:void(0);" class="rounded-trash gallery-trash d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                                     </div>
                                                     <div class="avatar avatar-xl border gallery-img p-1 ">
-                                                        <img src="{{URL::asset('build/img/products/product-12.jpg')}}" alt="User Img">
+                                                        <img src="{{ asset('theme/img/products/product-12.jpg')}}" alt="User Img">
                                                         <a href="javascript:void(0);" class="rounded-trash gallery-trash d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                                     </div>
                                                 </div>

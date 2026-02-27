@@ -12,7 +12,7 @@
                 <div class="pb-4 mb-4 border-bottom">
                     <div class="d-flex align-items-center justify-content-between bg-light flex-wrap p-3 rounded">
                         <div>
-                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt="">
+                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
                         </div>
                         <div class="text-end">
                             <h6 class="mb-2">Dreams Bus</h6>
@@ -171,7 +171,7 @@
                     </div>
                     <div class="text-center mb-3">
                         <p class="mb-1">For Dreamguys</p>
-                        <span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt=""></span>
+                        <span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt=""></span>
                     </div>
                 </div>
                 <div class="border-bottom mb-3 p-3">

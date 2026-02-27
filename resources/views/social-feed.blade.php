@@ -17,7 +17,7 @@
                             <div class="bg-light rounded p-3 mb-3">
                                 <div class="text-center mb-3">
                                     <a href="javascript:void(0);" class="avatar avatar-xl online avatar-rounded">
-                                        <img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="Img">
                                     </a>
                                     <h6 class="mb-1"><a href="javascript:void(0);">James Hong </a></h6>
                                     <p class="fs-12">@James Hong324</p>
@@ -64,19 +64,19 @@
                                 <div>
                                     <a href="javscript:void(0);" class="fw-medium d-flex align-items-center justify-content-between text-dark py-1 mb-2">
                                         <span class="d-inline-flex align-items-center">
-                                            <img src="{{URL::asset('build/img/icons/liked-page-01.svg')}}" class="me-2" alt="Img">Dribble
+                                            <img src="{{ asset('theme/img/icons/liked-page-01.svg')}}" class="me-2" alt="Img">Dribble
                                         </span>
                                         <span class="btn btn-icon btn-sm"><i class="ti ti-thumb-down"></i></span>
                                     </a>
                                     <a href="javscript:void(0);" class="fw-medium d-flex align-items-center justify-content-between text-dark py-1 mb-2">
                                         <span class="d-inline-flex align-items-center">
-                                            <img src="{{URL::asset('build/img/icons/liked-page-02.svg')}}" class="me-2" alt="Img">UI/UX Designs
+                                            <img src="{{ asset('theme/img/icons/liked-page-02.svg')}}" class="me-2" alt="Img">UI/UX Designs
                                         </span>
                                         <span class="btn btn-icon btn-sm"><i class="ti ti-thumb-down"></i></span>
                                     </a>
                                     <a href="javscript:void(0);" class="fw-medium d-flex align-items-center justify-content-between text-dark py-1">
                                         <span class="d-inline-flex align-items-center">
-                                            <img src="{{URL::asset('build/img/icons/liked-page-03.svg')}}" class="me-2" alt="Img">Figma Update
+                                            <img src="{{ asset('theme/img/icons/liked-page-03.svg')}}" class="me-2" alt="Img">Figma Update
                                         </span>
                                         <span class="btn btn-icon btn-sm"><i class="ti ti-thumb-down"></i></span>
                                     </a>
@@ -84,7 +84,7 @@
                                         <div class="more-menu-3">
                                             <a href="javscript:void(0);" class="fw-medium d-flex align-items-center justify-content-between text-dark py-1 mb-2">
                                                 <span class="d-inline-flex align-items-center">
-                                                    <img src="{{URL::asset('build/img/icons/liked-page-04.svg')}}" class="me-2" alt="Img">I Am Techie
+                                                    <img src="{{ asset('theme/img/icons/liked-page-04.svg')}}" class="me-2" alt="Img">I Am Techie
                                                 </span>
                                                 <span class="btn btn-icon btn-sm"><i class="ti ti-thumb-down"></i></span>
                                             </a>
@@ -137,28 +137,28 @@
                                 </div>
                                 <div class="channels-slider owl-carousel">
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-01.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-01.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-02.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-02.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-03.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-03.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-04.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-04.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-05.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-05.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-06.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-06.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-07.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-07.svg')}}" alt="Img">
                                     </a>
                                     <a href="javascript:void(0);">
-                                        <img src="{{URL::asset('build/img/icons/channel-08.svg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/icons/channel-08.svg')}}" alt="Img">
                                     </a>
                                 </div>
                             </div><!-- end card body -->
@@ -167,7 +167,7 @@
                             <div class="card-header border-0 pb-0">
                                 <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap row-gap-3 pb-3">
                                     <div class="d-flex align-items-center">
-                                        <a href="javascript:void(0);" class="avatar avatar-lg avatar-rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/users/user-03.jpg')}}" alt="Img"></a>
+                                        <a href="javascript:void(0);" class="avatar avatar-lg avatar-rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/users/user-03.jpg')}}" alt="Img"></a>
                                         <div>
                                             <h6 class="mb-1"><a href="javascript:void(0);">Richard Smith <i class="ti ti-circle-check-filled text-success"></i></a></h6>
                                             <p class="d-flex align-items-center">
@@ -221,27 +221,27 @@
                                     </p>
                                 </div>
                                 <div class="mb-2">
-                                    <img src="{{URL::asset('build/img/social/social-feed-01.jpg')}}" class="rounded" alt="Img">
+                                    <img src="{{ asset('theme/img/social/social-feed-01.jpg')}}" class="rounded" alt="Img">
                                 </div>
                                 <div class="social-gallery-slider owl-carousel mb-3">
-                                    <a href="{{URL::asset('build/img/social/gallery-big-01.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                        <img src="{{URL::asset('build/img/social/gallery-01.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/social/gallery-big-01.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                        <img src="{{ asset('theme/img/social/gallery-01.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
-                                    <a href="{{URL::asset('build/img/social/gallery-big-02.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                        <img src="{{URL::asset('build/img/social/gallery-02.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/social/gallery-big-02.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                        <img src="{{ asset('theme/img/social/gallery-02.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
-                                    <a href="{{URL::asset('build/img/social/gallery-big-03.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                        <img src="{{URL::asset('build/img/social/gallery-03.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/social/gallery-big-03.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                        <img src="{{ asset('theme/img/social/gallery-03.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
-                                    <a href="{{URL::asset('build/img/social/gallery-big-04.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                        <img src="{{URL::asset('build/img/social/gallery-04.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/social/gallery-big-04.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                        <img src="{{ asset('theme/img/social/gallery-04.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
-                                    <a href="{{URL::asset('build/img/social/gallery-big-01.jpg')}}" data-fancybox="gallery" class="gallery-item">
-                                        <img src="{{URL::asset('build/img/social/gallery-01.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/social/gallery-big-01.jpg')}}" data-fancybox="gallery" class="gallery-item">
+                                        <img src="{{ asset('theme/img/social/gallery-01.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
                                 </div>
@@ -265,7 +265,7 @@
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-start">
-                                    <a href="javascript:void(0);" class="avatar avatar-rounded me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-04.jpg')}}" alt="Img"></a>
+                                    <a href="javascript:void(0);" class="avatar avatar-rounded me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-04.jpg')}}" alt="Img"></a>
                                     <input type="text" class="form-control" placeholder="Enter Comments">
                                 </div>
                             </div><!-- end card body -->
@@ -274,7 +274,7 @@
                             <div class="card-header border-0 pb-0">
                                 <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap row-gap-3 pb-3">
                                     <div class="d-flex align-items-center">
-                                        <a href="javascript:void(0);" class="avatar avatar-lg avatar-rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/users/user-05.jpg')}}" alt="Img"></a>
+                                        <a href="javascript:void(0);" class="avatar avatar-lg avatar-rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/users/user-05.jpg')}}" alt="Img"></a>
                                         <div>
                                             <h6 class="mb-1"><a href="javascript:void(0);">Jason Heier <i class="ti ti-circle-check-filled text-success"></i></a></h6>
                                             <p class="d-flex align-items-center">
@@ -330,7 +330,7 @@
                                 </div>
                                 <div class="card shadow-none mb-3">
                                     <div class="card-img card-img-hover rounded-0">
-                                        <a href="javascript:void(0);" class="rounded-top"><img src="{{URL::asset('build/img/social/social-feed-02.jpg')}}" class="rounded-top" alt="Img"></a>
+                                        <a href="javascript:void(0);" class="rounded-top"><img src="{{ asset('theme/img/social/social-feed-02.jpg')}}" class="rounded-top" alt="Img"></a>
                                     </div>
                                     <div class="card-body p-2">
                                         <h6 class="mb-1 text-truncate"><a href="javascript:void(0);">Drinking water boosts skin health and beauty. Stay hydrated!💧</a></h6>
@@ -362,7 +362,7 @@
                             <div class="card-header border-0 pb-0">
                                 <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap row-gap-3 pb-3">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar avatar-lg avatar-rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/users/user-04.jpg')}}" alt="Img"></span>
+                                        <span class="avatar avatar-lg avatar-rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/users/user-04.jpg')}}" alt="Img"></span>
                                         <div>
                                             <h6 class="mb-1"><a href="javascript:void(0);">Sophie Headrick <i class="ti ti-circle-check-filled text-success"></i></a></h6>
                                             <p class="d-flex align-items-center">
@@ -417,7 +417,7 @@
                                     </p>
                                 </div>
                                 <div class="mb-2">
-                                    <img src="{{URL::asset('build/img/social/social-feed-03.jpg')}}" class="rounded" alt="Img">
+                                    <img src="{{ asset('theme/img/social/social-feed-03.jpg')}}" class="rounded" alt="Img">
                                 </div>
                                 <div class="d-flex align-items-center justify-content-between flex-wrap row-gap-3 mb-3">
                                     <div class="d-flex align-items-center flex-wrap row-gap-3">
@@ -440,7 +440,7 @@
                                 </div>
                                 <div class="d-flex align-items-start mb-3">
                                     <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="Img">
                                     </a>
                                     <div class="bg-light rounded flex-fill p-2">
                                         <div class="d-flex align-items-center mb-1">
@@ -454,7 +454,7 @@
                                 </div>
                                 <div class="d-flex align-items-start mb-3 ms-4 ps-2">
                                     <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img">
                                     </a>
                                     <div class="bg-light rounded flex-fill p-2">
                                         <div class="d-flex align-items-center mb-1">
@@ -469,7 +469,7 @@
                                 </div>
                                 <div class="d-flex align-items-start mb-3">
                                     <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="Img">
                                     </a>
                                     <div class="bg-light rounded flex-fill p-2">
                                         <div class="d-flex align-items-center mb-1">
@@ -486,7 +486,7 @@
                                     <div class="more-menu">
                                         <div class="d-flex align-items-start mb-3">
                                             <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="Img">
                                             </a>
                                             <div class="bg-light rounded flex-fill p-2">
                                                 <div class="d-flex align-items-center mb-1">
@@ -501,7 +501,7 @@
                                         </div>
                                         <div class="d-flex align-items-start mb-3">
                                             <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="Img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="Img">
                                             </a>
                                             <div class="bg-light rounded flex-fill p-2">
                                                 <div class="d-flex align-items-center mb-1">
@@ -520,7 +520,7 @@
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-start">
-                                    <span class="avatar avatar-rounded me-2 flex-shrink-0"><img src="{{URL::asset('build/img/users/user-05.jpg')}}" alt="Img"></span>
+                                    <span class="avatar avatar-rounded me-2 flex-shrink-0"><img src="{{ asset('theme/img/users/user-05.jpg')}}" alt="Img"></span>
                                     <input type="text" class="form-control" placeholder="Enter Comments">
                                 </div>
                             </div><!-- end card body -->
@@ -549,7 +549,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -564,7 +564,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -578,7 +578,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fw-medium mb-1">
@@ -592,7 +592,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -606,7 +606,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-09.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-09.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -621,7 +621,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -642,7 +642,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex fs-14 align-items-center fw-medium mb-1">
@@ -657,7 +657,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-10.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-10.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -671,7 +671,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-09.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-09.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14  fw-medium mb-1">
@@ -685,7 +685,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-08.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-08.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex fs-14 align-items-center fw-medium mb-1">
@@ -699,7 +699,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-07.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-07.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex fs-14 align-items-center fw-medium mb-1">
@@ -714,7 +714,7 @@
                                         <div class="d-flex align-items-center justify-content-between mb-3">
                                             <div class="d-flex align-items-center">
                                                 <a href="javascript:void(0);" class="avatar avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-06.jpg')}}" alt="Img">
+                                                    <img src="{{ asset('theme/img/users/user-06.jpg')}}" alt="Img">
                                                 </a>
                                                 <div>
                                                     <h6 class="d-inline-flex align-items-center fs-14 fw-medium mb-1">
@@ -739,7 +739,7 @@
                             <div class="bg-light rounded p-2 mb-2">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <a href="javascript:void(0);" class="d-flex align-items-center">
-                                        <span><img src="{{URL::asset('build/img/icons/feeds-01.svg')}}" class="me-2" alt="Img"></span>
+                                        <span><img src="{{ asset('theme/img/icons/feeds-01.svg')}}" class="me-2" alt="Img"></span>
                                         <p class="fs-12 fw-medium">World Health</p>
                                     </a>
                                     <a href="javascript:void(0);"><i class="ti ti-bookmark-filled text-warning"></i></a>
@@ -749,7 +749,7 @@
                             <div class="bg-light rounded p-2 mb-2">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <a href="javascript:void(0);" class="d-flex align-items-center">
-                                        <span><img src="{{URL::asset('build/img/icons/feeds-02.svg')}}" class="me-2" alt="Img"></span>
+                                        <span><img src="{{ asset('theme/img/icons/feeds-02.svg')}}" class="me-2" alt="Img"></span>
                                         <p class="fs-12 fw-medium">T3 Tech</p>
                                     </a>
                                     <a href="javascript:void(0);"><i class="ti ti-bookmark-filled text-warning"></i></a>
@@ -759,7 +759,7 @@
                             <div class="bg-light rounded p-2 mb-2">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <a href="javascript:void(0);" class="d-flex align-items-center">
-                                        <span><img src="{{URL::asset('build/img/icons/feeds-03.svg')}}" class="me-2" alt="Img"></span>
+                                        <span><img src="{{ asset('theme/img/icons/feeds-03.svg')}}" class="me-2" alt="Img"></span>
                                         <p class="fs-12 fw-medium">Fstoppers</p>
                                     </a>
                                     <a href="javascript:void(0);"><i class="ti ti-bookmark-filled text-warning"></i></a>
@@ -769,7 +769,7 @@
                             <div class="bg-light rounded p-2">
                                 <div class="d-flex align-items-center justify-content-between mb-1">
                                     <a href="javascript:void(0);" class="d-flex align-items-center">
-                                        <span><img src="{{URL::asset('build/img/icons/feeds-04.svg')}}" class="me-2" alt="Img"></span>
+                                        <span><img src="{{ asset('theme/img/icons/feeds-04.svg')}}" class="me-2" alt="Img"></span>
                                         <p class="fs-12 fw-medium">Evernote</p>
                                     </a>
                                     <a href="javascript:void(0);"><i class="ti ti-bookmark-filled text-warning"></i></a>
@@ -795,7 +795,7 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="card-img card-img-hover mb-3">
-                                <a href="javascript:void(0);" class="rounded"><img src="{{URL::asset('build/img/social/social-feed-04.jpg')}}" class="rounded" alt="Img"></a>
+                                <a href="javascript:void(0);" class="rounded"><img src="{{ asset('theme/img/social/social-feed-04.jpg')}}" class="rounded" alt="Img"></a>
                             </div>
                             <h6 class="text-center fs-14"><a href="javascript:void(0);">Enjoy Unlimited Access on a small price monthly.</a></h6>
                             <div class="mt-3">

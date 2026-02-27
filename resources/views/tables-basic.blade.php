@@ -860,7 +860,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -876,13 +876,13 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +5
@@ -900,7 +900,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -916,10 +916,10 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +6
@@ -937,7 +937,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -953,13 +953,13 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +2
@@ -977,7 +977,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-13.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-13.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -993,10 +993,10 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +5
@@ -1042,7 +1042,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -1063,7 +1063,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -1084,7 +1084,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -1106,7 +1106,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="avatar avatar-sm me-2 avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="img">
                                                     </div>
                                                     <div>
                                                         <div class="lh-1">
@@ -1165,7 +1165,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <span class="avatar avatar-xs me-2 online avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                     </span>Mayor Kelly
                                                 </div>
                                             </td>
@@ -1175,13 +1175,13 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +4
@@ -1209,7 +1209,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <span class="avatar avatar-xs me-2 online avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                                                     </span>Andrew Garfield
                                                 </div>
                                             </td>
@@ -1219,16 +1219,16 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +4
@@ -1256,7 +1256,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <span class="avatar avatar-xs me-2 online avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-14.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-14.jpg')}}" alt="img">
                                                     </span>Simon Cowel
                                                 </div>
                                             </td>
@@ -1266,10 +1266,10 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +10
@@ -1297,7 +1297,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <span class="avatar avatar-xs me-2 online avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                                     </span>Mirinda Hers
                                                 </div>
                                             </td>
@@ -1307,13 +1307,13 @@
                                             <td>
                                                 <div class="avatar-list-stacked">
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                     </span>
                                                     <span class="avatar avatar-sm avatar-rounded">
-                                                        <img src="{{URL::asset('build/img/profiles/avatar-14.jpg')}}" alt="img">
+                                                        <img src="{{ asset('theme/img/profiles/avatar-14.jpg')}}" alt="img">
                                                     </span>
                                                     <a class="avatar avatar-sm bg-primary text-fixed-white avatar-rounded" href="javascript:void(0);">
                                                         +6

@@ -31,7 +31,7 @@
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center">
                                                         <span class="avatar avatar-md bg-light rounded p-2 me-2">
-                                                            <img src="{{URL::asset('build/img/icons/storage-icon-01.svg')}}" class="img-fluid" alt="Img">
+                                                            <img src="{{ asset('theme/img/icons/storage-icon-01.svg')}}" class="img-fluid" alt="Img">
                                                         </span>
                                                         <p class="fw-medium text-dark">Local Storage</p>
                                                     </div>
@@ -54,7 +54,7 @@
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center">
                                                         <span class="avatar avatar-md bg-light rounded p-2 me-2">
-                                                            <img src="{{URL::asset('build/img/icons/storage-icon-02.svg')}}" class="img-fluid" alt="Img">
+                                                            <img src="{{ asset('theme/img/icons/storage-icon-02.svg')}}" class="img-fluid" alt="Img">
                                                         </span>
                                                         <p class="fw-medium text-dark">AWS</p>
                                                     </div>

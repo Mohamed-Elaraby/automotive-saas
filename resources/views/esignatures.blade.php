@@ -53,7 +53,7 @@
                                                         <a href="javascript:void(0);" class="text-dark">Samuel Donatte</a>
                                                     </td>
                                                     <td>
-                                                        <img src="{{URL::asset('build/img/icons/sign-01.svg')}}" alt="">
+                                                        <img src="{{ asset('theme/img/icons/sign-01.svg')}}" alt="">
                                                     </td>
                                                     <td><a class="rounded-circle bg-light p-1" href="javascript:void(0);"><i class="isax isax-star icon-active"></i></a></td>
                                                     <td>
@@ -80,7 +80,7 @@
                                                         <a href="javascript:void(0);" class="text-dark">Michael Smith</a>
                                                     </td>
                                                     <td>
-                                                        <img src="{{URL::asset('build/img/icons/sign-02.svg')}}" alt="">
+                                                        <img src="{{ asset('theme/img/icons/sign-02.svg')}}" alt="">
                                                     </td>
                                                     <td><a class="rounded-circle bg-light p-1" href="javascript:void(0);"><i class="isax isax-star icon-active"></i></a></td>
                                                     <td>
@@ -107,7 +107,7 @@
                                                         <a href="javascript:void(0);" class="text-dark">Alberto Alleo</a>
                                                     </td>
                                                     <td>
-                                                        <img src="{{URL::asset('build/img/icons/sign-03.svg')}}" alt="">
+                                                        <img src="{{ asset('theme/img/icons/sign-03.svg')}}" alt="">
                                                     </td>
                                                     <td><a class="rounded-circle bg-light p-1" href="javascript:void(0);"><i class="isax isax-star icon-active"></i></a></td>
                                                     <td>
@@ -134,7 +134,7 @@
                                                         <a href="javascript:void(0);" class="text-dark">Ernesto Janetts</a>
                                                     </td>
                                                     <td>
-                                                        <img src="{{URL::asset('build/img/icons/sign-04.svg')}}" alt="">
+                                                        <img src="{{ asset('theme/img/icons/sign-04.svg')}}" alt="">
                                                     </td>
                                                     <td><a class="rounded-circle bg-light p-1" href="javascript:void(0);"><i class="isax isax-star icon-active"></i></a></td>
                                                     <td>

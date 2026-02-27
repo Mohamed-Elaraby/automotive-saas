@@ -40,7 +40,7 @@
                             <p class="fs-13"><span class="text-success d-inline-flex align-items-center"><i class="isax isax-send me-1"></i>5.62%</span> from last month</p>
                         </div><!-- end card body -->
                         <div class="position-absolute start-0 bottom-0 z-n1">
-                            <img src="{{URL::asset('build/img/bg/income-report-1.svg')}}" alt="img">
+                            <img src="{{ asset('theme/img/bg/income-report-1.svg')}}" alt="img">
                         </div>
                     </div><!-- end card -->
                 </div><!-- end col -->
@@ -61,7 +61,7 @@
                             <p class="fs-13"><span class="text-success d-inline-flex align-items-center"><i class="isax isax-send me-1"></i>11.4%</span> from last month</p>
                         </div><!-- end card body -->
                         <div class="position-absolute start-0 bottom-0 z-n1">
-                            <img src="{{URL::asset('build/img/bg/income-report-2.svg')}}" alt="img">
+                            <img src="{{ asset('theme/img/bg/income-report-2.svg')}}" alt="img">
                         </div>
                     </div><!-- end card -->
                 </div>
@@ -83,7 +83,7 @@
                             <p class="fs-13"><span class="text-success d-inline-flex align-items-center"><i class="isax isax-send me-1"></i>8.12%</span> from last month</p>
                         </div><!-- end card body -->
                         <div class="position-absolute start-0 bottom-0 z-n1">
-                            <img src="{{URL::asset('build/img/bg/income-report-3.svg')}}" alt="img">
+                            <img src="{{ asset('theme/img/bg/income-report-3.svg')}}" alt="img">
                         </div>
                     </div><!-- end card -->
                 </div>
@@ -105,7 +105,7 @@
                             <p class="fs-13"><span class="text-success d-inline-flex align-items-center"><i class="isax isax-send me-1"></i>7.45%</span> from last month</p>
                         </div><!-- end card body -->
                         <div class="position-absolute start-0 bottom-0 z-n1">
-                            <img src="{{URL::asset('build/img/bg/income-report-4.svg')}}" alt="img">
+                            <img src="{{ asset('theme/img/bg/income-report-4.svg')}}" alt="img">
                         </div>
                     </div><!-- end card -->
                 </div>
@@ -423,7 +423,7 @@
                                 <h6 class="fs-14 fw-semibold mb-3">Today</h6>
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{URL::asset('build/img/icons/paypal-icon.svg')}}" alt="img" class="img-fluid"></span>
+                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{ asset('theme/img/icons/paypal-icon.svg')}}" alt="img" class="img-fluid"></span>
                                         <div class="ms-2">
                                             <h6 class="fs-14 fw-semibold mb-1">Andrew James</h6>
                                             <p>#INV45478</p>
@@ -433,7 +433,7 @@
                                 </div>
                                 <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{URL::asset('build/img/icons/card-icon.svg')}}" alt="img" class="img-fluid"></span>
+                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{ asset('theme/img/icons/card-icon.svg')}}" alt="img" class="img-fluid"></span>
                                         <div class="ms-2">
                                             <h6 class="fs-14 fw-semibold mb-1">John Carter</h6>
                                             <p>#INV45477</p>
@@ -444,7 +444,7 @@
                                 <h6 class="fs-14 fw-semibold mb-3">Yesterday</h6>
                                 <div class="d-flex align-items-center justify-content-between mb-3">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{URL::asset('build/img/icons/card-icon.svg')}}" alt="img" class="img-fluid"></span>
+                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{ asset('theme/img/icons/card-icon.svg')}}" alt="img" class="img-fluid"></span>
                                         <div class="ms-2">
                                             <h6 class="fs-14 fw-semibold mb-1">Sophia White</h6>
                                             <p>#INV45476</p>
@@ -454,7 +454,7 @@
                                 </div>
                                 <div class="d-flex align-items-center justify-content-between">
                                     <div class="d-flex align-items-center">
-                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{URL::asset('build/img/icons/card-icon.svg')}}" alt="img" class="img-fluid"></span>
+                                        <span class="avatar avatar-lg rounded-pill border bg-light p-2 flex-shrink-0"><img src="{{ asset('theme/img/icons/card-icon.svg')}}" alt="img" class="img-fluid"></span>
                                         <div class="ms-2">
                                             <h6 class="fs-14 fw-semibold mb-1">Daniel Martinez</h6>
                                             <p>#INV45475</p>

@@ -24,7 +24,7 @@
                             </div>
                         </div>
                         <div>
-                            <div class="mb-1"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt="User Img"></div>
+                            <div class="mb-1"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="User Img"></div>
                             <p class="mb-1 text-end">Original For Recipient</p>
                             <p class="mb-1 text-end">Invoice No: <span class="text-dark">INV 00001</span></p>
                             <p class="mb-1 text-end">Date: <span class="text-dark">05/12/2024</span></p>
@@ -155,7 +155,7 @@
                         </div>
                         <div class="text-center mb-3">
                             <p class="mb-1">For Dreamstechnologies</p>
-                            <span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt="User Img"></span>
+                            <span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt="User Img"></span>
                         </div>
                     </div>
                     <div class="border-bottom mb-3 pb-3">

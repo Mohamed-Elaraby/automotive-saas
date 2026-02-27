@@ -9,7 +9,7 @@
     <div class="card m-auto shadow-none">
         <div class="card-body">
             <div class="bg-light p-2 text-center mb-2">
-                <img src="{{URL::asset('build/img/receipt-logo.svg')}}" alt="User Img">
+                <img src="{{ asset('theme/img/receipt-logo.svg')}}" alt="User Img">
             </div>
             <h6 class="fs-16 fw-semibold text-center mb-2">Dreams Technologies Pvt Ltd.,</h6>
             <p class=" text-center mb-2">15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom.
@@ -137,7 +137,7 @@
                     </tbody>
                 </table>
                 <p class="text-center mb-2">12332345698234592384</p>
-                <img src="{{URL::asset('build/img/barcode.svg')}}" class="img-fluid mb-2" alt="img">
+                <img src="{{ asset('theme/img/barcode.svg')}}" class="img-fluid mb-2" alt="img">
                 <p class="text-center border-dashed pb-2 mb-2">**VAT against this challan is payable through central registration. Thank you for your business!</p>
                 <p class="text-center">Thank You</p>
             </div>

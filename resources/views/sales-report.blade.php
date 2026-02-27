@@ -54,7 +54,7 @@
                                     </div>
                                 </div>
                                 <span class="position-absolute start-0 top-0">
-                                    <img src="{{URL::asset('build/img/icons/sales-card-bg-1.svg')}}" alt="">
+                                    <img src="{{ asset('theme/img/icons/sales-card-bg-1.svg')}}" alt="">
                                 </span>
                             </div><!-- end card body -->
                         </div><!-- end card -->
@@ -77,7 +77,7 @@
                                     </div>
                                 </div>
                                 <span class="position-absolute start-0 top-0">
-                                    <img src="{{URL::asset('build/img/icons/sales-card-bg-2.svg')}}" alt="">
+                                    <img src="{{ asset('theme/img/icons/sales-card-bg-2.svg')}}" alt="">
                                 </span>
                             </div><!-- end card body -->
                         </div><!-- end card -->
@@ -100,7 +100,7 @@
                                     </div>
                                 </div>
                                 <span class="position-absolute start-0 top-0">
-                                    <img src="{{URL::asset('build/img/icons/sales-card-bg-3.svg')}}" alt="">
+                                    <img src="{{ asset('theme/img/icons/sales-card-bg-3.svg')}}" alt="">
                                 </span>
                             </div>
                         </div>
@@ -123,7 +123,7 @@
                                     </div>
                                 </div>
                                 <span class="position-absolute start-0 top-0">
-                                    <img src="{{URL::asset('build/img/icons/sales-card-bg-4.svg')}}" alt="">
+                                    <img src="{{ asset('theme/img/icons/sales-card-bg-4.svg')}}" alt="">
                                 </span>
                             </div><!-- end card body -->
                         </div><!-- end card -->
@@ -252,7 +252,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-01.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-01.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Apple iPhone 15</a></h6>
@@ -280,7 +280,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-02.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-02.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Dell XPS 13 9310</a></h6>
@@ -308,7 +308,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-03.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-03.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Bose QuietComfort 45</a></h6>
@@ -336,7 +336,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-04.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-04.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Nike Dri-FIT T-shirt</a></h6>
@@ -363,7 +363,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-05.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-05.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Adidas Ultraboost 22 Running Shoe</a></h6>
@@ -391,7 +391,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-06.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-06.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Samsung French Door Refrigerator</a></h6>
@@ -419,7 +419,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-07.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-07.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Dyson V15 Detect  Vacuum Cleaner</a></h6>
@@ -447,7 +447,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-08.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-08.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">HP Spectre x360 14</a></h6>
@@ -475,7 +475,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-09.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-09.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Dyson Supersonic Hair Dryer</a></h6>
@@ -503,7 +503,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-10.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-10.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Apple AirPods Pro</a></h6>
@@ -531,7 +531,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-11.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-11.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Levi’s 501 Original Fit Jeans</a></h6>
@@ -559,7 +559,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-12.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-12.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">CeraVe Hydrating Facial Cleanser</a></h6>
@@ -587,7 +587,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-13.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-13.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Giro Synthe MIPS Helmet</a></h6>
@@ -615,7 +615,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/products/product-14.jpg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/products/product-14.jpg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">OnePlus 11 5G</a></h6>
@@ -688,37 +688,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
                                     </label>
                                 </li>
                             </ul>

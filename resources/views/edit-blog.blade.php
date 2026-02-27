@@ -76,7 +76,7 @@
                                                         <div class="card-body">
                                                             <div class="d-flex align-items-center justify-content-between">
                                                                 <div class="d-flex align-items-center">
-                                                                    <img src="{{URL::asset('build/img/media/img-07.png')}}" alt="img" class="avatar avatar-lg rounded me-2">
+                                                                    <img src="{{ asset('theme/img/media/img-07.png')}}" alt="img" class="avatar avatar-lg rounded me-2">
                                                                     <div>
                                                                         <a href="javascript:void(0);" class="fs-14 fw-medium d-block">Blog1.jpg</a>
                                                                         <span class="fs-13">15.45 KB</span>

@@ -16,7 +16,7 @@
                     <div class="card incoming-call mb-0 shadow-none">
                         <div class="card-body text-center d-flex flex-column justify-content-center">
                             <div class="voice-call-img mb-3">
-                                <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
+                                <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="img-fluid rounded-circle" alt="img">
                             </div>
                             <h5>Anthony Lewis</h5>
                             <p>Calling...</p>

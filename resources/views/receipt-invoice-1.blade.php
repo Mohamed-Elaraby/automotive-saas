@@ -8,7 +8,7 @@
     <div class="card m-auto shadow-none">
         <div class="card-body">
             <div class="bg-light p-2 text-center mb-2">
-                <img src="{{URL::asset('build/img/receipt-logo.svg')}}" alt="User Img">
+                <img src="{{ asset('theme/img/receipt-logo.svg')}}" alt="User Img">
             </div>
             <h6 class="fs-16 fw-semibold text-center mb-2">Dreams Technologies Pvt Ltd.,</h6>
             <p class=" text-center mb-2">15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom.

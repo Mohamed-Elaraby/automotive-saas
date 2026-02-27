@@ -31,10 +31,10 @@
                 <div class="col-xxl-12">
                     <div class="single-video d-flex">
                         <div class="join-video flex-fill">
-                            <img src="{{URL::asset('build/img/media/video.jpg')}}" class="img-fluid" alt="Logo">
+                            <img src="{{ asset('theme/img/media/video.jpg')}}" class="img-fluid" alt="Logo">
                             <div class="chat-active-users">
                                 <div class="video-avatar">
-                                    <img src="{{URL::asset('./build/img/users/user-01.jpg')}}" class="img-fluid" alt="Logo">
+                                    <img src="{{URL::asset('./theme/img/users/user-01.jpg')}}" class="img-fluid" alt="Logo">
                                     <div class="user-name">
                                         <span>Joanne Conner</span>
                                     </div>
@@ -81,7 +81,7 @@
                                         <div class="chat-msg-blk p-0">
                                             <div class="chats">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">
@@ -102,12 +102,12 @@
                                                     </div>
                                                 </div>
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 ms-2">
-                                                    <img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="image">
                                                 </div>
                                             </div>
                                             <div class="chats">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">
@@ -120,7 +120,7 @@
                                             </div>
                                             <div class="chats">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">
@@ -133,7 +133,7 @@
                                             </div>
                                             <div class="chats">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">
@@ -147,7 +147,7 @@
                                             </div>
                                             <div class="chats">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">
@@ -160,7 +160,7 @@
                                             </div>
                                             <div class="chats">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">
@@ -182,12 +182,12 @@
                                                     </div>
                                                 </div>
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 ms-2">
-                                                    <img src="{{URL::asset('build/img/users/user-02.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-02.jpg')}}" alt="image">
                                                 </div>
                                             </div>
                                             <div class="chats mb-0">
                                                 <div class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                                    <img src="{{URL::asset('build/img/users/user-01.jpg')}}" alt="image">
+                                                    <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="image">
                                                 </div>
                                                 <div class="chat-content flex-fill">
                                                     <div class="message-content">

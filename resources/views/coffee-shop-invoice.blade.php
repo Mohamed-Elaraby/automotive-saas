@@ -26,7 +26,7 @@
             <div class="pb-3 mb-3 border-bottom border-3 border-dark">
                 <div class="d-flex align-items-center justify-content-between bg-light flex-wrap gap-2 p-3 rounded">
                     <div>
-                        <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="mb-2" alt="User Img">
+                        <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="mb-2" alt="User Img">
                         <p class="mb-1">Date : <span class="text-dark">05/12/2024</span></p>
                         <div class="inv-details">
                             <div class="inv-date-no">

@@ -39,13 +39,13 @@
                         <div class="card-body pb-1">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <a href="{{URL::asset('build/img/media/img-01.jpg')}}" class="image-popup">
-                                        <img src="{{URL::asset('build/img/media/img-01.jpg')}}" class="img-fluid" alt="image">
+                                    <a href="{{ asset('theme/img/media/img-01.jpg')}}" class="image-popup">
+                                        <img src="{{ asset('theme/img/media/img-01.jpg')}}" class="img-fluid" alt="image">
                                     </a>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <a href="{{URL::asset('build/img/media/img-02.jpg')}}" class="image-popup">
-                                        <img src="{{URL::asset('build/img/media/img-02.jpg')}}" class="img-fluid" alt="image">
+                                    <a href="{{ asset('theme/img/media/img-02.jpg')}}" class="image-popup">
+                                        <img src="{{ asset('theme/img/media/img-02.jpg')}}" class="img-fluid" alt="image">
                                     </a>
                                 </div>
                             </div>
@@ -63,18 +63,18 @@
                         <div class="card-body pb-1">
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <a href="{{URL::asset('build/img/media/img-03.jpg')}}" class="image-popup-desc" data-title="Title 01" data-description="Lorem ipsum dolor sit amet, consectetuer adipiscing elit">
-                                        <img src="{{URL::asset('build/img/media/img-03.jpg')}}" class="img-fluid" alt="work-thumbnail">
+                                    <a href="{{ asset('theme/img/media/img-03.jpg')}}" class="image-popup-desc" data-title="Title 01" data-description="Lorem ipsum dolor sit amet, consectetuer adipiscing elit">
+                                        <img src="{{ asset('theme/img/media/img-03.jpg')}}" class="img-fluid" alt="work-thumbnail">
                                     </a>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <a href="{{URL::asset('build/img/media/img-04.jpg')}}" class="image-popup-desc" data-title="Title 02" data-description="Lorem ipsum dolor sit amet, consectetuer adipiscing elit">
-                                        <img src="{{URL::asset('build/img/media/img-04.jpg')}}" class="img-fluid" alt="work-thumbnail">
+                                    <a href="{{ asset('theme/img/media/img-04.jpg')}}" class="image-popup-desc" data-title="Title 02" data-description="Lorem ipsum dolor sit amet, consectetuer adipiscing elit">
+                                        <img src="{{ asset('theme/img/media/img-04.jpg')}}" class="img-fluid" alt="work-thumbnail">
                                     </a>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <a href="{{URL::asset('build/img/media/img-05.jpg')}}" class="image-popup-desc" data-title="Title 03" data-description="Lorem ipsum dolor sit amet, consectetuer adipiscing elit">
-                                        <img src="{{URL::asset('build/img/media/img-05.jpg')}}" class="img-fluid" alt="work-thumbnail">
+                                    <a href="{{ asset('theme/img/media/img-05.jpg')}}" class="image-popup-desc" data-title="Title 03" data-description="Lorem ipsum dolor sit amet, consectetuer adipiscing elit">
+                                        <img src="{{ asset('theme/img/media/img-05.jpg')}}" class="img-fluid" alt="work-thumbnail">
                                     </a>
                                 </div>
                             </div>

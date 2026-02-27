@@ -32,7 +32,7 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center border-0 mb-3 pb-0">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/google.svg')}}" alt="Img"></span>
+                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/google.svg')}}" alt="Img"></span>
                                                     <p class="fw-medium text-gray-9">Google</p>
                                                 </div>
                                             </div>
@@ -57,7 +57,7 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center border-0 mb-3 pb-0">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/facebook.svg')}}" alt="Img"></span>
+                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/facebook.svg')}}" alt="Img"></span>
                                                     <p class="fw-medium text-gray-9">Facebook</p>
                                                 </div>
                                             </div>
@@ -82,7 +82,7 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center border-0 mb-3 pb-0">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/apple.svg')}}" alt="Img"></span>
+                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/apple.svg')}}" alt="Img"></span>
                                                     <p class="fw-medium text-gray-9">Apple</p>
                                                 </div>
                                             </div>
@@ -107,7 +107,7 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center border-0 mb-3 pb-0">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/sso.svg')}}" alt="Img"></span>
+                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/sso.svg')}}" alt="Img"></span>
                                                     <p class="fw-medium text-gray-9">SSO</p>
                                                 </div>
                                             </div>

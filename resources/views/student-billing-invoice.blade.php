@@ -12,7 +12,7 @@
                 <div class="pb-3 mb-3 border-bottom border-3 border-light">
                     <div class="d-flex align-items-center justify-content-between bg-light flex-wrap p-3 rounded">
                         <div>
-                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="mb-2" alt="">
+                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="mb-2" alt="">
                         </div>
                         <div class="text-end">
                             <h6 class="text-primary fw-bold mb-2">UNIVERSITY NAME</h6>
@@ -199,7 +199,7 @@
                     <div class="col-md-3">
                         <div class="text-end mb-3">
                             <p class="mb-1">For Dreamstechnologies</p>
-                            <span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt=""></span>
+                            <span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt=""></span>
                         </div>
                     </div>
                     <div class="d-flex align-items-center justify-content-center mb-3">

@@ -9,7 +9,7 @@
                     <div class="card">
                         <div class="comming-soon-pg d-flex flex-column align-items-center justify-content-center">
                             <div class="mb-2 p-4">
-                                <img src="{{URL::asset('build/img/favicon.png')}}" alt="logo" class="img-fluid">
+                                <img src="{{ asset('theme/img/favicon.png')}}" alt="logo" class="img-fluid">
                             </div>
                             <div>
                                 <p class="mb-2">Our Website is</p>
@@ -66,19 +66,19 @@
                                 </div>
                                 <div class="d-flex flex-wrap justify-content-center align-items-center pb-4">
                                     <a href="javascript:void(0);" class="btn btn-dark rounded-circle btn-icon btn-sm me-2 d-flex align-items-center justify-content-center">
-                                        <img src="{{URL::asset('build/img/icons/facebook-white.svg')}}" class="img-fluid">
+                                        <img src="{{ asset('theme/img/icons/facebook-white.svg')}}" class="img-fluid">
                                     </a>
                                     <a href="javascript:void(0);" class="btn btn-dark rounded-circle btn-icon btn-sm me-2 d-flex align-items-center justify-content-center">
-                                        <img src="{{URL::asset('build/img/icons/instagram.svg')}}" class="img-fluid">
+                                        <img src="{{ asset('theme/img/icons/instagram.svg')}}" class="img-fluid">
                                     </a>
                                     <a href="javascript:void(0);" class="btn btn-dark rounded-circle btn-icon btn-sm me-2 d-flex align-items-center justify-content-center">
-                                        <img src="{{URL::asset('build/img/icons/twitter.svg')}}" class="img-fluid">
+                                        <img src="{{ asset('theme/img/icons/twitter.svg')}}" class="img-fluid">
                                     </a>
                                     <a href="javascript:void(0);" class="btn btn-dark rounded-circle btn-icon btn-sm me-2 d-flex align-items-center justify-content-center">
-                                        <img src="{{URL::asset('build/img/icons/pinterest.svg')}}" class="img-fluid">
+                                        <img src="{{ asset('theme/img/icons/pinterest.svg')}}" class="img-fluid">
                                     </a>
                                     <a href="javascript:void(0);" class="btn btn-dark rounded-circle btn-icon btn-sm d-flex align-items-center justify-content-center">
-                                        <img src="{{URL::asset('build/img/icons/linkedin.svg')}}" class="img-fluid">
+                                        <img src="{{ asset('theme/img/icons/linkedin.svg')}}" class="img-fluid">
                                     </a>
                                 </div>
                             </div>

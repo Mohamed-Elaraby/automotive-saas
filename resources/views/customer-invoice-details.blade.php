@@ -29,7 +29,7 @@
 							<div class="card-body">
 								<div class="bg-light p-4 rounded position-relative mb-3">
 									<div class="position-absolute top-0 end-0">
-										<img src="{{URL::asset('build/img/bg/card-bg.png')}}" alt="User Img">
+										<img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="User Img">
 									</div>
 									<div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2">
 										<div class="mb-3">
@@ -39,12 +39,12 @@
 													<h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
 													<p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
 												</div>
-												<span><img src="{{URL::asset('build/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
+												<span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
 											</div>
 										</div>
 										<div class="mb-3">
-											<img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-											<img src="{{URL::asset('build/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+											<img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+											<img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
 										</div>
 									</div>
 
@@ -81,7 +81,7 @@
 												<div class="bg-white rounded p-3">
 													<div class="d-flex align-items-center mb-1">
 														<span class="avatar avatar-md border border-gray-100 border-2 me-2">
-															<img src="{{URL::asset('build/img/invoice/timesquare.png')}}" alt="User Img">
+															<img src="{{ asset('theme/img/invoice/timesquare.png')}}" alt="User Img">
 														</span>
 														<p class="text-dark fw-semibold">Timesquare Tech</p>
 													</div>
@@ -166,7 +166,7 @@
 											<div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
 												<div class="me-3">
 													<p class="mb-2">Scan to the pay</p>
-													<span><img src="{{URL::asset('build/img/icons/qr.png')}}" alt="User Img"></span>
+													<span><img src="{{ asset('theme/img/icons/qr.png')}}" alt="User Img"></span>
 												</div>
 												<div>
 													<h6 class="mb-2">Bank Details</h6>
@@ -228,7 +228,7 @@
 									</div><!-- end col -->
 									<div class="col-lg-5">
 										<div class="text-lg-end mb-3">
-											<span><img src="{{URL::asset('build/img/icons/sign.png')}}" class="sign-dark" alt="img"></span>
+											<span><img src="{{ asset('theme/img/icons/sign.png')}}" class="sign-dark" alt="img"></span>
 											<h6 class="fs-14 fw-semibold mb-1">Ted M. Davis</h6>
 											<p>Manager</p>
 										</div>
@@ -242,8 +242,8 @@
 										<p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
 									</div>
 									<div>
-										<img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-										<img src="{{URL::asset('build/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+										<img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+										<img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
 									</div>
 								</div>
 							</div><!-- end card body -->

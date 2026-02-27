@@ -99,7 +99,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/us.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/us.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">USA</a></h6>
@@ -132,7 +132,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/ca.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/ca.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Canada</a></h6>
@@ -165,7 +165,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/sh.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/sh.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">UK</a></h6>
@@ -198,7 +198,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/de.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/de.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Germany</a></h6>
@@ -231,7 +231,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/fr.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/fr.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">France</a></h6>
@@ -264,7 +264,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/ar.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/ar.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Argentina</a></h6>
@@ -297,7 +297,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/in.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/in.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">India</a></h6>
@@ -330,7 +330,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/it.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/it.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Italy</a></h6>
@@ -363,7 +363,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/nz.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/nz.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">New Zealand</a></h6>
@@ -396,7 +396,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/au.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/au.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Australia</a></h6>
@@ -429,7 +429,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/cn.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/cn.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">China</a></h6>
@@ -462,7 +462,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/br.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/br.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Brazil</a></h6>
@@ -496,7 +496,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/tr.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/tr.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Turkey</a></h6>
@@ -529,7 +529,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-xs me-2 flex-shrink-0">
-                                        <img src="{{URL::asset('build/img/flags/ru.png')}}" alt="img">
+                                        <img src="{{ asset('theme/img/flags/ru.png')}}" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Russia</a></h6>

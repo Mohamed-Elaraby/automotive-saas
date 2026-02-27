@@ -167,7 +167,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-28.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Emily Clark</a></h6>
@@ -180,7 +180,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-1.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-1.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">USA</a></h6>
@@ -232,7 +232,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">John Carter</a></h6>
@@ -243,7 +243,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-2.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-2.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Canada</a></h6>
@@ -295,7 +295,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Sophia White</a></h6>
@@ -306,7 +306,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-3.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-3.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">UK</a></h6>
@@ -358,7 +358,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Michael Johnson</a></h6>
@@ -369,7 +369,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-4.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-4.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Germany</a></h6>
@@ -421,7 +421,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-30.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Olivia Harris</a></h6>
@@ -432,7 +432,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-5.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-5.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">France</a></h6>
@@ -484,7 +484,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">David Anderson</a></h6>
@@ -495,7 +495,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-6.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-6.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Argentina</a></h6>
@@ -547,7 +547,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Emma Lewis</a></h6>
@@ -558,7 +558,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-7.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-7.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">India</a></h6>
@@ -610,7 +610,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Robert Thomas</a></h6>
@@ -621,7 +621,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-8.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-8.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Italy</a></h6>
@@ -673,7 +673,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Isabella Scott</a></h6>
@@ -684,7 +684,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-9.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-9.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">New Zealand</a></h6>
@@ -736,7 +736,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Daniel Martinez</a></h6>
@@ -747,7 +747,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-10.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-10.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Australia</a></h6>
@@ -799,7 +799,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-32.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-32.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Charlotte Brown</a></h6>
@@ -810,7 +810,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-11.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-11.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">China</a></h6>
@@ -862,7 +862,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-33.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-33.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">William Parker</a></h6>
@@ -873,7 +873,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-12.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-12.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Brazil</a></h6>
@@ -925,7 +925,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-34.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-34.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Mia Thompson</a></h6>
@@ -936,7 +936,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-13.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-13.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Turkey</a></h6>
@@ -988,7 +988,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/profiles/avatar-35.jpg')}}" class="rounded-circle" alt="img">
+										<img src="{{ asset('theme/img/profiles/avatar-35.jpg')}}" class="rounded-circle" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Amelia Robinson</a></h6>
@@ -999,7 +999,7 @@
 							<td>
 								<div class="d-flex align-items-center">
 									<a href="javascript:void(0);" class=" me-2 flex-shrink-0">
-										<img src="{{URL::asset('build/img/icons/flag-14.svg')}}" alt="img">
+										<img src="{{ asset('theme/img/icons/flag-14.svg')}}" alt="img">
 									</a>
 									<div>
 										<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Turkey</a></h6>
@@ -1098,25 +1098,25 @@
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
 									</label>
 								</li>
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
 									</label>
 								</li>
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
 									</label>
 								</li>
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+										<span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
 									</label>
 								</li>
 							</ul>
@@ -1156,25 +1156,25 @@
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class=" me-2"><img src="{{URL::asset('build/img/icons/flag-1.svg')}}" class="flex-shrink-0" alt="img"></span>United states
+										<span class=" me-2"><img src="{{ asset('theme/img/icons/flag-1.svg')}}" class="flex-shrink-0" alt="img"></span>United states
 									</label>
 								</li>
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class=" me-2"><img src="{{URL::asset('build/img/icons/flag-2.svg')}}" class="flex-shrink-0" alt="img"></span>Canada
+										<span class=" me-2"><img src="{{ asset('theme/img/icons/flag-2.svg')}}" class="flex-shrink-0" alt="img"></span>Canada
 									</label>
 								</li>
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class=" me-2"><img src="{{URL::asset('build/img/icons/flag-3.svg')}}" class="flex-shrink-0" alt="img"></span>UK
+										<span class=" me-2"><img src="{{ asset('theme/img/icons/flag-3.svg')}}" class="flex-shrink-0" alt="img"></span>UK
 									</label>
 								</li>
 								<li>
 									<label class="dropdown-item px-2 d-flex align-items-center text-dark">
 										<input class="form-check-input m-0 me-2" type="checkbox">
-										<span class=" me-2"><img src="{{URL::asset('build/img/icons/flag-4.svg')}}" class="flex-shrink-0" alt="img"></span>Germany
+										<span class=" me-2"><img src="{{ asset('theme/img/icons/flag-4.svg')}}" class="flex-shrink-0" alt="img"></span>Germany
 									</label>
 								</li>
 							</ul>

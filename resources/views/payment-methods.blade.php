@@ -32,7 +32,7 @@
 													<div class="card shadow-none">
 														<div class="card-body">
 																<div class="d-flex align-items-center justify-content-between mb-2">
-																	<span><img src="{{URL::asset('build/img/icons/paypal-name.svg')}}" alt="image"></span>
+																	<span><img src="{{ asset('theme/img/icons/paypal-name.svg')}}" alt="image"></span>
 																	<span class="badge badge-soft-success d-inline-flex align-items-center ms-2"><span class="badge-dot bg-success me-1"></span>Connected</span>
 																</div>
 															<p class="text-truncate line-clamb-2">PayPal is the faster, safer way to send and receive money </p>
@@ -53,7 +53,7 @@
 													<div class="card shadow-none">
 														<div class="card-body">
 																<div class="d-flex align-items-center justify-content-between mb-2">
-																	<span><img src="{{URL::asset('build/img/icons/stripe-icon.svg')}}" alt="image"></span>
+																	<span><img src="{{ asset('theme/img/icons/stripe-icon.svg')}}" alt="image"></span>
 																	<span class="badge badge-soft-success d-inline-flex align-items-center ms-2"><span class="badge-dot bg-success me-1"></span>Connected</span>
 																</div>
 															<p class="text-truncate line-clamb-2">APIs to accept cards, manage subscriptions, send money. </p>
@@ -74,7 +74,7 @@
 													<div class="card shadow-none">
 														<div class="card-body">
 																<div class="d-flex align-items-center justify-content-between mb-2">
-																	<span><img src="{{URL::asset('build/img/icons/razorpay-icon.svg')}}" alt="image"></span>
+																	<span><img src="{{ asset('theme/img/icons/razorpay-icon.svg')}}" alt="image"></span>
 																	<span class="badge badge-soft-success d-inline-flex align-items-center ms-2"><span class="badge-dot bg-success me-1"></span>Connected</span>
 																</div>
 															<p class="text-truncate line-clamb-2">Razorpay is an India's all in one payment solution. </p>
@@ -95,7 +95,7 @@
 													<div class="card shadow-none">
 														<div class="card-body">
 															<div class="d-flex align-items-center justify-content-between mb-2">
-																<span><img src="{{URL::asset('build/img/icons/applepay-icon.svg')}}" alt="image"></span>
+																<span><img src="{{ asset('theme/img/icons/applepay-icon.svg')}}" alt="image"></span>
 																<span class="badge badge-soft-primary d-inline-flex align-items-center ms-2"><span class="badge-dot bg-dark me-1"></span>Not Connected</span>
 															</div>
 															<p class="text-truncate line-clamb-2">PayPal is the faster, safer way to send and</br> receive money </p>

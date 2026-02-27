@@ -18,7 +18,7 @@
                         <div class="border bg-white rounded p-2 mb-3">
                             <div class="d-flex align-items-center">
                                 <a href="javascript:void(0);" class="avatar avatar-md flex-shrink-0 me-2">
-                                    <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" class="rounded-circle" alt="Img">
+                                    <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" class="rounded-circle" alt="Img">
                                 </a>
                                 <div>
                                     <h6 class="mb-1 fs-16 fw-medium"><a href="javascript:void(0);">James Hong</a></h6>
@@ -176,7 +176,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center flex-fill border-bottom mb-3 pb-3">
                                     <a href="javascript:void(0);" class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img">
+                                        <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img">
                                     </a>
                                     <div class="flex-fill">
                                         <div class="d-flex align-items-start justify-content-between flex-wrap row-gap-2">
@@ -220,16 +220,16 @@
                                     <a href="javascript:void(0);" class="text-primary fw-medium">Download All</a>
                                 </div>
                                 <div class="d-flex align-items-center img-full-view">
-                                    <a href="{{URL::asset('build/img/media/email-attach-big-01.jpg')}}" data-fancybox="gallery" class="avatar avatar-xl me-3 gallery-item">
-                                        <img src="{{URL::asset('build/img/media/email-attach-01.jpg')}}" class=" rounded" alt="img">
+                                    <a href="{{ asset('theme/img/media/email-attach-big-01.jpg')}}" data-fancybox="gallery" class="avatar avatar-xl me-3 gallery-item">
+                                        <img src="{{ asset('theme/img/media/email-attach-01.jpg')}}" class=" rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
-                                    <a href="{{URL::asset('build/img/media/email-attach-big-02.jpg')}}" data-fancybox="gallery" class="avatar avatar-xl me-3 gallery-item">
-                                        <img src="{{URL::asset('build/img/media/email-attach-02.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/media/email-attach-big-02.jpg')}}" data-fancybox="gallery" class="avatar avatar-xl me-3 gallery-item">
+                                        <img src="{{ asset('theme/img/media/email-attach-02.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
-                                    <a href="{{URL::asset('build/img/media/email-attach-big-03.jpg')}}" data-fancybox="gallery" class="avatar avatar-xl me-3 gallery-item">
-                                        <img src="{{URL::asset('build/img/media/email-attach-03.jpg')}}" class="rounded" alt="img">
+                                    <a href="{{ asset('theme/img/media/email-attach-big-03.jpg')}}" data-fancybox="gallery" class="avatar avatar-xl me-3 gallery-item">
+                                        <img src="{{ asset('theme/img/media/email-attach-03.jpg')}}" class="rounded" alt="img">
                                         <span class="avatar avatar-md avatar-rounded"><i class="ti ti-eye"></i></span>
                                     </a>
                                 </div>
@@ -241,7 +241,7 @@
                                 <div class="bg-light rounded p-3 mb-3">
                                     <div class="d-flex align-items-center flex-wrap row-gap-2 flex-fill">
                                         <a href="javascript:void(0);" class="avatar avatar-md avatar-rounded flex-shrink-0 me-2">
-                                            <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img">
+                                            <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img">
                                         </a>
                                         <div class="flex-fill">
                                             <div class="d-flex align-items-start justify-content-between flex-wrap row-gap-2">

@@ -13,7 +13,7 @@
                         <div>
                             <h5 class="mb-2">TAX INVOICE</h5>
                             <span class="mb-2">
-                                <img src="{{URL::asset('build/img/icons/cineplex.svg')}}" alt="icon">
+                                <img src="{{ asset('theme/img/icons/cineplex.svg')}}" alt="icon">
                             </span>
                             <div>
                                 <h6 class="mb-1">Dreamstechnologies Cineplex</h6>
@@ -23,7 +23,7 @@
                             </div>
                         </div>
                         <div>
-                            <div class="mb-1"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+                            <div class="mb-1"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
                             <p class="mb-1 text-end">Original For Recipient</p>
                             <p class="mb-1 text-end">Invoice No: <span class="text-dark">INV 00001</span></p>
                             <p class="mb-1 text-end">Date: <span class="text-dark">05/12/2024</span></p>

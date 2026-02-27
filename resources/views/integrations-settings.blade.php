@@ -33,7 +33,7 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center border-0 mb-3 pb-0">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/mail-icon.svg')}}" alt="Img"></span>
+                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/mail-icon.svg')}}" alt="Img"></span>
                                                     <p class="fw-medium text-gray-9">Gmail</p>
                                                 </div>
                                             </div>
@@ -53,7 +53,7 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center border-0 mb-3 pb-0">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{URL::asset('build/img/icons/calender-icon.svg')}}" alt="Img"></span>
+                                                    <span class="avatar avatar-lg p-2 bg-light rounded flex-shrink-0 me-2"><img src="{{ asset('theme/img/icons/calender-icon.svg')}}" alt="Img"></span>
                                                     <p class="fw-medium text-gray-9">Google Calendar</p>
                                                 </div>
                                             </div>

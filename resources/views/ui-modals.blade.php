@@ -296,10 +296,10 @@
                                         <div class="modal-body">
                                             <div class="auth-brand text-center mt-2 mb-3 position-relative top-0">
                                                 <a href="{{url('index')}}" class="logo-dark">
-                                                    <span><img src="{{URL::asset('build/img/logo-white.svg')}}" alt="dark logo" height="33"></span>
+                                                    <span><img src="{{ asset('theme/img/logo-white.svg')}}" alt="dark logo" height="33"></span>
                                                 </a>
                                                 <a href="{{url('index')}}" class="logo-light">
-                                                    <span><img src="{{URL::asset('build/img/logo.svg')}}" alt="logo" height="33"></span>
+                                                    <span><img src="{{ asset('theme/img/logo.svg')}}" alt="logo" height="33"></span>
                                                 </a>
                                             </div>
 
@@ -346,10 +346,10 @@
                                         <div class="modal-body">
                                             <div class="auth-brand text-center mt-2 mb-3 position-relative top-0">
                                                 <a href="{{url('index')}}" class="logo-dark">
-                                                    <span><img src="{{URL::asset('build/img/logo-white.svg')}}" alt="dark logo" height="22"></span>
+                                                    <span><img src="{{ asset('theme/img/logo-white.svg')}}" alt="dark logo" height="22"></span>
                                                 </a>
                                                 <a href="{{url('index')}}" class="logo-light">
-                                                    <span><img src="{{URL::asset('build/img/logo.svg')}}" alt="logo" height="22"></span>
+                                                    <span><img src="{{ asset('theme/img/logo.svg')}}" alt="logo" height="22"></span>
                                                 </a>
                                             </div>
 

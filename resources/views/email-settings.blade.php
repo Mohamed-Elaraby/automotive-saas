@@ -30,7 +30,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                                         <div class="d-flex align-items-center">
                                                             <span class="avatar avatar-lg bg-light me-2 p-2 flex-shrink-0">
-                                                                <img src="{{URL::asset('build/img/settings/phpmail.svg')}}" class="img-fluid" alt="img">
+                                                                <img src="{{ asset('theme/img/settings/phpmail.svg')}}" class="img-fluid" alt="img">
                                                             </span>
                                                             <p class="text-gray-9 fw-medium">PHP Mailer</p>
                                                         </div>
@@ -64,7 +64,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                                         <div class="d-flex align-items-center">
                                                             <span class="avatar avatar-lg bg-light me-2 p-2 flex-shrink-0">
-                                                                <img src="{{URL::asset('build/img/settings/smtp.svg')}}" class="img-fluid" alt="img">
+                                                                <img src="{{ asset('theme/img/settings/smtp.svg')}}" class="img-fluid" alt="img">
                                                             </span>
                                                             <p class="text-gray-9 fw-medium">SMTP</p>
                                                         </div>
@@ -98,7 +98,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                                         <div class="d-flex align-items-center">
                                                             <span class="avatar avatar-lg bg-light me-2 p-2 flex-shrink-0">
-                                                                <img src="{{URL::asset('build/img/settings/sendgrid.svg')}}" class="img-fluid" alt="img">
+                                                                <img src="{{ asset('theme/img/settings/sendgrid.svg')}}" class="img-fluid" alt="img">
                                                             </span>
                                                             <p class="text-gray-9 fw-medium">Send Grid</p>
                                                         </div>

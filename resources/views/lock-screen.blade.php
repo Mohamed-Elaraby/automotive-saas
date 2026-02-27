@@ -13,7 +13,7 @@
                     <form action="{{url('email-verification')}}" class="d-flex justify-content-center align-items-center">
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class=" mx-auto mb-5 text-center">
-                                <img src="{{URL::asset('build/img/logo.svg')}}" class="img-fluid" alt="Logo">
+                                <img src="{{ asset('theme/img/logo.svg')}}" class="img-fluid" alt="Logo">
                             </div>
                             <div class="card border-0 p-lg-3 shadow-lg rounded-2">
                                 <div class="card-body">
@@ -22,7 +22,7 @@
                                     </div>
                                     <div class="text-center mb-3">
                                         <span class="avatar avatar-xl rounded-circle flex-shrink-0">
-                                            <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="rounded-circle" alt="img">
+                                            <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="rounded-circle" alt="img">
                                         </span>
                                     </div>
                                     <div class="mb-3">

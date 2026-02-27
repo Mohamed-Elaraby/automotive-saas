@@ -32,13 +32,13 @@
                     <div class="d-flex align-items-center flex-wrap row-gap-3">
                         <div class="avatar-list-stacked avatar-group-sm me-3">
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded bg-primary fs-12">
                             1+
@@ -187,7 +187,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Doccure</h6>
                                                     </div>
@@ -208,19 +208,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                             </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -257,7 +257,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                            <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                            <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                         </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Tour</h6>
                                                     </div>
@@ -278,19 +278,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-09.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-09.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                             </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -358,7 +358,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Gigs</h6>
                                                     </div>
@@ -379,19 +379,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                             </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -428,7 +428,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                            <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                            <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                         </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Rent</h6>
                                                     </div>
@@ -449,19 +449,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                             </span>
                                                             <span class="avatar avatar-rounded">
-                                                                <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                             </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -529,7 +529,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Sports</h6>
                                                     </div>
@@ -550,19 +550,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -599,7 +599,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Estate</h6>
                                                     </div>
@@ -620,19 +620,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -700,7 +700,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Rent</h6>
                                                     </div>
@@ -721,19 +721,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -805,7 +805,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams LMS</h6>
                                                     </div>
@@ -826,19 +826,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -875,7 +875,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Truelysell</h6>
                                                     </div>
@@ -896,19 +896,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -976,7 +976,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams POS</h6>
                                                     </div>
@@ -997,19 +997,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1046,7 +1046,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">PreSkool</h6>
                                                     </div>
@@ -1067,19 +1067,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1147,7 +1147,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Kanakku</h6>
                                                     </div>
@@ -1168,19 +1168,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1248,7 +1248,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">SmartHR</h6>
                                                     </div>
@@ -1269,19 +1269,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1353,7 +1353,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">CRMS</h6>
                                                     </div>
@@ -1374,19 +1374,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1423,7 +1423,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Doccure</h6>
                                                     </div>
@@ -1444,19 +1444,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1524,7 +1524,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams Rent</h6>
                                                     </div>
@@ -1545,19 +1545,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1594,7 +1594,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams POS</h6>
                                                     </div>
@@ -1615,19 +1615,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1695,7 +1695,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Dreams LMS</h6>
                                                     </div>
@@ -1716,19 +1716,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-27.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-27.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1796,7 +1796,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Doccure</h6>
                                                     </div>
@@ -1817,19 +1817,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1901,7 +1901,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Project Title</h6>
                                                     </div>
@@ -1922,19 +1922,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-27.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-27.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -1971,7 +1971,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Project Title</h6>
                                                     </div>
@@ -1992,19 +1992,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -2072,7 +2072,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Project Title</h6>
                                                     </div>
@@ -2093,19 +2093,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -2142,7 +2142,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Project Title</h6>
                                                     </div>
@@ -2163,19 +2163,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -2243,7 +2243,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Project Title</h6>
                                                     </div>
@@ -2264,19 +2264,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+
@@ -2344,7 +2344,7 @@
                                                     </div>
                                                     <div class="d-flex align-items-center mb-3">
                                                         <span class="avatar avatar-xs rounded-circle bg-warning me-2">
-                                                        <img src="{{URL::asset('build/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
+                                                        <img src="{{ asset('theme/img/icons/kanban-arrow.svg')}}" class="w-auto h-auto" alt="Img">
                                                     </span>
                                                         <h6 class="d-flex align-items-center mb-0">Project Title</h6>
                                                     </div>
@@ -2365,19 +2365,19 @@
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <div class="avatar-list-stacked avatar-group-sm me-3">
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                                         </span>
                                                             <span class="avatar avatar-rounded">
-                                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                                         </span>
                                                             <a href="#" class="avatar avatar-rounded bg-primary fs-12 text-white">
                                                             1+

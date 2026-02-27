@@ -206,7 +206,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Anthony Lewis</a>
@@ -244,7 +244,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-09.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-09.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Brian Villalobos</a>
@@ -282,7 +282,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Harvey Smith</a>
@@ -320,7 +320,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-02.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-02.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Stephan Peralt</a>
@@ -358,7 +358,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-03.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-03.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Doglas Martini</a>
@@ -396,7 +396,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-02.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-02.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Linda Ray</a>
@@ -434,7 +434,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-06.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-06.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Elliot Murray</a>
@@ -472,7 +472,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-07.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-07.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Rebecca Smtih</a>
@@ -510,7 +510,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-08.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-08.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Anthony Lewis</a>
@@ -548,7 +548,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-09.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-09.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Connie Waters</a>
@@ -586,7 +586,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <a href="{{url('invoice-details')}}" class="avatar avatar-lg me-2">
-                                                            <img src="{{URL::asset('build/img/users/user-10.jpg')}}" class="rounded-circle" alt="user">
+                                                            <img src="{{ asset('theme/img/users/user-10.jpg')}}" class="rounded-circle" alt="user">
                                                         </a>
                                                         <div>
                                                             <h6 class="fw-medium fs-14"><a href="{{url('invoice-details')}}">Lori Broaddus</a>

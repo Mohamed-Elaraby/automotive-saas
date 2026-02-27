@@ -83,7 +83,7 @@
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <a href="{{url('language-setting2')}}" class=" me-2 flex-shrink-0"><img src="{{URL::asset('build/img/flags/us.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
+                                                    <a href="{{url('language-setting2')}}" class=" me-2 flex-shrink-0"><img src="{{ asset('theme/img/flags/us.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
                                                     <a href="{{url('language-setting2')}}">English</a>
                                                 </div>
                                             </td>
@@ -131,7 +131,7 @@
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <a href="{{url('language-setting2')}}" class="flex-shrink-0 me-2"><img src="{{URL::asset('build/img/flags/de.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
+                                                    <a href="{{url('language-setting2')}}" class="flex-shrink-0 me-2"><img src="{{ asset('theme/img/flags/de.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
                                                     <a href="{{url('language-setting2')}}">German</a>
                                                 </div>
                                             </td>
@@ -179,7 +179,7 @@
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <a href="{{url('language-setting2')}}" class="flex-shrink-0 me-2"><img src="{{URL::asset('build/img/flags/ae.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
+                                                    <a href="{{url('language-setting2')}}" class="flex-shrink-0 me-2"><img src="{{ asset('theme/img/flags/ae.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
                                                     <a href="{{url('language-setting2')}}">Arabic</a>
                                                 </div>
                                             </td>
@@ -227,7 +227,7 @@
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <a href="{{url('language-setting2')}}" class="flex-shrink-0 me-2"><img src="{{URL::asset('build/img/flags/fr.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
+                                                    <a href="{{url('language-setting2')}}" class="flex-shrink-0 me-2"><img src="{{ asset('theme/img/flags/fr.svg')}}" alt="img" class="avatar avatar-xs rounded-circle"></a>
                                                     <a href="{{url('language-setting2')}}">French</a>
                                                 </div>
                                             </td>

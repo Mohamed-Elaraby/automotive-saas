@@ -95,7 +95,7 @@
                                         </div>
                                         <div class="col-xl-3">
                                             <div class="new-logo ms-xl-auto bg-light border">
-                                                <img src="{{URL::asset('build/img/settings/company-setting-1.svg')}}" alt="Logo">
+                                                <img src="{{ asset('theme/img/settings/company-setting-1.svg')}}" alt="Logo">
                                                 <a href="javascript:void(0);" class="logo-trash bg-white text-danger me-1 mt-1"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>
@@ -128,7 +128,7 @@
                                         </div>
                                         <div class="col-xl-3">
                                             <div class="new-logo ms-xl-auto bg-dark border">
-                                                <img src="{{URL::asset('build/img/settings/company-setting-2.svg')}}" alt="Logo">
+                                                <img src="{{ asset('theme/img/settings/company-setting-2.svg')}}" alt="Logo">
                                                 <a href="javascript:void(0);" class="logo-trash bg-white text-danger me-1 mt-1"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>
@@ -161,7 +161,7 @@
                                         </div>
                                         <div class="col-xl-3">
                                             <div class="new-logo ms-xl-auto bg-light border">
-                                                <img src="{{URL::asset('build/img/settings/company-setting-1.svg')}}" alt="Logo">
+                                                <img src="{{ asset('theme/img/settings/company-setting-1.svg')}}" alt="Logo">
                                                 <a href="javascript:void(0);" class="logo-trash bg-white text-danger me-1 mt-1"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>
@@ -194,7 +194,7 @@
                                         </div>
                                         <div class="col-xl-3">
                                             <div class="new-logo ms-xl-auto bg-dark border">
-                                                <img src="{{URL::asset('build/img/settings/company-setting-4.svg')}}" alt="Logo">
+                                                <img src="{{ asset('theme/img/settings/company-setting-4.svg')}}" alt="Logo">
                                                 <a href="javascript:void(0);" class="logo-trash bg-white text-danger me-1 mt-1"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>
@@ -227,7 +227,7 @@
                                         </div>
                                         <div class="col-xl-3">
                                             <div class="new-logo ms-xl-auto bg-light border">
-                                                <img src="{{URL::asset('build/img/settings/company-setting-3.svg')}}" alt="Logo">
+                                                <img src="{{ asset('theme/img/settings/company-setting-3.svg')}}" alt="Logo">
                                                 <a href="javascript:void(0);" class="logo-trash bg-white text-danger me-1 mt-1"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>
@@ -260,7 +260,7 @@
                                         </div>
                                         <div class="col-xl-3">
                                             <div class="new-logo ms-xl-auto bg-light border">
-                                                <img src="{{URL::asset('build/img/settings/company-setting-3.svg')}}" alt="Logo">
+                                                <img src="{{ asset('theme/img/settings/company-setting-3.svg')}}" alt="Logo">
                                                 <a href="javascript:void(0);" class="logo-trash bg-white text-danger me-1 mt-1"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>

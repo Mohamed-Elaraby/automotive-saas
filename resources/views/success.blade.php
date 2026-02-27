@@ -11,7 +11,7 @@
                     <div class="d-flex justify-content-center align-items-center">
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class=" mx-auto mb-5 text-center">
-                                <img src="{{URL::asset('build/img/logo.svg')}}" class="img-fluid" alt="Logo">
+                                <img src="{{ asset('theme/img/logo.svg')}}" class="img-fluid" alt="Logo">
                             </div>
                             <!-- card start -->
                             <div class="card border-0 p-lg-3">

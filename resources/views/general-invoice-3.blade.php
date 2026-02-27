@@ -25,7 +25,7 @@
 							<div class="row gx-0">
 								<div class="col-lg-5 d-flex">
 									<div class="p-3 border-end flex-fill">
-										<div class="mb-3"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+										<div class="mb-3"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
 										<h6 class="fs-16 fw-semibold mb-2">Dreamstechnologies</h6>
 										<div class="row align-items-center">
 											<div class="col-md-6">
@@ -169,7 +169,7 @@
 						</div>
 						<div class="text-center border-start p-3">
 							<p class="mb-1">For Dreamstechnologies</p>
-							<span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt=""></span>
+							<span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt=""></span>
 						</div>
 					</div>
 					<div class="border border-top-0">

@@ -232,7 +232,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-01.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-01.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Emma Rose</a></h6>
@@ -258,7 +258,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-02.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-02.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Ethan James</a></h6>
@@ -284,7 +284,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-03.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-03.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Olivia Grace</a></h6>
@@ -310,7 +310,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-04.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-04.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Liam Michael</a></h6>
@@ -336,7 +336,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-05.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-05.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Sophia Marie</a></h6>
@@ -362,7 +362,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-06.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-06.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Noah Daniel</a></h6>
@@ -388,7 +388,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-07.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-07.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Isabella Faith</a></h6>
@@ -414,7 +414,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-08.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-08.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Oliver Scott</a></h6>
@@ -440,7 +440,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-09.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-09.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Ava Louise</a></h6>
@@ -466,7 +466,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-10.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-10.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">James Robert</a></h6>
@@ -492,7 +492,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-11.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-11.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Charlotte Anne</a></h6>
@@ -518,7 +518,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-12.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-12.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Benjamin Thomas</a></h6>
@@ -544,7 +544,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-13.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-13.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Amelia Jane</a></h6>
@@ -570,7 +570,7 @@
 								<td>
                                     <div class="d-flex align-items-center">
 										<a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-											<img src="{{URL::asset('build/img/reports/avatar-14.jpg')}}" class="rounded-circle" alt="img">
+											<img src="{{ asset('theme/img/reports/avatar-14.jpg')}}" class="rounded-circle" alt="img">
 										</a>
 										<div>
 											<h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Mia Elizabeth</a></h6>

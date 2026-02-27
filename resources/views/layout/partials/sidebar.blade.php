@@ -66,16 +66,16 @@
             <!-- Start Logo -->
             <div class="sidebar-logo">
                 <a href="{{url('index')}}" class="logo logo-normal">
-                    <img src="{{URL::asset('build/img/logo.svg')}}" alt="Logo">
+                    <img src="{{ asset('theme/img/logo.svg')}}" alt="Logo">
                 </a>
                 <a href="{{url('index')}}" class="logo-small">
-                    <img src="{{URL::asset('build/img/logo-small.svg')}}" alt="Logo">
+                    <img src="{{ asset('theme/img/logo-small.svg')}}" alt="Logo">
                 </a>
                 <a href="{{url('index')}}" class="dark-logo">
-                    <img src="{{URL::asset('build/img/logo-white.svg')}}" alt="Logo">
+                    <img src="{{ asset('theme/img/logo-white.svg')}}" alt="Logo">
                 </a>
                 <a href="{{url('index')}}" class="dark-small">
-                    <img src="{{URL::asset('build/img/logo-small-white.svg')}}" alt="Logo">
+                    <img src="{{ asset('theme/img/logo-small-white.svg')}}" alt="Logo">
                 </a>
                 
                 <!-- Sidebar Hover Menu Toggle Button -->
@@ -974,7 +974,7 @@
                     <div class="sidebar-footer">
                         <div class="trial-item bg-white text-center border">
                             <div class="bg-light p-3 text-center">
-                                <img src="{{URL::asset('build/img/icons/upgrade.svg')}}" alt="img">
+                                <img src="{{ asset('theme/img/icons/upgrade.svg')}}" alt="img">
                             </div>
                             <div class="p-2">
                                 <h6 class="fs-14 fw-semibold mb-1">Upgrade to More</h6>

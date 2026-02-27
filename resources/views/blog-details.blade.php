@@ -23,7 +23,7 @@
                 <div class="col-lg-12">
                     <h6 class="fs-16 mb-3">Small Businesses Automate Accounting</h6>
                     <div class="img-sec position-relative mb-3">
-                        <img src="{{URL::asset('build/img/media/img-18.png')}}" class="img-fluid rounded" alt="img">
+                        <img src="{{ asset('theme/img/media/img-18.png')}}" class="img-fluid rounded" alt="img">
                     </div>
                     <div class="mb-3">
                         <p class="mb-3">Automating accounting helps small businesses save time, reduce errors, and improve financial accuracy. With digital invoicing, expense tracking, and automated tax calculations, businesses can streamline operations without manual
@@ -38,17 +38,17 @@
                     <div class="row">
                         <div class="col-lg-4 col-md-6">
                             <div class="mb-3">
-                                <img src="{{URL::asset('build/img/media/img-15.png')}}" class="img-fluid rounded" alt="img">
+                                <img src="{{ asset('theme/img/media/img-15.png')}}" class="img-fluid rounded" alt="img">
                             </div>
                         </div>
                         <div class="col-lg-4 col-md-6">
                             <div class="mb-3">
-                                <img src="{{URL::asset('build/img/media/img-16.png')}}" class="img-fluid rounded" alt="img">
+                                <img src="{{ asset('theme/img/media/img-16.png')}}" class="img-fluid rounded" alt="img">
                             </div>
                         </div>
                         <div class="col-lg-4 col-md-6">
                             <div class="mb-3">
-                                <img src="{{URL::asset('build/img/media/img-17.png')}}" class="img-fluid rounded" alt="img">
+                                <img src="{{ asset('theme/img/media/img-17.png')}}" class="img-fluid rounded" alt="img">
                             </div>
                         </div>
                     </div>

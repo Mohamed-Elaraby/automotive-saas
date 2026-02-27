@@ -44,7 +44,7 @@
                                                         <div class="card-body p-2">
                                                             <a href="javascript:void(0);">
                                                                 <div class="border rounded border-gray mb-2">
-                                                                    <img src="{{URL::asset('build/img/theme/light.jpg')}}" class="img-fluid rounded" alt="theme">
+                                                                    <img src="{{ asset('theme/img/theme/light.jpg')}}" class="img-fluid rounded" alt="theme">
                                                                 </div>
                                                                 <p class="text-center fw-medium text-truncate">Light</p>
                                                             </a>
@@ -56,7 +56,7 @@
                                                         <div class="card-body p-2">
                                                             <a href="javascript:void(0);">
                                                                 <div class="border rounded border-gray mb-2">
-                                                                    <img src="{{URL::asset('build/img/theme/dark.jpg')}}" class="img-fluid rounded" alt="theme">
+                                                                    <img src="{{ asset('theme/img/theme/dark.jpg')}}" class="img-fluid rounded" alt="theme">
                                                                 </div>
                                                                 <p class="text-center fw-medium text-truncate">Dark</p>
                                                             </a>
@@ -68,7 +68,7 @@
                                                         <div class="card-body p-2">
                                                             <a href="javascript:void(0);">
                                                                 <div class="border rounded border-gray mb-2">
-                                                                    <img src="{{URL::asset('build/img/theme/automatic.jpg')}}" class="img-fluid rounded" alt="theme">
+                                                                    <img src="{{ asset('theme/img/theme/automatic.jpg')}}" class="img-fluid rounded" alt="theme">
                                                                 </div>
                                                                 <p class="text-center fw-medium text-truncate">Automatic</p>
                                                             </a>

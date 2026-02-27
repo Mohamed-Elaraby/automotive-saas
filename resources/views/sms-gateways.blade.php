@@ -32,7 +32,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-3 gap-2 flex-wrap">
                                                         <div class="d-flex align-items-center">
                                                             <span>
-                                                                <img src="{{URL::asset('build/img/icons/nexmo-logo-icon.svg')}}" class="img-fluid" alt="img">
+                                                                <img src="{{ asset('theme/img/icons/nexmo-logo-icon.svg')}}" class="img-fluid" alt="img">
                                                             </span>
                                                         </div>
                                                         <span class="badge badge-soft-success d-flex align-items-center">
@@ -65,7 +65,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-3 gap-2 flex-wrap">
                                                         <div class="d-flex align-items-center">
                                                             <span>
-                                                                <img src="{{URL::asset('build/img/icons/two-factor-icon.svg')}}" class="img-fluid" alt="img">
+                                                                <img src="{{ asset('theme/img/icons/two-factor-icon.svg')}}" class="img-fluid" alt="img">
                                                             </span>
                                                         </div>
                                                         <span class="badge badge-soft-success d-flex align-items-center">
@@ -98,7 +98,7 @@
                                                     <div class="d-flex align-items-center justify-content-between mb-3 gap-2 flex-wrap">
                                                         <div class="d-flex align-items-center">
                                                             <span>
-                                                                <img src="{{URL::asset('build/img/icons/twilio-icon.svg')}}" class="img-fluid" alt="img">
+                                                                <img src="{{ asset('theme/img/icons/twilio-icon.svg')}}" class="img-fluid" alt="img">
                                                             </span>
                                                         </div>
                                                         <span class="badge badge-soft-primary d-flex align-items-center text-gray-9">

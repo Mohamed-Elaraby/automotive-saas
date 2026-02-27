@@ -562,13 +562,13 @@
                             <p class="text-muted">Add classes to an element to easily round its corners.</p>
 
                             <div class="d-flex align-items-start flex-wrap gap-2">
-                                <img src="{{URL::asset('build/img/users/avatar-2.jpg')}}" class="avatar-lg rounded" alt="rounded">
-                                <img src="{{URL::asset('build/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-top" alt="rounded-top">
-                                <img src="{{URL::asset('build/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-end" alt="rounded-end">
-                                <img src="{{URL::asset('build/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-bottom" alt="rounded-bottom">
-                                <img src="{{URL::asset('build/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-start" alt="rounded-start">
-                                <img src="{{URL::asset('build/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-circle" alt="rounded-circle">
-                                <img src="{{URL::asset('build/img/users/small-2.jpg')}}" class="avatar-lg w-auto rounded-pill" alt="rounded-pill">
+                                <img src="{{ asset('theme/img/users/avatar-2.jpg')}}" class="avatar-lg rounded" alt="rounded">
+                                <img src="{{ asset('theme/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-top" alt="rounded-top">
+                                <img src="{{ asset('theme/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-end" alt="rounded-end">
+                                <img src="{{ asset('theme/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-bottom" alt="rounded-bottom">
+                                <img src="{{ asset('theme/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-start" alt="rounded-start">
+                                <img src="{{ asset('theme/img/users/avatar-2.jpg')}}" class="avatar-lg rounded-circle" alt="rounded-circle">
+                                <img src="{{ asset('theme/img/users/small-2.jpg')}}" class="avatar-lg w-auto rounded-pill" alt="rounded-pill">
                             </div>
 
                         </div> <!-- end card body -->
@@ -586,12 +586,12 @@
                                 Sizes range from <code>0</code> to <code>5</code>.</p>
 
                             <div class="d-flex align-items-start flex-wrap gap-2">
-                                <img src="{{URL::asset('build/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-0" alt="rounded-0">
-                                <img src="{{URL::asset('build/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-1" alt="rounded-1">
-                                <img src="{{URL::asset('build/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-2" alt="rounded-2">
-                                <img src="{{URL::asset('build/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-3" alt="rounded-3">
-                                <img src="{{URL::asset('build/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-4" alt="rounded-4">
-                                <img src="{{URL::asset('build/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-5" alt="rounded-5">
+                                <img src="{{ asset('theme/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-0" alt="rounded-0">
+                                <img src="{{ asset('theme/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-1" alt="rounded-1">
+                                <img src="{{ asset('theme/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-2" alt="rounded-2">
+                                <img src="{{ asset('theme/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-3" alt="rounded-3">
+                                <img src="{{ asset('theme/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-4" alt="rounded-4">
+                                <img src="{{ asset('theme/img/users/avatar-4.jpg')}}" class="avatar-lg rounded-5" alt="rounded-5">
                             </div>
                         </div> <!-- end card body -->
                     </div> <!-- end card -->
@@ -876,23 +876,23 @@
                             </p>
                             <div class="d-flex align-items-start flex-wrap gap-3 text-center">
                                 <div>
-                                    <img src="{{URL::asset('build/img/media/img-2.jpg')}}" class="object-fit-contain border rounded avatar-xl" alt="...">
+                                    <img src="{{ asset('theme/img/media/img-2.jpg')}}" class="object-fit-contain border rounded avatar-xl" alt="...">
                                     <p class="mt-1 mb-0"><code class="user-select-all">.object-fit-contain</code></p>
                                 </div>
                                 <div>
-                                    <img src="{{URL::asset('build/img/media/img-2.jpg')}}" class="object-fit-cover border rounded avatar-xl" alt="...">
+                                    <img src="{{ asset('theme/img/media/img-2.jpg')}}" class="object-fit-cover border rounded avatar-xl" alt="...">
                                     <p class="mt-1 mb-0"><code class="user-select-all">.object-fit-cover</code></p>
                                 </div>
                                 <div>
-                                    <img src="{{URL::asset('build/img/media/img-2.jpg')}}" class="object-fit-fill border rounded avatar-xl" alt="...">
+                                    <img src="{{ asset('theme/img/media/img-2.jpg')}}" class="object-fit-fill border rounded avatar-xl" alt="...">
                                     <p class="mt-1 mb-0"><code class="user-select-all">.object-fit-fill</code></p>
                                 </div>
                                 <div>
-                                    <img src="{{URL::asset('build/img/media/img-2.jpg')}}" class="object-fit-scale border rounded avatar-xl" alt="...">
+                                    <img src="{{ asset('theme/img/media/img-2.jpg')}}" class="object-fit-scale border rounded avatar-xl" alt="...">
                                     <p class="mt-1 mb-0"><code class="user-select-all">.object-fit-scale</code></p>
                                 </div>
                                 <div>
-                                    <img src="{{URL::asset('build/img/media/img-2.jpg')}}" class="object-fit-none border rounded avatar-xl" alt="...">
+                                    <img src="{{ asset('theme/img/media/img-2.jpg')}}" class="object-fit-none border rounded avatar-xl" alt="...">
                                     <p class="mt-1 mb-0"><code class="user-select-all">.object-fit-none</code></p>
                                 </div>
                             </div>

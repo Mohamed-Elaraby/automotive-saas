@@ -83,7 +83,7 @@
                                                 <div class="row">
                                                     <div class="col-lg-12">
                                                         <div class="border border-dashed bg-light rounded text-center p-3 mb-3">
-                                                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt="">
+                                                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-12">
@@ -143,7 +143,7 @@
                                                             </select>
                                                         </div>
                                                         <div class="bg-light border rounded p-3 d-flex align-items-start">
-                                                            <span class="avatar avatar-lg border flex-shrink-0 me-3"><img src="{{URL::asset('build/img/logo-small.svg')}}" alt=""></span>
+                                                            <span class="avatar avatar-lg border flex-shrink-0 me-3"><img src="{{ asset('theme/img/logo-small.svg')}}" alt=""></span>
                                                             <div>
                                                                 <h6 class="fs-14 fw-semibold mb-1">Kanakku Invoice Management</h6>
                                                                 <p class="mb-1 fs-13">15 Hodges Mews, HP12 3JL, United Kingdom</p>
@@ -173,7 +173,7 @@
                                                                 </select>
                                                             </div>
                                                             <div class="bg-light border rounded p-3 d-flex align-items-start">
-                                                                <span class="avatar avatar-lg border bg-dark flex-shrink-0 me-3"><img src="{{URL::asset('build/img/icons/black-icon.png')}}" alt=""></span>
+                                                                <span class="avatar avatar-lg border bg-dark flex-shrink-0 me-3"><img src="{{ asset('theme/img/icons/black-icon.png')}}" alt=""></span>
                                                                 <div>
                                                                     <h6 class="fs-14 fw-semibold mb-1">Timesquare Tech</h6>
                                                                     <p class="mb-1 fs-13">299 Star Trek Drive, Florida, 32405, USA</p>

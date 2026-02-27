@@ -44,28 +44,28 @@
 
                                     <div class="row">
                                         <div class="col-sm-3">
-                                            <img src="{{URL::asset('build/img/media/img-4.jpg')}}" alt="image" class="img-fluid rounded" width="200">
+                                            <img src="{{ asset('theme/img/media/img-4.jpg')}}" alt="image" class="img-fluid rounded" width="200">
                                             <p class="mb-0">
                                                 <code>.rounded</code>
                                             </p>
                                         </div>
 
                                         <div class="col-sm-3">
-                                            <img src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="image" class="img-fluid rounded-circle" width="133">
+                                            <img src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="image" class="img-fluid rounded-circle" width="133">
                                             <p class="mb-0">
                                                 <code>.rounded-circle</code>
                                             </p>
                                         </div>
 
                                         <div class="col-sm-3">
-                                            <img src="{{URL::asset('build/img/media/img-1.jpg')}}" alt="image" class="img-fluid img-thumbnail" width="200">
+                                            <img src="{{ asset('theme/img/media/img-1.jpg')}}" alt="image" class="img-fluid img-thumbnail" width="200">
                                             <p class="mb-0">
                                                 <code>.img-thumbnail</code>
                                             </p>
                                         </div>
 
                                         <div class="col-sm-3">
-                                            <img src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="image" class="img-thumbnail rounded-pill" width="133">
+                                            <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="image" class="img-thumbnail rounded-pill" width="133">
                                             <p class="mb-0">
                                                 <code>.rounded-pill</code>
                                             </p>
@@ -89,7 +89,7 @@
                             <h5 class="card-title">Image Left Align</h5>
                         </div>
                         <div class="card-body">
-                            <img class="rounded float-start" src="{{URL::asset('build/img/media/img-1.jpg')}}" alt="..." width="200">
+                            <img class="rounded float-start" src="{{ asset('theme/img/media/img-1.jpg')}}" alt="..." width="200">
                         </div> <!-- end card body -->
                     </div> <!-- end card -->
                 </div> <!-- end col -->
@@ -101,7 +101,7 @@
                             <h5 class="card-title">Image Center Align</h5>
                         </div>
                         <div class="card-body">
-                            <img class="rounded mx-auto d-block" src="{{URL::asset('build/img/media/img-1.jpg')}}" alt="..." width="200">
+                            <img class="rounded mx-auto d-block" src="{{ asset('theme/img/media/img-1.jpg')}}" alt="..." width="200">
                         </div> <!-- end card body -->
                     </div> <!-- end card -->
                 </div> <!-- end col -->
@@ -112,7 +112,7 @@
                             <h5 class="card-title">Image Right Align</h5>
                         </div>
                         <div class="card-body">
-                            <img class="rounded float-end" src="{{URL::asset('build/img/media/img-1.jpg')}}" alt="..." width="200">
+                            <img class="rounded float-end" src="{{ asset('theme/img/media/img-1.jpg')}}" alt="..." width="200">
                         </div> <!-- end card body -->
                     </div> <!-- end card -->
                 </div> <!-- end col -->
@@ -125,11 +125,11 @@
                         </div>
                         <div class="card-body d-flex justify-content-between gap-2 pb-1">
                             <figure class="figure">
-                                <img class="bd-placeholder-img figure-img img-fluid rounded card-img" src="{{URL::asset('build/img/media/img-1.jpg')}}" alt="...">
+                                <img class="bd-placeholder-img figure-img img-fluid rounded card-img" src="{{ asset('theme/img/media/img-1.jpg')}}" alt="...">
                                 <figcaption class="figure-caption">A caption for the above image.</figcaption>
                             </figure>
                             <figure class="figure float-end">
-                                <img class="bd-placeholder-img figure-img img-fluid rounded card-img" src="{{URL::asset('build/img/media/img-1.jpg')}}" alt="...">
+                                <img class="bd-placeholder-img figure-img img-fluid rounded card-img" src="{{ asset('theme/img/media/img-1.jpg')}}" alt="...">
                                 <figcaption class="figure-caption text-end">A caption for the above image.
                                 </figcaption>
                             </figure>

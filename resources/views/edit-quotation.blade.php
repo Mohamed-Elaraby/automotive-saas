@@ -92,8 +92,8 @@
                                                 <div class="row">
                                                     <div class="col-lg-12">
                                                         <div class="border border-dashed bg-light rounded text-center p-3 mb-3">
-                                                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                                            <img src="{{URL::asset('build/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                                            <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                                         </div>
                                                     </div><!-- end col -->
                                                     <div class="col-lg-12">
@@ -159,7 +159,7 @@
                                                             </select>
                                                         </div>
                                                         <div class="bg-light border rounded p-3 d-flex align-items-start">
-                                                            <span class="avatar avatar-lg border flex-shrink-0 me-3"><img src="{{URL::asset('build/img/logo-small.svg')}}" alt="User Img"></span>
+                                                            <span class="avatar avatar-lg border flex-shrink-0 me-3"><img src="{{ asset('theme/img/logo-small.svg')}}" alt="User Img"></span>
                                                             <div>
                                                                 <h6 class="fs-14 fw-semibold mb-1">Kanakku Invoice Management</h6>
                                                                 <p class="mb-1 fs-13">15 Hodges Mews, HP12 3JL, United Kingdom</p>
@@ -189,7 +189,7 @@
                                                                 </select>
                                                             </div>
                                                             <div class="bg-light border rounded p-3 d-flex align-items-start">
-                                                                <span class="avatar avatar-lg border bg-dark flex-shrink-0 me-3"><img src="{{URL::asset('build/img/icons/black-icon.png')}}" alt="User Img"></span>
+                                                                <span class="avatar avatar-lg border bg-dark flex-shrink-0 me-3"><img src="{{ asset('theme/img/icons/black-icon.png')}}" alt="User Img"></span>
                                                                 <div>
                                                                     <h6 class="fs-14 fw-semibold mb-1">Timesquare Tech</h6>
                                                                     <p class="mb-1 fs-13">299 Star Trek Drive, Florida, 32405, USA</p>

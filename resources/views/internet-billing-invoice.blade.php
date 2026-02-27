@@ -17,7 +17,7 @@
                         </div>
                     </div>
                     <div class="">
-                        <div class="mb-1 text-end"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+                        <div class="mb-1 text-end"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
                         <p class="mb-1 text-end">Date: <span class="text-dark">05/12/2024</span></p>
                         <div class="inv-details">
                             <div class="inv-date-rest">

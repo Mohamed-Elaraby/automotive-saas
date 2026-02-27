@@ -18,19 +18,19 @@
                 <div class="d-flex my-xl-auto right-content align-items-center flex-wrap gap-2">
                     <div class="avatar-list-stacked me-1">
                         <span class="avatar avatar-rounded avatar-sm">
-                            <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                            <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                         </span>
                         <span class="avatar avatar-rounded avatar-sm">
-                            <img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                            <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                         </span>
                         <span class="avatar avatar-rounded avatar-sm">
-                            <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                            <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                         </span>
                         <span class="avatar avatar-rounded avatar-sm">
-                            <img src="{{URL::asset('build/img/profiles/avatar-18.jpg')}}" alt="img">
+                            <img src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" alt="img">
                         </span>
                         <span class="avatar avatar-rounded avatar-sm">
-                            <img src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                            <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                         </span>
                     </div>
                     <div class="dropdown me-1">
@@ -73,7 +73,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-success"><i class="isax isax-send text-success me-1"></i>5.62%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-01.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/card-overlay-01.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -94,7 +94,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-success"><i class="isax isax-send text-success me-1"></i>11.4%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-02.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/card-overlay-02.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -115,7 +115,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-success"><i class="isax isax-send text-success me-1"></i>8.52%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-03.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/card-overlay-03.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -136,7 +136,7 @@
                             </div>
                             <p class="fs-13 mb-0"><span class="text-danger"><i class="isax isax-received text-danger me-1"></i>7.45%</span> from last month</p>
                             <span class="position-absolute end-0 bottom-0">
-                                <img src="{{URL::asset('build/img/bg/card-overlay-04.svg')}}" alt="User Img">
+                                <img src="{{ asset('theme/img/bg/card-overlay-04.svg')}}" alt="User Img">
                             </span>
                         </div><!-- end card body -->
                     </div><!-- end card -->
@@ -287,7 +287,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-28.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Emily Clark</a></h6>
@@ -340,7 +340,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">John Carter</a></h6>
@@ -393,7 +393,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Sophia White</a></h6>
@@ -446,7 +446,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Michael Johnson</a></h6>
@@ -501,7 +501,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-30.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Olivia Harris</a></h6>
@@ -556,7 +556,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">David Anderson</a></h6>
@@ -611,7 +611,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Emma Lewis</a></h6>
@@ -666,7 +666,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Robert Thomas</a></h6>
@@ -721,7 +721,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Isabella Scott</a></h6>
@@ -776,7 +776,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Daniel Martinez</a></h6>
@@ -831,7 +831,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Charlotte Brown</a></h6>
@@ -886,7 +886,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">William Parker</a></h6>
@@ -941,7 +941,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-18.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Mia Thompson</a></h6>
@@ -996,7 +996,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-26.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-26.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Amelia Robinson</a></h6>
@@ -1077,7 +1077,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-28.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Emily Clark</a></h6>
@@ -1130,7 +1130,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">David Anderson</a></h6>
@@ -1185,7 +1185,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Charlotte Brown</a></h6>
@@ -1266,7 +1266,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-30.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Olivia Harris</a></h6>
@@ -1321,7 +1321,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Daniel Martinez</a></h6>
@@ -1402,7 +1402,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-31.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Daniel Martinez</a></h6>
@@ -1483,7 +1483,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Sophia White</a></h6>
@@ -1536,7 +1536,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Robert Thomas</a></h6>
@@ -1591,7 +1591,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-18.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Mia Thompson</a></h6>
@@ -1672,7 +1672,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Michael Johnson</a></h6>
@@ -1727,7 +1727,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Isabella Scott</a></h6>
@@ -1782,7 +1782,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-26.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-26.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Amelia Robinson</a></h6>
@@ -1863,7 +1863,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">John Carter</a></h6>
@@ -1916,7 +1916,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Emma Lewis</a></h6>
@@ -1971,7 +1971,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">William Parker</a></h6>
@@ -2052,7 +2052,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">John Carter</a></h6>
@@ -2131,7 +2131,7 @@
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <a href="{{url('customer-details')}}" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
+                                                <img src="{{ asset('theme/img/profiles/avatar-23.jpg')}}" class="rounded-circle" alt="img">
                                             </a>
                                             <div>
                                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Robert Thomas</a></h6>
@@ -2232,25 +2232,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                             </ul>

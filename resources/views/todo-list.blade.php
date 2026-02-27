@@ -71,13 +71,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -125,13 +125,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -179,13 +179,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-04.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -233,13 +233,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-06.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-07.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -287,13 +287,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-08.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-09.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-09.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-10.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-10.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -341,13 +341,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-11.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-11.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-12.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-13.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-13.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -395,13 +395,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-14.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-14.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-15.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-16.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -449,13 +449,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-18.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-19.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-19.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -503,13 +503,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>
@@ -557,13 +557,13 @@
                                 <td>
                                     <div class="avatar-list-stacked avatar-group-sm">
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-02.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                                         </span>
                                         <span class="avatar avatar-rounded">
-                                            <img class="border border-white" src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" alt="img">
+                                            <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                                         </span>
                                     </div>
                                 </td>

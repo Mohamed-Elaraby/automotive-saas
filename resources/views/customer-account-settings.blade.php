@@ -60,7 +60,7 @@
 										<div class="d-flex align-items-center">
 											<div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
 												<div class="position-relative d-flex align-items-center">
-													<img src="{{URL::asset('build/img/users/user-01.jpg')}}" class="avatar avatar-xl " alt="User Img">
+													<img src="{{ asset('theme/img/users/user-01.jpg')}}" class="avatar avatar-xl " alt="User Img">
 													<a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
 												</div>
 											</div>

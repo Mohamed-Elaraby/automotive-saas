@@ -220,7 +220,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-01.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-01.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Trend Hive</a></h6>
@@ -267,7 +267,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-02.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-02.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Quick Cart</a></h6>
@@ -314,7 +314,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-03.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-03.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Tech Bazaar</a></h6>
@@ -361,7 +361,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-04.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-04.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Harvest Basket</a></h6>
@@ -408,7 +408,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-05.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-05.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Elite Mart</a></h6>
@@ -455,7 +455,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-06.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-06.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Prime Mart</a></h6>
@@ -502,7 +502,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-07.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-07.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Trend Crafters</a></h6>
@@ -549,7 +549,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-08.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-08.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Fresh Nest</a></h6>
@@ -596,7 +596,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-09.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-09.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Gizmo Mart</a></h6>
@@ -643,7 +643,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-10.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-10.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Dream Space</a></h6>
@@ -690,7 +690,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-11.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-11.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Mega Mart</a></h6>
@@ -737,7 +737,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-12.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-12.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Decor Ease</a></h6>
@@ -784,7 +784,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-13.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-13.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Electro World</a></h6>
@@ -831,7 +831,7 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     <a href="javascript:void(0);" class="avatar avatar-sm rounded-circle me-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#companies_details">
-                                        <img src="{{URL::asset('build/img/icons/company-14.svg')}}" class="rounded-circle" alt="img">
+                                        <img src="{{ asset('theme/img/icons/company-14.svg')}}" class="rounded-circle" alt="img">
                                     </a>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-0"><a href="javascript:void(0);">Urban Home</a></h6>

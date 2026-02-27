@@ -6,10 +6,10 @@
             <!-- Logo -->
             <div class="header-left">
                 <a href="{{url('index')}}" class="logo">
-                    <img src="{{URL::asset('build/img/logo.svg')}}" alt="Logo">
+                    <img src="{{ asset('theme/img/logo.svg')}}" alt="Logo">
                 </a>
                 <a href="{{url('index')}}" class="dark-logo">
-                    <img src="{{URL::asset('build/img/logo-white.svg')}}" alt="Logo">
+                    <img src="{{ asset('theme/img/logo-white.svg')}}" alt="Logo">
                 </a>
             </div>
 
@@ -1077,35 +1077,35 @@
                         <!-- Language Dropdown -->
                         <div class="nav-item dropdown has-arrow flag-nav me-2">
                             <a class="btn btn-menubar" data-bs-toggle="dropdown" href="javascript:void(0);" role="button">
-                                <img src="{{URL::asset('build/img/flags/us.svg')}}" alt="Language" class="img-fluid">
+                                <img src="{{ asset('theme/img/flags/us.svg')}}" alt="Language" class="img-fluid">
                             </a>
                             <ul class="dropdown-menu p-2">
 
                                 <!-- item-->
                                 <li>
                                     <a href="javascript:void(0);" class="dropdown-item">
-                                        <img src="{{URL::asset('build/img/flags/us.svg')}}" alt="flag" class="me-2">English
+                                        <img src="{{ asset('theme/img/flags/us.svg')}}" alt="flag" class="me-2">English
                                     </a>
                                 </li>
 
                                 <!-- item-->
                                 <li>
                                     <a href="javascript:void(0);" class="dropdown-item">
-                                        <img src="{{URL::asset('build/img/flags/de.svg')}}" alt="flag" class="me-2">German
+                                        <img src="{{ asset('theme/img/flags/de.svg')}}" alt="flag" class="me-2">German
                                     </a>
                                 </li>
 
                                 <!-- item-->
                                 <li>
                                     <a href="javascript:void(0);" class="dropdown-item">
-                                        <img src="{{URL::asset('build/img/flags/fr.svg')}}" alt="flag" class="me-2">French
+                                        <img src="{{ asset('theme/img/flags/fr.svg')}}" alt="flag" class="me-2">French
                                     </a>
                                 </li>
 
                                 <!-- item-->
                                 <li>
                                     <a href="javascript:void(0);" class="dropdown-item">
-                                        <img src="{{URL::asset('build/img/flags/ae.svg')}}" alt="flag" class="me-2">Arabic
+                                        <img src="{{ asset('theme/img/flags/ae.svg')}}" alt="flag" class="me-2">Arabic
                                     </a>
                                 </li>
 
@@ -1148,7 +1148,7 @@
                                     <div class="dropdown-item notification-item py-2 text-wrap border-bottom" id="notification-1">
                                         <div class="d-flex">
                                             <div class="me-2 position-relative flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-05.jpg')}}" class="avatar-md rounded-circle" alt="">
+                                                <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" class="avatar-md rounded-circle" alt="">
                                             </div>
                                             <div class="flex-grow-1">
                                                 <p class="mb-0 fw-semibold text-dark">John Smith</p>
@@ -1200,7 +1200,7 @@
                                     <div class="dropdown-item notification-item py-2 text-wrap border-bottom" id="notification-3">
                                         <div class="d-flex">
                                             <div class="me-2 position-relative flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-03.jpg')}}" class="avatar-md rounded-circle" alt="">
+                                                <img src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" class="avatar-md rounded-circle" alt="">
                                             </div>
                                             <div class="flex-grow-1">
                                                 <p class="mb-0 fw-semibold text-dark">Robert Fox </p>
@@ -1249,7 +1249,7 @@
                                     <div class="dropdown-item notification-item py-2 text-wrap border-bottom" id="notification-5">
                                         <div class="d-flex">
                                             <div class="me-2 position-relative flex-shrink-0">
-                                                <img src="{{URL::asset('build/img/profiles/avatar-17.jpg')}}" class="avatar-md rounded-circle" alt="">
+                                                <img src="{{ asset('theme/img/profiles/avatar-17.jpg')}}" class="avatar-md rounded-circle" alt="">
                                             </div>
                                             <div class="flex-grow-1">
                                                 <p class="mb-0 fw-semibold text-dark">Charlotte Brown</p>
@@ -1299,13 +1299,13 @@
                         <div class="dropdown profile-dropdown">
                             <a href="javascript:void(0);" class="dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown"  data-bs-auto-close="outside">
                                 <span class="avatar online">
-                                    <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img" class="img-fluid rounded-circle">
+                                    <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img" class="img-fluid rounded-circle">
                                 </span>
                             </a>
                             <div class="dropdown-menu p-2">
                                 <div class="d-flex align-items-center bg-light rounded-1 p-2 mb-2">
                                     <span class="avatar avatar-lg me-2">
-                                        <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="img" class="rounded-circle" >
+                                        <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img" class="rounded-circle" >
                                     </span>
                                     <div>
                                         <h6 class="fs-14 fw-medium mb-1">Jafna Cremson</h6>
@@ -1346,7 +1346,7 @@
             <div class="dropdown mobile-user-menu profile-dropdown">
                 <a href="javascript:void(0);" class="dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown"  data-bs-auto-close="outside">
                     <span class="avatar avatar-md online">
-                        <img src="{{URL::asset('build/img/profiles/avatar-01.jpg')}}" alt="Img" class="img-fluid rounded-circle">
+                        <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="Img" class="img-fluid rounded-circle">
                     </span>
                 </a>
                 <div class="dropdown-menu p-2 mt-0">

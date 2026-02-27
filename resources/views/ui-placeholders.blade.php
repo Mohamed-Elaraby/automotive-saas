@@ -45,7 +45,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="card border shadow-none mb-md-0">
-                                        <img src="{{URL::asset('build/img/media/img-1.jpg')}}" class="card-img-top" alt="...">
+                                        <img src="{{ asset('theme/img/media/img-1.jpg')}}" class="card-img-top" alt="...">
 
                                         <div class="card-body">
                                             <h5 class="card-title">Card title</h5>
@@ -61,7 +61,7 @@
 
                                 <div class="col-md-6">
                                     <div class="card border shadow-none mb-0" aria-hidden="true">
-                                        <img src="{{URL::asset('build/img/media/img-2.jpg')}}" class="card-img-top" alt="...">
+                                        <img src="{{ asset('theme/img/media/img-2.jpg')}}" class="card-img-top" alt="...">
                                         <div class="card-body">
                                             <h5 class="header-title placeholder-glow">
                                                 <span class="placeholder col-6"> </span>

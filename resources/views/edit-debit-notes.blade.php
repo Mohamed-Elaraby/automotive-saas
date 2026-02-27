@@ -76,8 +76,8 @@
                                                     <div class="col-md-12">
                                                         <div class="mb-3">
                                                             <div class="logo-image">
-                                                                <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                                                <img src="{{URL::asset('build/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                                                <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                                                <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                                             </div>
                                                         </div>
                                                     </div>
@@ -145,7 +145,7 @@
                                                 <div class="p-3 bg-light rounded border">
                                                     <div class="d-flex">
                                                         <div class="me-3">
-                                                            <span class="p-2 rounded border"><img src="{{URL::asset('build/img/logo-small.svg')}}" alt="image" class="img-fluid"></span>
+                                                            <span class="p-2 rounded border"><img src="{{ asset('theme/img/logo-small.svg')}}" alt="image" class="img-fluid"></span>
                                                         </div>
                                                         <div>
                                                             <h6 class="fs-14 mb-1">Kanakku Invoice Management</h6>
@@ -183,7 +183,7 @@
                                                 <div class="p-3 bg-light rounded border">
                                                     <div class="d-flex">
                                                         <div class="me-3">
-                                                            <span><img src="{{URL::asset('build/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
+                                                            <span><img src="{{ asset('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
                                                         </div>
                                                         <div>
                                                             <h6 class="fs-14 mb-1">Timesquare Tech</h6>

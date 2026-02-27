@@ -82,8 +82,8 @@
                                                 <div class="row">
                                                     <div class="col-lg-12">
                                                         <div class="border border-dashed bg-light rounded text-center p-3 mb-3">
-                                                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                                            <img src="{{URL::asset('build/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                                            <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-12">

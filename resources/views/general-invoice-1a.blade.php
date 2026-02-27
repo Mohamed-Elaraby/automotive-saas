@@ -27,7 +27,7 @@
 							</div> <!-- end col -->
 							<div class="col-lg-8">
 								<div class="text-lg-end mb-2">
-									<div class="mb-1"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+									<div class="mb-1"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
 									<p class="mb-1">Invoice No : <span class="text-dark">#005</span></p>
 									<p class="mb-1">Invoice Date : <span class="text-dark">05/10/2024</span></p>
 									<p class="mb-1">Due Date  : <span class="text-dark">05/12/2024</span></p>
@@ -154,7 +154,7 @@
 								<tr>
 									<td colspan="4">
 										<div>
-											<img src="{{URL::asset('build/img/icons/paid.svg')}}" alt="">
+											<img src="{{ asset('theme/img/icons/paid.svg')}}" alt="">
 										</div>
 									</td>
 									<td class="text-dark">
@@ -188,7 +188,7 @@
 					<div class="d-flex align-items-center justify-content-between flex-wrap border-bottom">
 						<div class="d-flex align-items-start mb-3">
 							<div class="me-4">
-								<span class="d-block mb-2"><img src="{{URL::asset('build/img/icons/qr.png')}}" alt=""></span>
+								<span class="d-block mb-2"><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
 								<p class="text-dark">Scan to View Receipt</p>
 							</div>
 							<div>

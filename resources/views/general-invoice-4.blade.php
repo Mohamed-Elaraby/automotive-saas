@@ -16,7 +16,7 @@
 				<div>
 					<div class="d-flex align-items-center justify-content-between bg-light p-3 rounded flex-wrap row-gap-3 mb-3">
 						<div>
-							<div class="mb-1"><img src="{{URL::asset('build/img/invoice-logo.svg')}}" alt=""></div>
+							<div class="mb-1"><img src="{{ asset('theme/img/invoice-logo.svg')}}" alt=""></div>
 						</div>
 						<div>
 							<h5 class="mb-1">TAX INVOICE</h5>
@@ -171,7 +171,7 @@
 						</div>
 						<div class="text-center mb-3">
 							<p class="mb-1">For Dreamstechnologies</p>
-							<span><img src="{{URL::asset('build/img/icons/sign-01.png')}}" alt=""></span>
+							<span><img src="{{ asset('theme/img/icons/sign-01.png')}}" alt=""></span>
 						</div>
 					</div>
 					<div class="border-bottom mb-3 pb-3">

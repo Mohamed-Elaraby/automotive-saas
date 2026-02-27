@@ -16,7 +16,7 @@
                     </div>
                     <div class="col-sm-4 col-md-4 col-lg-4 p-0">
                         <div class="invoice-logo">
-                            <img src="{{URL::asset('build/img/invoice-logo.svg')}}" class="mb-3 image-fluid" alt="img">
+                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="mb-3 image-fluid" alt="img">
                             <p class="mb-3">Original For Recipient</p>
                             <h3 class="text-primary">Dreams Hotel</h3>
                         </div>

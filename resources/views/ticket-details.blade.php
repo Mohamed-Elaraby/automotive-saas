@@ -63,7 +63,7 @@
                         <div class="col-lg-4 p-0 d-flex">
                             <div class="p-3 border flex-fill rounded-left border-end-0">
                                 <div class="d-flex align-items-center">
-                                    <img src="{{URL::asset('build/img/users/user-08.jpg')}}" class="avatar avatar-lg rounded-circle me-2" alt="img">
+                                    <img src="{{ asset('theme/img/users/user-08.jpg')}}" class="avatar avatar-lg rounded-circle me-2" alt="img">
                                     <div>
                                         <h6 class="fs-14 mb-1">Created By</h6>
                                         <p class="fs-13">Michael Carter</p>
@@ -106,7 +106,7 @@
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-3">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{URL::asset('build/img/icons/pdf.svg')}}" alt="img" class="avatar avatar-lg me-2">
+                                            <img src="{{ asset('theme/img/icons/pdf.svg')}}" alt="img" class="avatar avatar-lg me-2">
                                             <div>
                                                 <a href="javascript:void(0);" class="fs-13">Report1.pdf</a>
                                                 <span class="d-block fs-12">45 KB</span>
@@ -119,7 +119,7 @@
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between border rounded p-2">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{URL::asset('build/img/products/product-01.jpg')}}" alt="img" class="avatar avatar-lg me-2">
+                                            <img src="{{ asset('theme/img/products/product-01.jpg')}}" alt="img" class="avatar avatar-lg me-2">
                                             <div>
                                                 <a href="javascript:void(0);" class="fs-13">Image2.jpg</a>
                                                 <span class="d-block fs-12">38 KB</span>
@@ -181,7 +181,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="d-flex align-items-center">
-                            <a href="javascript:void(0);"><img src="{{URL::asset('build/img/users/user-03.jpg')}}" class="avatar avatar-lg rounded-circle me-2" alt="img"></a>
+                            <a href="javascript:void(0);"><img src="{{ asset('theme/img/users/user-03.jpg')}}" class="avatar avatar-lg rounded-circle me-2" alt="img"></a>
                             <div>
                                 <h6 class="fs-14 mb-1"><a href="javascript:void(0);">John Carter</a></h6>
                                 <p class="fs-13">2 weeks ago</p>
@@ -199,7 +199,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div class="d-flex align-items-center">
-                            <a href="javascript:void(0);"><img src="{{URL::asset('build/img/users/user-05.jpg')}}" class="avatar avatar-lg rounded-circle me-2" alt="img"></a>
+                            <a href="javascript:void(0);"><img src="{{ asset('theme/img/users/user-05.jpg')}}" class="avatar avatar-lg rounded-circle me-2" alt="img"></a>
                             <div>
                                 <h6 class="fs-14 mb-1"><a href="javascript:void(0);">Braun Tucker</a></h6>
                                 <p class="fs-13">3 weeks ago</p>
