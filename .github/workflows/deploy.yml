@@ -1,5 +1,6 @@
 name: Deploy to Vultr (main)
 
+
 on:
   push:
     branches:
@@ -72,7 +73,18 @@ jobs:
 
           echo "==> Restart workers"
           php artisan queue:restart || true
-          sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00
+
+          # Ensure Supervisor has latest config and isn't stuck in stale state
+          sudo -n /usr/bin/supervisorctl reread || true
+          sudo -n /usr/bin/supervisorctl update || true
+
+          # Restart with fallback (handles STOPPING / abnormal termination scenarios)
+          sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || \
+          ( sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true; \
+            sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true )
+
+          # Print status for debugging in Actions logs
+          sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
 
           echo "==> Maintenance OFF"
           php artisan up || true
