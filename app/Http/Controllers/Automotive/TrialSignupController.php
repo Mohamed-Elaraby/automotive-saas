@@ -77,7 +77,7 @@ class TrialSignupController extends Controller
         }
 
         // 6) Provision tenant DB + migrate/seed + create tenant admin in tenant users table
-        $this->provisionTenant($tenant, $centralUser);
+
 
         // 7) Redirect to tenant login
 //        return redirect()->to("https://{$fullDomain}/login")
@@ -90,38 +90,5 @@ class TrialSignupController extends Controller
         ], 201);
     }
 
-    protected function provisionTenant(Tenant $tenant, User $centralUser): void
-    {
-        tenancy()->initialize($tenant);
 
-        try {
-            // ✅ migrate tenant DB
-            \Artisan::call('tenants:migrate', [
-                '--tenants' => [$tenant->id],
-                '--force' => true,
-            ]);
-
-            // ✅ seed tenant DB (لو عندك seeder tenant)
-            \Artisan::call('tenants:seed', [
-                '--tenants' => [$tenant->id],
-                '--force' => true,
-            ]);
-
-            // ✅ Create tenant admin user inside tenant database
-            // هنا App\Models\User هيتعامل مع tenant connection لأن tenancy initialized
-            $tenantAdmin = \App\Models\User::query()->firstOrCreate(
-                ['email' => $centralUser->email],
-                [
-                    'name' => $centralUser->name,
-                    'password' => $centralUser->password, // already hashed
-                ]
-            );
-
-            // (اختياري) لو عندك flags في users داخل tenant
-            // $tenantAdmin->update(['is_admin' => true]);
-
-        } finally {
-            tenancy()->end();
-        }
-    }
 }
