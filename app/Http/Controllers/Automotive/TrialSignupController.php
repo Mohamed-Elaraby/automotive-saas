@@ -10,7 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Stancl\Tenancy\Database\Models\Tenant;
+use App\Models\Tenant;
 
 class TrialSignupController extends Controller
 {
