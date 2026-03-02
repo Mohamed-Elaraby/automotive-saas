@@ -4,15 +4,18 @@ namespace App\Models;
 
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
+use Stancl\Tenancy\DatabaseConfig;
 
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     /**
-     * Return the tenant database name.
-     * You can customize the prefix to avoid collisions.
+     * Return database config for this tenant (multi-database).
      */
-    public function database(): string
+    public function database(): DatabaseConfig
     {
-        return 'tenant_' . $this->id;
+        // database name pattern: tenant_{tenantId}
+        return new DatabaseConfig([
+            'database' => 'tenant_' . $this->id,
+        ]);
     }
 }
