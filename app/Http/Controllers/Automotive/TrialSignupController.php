@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Tenant;
+use Stancl\Tenancy\Database\Models\Domain;
 
 class TrialSignupController extends Controller
 {
@@ -51,8 +52,9 @@ class TrialSignupController extends Controller
             ]);
 
             // 3) Attach domain (central)
-            $tenant->domains()->create([
+            Domain::create([
                 'domain' => $fullDomain,
+                'tenant_id' => $tenant->id,
             ]);
 
             // 4) Create subscription (central)
