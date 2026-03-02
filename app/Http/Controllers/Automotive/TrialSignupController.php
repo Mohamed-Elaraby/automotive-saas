@@ -80,8 +80,14 @@ class TrialSignupController extends Controller
         $this->provisionTenant($tenant, $centralUser);
 
         // 7) Redirect to tenant login
-        return redirect()->to("https://{$fullDomain}/login")
-            ->with('success', 'Your trial has been created. Please login.');
+//        return redirect()->to("https://{$fullDomain}/login")
+//            ->with('success', 'Your trial has been created. Please login.');
+        return response()->json([
+            'ok' => true,
+            'tenant_id' => $tenant->id,
+            'domain' => $fullDomain,
+            'login_url' => "https://{$fullDomain}/login",
+        ], 201);
     }
 
     protected function provisionTenant(Tenant $tenant, User $centralUser): void
