@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Automotive\TrialSignupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 //Route::get('/', function () {
 //    return view('welcome');
 //});
+
+Route::post('/automotive/start-trial', TrialSignupController::class)
+    ->name('automotive.startTrial');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

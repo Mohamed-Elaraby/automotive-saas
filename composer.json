@@ -10,6 +10,7 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "seven-scapital/scaffold": "1.0.7",
         "stancl/tenancy": "^3.9"
     },
     "require-dev": {

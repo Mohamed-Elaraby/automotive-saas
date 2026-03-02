@@ -42,4 +42,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function tenants()
+    {
+        return $this->belongsToMany(
+            \App\Models\Tenant::class,
+            'tenant_users',
+            'user_id',
+            'tenant_id'
+        );
+    }
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fe2e99890259fc2c19258b9613894fed",
+    "content-hash": "6a48a4757c2fa298839e03ece824e9dd",
     "packages": [
         {
             "name": "brick/math",
@@ -3213,6 +3213,48 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.2"
             },
             "time": "2025-12-14T04:43:48+00:00"
+        },
+        {
+            "name": "seven-scapital/scaffold",
+            "version": "v1.0.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Mohamed-Elaraby/seven-scaffold-package.git",
+                "reference": "2f24d0c3edeaa0edd74d76dfc51b6cfc1ddca66f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Mohamed-Elaraby/seven-scaffold-package/zipball/2f24d0c3edeaa0edd74d76dfc51b6cfc1ddca66f",
+                "reference": "2f24d0c3edeaa0edd74d76dfc51b6cfc1ddca66f",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^10.0|^11.0|^12.0",
+                "php": ">=8.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Seven\\Scaffold\\SevenScaffoldServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Seven\\Scaffold\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "proprietary"
+            ],
+            "description": "Seven Scaffold Generator",
+            "support": {
+                "issues": "https://github.com/Mohamed-Elaraby/seven-scaffold-package/issues",
+                "source": "https://github.com/Mohamed-Elaraby/seven-scaffold-package/tree/v1.0.7"
+            },
+            "time": "2026-03-02T07:50:04+00:00"
         },
         {
             "name": "stancl/jobpipeline",
