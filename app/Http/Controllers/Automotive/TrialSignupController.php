@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\TenantUser;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Stancl\Tenancy\Database\Models\Domain;
@@ -75,7 +76,19 @@ class TrialSignupController extends Controller
                 ]);
             });
 
-            // ✅ إنشاء نفس اليوزر داخل tenant DB
+            // ✅ شغّل tenant migrations أولًا
+            Artisan::call('tenants:migrate', [
+                '--tenants' => [$tenant->id],
+                '--force' => true,
+            ]);
+
+            // ✅ لو عندك seed command شغال، سيبه. لو لا، سيبه متعطّل مؤقتًا.
+            Artisan::call('tenants:seed', [
+                '--tenants' => [$tenant->id],
+                '--force' => true,
+            ]);
+
+            // ✅ بعد الميجريشن: أنشئ tenant admin
             tenancy()->initialize($tenant);
 
             try {
@@ -83,7 +96,7 @@ class TrialSignupController extends Controller
                     ['email' => $centralUser->email],
                     [
                         'name' => $centralUser->name,
-                        'password' => $centralUser->password, // already hashed
+                        'password' => $centralUser->password,
                     ]
                 );
             } finally {
