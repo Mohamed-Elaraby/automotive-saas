@@ -72,18 +72,16 @@ jobs:
           php artisan view:cache || true
           php artisan event:cache || true
 
-                    echo "==> Restart workers"
+                              echo "==> Restart workers"
           php artisan queue:restart || true
 
           timeout 15s sudo -n /usr/bin/supervisorctl reread || true
           timeout 15s sudo -n /usr/bin/supervisorctl update || true
 
-          timeout 20s sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || \
-          (
-            timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
-            pkill -f "artisan queue:work" || true
-            timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
-          )
+          # لو الـ worker علق في STOPPING، نقتله بالقوة ونشغله من جديد
+          timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
+          pkill -f "artisan queue:work" || true
+          timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
 
           timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
           
