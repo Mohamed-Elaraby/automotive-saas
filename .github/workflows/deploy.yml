@@ -72,20 +72,21 @@ jobs:
           php artisan view:cache || true
           php artisan event:cache || true
 
-          echo "==> Restart workers"
+                    echo "==> Restart workers"
           php artisan queue:restart || true
 
-          # Ensure Supervisor has latest config and isn't stuck in stale state
-          sudo -n /usr/bin/supervisorctl reread || true
-          sudo -n /usr/bin/supervisorctl update || true
+          timeout 15s sudo -n /usr/bin/supervisorctl reread || true
+          timeout 15s sudo -n /usr/bin/supervisorctl update || true
 
-          # Restart with fallback
-          sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || \
-          ( sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true; \
-            sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true )
+          timeout 20s sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || \
+          (
+            timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
+            pkill -f "artisan queue:work" || true
+            timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
+          )
 
-          sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
-
+          timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
+          
           echo "==> Maintenance OFF"
           php artisan up || true
 
