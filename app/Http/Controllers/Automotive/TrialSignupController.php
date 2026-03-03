@@ -46,7 +46,7 @@ class TrialSignupController extends Controller
             ]
         );
 
-        // مهم: خارج أي transaction
+        // ✅ مهم: خارج أي transaction
         $tenant = Tenant::create([
             'id' => $tenantId,
             'data' => [
@@ -56,6 +56,7 @@ class TrialSignupController extends Controller
         ]);
 
         try {
+            // ✅ كل الجداول المركزية فقط داخل central context
             DB::transaction(function () use ($tenant, $centralUser, $fullDomain) {
                 Domain::create([
                     'domain' => $fullDomain,
@@ -76,19 +77,23 @@ class TrialSignupController extends Controller
                 ]);
             });
 
-            // ✅ شغّل tenant migrations أولًا
+            // ✅ migrate tenant DB first
             Artisan::call('tenants:migrate', [
                 '--tenants' => [$tenant->id],
                 '--force' => true,
             ]);
 
-            // ✅ لو عندك seed command شغال، سيبه. لو لا، سيبه متعطّل مؤقتًا.
-            Artisan::call('tenants:seed', [
-                '--tenants' => [$tenant->id],
-                '--force' => true,
-            ]);
+            // ✅ لو seed موجود شغال سيبه. لو لا علّقه.
+            try {
+                Artisan::call('tenants:seed', [
+                    '--tenants' => [$tenant->id],
+                    '--force' => true,
+                ]);
+            } catch (\Throwable $e) {
+                // ignore if seed command not configured
+            }
 
-            // ✅ بعد الميجريشن: أنشئ tenant admin
+            // ✅ create tenant admin داخل tenant DB
             tenancy()->initialize($tenant);
 
             try {
@@ -104,11 +109,18 @@ class TrialSignupController extends Controller
             }
 
         } catch (\Throwable $e) {
-            // cleanup لو أي حاجة فشلت
-            Domain::query()->where('tenant_id', $tenant->id)->delete();
-            Subscription::query()->where('tenant_id', $tenant->id)->delete();
-            TenantUser::query()->where('tenant_id', $tenant->id)->delete();
-            Tenant::query()->where('id', $tenant->id)->delete();
+            // ✅ تأكد إننا رجعنا للـ central context قبل أي cleanup
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                tenancy()->end();
+            }
+
+            // ✅ cleanup على الجداول المركزية فقط
+            DB::connection(config('database.default'))->transaction(function () use ($tenant) {
+                Domain::query()->where('tenant_id', $tenant->id)->delete();
+                Subscription::query()->where('tenant_id', $tenant->id)->delete();
+                TenantUser::query()->where('tenant_id', $tenant->id)->delete();
+                Tenant::query()->where('id', $tenant->id)->delete();
+            });
 
             throw $e;
         }
