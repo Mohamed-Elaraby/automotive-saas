@@ -45,7 +45,7 @@ class TrialSignupController extends Controller
             ]
         );
 
-        // ✅ مهم: خارج أي transaction
+        // مهم: خارج أي transaction
         $tenant = Tenant::create([
             'id' => $tenantId,
             'data' => [
@@ -74,8 +74,24 @@ class TrialSignupController extends Controller
                     'role' => 'owner',
                 ]);
             });
+
+            // ✅ إنشاء نفس اليوزر داخل tenant DB
+            tenancy()->initialize($tenant);
+
+            try {
+                \App\Models\User::query()->firstOrCreate(
+                    ['email' => $centralUser->email],
+                    [
+                        'name' => $centralUser->name,
+                        'password' => $centralUser->password, // already hashed
+                    ]
+                );
+            } finally {
+                tenancy()->end();
+            }
+
         } catch (\Throwable $e) {
-            // cleanup لو فشل الربط المركزي
+            // cleanup لو أي حاجة فشلت
             Domain::query()->where('tenant_id', $tenant->id)->delete();
             Subscription::query()->where('tenant_id', $tenant->id)->delete();
             TenantUser::query()->where('tenant_id', $tenant->id)->delete();
