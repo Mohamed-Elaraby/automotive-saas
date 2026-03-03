@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Automotive;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StartTrialRequest;
-use App\Models\Subscription;
 use App\Models\Tenant;
-use App\Models\TenantUser;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -19,6 +17,7 @@ class TrialSignupController extends Controller
     public function __invoke(StartTrialRequest $request)
     {
         $baseDomain = 'automotive.seven-scapital.com';
+        $centralConnection = config('database.default');
 
         $sub = strtolower(trim($request->input('subdomain')));
         $tenantId = $sub;
@@ -46,7 +45,7 @@ class TrialSignupController extends Controller
             ]
         );
 
-        // ✅ مهم: خارج أي transaction
+        // IMPORTANT: Tenant::create stays OUTSIDE any DB transaction
         $tenant = Tenant::create([
             'id' => $tenantId,
             'data' => [
@@ -56,44 +55,46 @@ class TrialSignupController extends Controller
         ]);
 
         try {
-            // ✅ كل الجداول المركزية فقط داخل central context
-            DB::transaction(function () use ($tenant, $centralUser, $fullDomain) {
-                Domain::create([
+            // Central records ONLY, explicitly on central connection
+            DB::connection($centralConnection)->transaction(function () use ($tenant, $centralUser, $fullDomain, $centralConnection) {
+                DB::connection($centralConnection)->table('domains')->insert([
                     'domain' => $fullDomain,
                     'tenant_id' => $tenant->id,
                 ]);
 
-                Subscription::create([
+                DB::connection($centralConnection)->table('subscriptions')->insert([
                     'tenant_id' => $tenant->id,
                     'plan_id' => null,
                     'status' => 'trialing',
                     'trial_ends_at' => Carbon::now()->addDays(14),
+                    'ends_at' => null,
+                    'external_id' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
-                TenantUser::create([
+                DB::connection($centralConnection)->table('tenant_users')->insert([
                     'tenant_id' => $tenant->id,
                     'user_id' => $centralUser->id,
                     'role' => 'owner',
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             });
 
-            // ✅ migrate tenant DB first
+            // Tenant DB migrations FIRST
             Artisan::call('tenants:migrate', [
                 '--tenants' => [$tenant->id],
                 '--force' => true,
             ]);
 
-            // ✅ لو seed موجود شغال سيبه. لو لا علّقه.
-            try {
-                Artisan::call('tenants:seed', [
-                    '--tenants' => [$tenant->id],
-                    '--force' => true,
-                ]);
-            } catch (\Throwable $e) {
-                // ignore if seed command not configured
-            }
+            // Seed disabled for now until everything stabilizes
+            // Artisan::call('tenants:seed', [
+            //     '--tenants' => [$tenant->id],
+            //     '--force' => true,
+            // ]);
 
-            // ✅ create tenant admin داخل tenant DB
+            // Create tenant admin inside tenant DB
             tenancy()->initialize($tenant);
 
             try {
@@ -106,23 +107,45 @@ class TrialSignupController extends Controller
                 );
             } finally {
                 tenancy()->end();
+                DB::purge('tenant');
             }
 
         } catch (\Throwable $e) {
-            // ✅ تأكد إننا رجعنا للـ central context قبل أي cleanup
-            if (function_exists('tenancy') && tenancy()->initialized) {
-                tenancy()->end();
+            // Always leave tenant context before touching central DB
+            try {
+                if (function_exists('tenancy') && tenancy()->initialized) {
+                    tenancy()->end();
+                }
+            } catch (\Throwable) {
+                //
             }
 
-            // ✅ cleanup على الجداول المركزية فقط
-            DB::connection(config('database.default'))->transaction(function () use ($tenant) {
-                Domain::query()->where('tenant_id', $tenant->id)->delete();
-                Subscription::query()->where('tenant_id', $tenant->id)->delete();
-                TenantUser::query()->where('tenant_id', $tenant->id)->delete();
-                Tenant::query()->where('id', $tenant->id)->delete();
+            DB::purge('tenant');
+
+            // Central cleanup ONLY, explicitly on central connection
+            DB::connection($centralConnection)->transaction(function () use ($tenant, $centralConnection) {
+                DB::connection($centralConnection)->table('domains')
+                    ->where('tenant_id', $tenant->id)
+                    ->delete();
+
+                DB::connection($centralConnection)->table('subscriptions')
+                    ->where('tenant_id', $tenant->id)
+                    ->delete();
+
+                DB::connection($centralConnection)->table('tenant_users')
+                    ->where('tenant_id', $tenant->id)
+                    ->delete();
+
+                DB::connection($centralConnection)->table('tenants')
+                    ->where('id', $tenant->id)
+                    ->delete();
             });
 
-            throw $e;
+            report($e);
+
+            return response()->json([
+                'message' => 'Provisioning failed.',
+            ], 500);
         }
 
         return response()->json([
