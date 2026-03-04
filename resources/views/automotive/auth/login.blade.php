@@ -1,5 +1,5 @@
-<?php $page = 'login'; ?>
-@extends('layout.mainlayout')
+<?php $page = 'automotive/admin/login'; ?>
+@extends('automotive.layouts.adminLayout.mainlayout')
 @section('content')
     <!-- ========================
         Start Page Content
@@ -61,13 +61,13 @@
                                         <div class="d-flex align-items-center justify-content-center flex-wrap">
                                             <div class="text-center me-2 flex-fill">
                                                 <a href="javascript:void(0);"
-                                                    class="br-10 p-1 btn btn-light d-flex align-items-center justify-content-center">
+                                                   class="br-10 p-1 btn btn-light d-flex align-items-center justify-content-center">
                                                     <img class="img-fluid m-1" src="{{ asset('theme/img/icons/facebook-logo.svg')}}" alt="Facebook">
                                                 </a>
                                             </div>
                                             <div class="text-center me-2 flex-fill">
                                                 <a href="javascript:void(0);"
-                                                    class="br-10 p-1 btn btn-light d-flex align-items-center justify-content-center">
+                                                   class="br-10 p-1 btn btn-light d-flex align-items-center justify-content-center">
                                                     <img class="img-fluid m-1" src="{{ asset('theme/img/icons/google-logo.svg')}}" alt="Google">
                                                 </a>
                                             </div>
@@ -92,3 +92,4 @@
         End Page Content
     ========================= -->
 @endsection
+

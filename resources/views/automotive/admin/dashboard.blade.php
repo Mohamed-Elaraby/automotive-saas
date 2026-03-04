@@ -1,4 +1,4 @@
-@extends('layout.mainlayout')
+@extends('automotive.layouts.adminLayout.mainlayout')
 
 @section('title','Dashboard')
 

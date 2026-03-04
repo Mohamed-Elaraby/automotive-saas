@@ -12,7 +12,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(TestModel2Seeder::class);
+        // <seven-scaffold-seeders>
+$this->call(TestModel2Seeder::class);
 $this->call(TestModelSeeder::class);
 // \App\Models\User::factory(10)->create();
 

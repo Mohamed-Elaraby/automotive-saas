@@ -21,9 +21,6 @@ use Illuminate\Support\Facades\Route;
 //Route::post('/automotive/start-trial', TrialSignupController::class)
 //    ->name('automotive.startTrial');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
 
 Route::get('/', function () {
     return view('index');
@@ -297,9 +294,9 @@ Route::get('/lock-screen', function () {
     return view('lock-screen');
 })->name('lock-screen');
 
-Route::get('/login', function () {
-    return view('login');
-})->name('login');
+//Route::get('/login', function () {
+//    return view('login');
+//})->name('login');
 
 Route::get('/low-stock', function () {
     return view('low-stock');
@@ -1303,3 +1300,9 @@ Route::get('/add-debit-notes', function () {
     return view('add-debit-notes');
 })->name('add-debit-notes');
 
+require __DIR__.'/admin.php';
+require __DIR__.'/front.php';
+
+Auth::routes();
+
+//Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
