@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\automotive\Admin\Auth\AuthController;
-use App\Http\Controllers\automotive\Admin\DashboardController;
+use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
+use App\Http\Controllers\Automotive\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('automotive/admin')

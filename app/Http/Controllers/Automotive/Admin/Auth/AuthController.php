@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\automotive\Admin\Auth;
+namespace App\Http\Controllers\Automotive\Admin\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
