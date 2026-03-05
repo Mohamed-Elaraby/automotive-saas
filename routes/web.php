@@ -1300,9 +1300,6 @@ Route::get('/add-debit-notes', function () {
     return view('add-debit-notes');
 })->name('add-debit-notes');
 
-require __DIR__.'/admin.php';
-require __DIR__.'/front.php';
-
 Auth::routes();
 
 //Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

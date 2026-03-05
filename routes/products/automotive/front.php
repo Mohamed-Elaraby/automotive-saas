@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::middleware([])
-    ->group(function (){
+Route::prefix('automotive')
+    ->name('automotive.')
+    ->group(function () {
 
         // <seven-scaffold-routes>
 

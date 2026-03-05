@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('automotive.layouts.adminLayout.mainlayout')
 
 @section('content')
 <div class="container">
