@@ -1,20 +1,20 @@
 <?php
 
-
-use App\Http\Controllers\Automotive\Admin\Auth\RegisterController;
+use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
+use App\Http\Controllers\Automotive\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('automotive/admin')
     ->name('automotive.admin.')
     ->group(function () {
 
-        // Auth
+        // Auth (Tenant)
         Route::middleware('guest:automotive_admin')->group(function () {
-            Route::get('/login', [RegisterController::class, 'login'])->name('login');
-            Route::post('/login', [RegisterController::class, 'doLogin'])->name('login.submit');
+            Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+            Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
         });
 
-        Route::post('/logout', [RegisterController::class, 'logout'])
+        Route::post('/logout', [AuthController::class, 'logout'])
             ->middleware('auth:automotive_admin')
             ->name('logout');
 
