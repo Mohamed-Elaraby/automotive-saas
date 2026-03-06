@@ -94,6 +94,9 @@ jobs:
           php artisan view:cache || true
           php artisan event:cache || true
 
+          echo "==> Restart PHP-FPM"
+          sudo -n /usr/bin/systemctl restart php8.2-fpm || true
+
           echo "==> Restart workers"
           php artisan queue:restart || true
 
