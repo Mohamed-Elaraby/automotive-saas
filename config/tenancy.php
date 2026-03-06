@@ -23,10 +23,10 @@ return [
     */
 
     'central_domains' => [
-        '127.0.0.1',
-        'localhost',
+        'seven-scapital.com',
+        'www.seven-scapital.com',
         'automotive.seven-scapital.com',
-        '216.128.148.123',
+        'spareparts.seven-scapital.com',
     ],
 
     /*
