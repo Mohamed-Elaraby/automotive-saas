@@ -11,8 +11,8 @@
         <div class="w-100 overflow-hidden position-relative flex-wrap d-block vh-100">
             <div class="row justify-content-center align-items-center vh-100 overflow-auto flex-wrap ">
                 <div class="col-lg-4 mx-auto">
-                    <form method="POST" action="{{ route('automotive.admin.login.submit') }}" class="d-flex justify-content-center align-items-center">
-                        @csrf
+{{--                    <form method="POST" action="{{ route('automotive.admin.login.submit') }}" class="d-flex justify-content-center align-items-center">--}}
+                    <form method="POST" action="{{ url('/automotive/admin/login') }}" class="d-flex justify-content-center align-items-center">                        @csrf
 
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class=" mx-auto mb-5 text-center">
@@ -83,8 +83,9 @@
                                         </div>
 
                                         <div class="text-end">
-                                            <a href="{{ route('automotive.admin.forgot') }}">Forgot Password</a>
-                                        </div>
+                                            @if (\Illuminate\Support\Facades\Route::has('automotive.admin.forgot'))
+                                                <a href="{{ route('automotive.admin.forgot') }}">Forgot Password</a>
+                                            @endif                                        </div>
                                     </div>
 
                                     <div class="mb-1">
@@ -93,7 +94,9 @@
 
                                     <div class="text-center mt-3">
                                         <h6 class="fw-normal fs-14 text-dark mb-0">Don’t have an account yet?
-                                            <a href="{{ route('automotive.admin.register') }}" class="hover-a"> Register</a>
+                                            @if (\Illuminate\Support\Facades\Route::has('automotive.admin.register'))
+                                                <a href="{{ route('automotive.admin.register') }}" class="hover-a"> Register</a>
+                                            @endif
                                         </h6>
                                     </div>
 
