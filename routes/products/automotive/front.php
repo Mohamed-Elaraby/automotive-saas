@@ -1,13 +1,9 @@
 <?php
 
-
-use App\Http\Controllers\automotive\Admin\Auth\AuthController;
+use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('automotive')
-    ->name('automotive.')
-    ->group(function () {
-        // <seven-scaffold-routes>
-        Route::get('/register', [AuthController::class, 'register'])->name('register');
-        Route::post('/register', [AuthController::class, 'doRegister'])->name('register.submit');
-    });
+Route::prefix('automotive')->name('automotive.')->group(function () {
+    Route::get('/register', [RegisterController::class, 'show'])->name('register');
+    Route::post('/register', [RegisterController::class, 'submit'])->name('register.submit');
+});
