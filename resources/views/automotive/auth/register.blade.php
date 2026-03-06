@@ -1,77 +1,142 @@
-@extends('automotive.layouts.adminLayout.mainlayout')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Free Trial - Automotive SaaS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 0;
+        }
+        .wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.08);
+            padding: 30px;
+        }
+        h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            border: 1px solid #d8dce3;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            border: 0;
+            background: #1d4ed8;
+            color: #fff;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .error {
+            background: #fdecec;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+        .field-error {
+            color: #b91c1c;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+        .hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="card">
+        <h1>Start Your 14-Day Free Trial</h1>
+        <p>Create your Automotive SaaS account and get your own subdomain instantly.</p>
 
-@section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Register') }}</div>
-
-                <div class="card-body">
-                    <form method="POST" action="{{ route('register') }}">
-                        @csrf
-
-                        <div class="row mb-3">
-                            <label for="name" class="col-md-4 col-form-label text-md-end">{{ __('Name') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
-
-                                @error('name')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email">
-
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                            </div>
-                        </div>
-
-                        <div class="row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+        @if ($errors->any())
+            <div class="error">
+                <strong>Please review the form.</strong>
+                @if ($errors->has('register'))
+                    <div style="margin-top:8px;">{{ $errors->first('register') }}</div>
+                @endif
             </div>
-        </div>
+        @endif
+
+        <form method="POST" action="{{ route('automotive.register.submit') }}">
+            @csrf
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input id="name" type="text" name="name" value="{{ old('name') }}" required>
+                @error('name') <div class="field-error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="email">Business Email</label>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required>
+                @error('email') <div class="field-error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="company_name">Company Name</label>
+                <input id="company_name" type="text" name="company_name" value="{{ old('company_name') }}" required>
+                @error('company_name') <div class="field-error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="subdomain">Subdomain</label>
+                <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" required>
+                <div class="hint">Example: mido → mido.automotive.seven-scapital.com</div>
+                @error('subdomain') <div class="field-error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" required>
+                @error('password') <div class="field-error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="password_confirmation">Confirm Password</label>
+                <input id="password_confirmation" type="password" name="password_confirmation" required>
+            </div>
+
+            <button type="submit">Start Free Trial</button>
+        </form>
     </div>
 </div>
-@endsection
+</body>
+</html>

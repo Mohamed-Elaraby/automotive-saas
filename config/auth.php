@@ -43,7 +43,7 @@ return [
 
         'automotive_admin' => [
             'driver' => 'session',
-            'provider' => 'tenant_users',
+            'provider' => 'automotive_admin_users',
         ],
     ],
 
@@ -70,9 +70,9 @@ return [
             'model' => App\Models\User::class,
         ],
 
-        'tenant_users' => [
+        'automotive_admin_users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\TenantUser::class,
+            'model' => App\Models\User::class,
         ],
 
         // 'users' => [

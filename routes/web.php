@@ -1302,4 +1302,7 @@ Route::get('/add-debit-notes', function () {
 
 Auth::routes();
 
+// Central product routes
+require base_path('routes/products/automotive/front.php');
+
 //Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
