@@ -2,16 +2,21 @@
 
 namespace App\Models;
 
-use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
-use Stancl\Tenancy\DatabaseConfig;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
+use Stancl\Tenancy\Database\Concerns\HasDatabase;
 
-class Tenant extends BaseTenant implements TenantWithDatabase
+class Tenant extends BaseTenant
 {
-    public function database(): DatabaseConfig
-    {
-        return new DatabaseConfig($this, [
-            'database' => $this->getInternal('db_name') ?: ('tenant_' . $this->id),
-        ]);
-    }
+    use HasDomains;
+    use HasDatabase;
+
+    protected $fillable = [
+        'id',
+        'data',
+    ];
+
+    protected $casts = [
+        'data' => 'array',
+    ];
 }
