@@ -30,10 +30,17 @@ jobs:
       - name: Deploy
         env:
           HOST: ${{ secrets.VULTR_HOST }}
-          USER: ${{ secrets.deploy }}
           PORT: ${{ secrets.VULTR_PORT }}
+          USER: ${{ secrets.VULTR_USER }}
         run: |
+          # Fail fast if USER/HOST/PORT are empty
+          test -n "$HOST"
+          test -n "$PORT"
+          test -n "$USER"
+
           ssh -p "$PORT" \
+          -o BatchMode=yes \
+          -o StrictHostKeyChecking=yes \
           -o ServerAliveInterval=30 \
           -o ServerAliveCountMax=10 \
           -o TCPKeepAlive=yes \
@@ -70,7 +77,6 @@ jobs:
           echo "==> Install PHP deps"
           timeout 10m composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-          # Build assets BEFORE maintenance to avoid long 503 windows
           echo "==> Frontend build"
           timeout 10m npm ci
           timeout 10m npm run build
@@ -96,9 +102,8 @@ jobs:
 
           # لو الـ worker علق في STOPPING، نقتله بالقوة ونشغله من جديد
           timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
-          sudo -n pkill -f "artisan queue:work" || true
+          timeout 10s sudo -n /usr/bin/pkill -f "artisan queue:work" || true
           timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
-
           timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
 
           echo "==> Maintenance OFF"
