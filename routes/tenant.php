@@ -17,13 +17,18 @@ Route::middleware([
         return 'TENANT HOME: ' . tenant('id');
     });
 
-    Route::get('/__tenant_check', function () {
-        return response()->json([
-            'tenant_id' => tenant('id'),
-            'db' => DB::connection()->getDatabaseName(),
-            'default_connection' => config('database.default'),
-        ]);
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | Product Routes (Tenant scoped)
+    |--------------------------------------------------------------------------
+    | كل product له ملفات routes منفصلة: admin + front
+    */
+    require base_path('routes/products/automotive/admin.php');
+//    require __DIR__ . '/products/automotive/front.php';
+//    require __DIR__ . '/products/automotive/admin.php';
 
-    Route::get('/__tenant', fn () => 'TENANT OK');
+    // لما تزود product جديد:
+    // require __DIR__ . '/products/spareparts/front.php';
+    // require __DIR__ . '/products/spareparts/admin.php';
+
 });

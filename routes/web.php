@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Automotive\TrialSignupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,9 +18,9 @@ use Illuminate\Support\Facades\Route;
 //    return view('welcome');
 //});
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
+//Route::post('/automotive/start-trial', TrialSignupController::class)
+//    ->name('automotive.startTrial');
+
 
 Route::get('/', function () {
     return view('index');
@@ -293,9 +294,9 @@ Route::get('/lock-screen', function () {
     return view('lock-screen');
 })->name('lock-screen');
 
-Route::get('/login', function () {
-    return view('login');
-})->name('login');
+//Route::get('/login', function () {
+//    return view('login');
+//})->name('login');
 
 Route::get('/low-stock', function () {
     return view('low-stock');
@@ -1300,5 +1301,9 @@ Route::get('/add-debit-notes', function () {
 })->name('add-debit-notes');
 
 
-require __DIR__.'/admin.php';
-require __DIR__.'/front.php';
+Auth::routes();
+
+// Central product routes
+require base_path('routes/products/automotive/front.php');
+
+//Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

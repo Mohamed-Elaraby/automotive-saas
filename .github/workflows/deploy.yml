@@ -30,10 +30,17 @@ jobs:
       - name: Deploy
         env:
           HOST: ${{ secrets.VULTR_HOST }}
-          USER: ${{ secrets.VULTR_USER }}
           PORT: ${{ secrets.VULTR_PORT }}
+          USER: ${{ secrets.VULTR_USER }}
         run: |
+          # Fail fast if USER/HOST/PORT are empty
+          test -n "$HOST"
+          test -n "$PORT"
+          test -n "$USER"
+
           ssh -p "$PORT" \
+          -o BatchMode=yes \
+          -o StrictHostKeyChecking=yes \
           -o ServerAliveInterval=30 \
           -o ServerAliveCountMax=10 \
           -o TCPKeepAlive=yes \
@@ -44,24 +51,41 @@ jobs:
           APP_DIR="/var/www/automotive"
           cd "$APP_DIR"
 
+          # Always bring app back up even if something fails
           trap 'php artisan up || true' EXIT
 
+          echo "==> Fix runtime dirs permissions (storage & cache)"
+          sudo -n chown -R www-data:www-data storage bootstrap/cache || true
+          sudo -n chmod -R 775 storage bootstrap/cache || true
+
+          echo "==> Protect runtime .gitignore from git reset"
+          git update-index --skip-worktree bootstrap/cache/.gitignore || true
+          git update-index --skip-worktree storage/app/.gitignore || true
+          git update-index --skip-worktree storage/app/public/.gitignore || true
+          git update-index --skip-worktree storage/framework/.gitignore || true
+          git update-index --skip-worktree storage/framework/cache/.gitignore || true
+          git update-index --skip-worktree storage/framework/cache/data/.gitignore || true
+          git update-index --skip-worktree storage/framework/sessions/.gitignore || true
+          git update-index --skip-worktree storage/framework/testing/.gitignore || true
+          git update-index --skip-worktree storage/framework/views/.gitignore || true
+          git update-index --skip-worktree storage/logs/.gitignore || true
+
           echo "==> Pull latest code"
-          git fetch --all --prune
+          git fetch origin main
           git reset --hard origin/main
 
           echo "==> Install PHP deps"
-          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+          timeout 10m composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-          echo "==> Maintenance ON"
+          echo "==> Frontend build"
+          timeout 10m npm ci
+          timeout 10m npm run build
+
+          echo "==> Maintenance ON (short window)"
           php artisan down --render="errors::503" || true
 
           echo "==> Central migrations only"
           php artisan migrate --force
-
-          echo "==> Frontend build"
-          npm ci
-          npm run build
 
           echo "==> Optimize caches"
           php artisan optimize:clear
@@ -72,7 +96,15 @@ jobs:
 
           echo "==> Restart workers"
           php artisan queue:restart || true
-          sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00
+
+          timeout 15s sudo -n /usr/bin/supervisorctl reread || true
+          timeout 15s sudo -n /usr/bin/supervisorctl update || true
+
+          # لو الـ worker علق في STOPPING، نقتله بالقوة ونشغله من جديد
+          timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
+          timeout 10s sudo -n /usr/bin/pkill -f "artisan queue:work" || true
+          timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
+          timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
 
           echo "==> Maintenance OFF"
           php artisan up || true

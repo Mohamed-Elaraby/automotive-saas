@@ -59,7 +59,7 @@
 @endif
 
 @if(Route::is(['error-404', 'coming-soon', 'error-500', 'lock-screen', 'login', 'success', 'two-step-verification', 'under-construction', 'under-maintenance', 'email-verification', 'forgot-password','free-trial','reset-password','register']))
-<div class="main-wrapper auth-bg">     
+<div class="main-wrapper auth-bg">
 @endif
 
     @if (!Route::is(['signin', 'signup','coming-soon', 'error-404', 'error-500', 'under-construction','change-password','forgot-password','lock-screen','general-invoice-1','general-invoice-1a','general-invoice-2',
@@ -67,10 +67,10 @@
         @include('layout.partials.header')
     @endif
     @if(!Route::is(['signin', 'signup','coming-soon', 'error-404', 'error-500', 'under-construction','change-password','forgot-password','lock-screen','general-invoice-1','general-invoice-1a','general-invoice-2',
-    'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))         
+    'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))
         @include('layout.partials.sidebar')
     @endif
-        @yield('content')        
+        @yield('content')
     @component('components.modal-popup')
     @endcomponent
 </div>

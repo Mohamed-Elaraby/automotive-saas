@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         // <seven-scaffold-seeders>
         $this->call(Branch2Seeder::class);
         $this->call(BranchSeeder::class);
+
 // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([
