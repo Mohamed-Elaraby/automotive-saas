@@ -30,7 +30,7 @@ jobs:
       - name: Deploy
         env:
           HOST: ${{ secrets.VULTR_HOST }}
-          USER: ${{ secrets.VULTR_USER }}
+          USER: ${{ secrets.deploy }}
           PORT: ${{ secrets.VULTR_PORT }}
         run: |
           ssh -p "$PORT" \
@@ -46,6 +46,22 @@ jobs:
 
           # Always bring app back up even if something fails
           trap 'php artisan up || true' EXIT
+
+          echo "==> Fix runtime dirs permissions (storage & cache)"
+          sudo -n chown -R www-data:www-data storage bootstrap/cache || true
+          sudo -n chmod -R 775 storage bootstrap/cache || true
+
+          echo "==> Protect runtime .gitignore from git reset"
+          git update-index --skip-worktree bootstrap/cache/.gitignore || true
+          git update-index --skip-worktree storage/app/.gitignore || true
+          git update-index --skip-worktree storage/app/public/.gitignore || true
+          git update-index --skip-worktree storage/framework/.gitignore || true
+          git update-index --skip-worktree storage/framework/cache/.gitignore || true
+          git update-index --skip-worktree storage/framework/cache/data/.gitignore || true
+          git update-index --skip-worktree storage/framework/sessions/.gitignore || true
+          git update-index --skip-worktree storage/framework/testing/.gitignore || true
+          git update-index --skip-worktree storage/framework/views/.gitignore || true
+          git update-index --skip-worktree storage/logs/.gitignore || true
 
           echo "==> Pull latest code"
           git fetch origin main
@@ -72,7 +88,7 @@ jobs:
           php artisan view:cache || true
           php artisan event:cache || true
 
-                              echo "==> Restart workers"
+          echo "==> Restart workers"
           php artisan queue:restart || true
 
           timeout 15s sudo -n /usr/bin/supervisorctl reread || true
@@ -80,11 +96,11 @@ jobs:
 
           # لو الـ worker علق في STOPPING، نقتله بالقوة ونشغله من جديد
           timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
-          pkill -f "artisan queue:work" || true
+          sudo -n pkill -f "artisan queue:work" || true
           timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
 
           timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
-          
+
           echo "==> Maintenance OFF"
           php artisan up || true
 
