@@ -55,8 +55,8 @@ jobs:
           trap 'php artisan up || true' EXIT
 
           echo "==> Fix runtime dirs permissions (storage & cache)"
-          sudo -n chown -R www-data:www-data storage bootstrap/cache || true
-          sudo -n chmod -R 775 storage bootstrap/cache || true
+          sudo -n /bin/chown -R www-data:www-data storage bootstrap/cache || true
+          sudo -n /bin/chmod -R 2775 storage bootstrap/cache || true
 
           echo "==> Protect runtime .gitignore from git reset"
           git update-index --skip-worktree bootstrap/cache/.gitignore || true
