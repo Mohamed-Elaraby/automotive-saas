@@ -102,13 +102,14 @@ jobs:
           timeout 15s sudo -n /usr/bin/supervisorctl update || true
 
           echo "==> Restart worker (non-blocking)"
-          # restart is usually faster than stop/start
+          # restart أسرع من stop/start وغالبًا لا يعلق
           timeout 15s sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || true
 
-          # If still stuck, force kill and start
+          # لو لسه STOPPING، اقتله بالقوة ثم ابدأه
           if sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 | grep -qi "STOPPING"; then
             echo "==> Worker stuck in STOPPING, force killing queue:work"
             timeout 5s sudo -n /usr/bin/pkill -f "artisan queue:work" || true
+            timeout 5s sudo -n /usr/bin/pkill -9 -f "artisan queue:work" || true
             timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
           fi
 
