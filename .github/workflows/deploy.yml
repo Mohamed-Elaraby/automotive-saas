@@ -97,13 +97,21 @@ jobs:
           echo "==> Restart workers"
           php artisan queue:restart || true
 
+          echo "==> Reload supervisor configs"
           timeout 15s sudo -n /usr/bin/supervisorctl reread || true
           timeout 15s sudo -n /usr/bin/supervisorctl update || true
 
-          # لو الـ worker علق في STOPPING، نقتله بالقوة ونشغله من جديد
-          timeout 10s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
-          timeout 10s sudo -n /usr/bin/pkill -f "artisan queue:work" || true
-          timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
+          echo "==> Restart worker (non-blocking)"
+          # restart is usually faster than stop/start
+          timeout 15s sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || true
+
+          # If still stuck, force kill and start
+          if sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 | grep -qi "STOPPING"; then
+            echo "==> Worker stuck in STOPPING, force killing queue:work"
+            timeout 5s sudo -n /usr/bin/pkill -f "artisan queue:work" || true
+            timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
+          fi
+
           timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
 
           echo "==> Maintenance OFF"
