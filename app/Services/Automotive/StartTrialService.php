@@ -14,14 +14,14 @@ class StartTrialService
 {
     public function start(array $data): array
     {
-        $baseDomain = 'automotive.seven-scapital.com';
         $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
 
         $sub = strtolower(trim($data['subdomain']));
-        $tenantId = $sub;
-        $fullDomain = "{$sub}.{$baseDomain}";
+        $baseHost = strtolower(trim($data['base_host'] ?? 'automotive.seven-scapital.com'));
 
-        // Validate domain uniqueness
+        $tenantId = $sub;
+        $fullDomain = "{$sub}.{$baseHost}";
+
         if (Domain::query()->where('domain', $fullDomain)->exists()) {
             return [
                 'ok' => false,
@@ -48,7 +48,6 @@ class StartTrialService
             ]
         );
 
-        // IMPORTANT: Tenant::create stays OUTSIDE any DB transaction
         $tenant = Tenant::create([
             'id' => $tenantId,
             'data' => [
@@ -58,7 +57,6 @@ class StartTrialService
         ]);
 
         try {
-            // Central records ONLY, explicitly on central connection
             DB::connection($centralConnection)->transaction(function () use ($tenant, $centralUser, $fullDomain, $centralConnection) {
                 DB::connection($centralConnection)->table('domains')->insert([
                     'domain' => $fullDomain,
@@ -85,13 +83,11 @@ class StartTrialService
                 ]);
             });
 
-            // Tenant DB migrations FIRST
             Artisan::call('tenants:migrate', [
                 '--tenants' => [$tenant->id],
                 '--force' => true,
             ]);
 
-            // Create tenant admin inside tenant DB
             tenancy()->initialize($tenant);
 
             try {
@@ -106,9 +102,7 @@ class StartTrialService
                 tenancy()->end();
                 DB::purge('tenant');
             }
-
         } catch (\Throwable $e) {
-            // Always leave tenant context before touching central DB
             try {
                 if (function_exists('tenancy') && tenancy()->initialized) {
                     tenancy()->end();
@@ -119,7 +113,6 @@ class StartTrialService
 
             DB::purge('tenant');
 
-            // Central cleanup ONLY, explicitly on central connection
             DB::connection($centralConnection)->transaction(function () use ($tenant, $centralConnection) {
                 DB::connection($centralConnection)->table('domains')
                     ->where('tenant_id', $tenant->id)
@@ -153,7 +146,6 @@ class StartTrialService
             'status' => 201,
             'tenant_id' => $tenant->id,
             'domain' => $fullDomain,
-            // ✅ مهم: ده اللينك الصحيح حسب الراوتس المنظمة
             'login_url' => "https://{$fullDomain}/automotive/admin/login",
         ];
     }

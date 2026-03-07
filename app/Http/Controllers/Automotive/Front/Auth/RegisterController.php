@@ -33,6 +33,7 @@ class RegisterController extends Controller
         }
 
         $data = $validator->validated();
+        $data['base_host'] = $request->getHost();
 
         $result = $service->start($data);
 
