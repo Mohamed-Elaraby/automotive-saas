@@ -9,7 +9,7 @@ Route::prefix('automotive/admin')
     ->group(function () {
 
         // Auth (Tenant)
-        Route::middleware('guest:automotive_admin')->group(function () {
+        Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
             Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
             Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
         });

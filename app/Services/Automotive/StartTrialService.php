@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Stancl\Tenancy\Database\Models\Domain;
+use App\Support\SubscriptionStatus;
 
 class StartTrialService
 {
@@ -66,7 +67,7 @@ class StartTrialService
                 DB::connection($centralConnection)->table('subscriptions')->insert([
                     'tenant_id' => $tenant->id,
                     'plan_id' => null,
-                    'status' => 'trialing',
+                    'status' => SubscriptionStatus::TRIALING,
                     'trial_ends_at' => Carbon::now()->addDays(14),
                     'ends_at' => null,
                     'external_id' => null,
