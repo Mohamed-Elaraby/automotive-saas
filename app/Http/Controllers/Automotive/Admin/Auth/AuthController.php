@@ -30,15 +30,16 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route('automotive.admin.dashboard');
+        return redirect('/automotive/admin/dashboard');
     }
 
     public function logout(Request $request)
     {
         Auth::guard('automotive_admin')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('automotive.admin.login');
+        return redirect('/automotive/admin/login');
     }
 }

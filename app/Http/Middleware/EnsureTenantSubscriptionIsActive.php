@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\Tenancy\TenantSubscriptionService;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
-use App\Services\Tenancy\TenantSubscriptionService;
+use Symfony\Component\HttpFoundation\Response;
 
 class EnsureTenantSubscriptionIsActive
 {
@@ -29,15 +29,13 @@ public function handle(Request $request, Closure $next): Response
         return $next($request);
     }
 
-    Auth::guard('automotive_admin')->logout();
+    if (Auth::guard('automotive_admin')->check()) {
+        Auth::guard('automotive_admin')->logout();
+    }
 
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect()
-        ->route('automotive.admin.login')
-        ->withErrors([
-            'subscription' => 'Your trial or subscription is no longer active.',
-        ]);
+    return redirect('/automotive/admin/subscription-expired');
 }
 }

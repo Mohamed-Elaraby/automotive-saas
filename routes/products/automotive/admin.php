@@ -7,9 +7,11 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('automotive/admin')
     ->name('automotive.admin.')
     ->group(function () {
+        Route::get('/subscription-expired', function () {
+            return response()->view('automotive.admin.auth.subscription-expired');
+        })->name('subscription.expired');
 
-        // Auth (Tenant)
-        Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
+        Route::middleware('guest:automotive_admin')->group(function () {
             Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
             Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
         });
@@ -18,8 +20,7 @@ Route::prefix('automotive/admin')
             ->middleware('auth:automotive_admin')
             ->name('logout');
 
-        // Protected
-        Route::middleware('auth:automotive_admin')->group(function () {
+        Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         });
     });

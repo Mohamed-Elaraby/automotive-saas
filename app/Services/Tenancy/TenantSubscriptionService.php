@@ -33,7 +33,6 @@ class TenantSubscriptionService
         $status = $subscription->status ?? null;
         $trialEndsAt = $subscription->trial_ends_at ?? null;
 
-        // Active subscription always allowed
         if ($status === SubscriptionStatus::ACTIVE) {
             return [
                 'allowed' => true,
@@ -42,7 +41,6 @@ class TenantSubscriptionService
             ];
         }
 
-        // Trialing is allowed only if still within trial period
         if ($status === SubscriptionStatus::TRIALING) {
             if ($trialEndsAt && now()->greaterThan($trialEndsAt)) {
                 return [

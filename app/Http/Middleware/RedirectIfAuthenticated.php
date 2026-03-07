@@ -10,17 +10,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {
         $guards = empty($guards) ? [null] : $guards;
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                if ($guard === 'automotive_admin') {
+                    // لو هو أصلاً على dashboard أو expired page سيبه يكمل
+                    if ($request->is('automotive/admin/dashboard') || $request->is('automotive/admin/subscription-expired')) {
+                        return $next($request);
+                    }
+
+                    return redirect('/automotive/admin/dashboard');
+                }
+
                 return redirect(RouteServiceProvider::HOME);
             }
         }
