@@ -11,6 +11,7 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    'refresh.route.lookups',
 ])->group(function () {
 
     Route::get('/', function () {
