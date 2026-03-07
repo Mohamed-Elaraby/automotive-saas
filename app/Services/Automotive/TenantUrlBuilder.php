@@ -28,7 +28,6 @@ class TenantUrlBuilder
         $currentHost = strtolower($currentHost);
         $subdomain = strtolower($subdomain);
 
-        // لو أصلاً نفس الـ subdomain موجود، رجعه كما هو
         if (str_starts_with($currentHost, $subdomain . '.')) {
             return $currentHost;
         }

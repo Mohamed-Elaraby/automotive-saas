@@ -1,48 +1,56 @@
 <?php
 
-namespace App\Services\Automotive;
+namespace App\Http\Controllers\Automotive\Front\Auth;
 
+use App\Http\Controllers\Controller;
+use App\Services\Automotive\StartTrialService;
+use App\Services\Automotive\TenantUrlBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-class TenantUrlBuilder
+class RegisterController extends Controller
 {
-    public function tenantLoginUrl(Request $request, string $subdomain): string
+    public function show()
     {
-        $scheme = $request->getScheme();
-        $host = $request->getHost();
-        $port = $request->getPort();
-
-        $tenantHost = $this->buildTenantHost($host, $subdomain);
-
-        $url = $scheme . '://' . $tenantHost;
-
-        if ($this->shouldAppendPort($scheme, $port)) {
-            $url .= ':' . $port;
-        }
-
-        return $url . '/automotive/admin/login';
+        return view('automotive.front.auth.register');
     }
 
-    protected function buildTenantHost(string $currentHost, string $subdomain): string
-    {
-        $currentHost = strtolower($currentHost);
-        $subdomain = strtolower($subdomain);
+    public function submit(
+        Request $request,
+        StartTrialService $service,
+        TenantUrlBuilder $tenantUrlBuilder
+    ) {
+        $validator = Validator::make($request->all(), [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'company_name' => ['required', 'string', 'max:255'],
+            'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
+        ]);
 
-        if (str_starts_with($currentHost, $subdomain . '.')) {
-            return $currentHost;
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
         }
 
-        return $subdomain . '.' . $currentHost;
+        $data = $validator->validated();
+
+        $result = $service->start($data);
+
+        if (! ($result['ok'] ?? false)) {
+            if (($result['status'] ?? 500) === 422) {
+                return back()
+                    ->withErrors($result['errors'] ?? ['register' => $result['message'] ?? 'Validation error'])
+                    ->withInput();
+            }
+
+            return back()
+                ->withErrors(['register' => $result['message'] ?? 'Provisioning failed.'])
+                ->withInput();
+        }
+
+        $loginUrl = $tenantUrlBuilder->tenantLoginUrl($request, $data['subdomain']);
+
+        return redirect()->away($loginUrl)
+            ->with('success', 'Your trial account has been created successfully.');
     }
-
-    protected function shouldAppendPort(string $scheme, int|string|null $port): bool
-    {
-        if (empty($port)) {
-            return false;
-        }
-
-$port = (int) $port;
-
-return ! (($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443));
-}
 }
