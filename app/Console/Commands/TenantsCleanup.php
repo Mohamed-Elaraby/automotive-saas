@@ -6,10 +6,13 @@ use App\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Stancl\Tenancy\Database\Models\Domain;
 
 class TenantsCleanup extends Command
 {
-    protected $signature = 'tenants:cleanup {--grace-days=7 : Days to keep expired trials before deletion} {--dry-run : Show what would happen without making changes}';
+    protected $signature = 'tenants:cleanup
+        {--grace-days=7 : Days to keep expired trials before deletion}
+        {--dry-run : Show what would happen without making changes}';
 
     protected $description = 'Expire ended trials and delete tenants after grace period';
 
@@ -49,7 +52,7 @@ class TenantsCleanup extends Command
             }
         }
 
-        // 2) Delete expired tenants after grace period
+        // 2) Re-query expired tenants after updates so expire + delete can happen in same run
         $subscriptionsToDelete = DB::connection($centralConnection)
             ->table('subscriptions')
             ->where('status', 'expired')
@@ -66,7 +69,7 @@ class TenantsCleanup extends Command
             $tenant = Tenant::query()->find($tenantId);
 
             if (! $tenant) {
-                $this->warn("Tenant [{$tenantId}] not found, cleaning central records only.");
+                $this->warn("Tenant [{$tenantId}] not found in tenants table, cleaning central records only.");
 
                 if (! $dryRun) {
                     $this->deleteCentralRecords($centralConnection, $tenantId);
@@ -76,6 +79,11 @@ class TenantsCleanup extends Command
             }
 
             $dbName = data_get($tenant->data, 'db_name');
+
+            // Fallback in case db_name is missing
+            if (empty($dbName)) {
+                $dbName = 'tenant_' . $tenant->id;
+            }
 
             $this->line("Deleting tenant [{$tenantId}] with DB [{$dbName}]");
 
@@ -99,7 +107,6 @@ class TenantsCleanup extends Command
 
     protected function deleteTenantSafely(Tenant $tenant, string $centralConnection, ?string $dbName): void
     {
-        // Always end tenancy if anything was initialized somewhere
         try {
             if (function_exists('tenancy') && tenancy()->initialized) {
                 tenancy()->end();
@@ -110,7 +117,32 @@ class TenantsCleanup extends Command
 
         DB::purge('tenant');
 
-        DB::connection($centralConnection)->transaction(function () use ($tenant, $centralConnection, $dbName) {
+        // 1) Drop database first, outside transaction
+        if (! empty($dbName)) {
+            $escapedDbName = str_replace('`', '``', $dbName);
+
+            $exists = DB::connection($centralConnection)->selectOne(
+                'SELECT SCHEMA_NAME
+                 FROM INFORMATION_SCHEMA.SCHEMATA
+                 WHERE SCHEMA_NAME = ?',
+                [$dbName]
+            );
+
+            if ($exists) {
+                $this->line("Dropping database [{$dbName}]...");
+
+                DB::connection($centralConnection)->statement("DROP DATABASE IF EXISTS `{$escapedDbName}`");
+
+                $this->info("Database [{$dbName}] dropped.");
+            } else {
+                $this->warn("Database [{$dbName}] not found, skipping DROP DATABASE.");
+            }
+        } else {
+            $this->warn("No db_name found for tenant [{$tenant->id}], skipping database drop.");
+        }
+
+        // 2) Delete central records
+        DB::connection($centralConnection)->transaction(function () use ($tenant, $centralConnection) {
             DB::connection($centralConnection)->table('domains')
                 ->where('tenant_id', $tenant->id)
                 ->delete();
@@ -126,11 +158,6 @@ class TenantsCleanup extends Command
             DB::connection($centralConnection)->table('tenants')
                 ->where('id', $tenant->id)
                 ->delete();
-
-            if (! empty($dbName)) {
-                $escapedDbName = str_replace('`', '``', $dbName);
-                DB::connection($centralConnection)->statement("DROP DATABASE IF EXISTS `{$escapedDbName}`");
-            }
         });
 
         DB::purge('tenant');
@@ -138,6 +165,12 @@ class TenantsCleanup extends Command
 
     protected function deleteCentralRecords(string $centralConnection, string $tenantId): void
     {
+        $domainCount = Domain::query()->where('tenant_id', $tenantId)->count();
+
+        if ($domainCount > 0) {
+            $this->warn("Tenant [{$tenantId}] missing from tenants table, but {$domainCount} domain record(s) still exist.");
+        }
+
         DB::connection($centralConnection)->transaction(function () use ($centralConnection, $tenantId) {
             DB::connection($centralConnection)->table('domains')
                 ->where('tenant_id', $tenantId)
