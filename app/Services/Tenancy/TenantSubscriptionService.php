@@ -2,8 +2,8 @@
 
 namespace App\Services\Tenancy;
 
-use Illuminate\Support\Facades\DB;
 use App\Support\SubscriptionStatus;
+use Illuminate\Support\Facades\DB;
 
 class TenantSubscriptionService
 {
@@ -31,18 +31,37 @@ class TenantSubscriptionService
         }
 
         $status = $subscription->status ?? null;
+        $trialEndsAt = $subscription->trial_ends_at ?? null;
 
-        if (! is_string($status) || ! SubscriptionStatus::allowsAccess($status)) {
+        // Active subscription always allowed
+        if ($status === SubscriptionStatus::ACTIVE) {
             return [
-                'allowed' => false,
-                'reason' => $status ?: 'unknown_status',
+                'allowed' => true,
+                'reason' => 'active',
+                'subscription' => $subscription,
+            ];
+        }
+
+        // Trialing is allowed only if still within trial period
+        if ($status === SubscriptionStatus::TRIALING) {
+            if ($trialEndsAt && now()->greaterThan($trialEndsAt)) {
+                return [
+                    'allowed' => false,
+                    'reason' => SubscriptionStatus::EXPIRED,
+                    'subscription' => $subscription,
+                ];
+            }
+
+            return [
+                'allowed' => true,
+                'reason' => 'trialing',
                 'subscription' => $subscription,
             ];
         }
 
         return [
-            'allowed' => true,
-            'reason' => 'ok',
+            'allowed' => false,
+            'reason' => $status ?: 'unknown_status',
             'subscription' => $subscription,
         ];
     }
