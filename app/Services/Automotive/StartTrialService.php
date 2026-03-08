@@ -2,14 +2,15 @@
 
 namespace App\Services\Automotive;
 
+use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\SubscriptionStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Stancl\Tenancy\Database\Models\Domain;
-use App\Support\SubscriptionStatus;
 
 class StartTrialService
 {
@@ -49,6 +50,11 @@ class StartTrialService
             ]
         );
 
+        $trialPlan = Plan::query()
+            ->where('slug', 'trial')
+            ->where('is_active', true)
+            ->first();
+
         $tenant = Tenant::create([
             'id' => $tenantId,
             'data' => [
@@ -58,7 +64,13 @@ class StartTrialService
         ]);
 
         try {
-            DB::connection($centralConnection)->transaction(function () use ($tenant, $centralUser, $fullDomain, $centralConnection) {
+            DB::connection($centralConnection)->transaction(function () use (
+                $tenant,
+                $centralUser,
+                $fullDomain,
+                $centralConnection,
+                $trialPlan
+            ) {
                 DB::connection($centralConnection)->table('domains')->insert([
                     'domain' => $fullDomain,
                     'tenant_id' => $tenant->id,
@@ -66,7 +78,7 @@ class StartTrialService
 
                 DB::connection($centralConnection)->table('subscriptions')->insert([
                     'tenant_id' => $tenant->id,
-                    'plan_id' => null,
+                    'plan_id' => $trialPlan?->id,
                     'status' => SubscriptionStatus::TRIALING,
                     'trial_ends_at' => Carbon::now()->addDays(14),
                     'ends_at' => null,
