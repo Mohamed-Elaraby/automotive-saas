@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
+use App\Http\Controllers\Automotive\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('automotive/admin')
@@ -22,5 +23,14 @@ Route::prefix('automotive/admin')
 
         Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/users', [UserController::class, 'index'])->name('users.index');
+            Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+            Route::post('/users', [UserController::class, 'store'])
+                ->middleware('tenant.user.limit')
+                ->name('users.store');
+            Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+            Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+            Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         });
     });
