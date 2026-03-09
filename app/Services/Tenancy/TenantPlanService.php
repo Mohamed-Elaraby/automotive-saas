@@ -7,11 +7,14 @@ use Illuminate\Support\Facades\DB;
 
 class TenantPlanService
 {
+    protected function centralConnection(): string
+    {
+        return config('tenancy.database.central_connection') ?? config('database.default');
+    }
+
     public function getCurrentSubscription(string $tenantId): ?object
     {
-        $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
-
-        return DB::connection($centralConnection)
+        return DB::connection($this->centralConnection())
             ->table('subscriptions')
             ->where('tenant_id', $tenantId)
             ->orderByDesc('id')
@@ -26,7 +29,7 @@ class TenantPlanService
             return null;
         }
 
-        return Plan::query()->find($subscription->plan_id);
+        return Plan::on($this->centralConnection())->find($subscription->plan_id);
     }
 
     public function getLimit(string $tenantId, string $field): int|null
