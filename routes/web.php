@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Automotive\TrialSignupController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,8 +19,24 @@ use Illuminate\Support\Facades\Route;
 //    return view('welcome');
 //});
 
-//Route::post('/automotive/start-trial', TrialSignupController::class)
-//    ->name('automotive.startTrial');
+
+Auth::routes();
+
+// Central product routes
+require base_path('routes/products/automotive/front.php');
+
+
+Route::prefix('admin/plans')
+    ->name('admin.plans.')
+    ->group(function () {
+        Route::get('/', [PlanController::class, 'index'])->name('index');
+        Route::get('/create', [PlanController::class, 'create'])->name('create');
+        Route::post('/', [PlanController::class, 'store'])->name('store');
+        Route::get('/{plan}/edit', [PlanController::class, 'edit'])->name('edit');
+        Route::put('/{plan}', [PlanController::class, 'update'])->name('update');
+        Route::patch('/{plan}/toggle-active', [PlanController::class, 'toggleActive'])->name('toggle-active');
+        Route::delete('/{plan}', [PlanController::class, 'destroy'])->name('destroy');
+    });
 
 
 Route::get('/', function () {
@@ -1301,9 +1318,6 @@ Route::get('/add-debit-notes', function () {
 })->name('add-debit-notes');
 
 
-Auth::routes();
 
-// Central product routes
-require base_path('routes/products/automotive/front.php');
 
 //Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
