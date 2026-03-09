@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         // Custom Middleware Made By The Developer
         'refresh.route.lookups' => \App\Http\Middleware\RefreshRouteLookups::class,
         'tenant.subscription.active' => \App\Http\Middleware\EnsureTenantSubscriptionIsActive::class,
+        'tenant.user.limit' => \App\Http\Middleware\EnsureTenantUserLimitNotReached::class,
     ];
 }
