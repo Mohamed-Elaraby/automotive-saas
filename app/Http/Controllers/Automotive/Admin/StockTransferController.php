@@ -111,10 +111,16 @@ public function show(StockTransfer $stockTransfer)
 
 public function post(StockTransfer $stockTransfer)
 {
-    $this->stockTransferService->postTransfer($stockTransfer);
+    try {
+        $this->stockTransferService->postTransfer($stockTransfer);
 
-    return redirect()
-        ->route('automotive.admin.stock-transfers.show', $stockTransfer)
-        ->with('success', 'Stock transfer posted successfully.');
+        return redirect()
+            ->route('automotive.admin.stock-transfers.show', $stockTransfer)
+            ->with('success', 'Stock transfer posted successfully.');
+    } catch (ValidationException $e) {
+        return redirect()
+            ->route('automotive.admin.stock-transfers.show', $stockTransfer)
+            ->withErrors($e->errors());
+    }
 }
 }
