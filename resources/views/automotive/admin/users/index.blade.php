@@ -3,41 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plans</title>
+    <title>Tenant Users</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 24px; background: #f8fafc; color: #111827; }
-        .wrap { max-width: 1200px; margin: 0 auto; }
-        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .wrap { max-width: 1100px; margin: 0 auto; }
+        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; }
         .btn { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none; border:0; cursor:pointer; }
         .btn-primary { background:#2563eb; color:#fff; }
-        .btn-warning { background:#f59e0b; color:#fff; }
         .btn-secondary { background:#374151; color:#fff; }
+        .btn-danger { background:#dc2626; color:#fff; }
         .card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
         table { width:100%; border-collapse:collapse; }
-        th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:top; }
-        .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; }
-        .badge-active { background:#dcfce7; color:#166534; }
-        .badge-inactive { background:#fee2e2; color:#991b1b; }
+        th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; }
+        .alert { margin-bottom:16px; padding:12px 14px; border-radius:8px; }
+        .alert-success { background:#dcfce7; color:#166534; }
+        .alert-error { background:#fee2e2; color:#991b1b; }
         .actions { display:flex; gap:8px; flex-wrap:wrap; }
         form { display:inline; }
-        .alert { margin-bottom:16px; padding:12px 14px; background:#dcfce7; color:#166534; border-radius:8px; }
+        .meta { font-size:14px; color:#4b5563; margin-bottom:16px; }
     </style>
 </head>
 <body>
 <div class="wrap">
     <div class="top">
-        <h1>Plans</h1>
-        <a href="{{ route('admin.plans.create') }}" class="btn btn-primary">Add Plan</a>
+        <div>
+            <h1>Tenant Users</h1>
+            @if ($limitInfo)
+                <div class="meta">
+                    Current users: {{ $limitInfo['current'] }}
+                    @if (!is_null($limitInfo['limit']))
+                        / {{ $limitInfo['limit'] }}
+                    @else
+                        / Unlimited
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <a href="{{ route('automotive.admin.dashboard') }}" class="btn btn-secondary">Dashboard</a>
+            <a href="{{ route('automotive.admin.users.create') }}" class="btn btn-primary">Add User</a>
+        </div>
     </div>
 
     @if (session('success'))
-        <div class="alert">{{ session('success') }}</div>
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if ($errors->has('limit'))
+        <div class="alert alert-error">{{ $errors->first('limit') }}</div>
     @endif
 
     @if ($errors->has('delete'))
-        <div class="alert" style="background:#fee2e2;color:#991b1b;">
-            {{ $errors->first('delete') }}
-        </div>
+        <div class="alert alert-error">{{ $errors->first('delete') }}</div>
     @endif
 
     <div class="card">
@@ -46,60 +64,33 @@
             <tr>
                 <th>#</th>
                 <th>Name</th>
-                <th>Slug</th>
-                <th>Price</th>
-                <th>Billing</th>
-                <th>Limits</th>
-                <th>Status</th>
-                <th>Order</th>
+                <th>Email</th>
+                <th>Created</th>
                 <th>Actions</th>
             </tr>
             </thead>
             <tbody>
-            @forelse ($plans as $plan)
+            @forelse ($users as $user)
                 <tr>
-                    <td>{{ $plan->id }}</td>
-                    <td>{{ $plan->name }}</td>
-                    <td>{{ $plan->slug }}</td>
-                    <td>{{ $plan->price }} {{ $plan->currency }}</td>
-                    <td>{{ ucfirst($plan->billing_period) }}</td>
-                    <td>
-                        Users: {{ $plan->max_users ?? '—' }}<br>
-                        Branches: {{ $plan->max_branches ?? '—' }}<br>
-                        Products: {{ $plan->max_products ?? '—' }}<br>
-                        Storage: {{ $plan->max_storage_mb ?? '—' }} MB
-                    </td>
-                    <td>
-                        @if ($plan->is_active)
-                            <span class="badge badge-active">Active</span>
-                        @else
-                            <span class="badge badge-inactive">Inactive</span>
-                        @endif
-                    </td>
-                    <td>{{ $plan->sort_order }}</td>
+                    <td>{{ $user->id }}</td>
+                    <td>{{ $user->name }}</td>
+                    <td>{{ $user->email }}</td>
+                    <td>{{ optional($user->created_at)->format('Y-m-d H:i') }}</td>
                     <td>
                         <div class="actions">
-                            <a href="{{ route('admin.plans.edit', $plan) }}" class="btn btn-secondary">Edit</a>
+                            <a href="{{ route('automotive.admin.users.edit', $user) }}" class="btn btn-secondary">Edit</a>
 
-                            <form method="POST" action="{{ route('admin.plans.toggle-active', $plan) }}">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="btn btn-warning">
-                                    {{ $plan->is_active ? 'Deactivate' : 'Activate' }}
-                                </button>
-                            </form>
-
-                            <form method="POST" action="{{ route('admin.plans.destroy', $plan) }}" onsubmit="return confirm('Are you sure you want to delete this plan?');">
+                            <form method="POST" action="{{ route('automotive.admin.users.destroy', $user) }}" onsubmit="return confirm('Are you sure you want to delete this user?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn" style="background:#dc2626;color:#fff;">Delete</button>
+                                <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
                         </div>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9">No plans found.</td>
+                    <td colspan="5">No users found.</td>
                 </tr>
             @endforelse
             </tbody>

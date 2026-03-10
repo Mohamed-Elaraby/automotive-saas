@@ -13,8 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // <seven-scaffold-seeders>
-        $this->call(Branch2Seeder::class);
-        $this->call(BranchSeeder::class);
+        $this->call(PlanSeeder::class);
 
 // \App\Models\User::factory(10)->create();
 

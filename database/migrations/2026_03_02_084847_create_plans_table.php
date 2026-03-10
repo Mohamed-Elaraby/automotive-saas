@@ -10,18 +10,23 @@ return new class extends Migration
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-
             $table->string('name');
+            $table->string('slug')->unique();
             $table->decimal('price', 10, 2)->default(0);
+            $table->string('currency', 3)->default('AED');
+            $table->string('billing_period')->default('monthly'); // monthly|yearly|one_time|trial
+            $table->boolean('is_active')->default(true);
+            $table->unsignedInteger('sort_order')->default(0);
 
-            // monthly / yearly
-            $table->string('interval')->default('monthly');
+            // Limits / features (foundation)
+            $table->unsignedInteger('max_users')->nullable();
+            $table->unsignedInteger('max_branches')->nullable();
+            $table->unsignedInteger('max_products')->nullable();
+            $table->unsignedBigInteger('max_storage_mb')->nullable();
 
-            // features config
             $table->json('features')->nullable();
 
-            $table->boolean('is_active')->default(true);
-
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

@@ -8,14 +8,23 @@ class Plan extends Model
 {
     protected $fillable = [
         'name',
+        'slug',
         'price',
-        'interval',
-        'features',
+        'currency',
+        'billing_period',
         'is_active',
+        'sort_order',
+        'max_users',
+        'max_branches',
+        'max_products',
+        'max_storage_mb',
+        'features',
+        'description',
     ];
 
     protected $casts = [
-        'features' => 'array',
         'is_active' => 'boolean',
+        'features' => 'array',
+        'price' => 'decimal:2',
     ];
 }
