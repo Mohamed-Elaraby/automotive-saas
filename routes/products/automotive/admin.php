@@ -3,6 +3,7 @@
 use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
 use App\Http\Controllers\Automotive\Admin\BranchController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
+use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,11 @@ Route::prefix('automotive/admin')
             Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
             Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+            // Products Routs
+            Route::get('/inventory-adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory-adjustments.index');
+            Route::get('/inventory-adjustments/create', [InventoryAdjustmentController::class, 'create'])->name('inventory-adjustments.create');
+            Route::post('/inventory-adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory-adjustments.store');
 
         });
 
