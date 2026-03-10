@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Tenancy\TenantPlanService;
+use App\Services\Tenancy\TenantLimitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     public function __construct(
-        protected TenantPlanService $tenantPlanService
+        protected TenantLimitService $tenantLimitService
     ) {
     }
 
@@ -23,9 +23,15 @@ public function index()
         ->get();
 
     $tenant = tenant();
-    $limitInfo = $tenant
-        ? $this->tenantPlanService->getUserLimitDecision($tenant->id)
-        : null;
+    $limitInfo = null;
+
+    if ($tenant) {
+        $limitInfo = $this->tenantLimitService->getDecision(
+            $tenant->id,
+            'max_users',
+            $users->count()
+        );
+    }
 
     return view('automotive.admin.users.index', compact('users', 'limitInfo'));
 }

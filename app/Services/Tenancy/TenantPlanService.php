@@ -42,39 +42,4 @@ class TenantPlanService
 
 return $plan->{$field} ?? null;
 }
-
-public function getTenantUsersCount(): int
-{
-    return \App\Models\User::query()->count();
-}
-
-public function getUserLimitDecision(string $tenantId): array
-{
-    $plan = $this->getCurrentPlan($tenantId);
-    $limit = $this->getLimit($tenantId, 'max_users');
-    $current = $this->getTenantUsersCount();
-
-    if ($limit === null) {
-        return [
-            'allowed' => true,
-            'reason' => 'no_limit',
-            'current' => $current,
-            'limit' => null,
-            'plan' => $plan,
-        ];
-    }
-
-    return [
-        'allowed' => $current < $limit,
-        'reason' => $current < $limit ? 'within_limit' : 'limit_reached',
-        'current' => $current,
-        'limit' => $limit,
-        'plan' => $plan,
-    ];
-}
-
-public function canCreateTenantUser(string $tenantId): bool
-{
-    return $this->getUserLimitDecision($tenantId)['allowed'];
-}
 }
