@@ -30,6 +30,18 @@
     <div class="top">
         <div>
             <h1>Branches</h1>
+            @if (!empty($limitInfo))
+                <p style="margin:6px 0 0;color:#6b7280;">
+                    Current branches: {{ $limitInfo['current'] }}
+                    @if (!is_null($limitInfo['limit']))
+                        / {{ $limitInfo['limit'] }} — Remaining: {{ $limitInfo['remaining'] }}
+                    @else
+                        / Unlimited
+                    @endif
+                </p>
+            @else
+                <p style="margin:6px 0 0;color:#6b7280;">Manage your tenant branches.</p>
+            @endif
             <p style="margin:6px 0 0;color:#6b7280;">Manage your tenant branches.</p>
         </div>
 
@@ -41,6 +53,10 @@
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if ($errors->has('limit'))
+        <div class="alert alert-error">{{ $errors->first('limit') }}</div>
     @endif
 
     @if ($errors->has('delete'))
