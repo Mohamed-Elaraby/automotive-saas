@@ -3,6 +3,7 @@
 use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
 use App\Http\Controllers\Automotive\Admin\BranchController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
+use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,13 +36,21 @@ Route::prefix('automotive/admin')
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-            // Products Routs
+            // Branches Routs
             Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
             Route::get('/branches/create', [BranchController::class, 'create'])->name('branches.create');
             Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
             Route::get('/branches/{branch}/edit', [BranchController::class, 'edit'])->name('branches.edit');
             Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
             Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
+
+            // Products Routs
+            Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+            Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+            Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+            Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+            Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+            Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
         });
 
