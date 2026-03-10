@@ -13,7 +13,7 @@
         }
 
         .wrap {
-            max-width: 1100px;
+            max-width: 1250px;
             margin: 0 auto;
         }
 
@@ -36,6 +36,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -47,8 +48,13 @@
             display: inline-block;
         }
 
-        .btn-users {
+        .btn-primary {
             background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #374151;
             color: #fff;
         }
 
@@ -57,7 +63,14 @@
             color: #fff;
         }
 
-        .grid {
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            margin: 24px 0;
+        }
+
+        .info-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 18px;
@@ -75,6 +88,23 @@
             margin-top: 0;
             margin-bottom: 14px;
             font-size: 18px;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 8px;
+            font-size: 15px;
+            color: #6b7280;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-meta {
+            color: #6b7280;
+            font-size: 14px;
         }
 
         .meta-row {
@@ -116,24 +146,51 @@
             color: #991b1b;
         }
 
-        .stat {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 6px 0 8px;
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .quick-link {
+            display: block;
+            text-decoration: none;
+            padding: 14px 16px;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .quick-link small {
+            display: block;
+            margin-top: 6px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .quick-links {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 768px) {
-            .grid {
+            .info-grid,
+            .stats-grid,
+            .quick-links {
                 grid-template-columns: 1fr;
             }
 
             .top {
                 flex-direction: column;
                 align-items: flex-start;
-            }
-
-            .top-actions {
-                flex-wrap: wrap;
             }
         }
     </style>
@@ -150,7 +207,9 @@
             </div>
 
             <div class="top-actions">
-                <a href="/automotive/admin/users" class="btn btn-users">Users</a>
+                <a href="/automotive/admin/users" class="btn btn-secondary">Users</a>
+                <a href="/automotive/admin/branches" class="btn btn-secondary">Branches</a>
+                <a href="/automotive/admin/products" class="btn btn-secondary">Products</a>
 
                 <form method="POST" action="/automotive/admin/logout" style="margin:0;">
                     @csrf
@@ -159,9 +218,63 @@
             </div>
         </div>
 
-        <p>You are logged in successfully.</p>
+        <div class="stats-grid">
+            <div class="card stat-card">
+                <h3>Users</h3>
+                <div class="stat-value">{{ $usersCount }}</div>
+                <div class="stat-meta">
+                    @if (!is_null($userLimit['limit']))
+                        Limit: {{ $userLimit['limit'] }} | Remaining: {{ $userLimit['remaining'] }}
+                    @else
+                        Unlimited
+                    @endif
+                </div>
+            </div>
 
-        <div class="grid">
+            <div class="card stat-card">
+                <h3>Branches</h3>
+                <div class="stat-value">{{ $branchesCount }}</div>
+                <div class="stat-meta">
+                    @if (!is_null($branchLimit['limit']))
+                        Limit: {{ $branchLimit['limit'] }} | Remaining: {{ $branchLimit['remaining'] }}
+                    @else
+                        Unlimited
+                    @endif
+                </div>
+            </div>
+
+            <div class="card stat-card">
+                <h3>Products</h3>
+                <div class="stat-value">{{ $productsCount }}</div>
+                <div class="stat-meta">
+                    @if (!is_null($productLimit['limit']))
+                        Limit: {{ $productLimit['limit'] }} | Remaining: {{ $productLimit['remaining'] }}
+                    @else
+                        Unlimited
+                    @endif
+                </div>
+            </div>
+
+            <div class="card stat-card">
+                <h3>Inventory Records</h3>
+                <div class="stat-value">{{ $inventoriesCount }}</div>
+                <div class="stat-meta">Branch-product stock records</div>
+            </div>
+
+            <div class="card stat-card">
+                <h3>Stock Transfers</h3>
+                <div class="stat-value">{{ $stockTransfersCount }}</div>
+                <div class="stat-meta">Draft + posted transfers</div>
+            </div>
+
+            <div class="card stat-card">
+                <h3>Stock Movements</h3>
+                <div class="stat-value">{{ $stockMovementsCount }}</div>
+                <div class="stat-meta">Opening, adjustments, transfers</div>
+            </div>
+        </div>
+
+        <div class="info-grid">
             <div class="card">
                 <h2>Tenant Overview</h2>
 
@@ -230,55 +343,39 @@
                 </div>
             </div>
 
-            <div class="card">
-                <h2>User Limit</h2>
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Quick Navigation</h2>
 
-                <div class="stat">
-                    {{ $userLimit['current'] }}
-                    @if (!is_null($userLimit['limit']))
-                        / {{ $userLimit['limit'] }}
-                    @else
-                        / ∞
-                    @endif
-                </div>
+                <div class="quick-links">
+                    <a href="/automotive/admin/users" class="quick-link">
+                        Users
+                        <small>Manage tenant users and seat usage.</small>
+                    </a>
 
-                <div class="meta-row">
-                    <span class="muted">Current Users</span>
-                    <strong>{{ $userLimit['current'] }}</strong>
-                </div>
+                    <a href="/automotive/admin/branches" class="quick-link">
+                        Branches
+                        <small>Manage active branches and branch limits.</small>
+                    </a>
 
-                <div class="meta-row">
-                    <span class="muted">Max Users</span>
-                    <strong>{{ is_null($userLimit['limit']) ? 'Unlimited' : $userLimit['limit'] }}</strong>
-                </div>
+                    <a href="/automotive/admin/products" class="quick-link">
+                        Products
+                        <small>Manage product master data and product limits.</small>
+                    </a>
 
-                <div class="meta-row">
-                    <span class="muted">Remaining</span>
-                    <strong>{{ is_null($userLimit['remaining']) ? 'Unlimited' : $userLimit['remaining'] }}</strong>
-                </div>
-            </div>
+                    <a href="/automotive/admin/inventory-adjustments" class="quick-link">
+                        Inventory Adjustments
+                        <small>Opening stock and manual stock changes.</small>
+                    </a>
 
-            <div class="card">
-                <h2>Quick Info</h2>
+                    <a href="/automotive/admin/stock-transfers" class="quick-link">
+                        Stock Transfers
+                        <small>Transfer stock between branches.</small>
+                    </a>
 
-                <div class="meta-row">
-                    <span class="muted">Logged-in User</span>
-                    <strong>{{ auth('automotive_admin')->user()?->email }}</strong>
-                </div>
-
-                <div class="meta-row">
-                    <span class="muted">Features Configured</span>
-                    <strong>{{ is_array($plan?->features) ? count($plan->features) : 0 }}</strong>
-                </div>
-
-                <div class="meta-row">
-                    <span class="muted">Plan Slug</span>
-                    <strong>{{ $plan?->slug ?? '—' }}</strong>
-                </div>
-
-                <div class="meta-row">
-                    <span class="muted">Sort Order</span>
-                    <strong>{{ $plan?->sort_order ?? '—' }}</strong>
+                    <a href="/automotive/admin/inventory-report" class="quick-link">
+                        Inventory Report
+                        <small>View stock by branch and product.</small>
+                    </a>
                 </div>
             </div>
         </div>
