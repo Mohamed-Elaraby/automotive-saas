@@ -56,7 +56,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @forelse ($products as $product)
+                    @foreach ($products as $product)
                         <tr>
                             <td>
                                 <h6 class="fs-14 fw-medium mb-0">{{ $product->name }}</h6>
@@ -94,15 +94,10 @@
                                 </ul>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9">No products found.</td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                     </tbody>
                 </table>
             </div>
-
             @include('automotive.admin.components.page-footer')
         </div>
     </div>
