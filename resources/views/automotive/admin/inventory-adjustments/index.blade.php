@@ -1,88 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Adjustments</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 24px; background: #f8fafc; color: #111827; }
-        .wrap { max-width: 1200px; margin: 0 auto; }
-        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; }
-        .btn { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none; border:0; cursor:pointer; }
-        .btn-primary { background:#2563eb; color:#fff; }
-        .btn-secondary { background:#374151; color:#fff; }
-        .card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
-        table { width:100%; border-collapse:collapse; }
-        th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:top; }
-        .alert { margin-bottom:16px; padding:12px 14px; border-radius:8px; }
-        .alert-success { background:#dcfce7; color:#166534; }
-        .type-opening { color:#1d4ed8; font-weight:700; }
-        .type-in { color:#166534; font-weight:700; }
-        .type-out { color:#991b1b; font-weight:700; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
-        <div>
-            <h1>Inventory Adjustments</h1>
-            <p style="margin:6px 0 0;color:#6b7280;">Opening stock and manual stock adjustments.</p>
-        </div>
+<?php $page = 'inventory-adjustments'; ?>
+@extends('automotive.layouts.adminLayout.mainlayout')
 
-        <div style="display:flex;gap:10px;">
-            <a href="/automotive/admin/dashboard" class="btn btn-secondary">Dashboard</a>
-            <a href="/automotive/admin/inventory-adjustments/create" class="btn btn-primary">New Adjustment</a>
+@section('content')
+    <div class="page-wrapper">
+        <div class="content container-fluid">
+
+            @php
+                $adjustmentRows =
+                    $movements
+                    ?? $adjustments
+                    ?? $inventoryAdjustments
+                    ?? $inventoryAdjustmentRows
+                    ?? $records
+                    ?? $data
+                    ?? collect();
+
+                if ($adjustmentRows instanceof \Illuminate\Pagination\AbstractPaginator) {
+                    $adjustmentCollection = collect($adjustmentRows->items());
+                } else {
+                    $adjustmentCollection = collect($adjustmentRows);
+                }
+            @endphp
+
+            @include('automotive.admin.partials.page-header', [
+                'title' => 'Inventory Adjustments',
+                'subtitle' => 'Track opening balances and stock adjustments.',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
+                    ['label' => 'Inventory Adjustments'],
+                ],
+            ])
+
+            <div class="mb-3">
+                <a href="{{ route('automotive.admin.inventory-adjustments.create') }}" class="btn btn-primary">
+                    <i class="isax isax-add me-1"></i> New Adjustment
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    @include('automotive.admin.partials.alerts')
+
+                    <div class="table-responsive">
+                        <table class="table table-hover datatable">
+                            <thead class="thead-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Branch</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Notes</th>
+                                <th>Created By</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @forelse($adjustmentCollection as $movement)
+                                @php
+                                    $movementId = $movement->id ?? '-';
+                                    $movementDate = $movement->created_at ?? null;
+                                    $movementType = $movement->type ?? '-';
+                                    $branchName = $movement->branch->name ?? '-';
+                                    $productName = $movement->product->name ?? '-';
+                                    $qty = $movement->quantity ?? 0;
+                                    $notes = $movement->notes ?? '-';
+                                    $createdBy = $movement->creator->name ?? '-';
+                                @endphp
+
+                                <tr>
+                                    <td>{{ $movementId }}</td>
+                                    <td>{{ $movementDate ? \Illuminate\Support\Carbon::parse($movementDate)->format('Y-m-d H:i') : '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ $movementType }}</span>
+                                    </td>
+                                    <td>{{ $branchName }}</td>
+                                    <td>{{ $productName }}</td>
+                                    <td>{{ number_format((float) $qty, 2) }}</td>
+                                    <td>{{ $notes }}</td>
+                                    <td>{{ $createdBy }}</td>
+                                </tr>
+                            @empty
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($adjustmentCollection->isEmpty())
+                        <div class="mt-3">
+                            @include('automotive.admin.partials.empty-state', [
+                                'title' => 'No inventory adjustments found',
+                                'message' => 'Create your first opening balance or stock adjustment.',
+                            ])
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
-
-    @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    <div class="card">
-        <table>
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Branch</th>
-                <th>Product</th>
-                <th>Type</th>
-                <th>Quantity</th>
-                <th>Created By</th>
-                <th>Date</th>
-                <th>Notes</th>
-            </tr>
-            </thead>
-            <tbody>
-            @forelse ($movements as $movement)
-                <tr>
-                    <td>{{ $movement->id }}</td>
-                    <td>{{ $movement->branch?->name ?? '—' }}</td>
-                    <td>{{ $movement->product?->name ?? '—' }}</td>
-                    <td>
-                        @if ($movement->type === 'opening')
-                            <span class="type-opening">Opening</span>
-                        @elseif ($movement->type === 'adjustment_in')
-                            <span class="type-in">Adjustment In</span>
-                        @elseif ($movement->type === 'adjustment_out')
-                            <span class="type-out">Adjustment Out</span>
-                        @else
-                            {{ $movement->type }}
-                        @endif
-                    </td>
-                    <td>{{ $movement->quantity }}</td>
-                    <td>{{ $movement->creator?->name ?? '—' }}</td>
-                    <td>{{ optional($movement->movement_date)->format('Y-m-d H:i') }}</td>
-                    <td>{{ $movement->notes ?: '—' }}</td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="8">No inventory adjustments found.</td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-</body>
-</html>
+@endsection

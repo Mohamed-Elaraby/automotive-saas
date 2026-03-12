@@ -1,100 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Transfers</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 24px; background: #f8fafc; color: #111827; }
-        .wrap { max-width: 1200px; margin: 0 auto; }
-        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; }
-        .btn { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none; border:0; cursor:pointer; }
-        .btn-primary { background:#2563eb; color:#fff; }
-        .btn-secondary { background:#374151; color:#fff; }
-        .card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
-        table { width:100%; border-collapse:collapse; }
-        th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:top; }
-        .alert { margin-bottom:16px; padding:12px 14px; border-radius:8px; }
-        .alert-success { background:#dcfce7; color:#166534; }
-        .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; }
-        .badge-draft { background:#fef3c7; color:#92400e; }
-        .badge-posted { background:#dcfce7; color:#166534; }
-        .badge-cancelled { background:#fee2e2; color:#991b1b; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
-        <div>
-            <h1>Stock Transfers</h1>
-            <p style="margin:6px 0 0;color:#6b7280;">Transfer stock between branches.</p>
-        </div>
+<?php $page = 'stock-transfers'; ?>
+@extends('automotive.layouts.adminLayout.mainlayout')
 
-        <div style="display:flex;gap:10px;">
-            <a href="/automotive/admin/dashboard" class="btn btn-secondary">Dashboard</a>
-            <a href="/automotive/admin/stock-transfers/create" class="btn btn-primary">New Transfer</a>
+@section('content')
+    <div class="page-wrapper">
+        <div class="content container-fluid">
+
+            @include('automotive.admin.partials.page-header', [
+                'title' => 'Stock Transfers',
+                'subtitle' => 'Create and post stock transfers between branches.',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
+                    ['label' => 'Stock Transfers'],
+                ],
+            ])
+
+            <div class="mb-3">
+                <a href="{{ route('automotive.admin.stock-transfers.create') }}" class="btn btn-primary">
+                    <i class="isax isax-add me-1"></i> New Transfer
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    @include('automotive.admin.partials.alerts')
+
+                    <div class="table-responsive">
+                        <table class="table table-hover datatable">
+                            <thead class="thead-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @forelse($transfers as $transfer)
+                                <tr>
+                                    <td>{{ $transfer->id }}</td>
+                                    <td>{{ optional($transfer->created_at)->format('Y-m-d H:i') }}</td>
+                                    <td>{{ $transfer->sourceBranch->name ?? '-' }}</td>
+                                    <td>{{ $transfer->destinationBranch->name ?? '-' }}</td>
+                                    <td>
+                                        <span class="badge {{ $transfer->status === 'posted' ? 'bg-success' : 'bg-warning text-dark' }}">
+                                            {{ ucfirst($transfer->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('automotive.admin.stock-transfers.show', $transfer) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($transfers->isEmpty())
+                        <div class="mt-3">
+                            @include('automotive.admin.partials.empty-state', [
+                                'title' => 'No stock transfers found',
+                                'message' => 'Create your first transfer between branches.',
+                            ])
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
-
-    @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    @if ($errors->any())
-        <div class="alert" style="background:#fee2e2;color:#991b1b;">
-            <ul style="margin:0; padding-left:18px;">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-
-    <div class="card">
-        <table>
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Reference</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Created By</th>
-                <th>View</th>
-            </tr>
-            </thead>
-            <tbody>
-            @forelse ($transfers as $transfer)
-                <tr>
-                    <td>{{ $transfer->id }}</td>
-                    <td>{{ $transfer->reference }}</td>
-                    <td>{{ $transfer->fromBranch?->name ?? '—' }}</td>
-                    <td>{{ $transfer->toBranch?->name ?? '—' }}</td>
-                    <td>
-                        @if ($transfer->status === 'draft')
-                            <span class="badge badge-draft">Draft</span>
-                        @elseif ($transfer->status === 'posted')
-                            <span class="badge badge-posted">Posted</span>
-                        @else
-                            <span class="badge badge-cancelled">{{ ucfirst($transfer->status) }}</span>
-                        @endif
-                    </td>
-                    <td>{{ optional($transfer->transfer_date)->format('Y-m-d H:i') ?: '—' }}</td>
-                    <td>{{ $transfer->creator?->name ?? '—' }}</td>
-                    <td>
-                        <a href="/automotive/admin/stock-transfers/{{ $transfer->id }}" class="btn btn-secondary">Open</a>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="8">No stock transfers found.</td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-</body>
-</html>
+@endsection

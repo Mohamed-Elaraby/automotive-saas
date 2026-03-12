@@ -5,11 +5,6 @@
     <div class="page-wrapper">
         <div class="content container-fluid">
 
-            @php
-                $reportRows = $inventories ?? $rows ?? collect();
-                $branchRows = $branches ?? collect();
-            @endphp
-
             @include('automotive.admin.partials.page-header', [
                 'title' => 'Inventory Report',
                 'subtitle' => 'Current stock balance by branch and product.',
@@ -30,8 +25,8 @@
                                     <label class="form-label">Branch</label>
                                     <select name="branch_id" class="form-control">
                                         <option value="">All branches</option>
-                                        @foreach($branchRows as $branch)
-                                            <option value="{{ $branch->id }}" {{ request('branch_id', $branchId ?? '') == $branch->id ? 'selected' : '' }}>
+                                        @foreach($branches as $branch)
+                                            <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
                                                 {{ $branch->name }}
                                             </option>
                                         @endforeach
@@ -46,7 +41,7 @@
                                         type="text"
                                         name="search"
                                         class="form-control"
-                                        value="{{ request('search', $search ?? '') }}"
+                                        value="{{ request('search') }}"
                                         placeholder="Search by product name / SKU / code"
                                     >
                                 </div>
@@ -78,16 +73,16 @@
                             </tr>
                             </thead>
                             <tbody>
-                            @forelse($reportRows as $row)
+                            @forelse($rows as $row)
                                 @php
                                     $currentQty = (float) ($row->quantity ?? 0);
-                                    $minAlert = (float) (($row->product->min_stock_alert ?? 0) ?: ($row->min_stock_alert ?? 0));
+                                    $minAlert = (float) ($row->min_stock_alert ?? 0);
                                     $isLowStock = $minAlert > 0 && $currentQty <= $minAlert;
                                 @endphp
                                 <tr>
-                                    <td>{{ $row->branch->name ?? '-' }}</td>
-                                    <td>{{ $row->product->name ?? '-' }}</td>
-                                    <td>{{ $row->product->sku ?? '-' }}</td>
+                                    <td>{{ $row->branch_name ?? $row->branch->name ?? '-' }}</td>
+                                    <td>{{ $row->product_name ?? $row->product->name ?? '-' }}</td>
+                                    <td>{{ $row->product_sku ?? $row->product->sku ?? '-' }}</td>
                                     <td>{{ number_format($currentQty, 2) }}</td>
                                     <td>{{ number_format($minAlert, 2) }}</td>
                                     <td>
@@ -104,7 +99,7 @@
                         </table>
                     </div>
 
-                    @if($reportRows->isEmpty())
+                    @if($rows->isEmpty())
                         <div class="mt-3">
                             @include('automotive.admin.partials.empty-state', [
                                 'title' => 'No inventory data found',

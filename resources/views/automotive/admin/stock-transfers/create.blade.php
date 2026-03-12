@@ -1,51 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Stock Transfer</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 24px; background: #f8fafc; color: #111827; }
-        .wrap { max-width: 1000px; margin: 0 auto; }
-        .card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
-        input, select, textarea { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; margin-top:6px; }
-        label { display:block; font-weight:600; }
-        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        .btn { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none; border:0; cursor:pointer; }
-        .btn-primary { background:#2563eb; color:#fff; }
-        .btn-secondary { background:#374151; color:#fff; }
-        .errors { margin-bottom:16px; padding:12px 14px; background:#fee2e2; color:#991b1b; border-radius:8px; }
-        .actions { margin-top:20px; display:flex; gap:10px; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
-        <h1>Create Stock Transfer</h1>
-        <a href="/automotive/admin/stock-transfers" class="btn btn-secondary">Back</a>
-    </div>
+<?php $page = 'stock-transfers'; ?>
+@extends('automotive.layouts.adminLayout.mainlayout')
 
-    @if ($errors->any())
-        <div class="errors">
-            <ul style="margin:0; padding-left:18px;">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+@section('content')
+    <div class="page-wrapper">
+        <div class="content container-fluid">
 
-    <div class="card">
-        <form method="POST" action="/automotive/admin/stock-transfers">
-            @csrf
+            @include('automotive.admin.partials.page-header', [
+                'title' => 'Create Stock Transfer',
+                'subtitle' => 'Move stock between branches as a draft first.',
+                'breadcrumbs' => [
+                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
+                    ['label' => 'Stock Transfers', 'url' => route('automotive.admin.stock-transfers.index')],
+                    ['label' => 'Create Transfer'],
+                ],
+            ])
 
-            @include('automotive.admin.stock-transfers._form')
+            <div class="card">
+                <div class="card-body">
+                    @include('automotive.admin.partials.alerts')
 
-            <div class="actions">
-                <button type="submit" class="btn btn-primary">Save Draft Transfer</button>
+                    <form action="{{ route('automotive.admin.stock-transfers.store') }}" method="POST">
+                        @include('automotive.admin.stock-transfers._form', [
+                            'stockTransfer' => $stockTransfer ?? null,
+                            'branches' => $branches ?? collect(),
+                            'products' => $products ?? collect(),
+                        ])
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-</body>
-</html>
+@endsection
