@@ -32,7 +32,7 @@ class TenantPlanService
         return Plan::on($this->centralConnection())->find($subscription->plan_id);
     }
 
-    public function getLimit(string $tenantId, string $field): int|null
+    public function getLimit(string $tenantId, string $field): ?int
     {
         $plan = $this->getCurrentPlan($tenantId);
 
@@ -40,6 +40,18 @@ class TenantPlanService
             return null;
         }
 
-return $plan->{$field} ?? null;
-}
+        return $plan->{$field} ?? null;
+    }
+
+    public function getLimitSummary(string $tenantId, string $field, int $currentCount): array
+    {
+        $limit = $this->getLimit($tenantId, $field);
+
+        return [
+            'limit' => $limit,
+            'current' => $currentCount,
+            'remaining' => is_null($limit) ? null : max($limit - $currentCount, 0),
+            'unlimited' => is_null($limit),
+        ];
+    }
 }

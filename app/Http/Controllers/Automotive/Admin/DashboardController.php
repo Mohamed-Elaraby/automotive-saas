@@ -9,29 +9,20 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
-use App\Services\Tenancy\TenantLimitService;
 use App\Services\Tenancy\TenantPlanService;
-use App\Services\Tenancy\TenantSubscriptionService;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     public function __construct(
-        protected TenantSubscriptionService $tenantSubscriptionService,
-        protected TenantPlanService $tenantPlanService,
-        protected TenantLimitService $tenantLimitService
+        protected TenantPlanService $tenantPlanService
     ) {
     }
 
-public function index()
+public function index(): View
 {
     $tenant = tenant();
-
-    if (! $tenant) {
-        abort(404, 'Tenant not identified.');
-    }
-
-    $subscription = $this->tenantSubscriptionService->getCurrentSubscription($tenant->id);
-    $plan = $this->tenantPlanService->getCurrentPlan($tenant->id);
+    $tenantId = $tenant->id;
 
     $usersCount = User::query()->count();
     $branchesCount = Branch::query()->count();
@@ -40,37 +31,50 @@ public function index()
     $stockTransfersCount = StockTransfer::query()->count();
     $stockMovementsCount = StockMovement::query()->count();
 
-    $userLimit = $this->tenantLimitService->getDecision(
-        $tenant->id,
-        'max_users',
-        $usersCount
-    );
+    $userLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_users', $usersCount);
+    $branchLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_branches', $branchesCount);
+    $productLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_products', $productsCount);
 
-    $branchLimit = $this->tenantLimitService->getDecision(
-        $tenant->id,
-        'max_branches',
-        $branchesCount
-    );
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
 
-    $productLimit = $this->tenantLimitService->getDecision(
-        $tenant->id,
-        'max_products',
-        $productsCount
-    );
+    $lowStockItems = Inventory::query()
+        ->with(['product', 'branch'])
+        ->whereHas('product', function ($query) {
+            $query->whereColumn('inventories.quantity', '<=', 'products.min_stock_alert');
+        })
+        ->orderBy('quantity')
+        ->limit(5)
+        ->get();
 
-    return view('automotive.admin.dashboard.index', [
-        'tenant' => $tenant,
-        'subscription' => $subscription,
-        'plan' => $plan,
-        'usersCount' => $usersCount,
-        'branchesCount' => $branchesCount,
-        'productsCount' => $productsCount,
-        'inventoriesCount' => $inventoriesCount,
-        'stockTransfersCount' => $stockTransfersCount,
-        'stockMovementsCount' => $stockMovementsCount,
-        'userLimit' => $userLimit,
-        'branchLimit' => $branchLimit,
-        'productLimit' => $productLimit,
-    ]);
+    $recentTransfers = StockTransfer::query()
+        ->with(['fromBranch', 'toBranch'])
+        ->latest()
+        ->limit(5)
+        ->get();
+
+    $recentMovements = StockMovement::query()
+        ->with(['branch', 'product'])
+        ->latest()
+        ->limit(6)
+        ->get();
+
+    return view('automotive.admin.dashboard.index', compact(
+        'tenant',
+        'usersCount',
+        'branchesCount',
+        'productsCount',
+        'inventoriesCount',
+        'stockTransfersCount',
+        'stockMovementsCount',
+        'userLimit',
+        'branchLimit',
+        'productLimit',
+        'subscription',
+        'plan',
+        'lowStockItems',
+        'recentTransfers',
+        'recentMovements'
+    ));
 }
 }

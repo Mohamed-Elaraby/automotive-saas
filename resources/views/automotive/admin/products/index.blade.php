@@ -1,120 +1,109 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 24px; background: #f8fafc; color: #111827; }
-        .wrap { max-width: 1200px; margin: 0 auto; }
-        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; }
-        .btn { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none; border:0; cursor:pointer; }
-        .btn-primary { background:#2563eb; color:#fff; }
-        .btn-secondary { background:#374151; color:#fff; }
-        .btn-danger { background:#dc2626; color:#fff; }
-        .card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
-        table { width:100%; border-collapse:collapse; }
-        th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:top; }
-        .alert { margin-bottom:16px; padding:12px 14px; border-radius:8px; }
-        .alert-success { background:#dcfce7; color:#166534; }
-        .alert-error { background:#fee2e2; color:#991b1b; }
-        .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; }
-        .badge-active { background:#dcfce7; color:#166534; }
-        .badge-inactive { background:#fee2e2; color:#991b1b; }
-        .actions { display:flex; gap:8px; flex-wrap:wrap; }
-        form { display:inline; }
-        .meta { font-size:14px; color:#4b5563; margin-top:6px; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
-        <div>
-            <h1>Products</h1>
-            @if ($limitInfo)
-                <div class="meta">
-                    Current products: {{ $limitInfo['current'] }}
-                    @if (! is_null($limitInfo['limit']))
-                        / {{ $limitInfo['limit'] }} — Remaining: {{ $limitInfo['remaining'] }}
-                    @else
-                        / Unlimited
+<?php $page = 'products'; ?>
+@extends('automotive.layouts.adminLayout.mainlayout')
+
+@section('content')
+    <div class="page-wrapper">
+        <div class="content content-two">
+
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+                <div>
+                    <h6>Products</h6>
+                    @if ($limitInfo)
+                        <p class="mb-0 text-muted">
+                            Current products: {{ $limitInfo['current'] }}
+                            @if (!is_null($limitInfo['limit']))
+                                / {{ $limitInfo['limit'] }} — Remaining: {{ $limitInfo['remaining'] }}
+                            @else
+                                / Unlimited
+                            @endif
+                        </p>
                     @endif
                 </div>
+                <div>
+                    <a href="{{ route('automotive.admin.products.create') }}" class="btn btn-primary d-flex align-items-center">
+                        <i class="isax isax-add-circle5 me-1"></i>New Product
+                    </a>
+                </div>
+            </div>
+
+            @if (session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
             @endif
-        </div>
 
-        <div style="display:flex;gap:10px;">
-            <a href="/automotive/admin/dashboard" class="btn btn-secondary">Dashboard</a>
-            <a href="/automotive/admin/products/create" class="btn btn-primary">Add Product</a>
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0 ps-3">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="table-responsive">
+                <table class="table table-nowrap datatable">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>SKU</th>
+                        <th>Barcode</th>
+                        <th>Unit</th>
+                        <th>Cost Price</th>
+                        <th>Sale Price</th>
+                        <th>Min Alert</th>
+                        <th>Status</th>
+                        <th class="no-sort"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @forelse ($products as $product)
+                        <tr>
+                            <td>
+                                <h6 class="fs-14 fw-medium mb-0">{{ $product->name }}</h6>
+                            </td>
+                            <td>{{ $product->sku }}</td>
+                            <td>{{ $product->barcode ?: '—' }}</td>
+                            <td>{{ $product->unit }}</td>
+                            <td>{{ $product->cost_price }}</td>
+                            <td>{{ $product->sale_price }}</td>
+                            <td>{{ $product->min_stock_alert }}</td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" disabled {{ $product->is_active ? 'checked' : '' }}>
+                                </div>
+                            </td>
+                            <td class="action-item">
+                                <a href="javascript:void(0);" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a href="{{ route('automotive.admin.products.edit', $product) }}" class="dropdown-item d-flex align-items-center">
+                                            <i class="isax isax-edit me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <form method="POST" action="{{ route('automotive.admin.products.destroy', $product) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item d-flex align-items-center border-0 bg-transparent w-100" onclick="return confirm('Are you sure you want to delete this product?');">
+                                                <i class="isax isax-trash me-2"></i>Delete
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9">No products found.</td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @include('automotive.admin.components.page-footer')
         </div>
     </div>
-
-    @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    @if ($errors->has('limit'))
-        <div class="alert alert-error">{{ $errors->first('limit') }}</div>
-    @endif
-
-    @if ($errors->has('delete'))
-        <div class="alert alert-error">{{ $errors->first('delete') }}</div>
-    @endif
-
-    <div class="card">
-        <table>
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>SKU</th>
-                <th>Barcode</th>
-                <th>Unit</th>
-                <th>Cost</th>
-                <th>Sale</th>
-                <th>Min Alert</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            @forelse ($products as $product)
-                <tr>
-                    <td>{{ $product->id }}</td>
-                    <td>{{ $product->name }}</td>
-                    <td>{{ $product->sku }}</td>
-                    <td>{{ $product->barcode ?: '—' }}</td>
-                    <td>{{ $product->unit }}</td>
-                    <td>{{ $product->cost_price }}</td>
-                    <td>{{ $product->sale_price }}</td>
-                    <td>{{ $product->min_stock_alert }}</td>
-                    <td>
-                        @if ($product->is_active)
-                            <span class="badge badge-active">Active</span>
-                        @else
-                            <span class="badge badge-inactive">Inactive</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="actions">
-                            <a href="/automotive/admin/products/{{ $product->id }}/edit" class="btn btn-secondary">Edit</a>
-
-                            <form method="POST" action="/automotive/admin/products/{{ $product->id }}" onsubmit="return confirm('Are you sure you want to delete this product?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger">Delete</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="10">No products found.</td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-</body>
-</html>
+@endsection

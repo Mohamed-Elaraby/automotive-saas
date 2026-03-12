@@ -37,8 +37,8 @@ let themesettings = `
                                     <label for="defaultLayout">
                                         <span class="d-block mb-2 layout-img">
                                             <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/default.svg" alt="img">
-                                        </span>                                     
+                                            <img src="/theme/img/theme/default.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Default</span>
                                     </label>
                                 </div>
@@ -49,8 +49,8 @@ let themesettings = `
                                     <label for="singleLayout">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/single.svg" alt="img">
-                                        </span>                                    
+                                            <img src="/theme/img/theme/single.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Single</span>
                                     </label>
                                 </div>
@@ -61,8 +61,8 @@ let themesettings = `
                                     <label for="miniLayout">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/mini.svg" alt="img">
-                                        </span>                                    
+                                            <img src="/theme/img/theme/mini.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Mini</span>
                                     </label>
                                 </div>
@@ -73,8 +73,8 @@ let themesettings = `
                                     <label for="transparentLayout">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/transparent.svg" alt="img">
-                                        </span>                                    
+                                            <img src="/theme/img/theme/transparent.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Transparent</span>
                                     </label>
                                 </div>
@@ -85,8 +85,8 @@ let themesettings = `
                                     <label for="without-headerLayout">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/without-header.svg" alt="img">
-                                        </span>                                    
+                                            <img src="/theme/img/theme/without-header.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Without Header</span>
                                     </label>
                                 </div>
@@ -94,8 +94,8 @@ let themesettings = `
                             <div class="col-4">
                                 <a href="layout-rtl" class="theme-layout mb-3 text-center">
                                     <span class="d-block mb-2 layout-img">
-                                        <img src="theme/img/theme/rtl.svg" alt="img">
-                                    </span>                                    
+                                        <img src="/theme/img/theme/rtl.svg" alt="img">
+                                    </span>
                                     <span class="layout-type d-block">RTL</span>
                                 </a>
                             </div>
@@ -103,7 +103,7 @@ let themesettings = `
                     </div>
                     </div>
                 </div>
-            </div> 
+            </div>
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button text-gray-9 fw-semibold fs-16" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarsetting" aria-expanded="true">
@@ -124,7 +124,7 @@ let themesettings = `
                                 <label for="boxWidth" class="d-flex align-items-center rounded fs-12"><i class="isax isax-slider-vertical me-1"></i>Boxed Layout
                                 </label>
                             </div>
-                        </div>  
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -175,13 +175,13 @@ let themesettings = `
                                 <label for="sidebar6Sidebar" class="d-block rounded bg-info mb-2">
                                     <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
                                 </label>
-                            </div>    
+                            </div>
                             <div class="theme-colorselect m-1 me-2">
                                 <input type="radio" name="sidebar" id="sidebar7Sidebar" value="sidebar7">
                                 <label for="sidebar7Sidebar" class="d-block rounded bg-success mb-2">
                                     <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
                                 </label>
-                            </div>      
+                            </div>
                         </div>
                         <h6 class="fs-14 fw-medium mb-2">Gradient Colors</h6>
                        <div class="d-flex align-items-center flex-wrap">
@@ -220,12 +220,12 @@ let themesettings = `
                                 <label for="gradientsidebar6Sidebar" class="d-block rounded bg-danger bg-gradient mb-2">
                                     <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
                                 </label>
-                            </div>    
+                            </div>
                         </div>
                     </div>
                     </div>
                 </div>
-            </div>    
+            </div>
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button text-gray-9 fw-semibold fs-16" type="button" data-bs-toggle="collapse" data-bs-target="#sizesetting" aria-expanded="true" aria-controls="collapsecustomicon1One">
@@ -242,8 +242,8 @@ let themesettings = `
                                     <label for="defaultSize">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/default.svg" alt="img">
-                                        </span>                                     
+                                            <img src="/theme/img/theme/default.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Default</span>
                                     </label>
                                 </div>
@@ -254,8 +254,8 @@ let themesettings = `
                                     <label for="singleSize">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/single.svg" alt="img">
-                                        </span>                                    
+                                            <img src="/theme/img/theme/single.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Single</span>
                                     </label>
                                 </div>
@@ -266,8 +266,8 @@ let themesettings = `
                                     <label for="compactSize">
                                         <span class="d-block mb-2 layout-img">
                                         <span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                            <img src="theme/img/theme/mini.svg" alt="img">
-                                        </span>                                    
+                                            <img src="/theme/img/theme/mini.svg" alt="img">
+                                        </span>
                                         <span class="layout-type">Compact</span>
                                     </label>
                                 </div>
@@ -309,15 +309,15 @@ let themesettings = `
                             <div class="theme-colorselect mb-3 me-3">
                                 <input type="radio" name="topbar" id="topbar4Topbar" value="topbar4">
                                 <label for="topbar4Topbar" class="bg-secondary"><span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span></label>
-                            </div>                   
+                            </div>
                             <div class="theme-colorselect mb-3 me-3">
                                 <input type="radio" name="topbar" id="topbar5Topbar" value="topbar5">
                                 <label for="topbar5Topbar" class="bg-info"><span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span></label>
-                            </div>                   
+                            </div>
                             <div class="theme-colorselect mb-3">
                                 <input type="radio" name="topbar" id="topbar6Topbar" value="topbar6">
                                 <label for="topbar6Topbar" class="bg-success"><span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span></label>
-                            </div> 
+                            </div>
                         </div>
                         <h6 class="fs-14 fw-medium mb-2">Gradient Colors</h6>
                        <div class="d-flex align-items-center flex-wrap topbar-background">
@@ -342,17 +342,17 @@ let themesettings = `
                             <div class="theme-colorselect mb-3 me-3">
                                 <input type="radio" name="topbar" id="gradienttopbar5Topbar" value="gradienttopbar5">
                                 <label for="gradienttopbar5Topbar" class="bg-dark bg-gradient"><span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span></label>
-                            </div>                   
+                            </div>
                             <div class="theme-colorselect mb-3 me-3">
                                 <input type="radio" name="topbar" id="gradienttopbar6Topbar" value="gradienttopbar6">
                                 <label for="gradienttopbar6Topbar" class="bg-danger bg-gradient"><span class="theme-check rounded-circle"><i class="fa-solid fa-check"></i></span></label>
-                            </div>                  
+                            </div>
                         </div>
                     </div>
                  </div>
                 </div>
-            </div>      
-		    
+            </div>
+
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button text-gray-9 fw-semibold fs-16" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarbgsetting" aria-expanded="true">
@@ -364,54 +364,54 @@ let themesettings = `
                      <div class="theme-content">
                      <h6 class="fs-14 fw-medium mb-2">Pattern</h6>
                        <div class="d-flex align-items-center flex-wrap">
-                            <div class="theme-sidebarbg me-3 mb-3">                            
-                           
+                            <div class="theme-sidebarbg me-3 mb-3">
+
                                 <input type="radio" name="sidebarbg" id="sidebarBg1" value="sidebarbg1">
                                 <label for="sidebarBg1" class="d-block rounded">
                                  <span class="theme-check2 rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                    <img src="theme/img/theme/sidebar-bg-01.svg" alt="img" class="rounded">
+                                    <img src="/theme/img/theme/sidebar-bg-01.svg" alt="img" class="rounded">
                                 </label>
                             </div>
                             <div class="theme-sidebarbg me-3 mb-3">
                                 <input type="radio" name="sidebarbg" id="sidebarBg2" value="sidebarbg2">
                                 <label for="sidebarBg2" class="d-block rounded">
                                  <span class="theme-check2 rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                    <img src="theme/img/theme/sidebar-bg-02.svg" alt="img" class="rounded">
+                                    <img src="/theme/img/theme/sidebar-bg-02.svg" alt="img" class="rounded">
                                 </label>
                             </div>
                             <div class="theme-sidebarbg me-3 mb-3">
                                 <input type="radio" name="sidebarbg" id="sidebarBg3" value="sidebarbg3">
                                 <label for="sidebarBg3" class="d-block rounded">
                                  <span class="theme-check2 rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                    <img src="theme/img/theme/sidebar-bg-03.svg" alt="img" class="rounded">
+                                    <img src="/theme/img/theme/sidebar-bg-03.svg" alt="img" class="rounded">
                                 </label>
                             </div>
                             <div class="theme-sidebarbg me-3 mb-3">
                                 <input type="radio" name="sidebarbg" id="sidebarBg4" value="sidebarbg4">
                                 <label for="sidebarBg4" class="d-block rounded">
                                  <span class="theme-check2 rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                    <img src="theme/img/theme/sidebar-bg-04.svg" alt="img" class="rounded">
+                                    <img src="/theme/img/theme/sidebar-bg-04.svg" alt="img" class="rounded">
                                 </label>
                             </div>
                             <div class="theme-sidebarbg me-3 mb-3">
                                 <input type="radio" name="sidebarbg" id="sidebarBg5" value="sidebarbg5">
                                 <label for="sidebarBg5" class="d-block rounded">
                                  <span class="theme-check2 rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                    <img src="theme/img/theme/sidebar-bg-05.svg" alt="img" class="rounded">
+                                    <img src="/theme/img/theme/sidebar-bg-05.svg" alt="img" class="rounded">
                                 </label>
                             </div>
                             <div class="theme-sidebarbg mb-3">
                                 <input type="radio" name="sidebarbg" id="sidebarBg6" value="sidebarbg6">
                                 <label for="sidebarBg6" class="d-block rounded">
                                  <span class="theme-check2 rounded-circle"><i class="fa-solid fa-check"></i></span>
-                                    <img src="theme/img/theme/sidebar-bg-06.svg" alt="img" class="rounded">
+                                    <img src="/theme/img/theme/sidebar-bg-06.svg" alt="img" class="rounded">
                                 </label>
                             </div>
                         </div>
                       </div>
                     </div>
                 </div>
-            </div>    
+            </div>
             <div class="accordion-item">
                 <h2 class="accordion-header">
                     <button class="accordion-button text-gray-9 fw-semibold fs-16" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarcolor" aria-expanded="true">
@@ -445,13 +445,13 @@ let themesettings = `
                             <div class="theme-colorsset me-2 mb-2">
                                 <input type="radio" name="color" id="warningColor" value="warning">
                                 <label for="warningColor" class="warning-clr"></label>
-                            </div>  
+                            </div>
                         </div>
                          </div>
                     </div>
                 </div>
-            </div> 
-        </div> 
+            </div>
+        </div>
     </div>
         <div class="p-3 border-top">
             <div class="row gx-3">
@@ -462,9 +462,9 @@ let themesettings = `
                     <a href="#" class="btn btn-primary w-100" data-bs-dismiss="offcanvas"><i class="ti ti-shopping-cart-plus me-1"></i>Buy Product</a>
                 </div>
             </div>
-        </div>    
+        </div>
     </div> `
-    
+
     document.addEventListener("DOMContentLoaded", function() {
 
     document.body.insertAdjacentHTML('beforeend', themesettings);
@@ -512,14 +512,14 @@ let themesettings = `
         const resetButton = document.getElementById('resetbutton');
         const sidebarBgContainer = document.getElementById('sidebarbgContainer');
         const sidebarElement = document.querySelector('.sidebar'); // Adjust this selector to match your sidebar element
-    
+
         function setThemeAndSidebarTheme(theme, sidebarTheme, color, layout, topbar, size, width) {
             // Check if the sidebar element exists
             if (!sidebarElement) {
                 console.error('Sidebar element not found');
                 return;
             }
-    
+
             // Setting data attributes and classes
             document.documentElement.setAttribute('data-bs-theme', theme);
             document.documentElement.setAttribute('data-sidebar', sidebarTheme);
@@ -528,7 +528,7 @@ let themesettings = `
             document.documentElement.setAttribute('data-topbar', topbar);
             document.documentElement.setAttribute('data-size', size);
             document.documentElement.setAttribute('data-width', width);
-    
+
             //track mini-layout set or not
             layout_mini = 0;
             if (layout === 'mini') {
@@ -548,7 +548,7 @@ let themesettings = `
                 document.body.classList.remove("mini-sidebar", "menu-horizontal");
             }
 
-            
+
             if (size === 'compact') {
                 document.body.classList.add("mini-sidebar");
                 document.body.classList.remove("expand-menu");
@@ -579,7 +579,7 @@ let themesettings = `
             ((width === 'box') && (layout === 'horizontal-single')) || ((width === 'box') && (layout === 'without-header'))) {
                     document.body.classList.remove("mini-sidebar");
             }
-            
+
             // Saving to localStorage
             localStorage.setItem('theme', theme);
             localStorage.setItem('sidebarTheme', sidebarTheme);
@@ -588,7 +588,7 @@ let themesettings = `
             localStorage.setItem('topbar', topbar);
             localStorage.setItem('size', size);
             localStorage.setItem('width', width);
-    
+
             // Show/hide sidebar background options based on layout selection
             if (layout === 'box' && sidebarBgContainer) {
                 sidebarBgContainer.classList.add('show');
@@ -596,10 +596,10 @@ let themesettings = `
                 sidebarBgContainer.classList.remove('show');
             }
         }
-    
+
         function handleSidebarBgChange() {
             const sidebarBg = document.querySelector('input[name="sidebarbg"]:checked') ? document.querySelector('input[name="sidebarbg"]:checked').value : null;
-    
+
             if (sidebarBg) {
                 document.body.setAttribute('data-sidebarbg', sidebarBg);
                 localStorage.setItem('sidebarBg', sidebarBg);
@@ -608,7 +608,7 @@ let themesettings = `
                 localStorage.removeItem('sidebarBg');
             }
         }
-    
+
         function handleInputChange() {
            // const theme = 'light'
            const theme = localStorage.getItem('darkMode') === 'enabled' ? 'dark' : 'light';
@@ -617,11 +617,11 @@ let themesettings = `
             const size = document.querySelector('input[name="size"]:checked').value;
             const width = document.querySelector('input[name="width"]:checked').value;
 
-            
+
             color = localStorage.getItem('primaryRGB');
             sidebarTheme = localStorage.getItem('sidebarRGB');
             topbar = localStorage.getItem('topbarRGB');
-            
+
             if(document.querySelector('input[name="color"]:checked') != null)
             {
                 color = document.querySelector('input[name="color"]:checked').value;
@@ -642,12 +642,12 @@ let themesettings = `
             }else{
                 topbar = 'all'
             }
-    
+
             setThemeAndSidebarTheme(theme, sidebarTheme, color, layout, topbar, size, width);
         }
 
-      
-    
+
+
         function resetThemeAndSidebarThemeAndColorAndBg() {
             setThemeAndSidebarTheme('light', 'light', 'primary', 'default', 'white', 'default', 'fluid');
             document.body.removeAttribute('data-sidebarbg');
@@ -666,15 +666,15 @@ let themesettings = `
             document.getElementById('whiteTopbar').checked = true;
             document.getElementById('defaultSize').checked = true;
             document.getElementById('fluidWidth').checked = true;
-    
+
             const checkedSidebarBg = document.querySelector('input[name="sidebarbg"]:checked');
             if (checkedSidebarBg) {
                 checkedSidebarBg.checked = false;
             }
-    
+
             localStorage.removeItem('sidebarBg');
         }
-    
+
         // Adding event listeners
         sidebarRadios.forEach(radio => radio.addEventListener('change', handleInputChange));
         colorRadios.forEach(radio => radio.addEventListener('change', handleInputChange));
@@ -685,7 +685,7 @@ let themesettings = `
         sidebarBgRadios.forEach(radio => radio.addEventListener('change', handleSidebarBgChange));
         topbarbgRadios.forEach(radio => radio.addEventListener('change', handleTopbarBgChange));
         resetButton.addEventListener('click', resetThemeAndSidebarThemeAndColorAndBg);
-    
+
         // Initial setup from localStorage
         const savedTheme = localStorage.getItem('darkMode') === 'enabled' ? 'dark' : 'light';
 
@@ -699,7 +699,7 @@ let themesettings = `
         const savedTopbarBg = localStorage.getItem('topbarbg') || null;
 
         // setup theme color all
-        const savedColorPickr = localStorage.getItem('primaryRGB') 
+        const savedColorPickr = localStorage.getItem('primaryRGB')
         if((savedColor == null) && (savedColorPickr == null))
         {
             savedColor = 'primary';
@@ -711,7 +711,7 @@ let themesettings = `
         }
 
         // setup theme topbar all
-        const savedTopbarPickr = localStorage.getItem('topbarRGB') 
+        const savedTopbarPickr = localStorage.getItem('topbarRGB')
         if((savedTopbar == null) && (savedTopbarPickr == null))
         {
             savedTopbar = 'white';
@@ -721,9 +721,9 @@ let themesettings = `
             let html = document.querySelector("html");
             html.style.setProperty("--topbar-rgb",  savedTopbarPickr);
         }
- 
+
         // setup theme color all
-        const savedSidebarPickr = localStorage.getItem('sidebarRGB') 
+        const savedSidebarPickr = localStorage.getItem('sidebarRGB')
         if((savedSidebarTheme == null) && (savedSidebarPickr == null))
         {
             savedSidebarTheme = 'light';
@@ -733,9 +733,9 @@ let themesettings = `
             let html = document.querySelector("html");
             html.style.setProperty("--sidebar-rgb",  savedSidebarPickr);
         }
-    
+
         setThemeAndSidebarTheme(savedTheme, savedSidebarTheme, savedColor, savedLayout, savedTopbar, savedSize, savedWidth);
-    
+
         if (savedSidebarBg) {
             document.body.setAttribute('data-sidebarbg', savedSidebarBg);
         } else {
@@ -747,7 +747,7 @@ let themesettings = `
         } else {
             document.body.removeAttribute('data-topbarbg');
         }
-    
+
         // Check and set radio buttons based on saved preferences
         if (document.getElementById(`${savedTheme}Theme`)) {
             document.getElementById(`${savedTheme}Theme`).checked = true;
@@ -776,10 +776,9 @@ let themesettings = `
         if (savedTopbarBg && document.getElementById(`${savedTopbarBg}`)) {
             document.getElementById(`${savedTopbarBg}`).checked = true;
         }
-    
+
         // Initially hide sidebar background options based on layout
         if (savedLayout !== 'box' && sidebarBgContainer) {
             sidebarBgContainer.classList.remove('show');
         }
     });
-    

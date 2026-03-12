@@ -29,7 +29,7 @@
 <html lang="en" data-layout="without-header">
 @endif
 
-@component('components.title-meta')
+@component('automotive.layouts.components.title-meta')
 @endcomponent
 
 @if (!Route::is(['coming-soon', 'error-404', 'error-500', 'under-construction', 'coming-soon', 'under-maintenance', 'layout-mini', 'layout-rtl', 'lock-screen', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'general-invoice-5', 'two-step-verification', 'free-trial' ,'reset-password','register']))
@@ -72,8 +72,9 @@
     'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))
         @include('automotive.layouts.adminLayout.partials.sidebar')
     @endif
+    @php($page = $page ?? '')
         @yield('content')
-    @component('components.modal-popup')
+    @component('automotive.layouts.components.modal-popup')
     @endcomponent
 </div>
 <!-- End Main Wrapper -->
