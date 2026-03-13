@@ -6,6 +6,7 @@ use App\Http\Controllers\Automotive\Admin\DashboardController;
 use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\InventoryReportController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
+use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
 use App\Http\Controllers\Automotive\Admin\StockTransferController;
 use App\Http\Controllers\Automotive\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +71,9 @@ Route::prefix('automotive/admin')
             Route::get('/stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
             Route::post('/stock-transfers/{stockTransfer}/post', [StockTransferController::class, 'post'])->name('stock-transfers.post');
 
+
+            Route::get('/stock-movements', [StockMovementReportController::class, 'index'])
+                ->name('stock-movements.index');
         });
 
 
