@@ -38,7 +38,7 @@ jobs:
           test -n "$PORT"
           test -n "$USER"
 
-          ssh -p "$PORT" \
+          ssh -T -p "$PORT" \
           -o BatchMode=yes \
           -o StrictHostKeyChecking=yes \
           -o ServerAliveInterval=30 \
@@ -47,6 +47,7 @@ jobs:
           -o ConnectTimeout=30 \
           "$USER@$HOST" 'bash -s' <<'EOF'
           set -euo pipefail
+          set -x
 
           APP_DIR="/var/www/automotive"
           cd "$APP_DIR"
@@ -105,15 +106,20 @@ jobs:
           timeout 15s sudo -n /usr/bin/supervisorctl update || true
 
           echo "==> Restart worker (non-blocking)"
-          # restart أسرع من stop/start وغالبًا لا يعلق
           timeout 15s sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || true
 
-          # لو لسه STOPPING، اقتله بالقوة ثم ابدأه
-          if sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 | grep -qi "STOPPING"; then
+          echo "==> Check worker status"
+          WORKER_STATUS="$(timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true)"
+          echo "$WORKER_STATUS"
+
+          if echo "$WORKER_STATUS" | grep -qi "STOPPING"; then
             echo "==> Worker stuck in STOPPING, force killing queue:work"
             timeout 5s sudo -n /usr/bin/pkill -f "artisan queue:work" || true
             timeout 5s sudo -n /usr/bin/pkill -9 -f "artisan queue:work" || true
             timeout 10s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
+
+            echo "==> Worker status after force restart"
+            timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
           fi
 
           timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true
