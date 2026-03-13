@@ -139,7 +139,7 @@
                         <ul>
                             <li class="{{ $page === 'inventory-adjustments' ? 'active' : '' }}">
                                 <a href="{{ route('automotive.admin.inventory-adjustments.index') }}">
-                                    <i class="isax isax-arrows-swap5"></i><span>Inventory Adjustments</span>
+                                    <i class="isax isax-arrow-right-3"></i><span>Inventory Adjustments</span>
                                 </a>
                             </li>
                             <li class="{{ $page === 'stock-transfers' ? 'active' : '' }}">
