@@ -2,16 +2,17 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Tenancy\TenantSubscriptionService;
+use App\Services\Billing\TenantBillingLifecycleService;
+use App\Services\Tenancy\TenantPlanService;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureTenantSubscriptionIsActive
 {
     public function __construct(
-        protected TenantSubscriptionService $subscriptionService
+        protected TenantPlanService $tenantPlanService,
+        protected TenantBillingLifecycleService $tenantBillingLifecycleService
     ) {
     }
 
@@ -20,22 +21,26 @@ public function handle(Request $request, Closure $next): Response
     $tenant = tenant();
 
     if (! $tenant) {
-        abort(404, 'Tenant not identified.');
+        abort(404, 'Tenant context is not available.');
     }
 
-    $decision = $this->subscriptionService->getAccessDecision($tenant->id);
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+    $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
 
-    if ($decision['allowed']) {
-        return $next($request);
+    $allowedRoutes = [
+        'automotive.admin.subscription.expired',
+        'automotive.admin.billing.status',
+        'automotive.admin.logout',
+    ];
+
+    if (! $billingState['allow_access']) {
+        if (! in_array(optional($request->route())->getName(), $allowedRoutes, true)) {
+            return redirect()
+                ->route('automotive.admin.billing.status')
+                ->with('error', $billingState['message']);
+        }
     }
 
-    if (Auth::guard('automotive_admin')->check()) {
-        Auth::guard('automotive_admin')->logout();
-    }
-
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-
-    return redirect('/automotive/admin/subscription-expired');
+    return $next($request);
 }
 }

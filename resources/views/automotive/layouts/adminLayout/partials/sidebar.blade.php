@@ -163,8 +163,8 @@
                     <li class="menu-title"><span>Subscription</span></li>
                     <li>
                         <ul>
-                            <li>
-                                <a href="javascript:void(0);">
+                            <li class="{{ $page === 'billing' ? 'active' : '' }}">
+                                <a href="{{ route('automotive.admin.billing.status') }}">
                                     <i class="isax isax-crown5"></i><span>Plans & Billing</span>
                                 </a>
                             </li>

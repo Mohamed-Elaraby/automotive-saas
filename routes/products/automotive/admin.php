@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
+use App\Http\Controllers\Automotive\Admin\BillingController;
 use App\Http\Controllers\Automotive\Admin\BranchController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
 use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
@@ -72,8 +73,9 @@ Route::prefix('automotive/admin')
             Route::post('/stock-transfers/{stockTransfer}/post', [StockTransferController::class, 'post'])->name('stock-transfers.post');
 
 
-            Route::get('/stock-movements', [StockMovementReportController::class, 'index'])
-                ->name('stock-movements.index');
+            Route::get('/stock-movements', [StockMovementReportController::class, 'index'])->name('stock-movements.index');
+
+            Route::get('/billing', [BillingController::class, 'status'])->name('billing.status');
         });
 
 
