@@ -4,14 +4,11 @@ namespace App\Services\Billing;
 
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
-use Stancl\Tenancy\Contracts\Tenant;
 
 class TenantBillingLifecycleService
 {
     public function resolveState(?object $subscription): array
     {
-        $now = now();
-
         if (! $subscription) {
             return $this->buildState(
                 SubscriptionStatuses::EXPIRED,
@@ -31,7 +28,7 @@ class TenantBillingLifecycleService
                 if ($graceEndsAt && $graceEndsAt->isFuture()) {
                     return $this->buildState(
                         SubscriptionStatuses::GRACE_PERIOD,
-                        'Your trial has ended and the tenant is currently inside the grace period.',
+                        'Your free trial has ended. Access is temporarily restricted until billing is completed.',
                         false,
                         true,
                         $trialEndsAt,
@@ -41,7 +38,7 @@ class TenantBillingLifecycleService
 
                 return $this->buildState(
                     SubscriptionStatuses::EXPIRED,
-                    'Your trial period has ended.',
+                    'Your trial period has ended and no active paid subscription is available.',
                     false,
                     true,
                     $trialEndsAt,
@@ -51,7 +48,7 @@ class TenantBillingLifecycleService
 
             return $this->buildState(
                 SubscriptionStatuses::TRIALING,
-                'Your tenant is currently on a trial subscription.',
+                'Your tenant is currently on a free trial period.',
                 true,
                 true,
                 $trialEndsAt,
@@ -62,7 +59,7 @@ class TenantBillingLifecycleService
         if ($status === SubscriptionStatuses::ACTIVE) {
             return $this->buildState(
                 SubscriptionStatuses::ACTIVE,
-                'Your subscription is active.',
+                'Your subscription is active and tenant access is allowed.',
                 true,
                 false,
                 $endsAt,
@@ -74,7 +71,7 @@ class TenantBillingLifecycleService
             if ($graceEndsAt && $graceEndsAt->isFuture()) {
                 return $this->buildState(
                     SubscriptionStatuses::GRACE_PERIOD,
-                    'Payment is overdue and the tenant is currently inside the grace period.',
+                    'Your payment is overdue. The tenant is currently inside the grace period.',
                     false,
                     false,
                     $endsAt,
@@ -84,7 +81,7 @@ class TenantBillingLifecycleService
 
             return $this->buildState(
                 SubscriptionStatuses::PAST_DUE,
-                'Payment is overdue.',
+                'Your payment is overdue and billing action is required.',
                 false,
                 false,
                 $endsAt,
@@ -95,7 +92,7 @@ class TenantBillingLifecycleService
         if ($status === SubscriptionStatuses::SUSPENDED) {
             return $this->buildState(
                 SubscriptionStatuses::SUSPENDED,
-                'This tenant is suspended until billing is resolved.',
+                'This tenant is suspended until billing is resolved and the subscription is reactivated.',
                 false,
                 false,
                 $endsAt,
@@ -107,7 +104,7 @@ class TenantBillingLifecycleService
             if ($endsAt && $endsAt->isFuture()) {
                 return $this->buildState(
                     SubscriptionStatuses::CANCELLED,
-                    'The subscription is cancelled and will remain accessible until its end date.',
+                    'The subscription is cancelled but remains active until the current billing period ends.',
                     true,
                     false,
                     $endsAt,
@@ -117,7 +114,7 @@ class TenantBillingLifecycleService
 
             return $this->buildState(
                 SubscriptionStatuses::EXPIRED,
-                'The subscription has been cancelled and access has expired.',
+                'The subscription has been cancelled and tenant access has expired.',
                 false,
                 false,
                 $endsAt,

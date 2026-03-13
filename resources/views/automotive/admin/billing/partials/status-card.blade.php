@@ -34,6 +34,10 @@
                     <strong>Allow Access:</strong>
                     {{ !empty($billingState['allow_access']) ? 'Yes' : 'No' }}
                 </p>
+                <p class="mb-2">
+                    <strong>Trial:</strong>
+                    {{ !empty($billingState['is_trial']) ? 'Yes' : 'No' }}
+                </p>
             </div>
 
             <div class="col-md-6">
@@ -47,5 +51,11 @@
                 </p>
             </div>
         </div>
+
+        @if(in_array($status, ['grace_period', 'past_due', 'suspended', 'expired'], true))
+            <div class="alert alert-warning mt-3 mb-0">
+                Billing action is required to restore or maintain tenant access.
+            </div>
+        @endif
     </div>
 </div>

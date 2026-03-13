@@ -76,6 +76,7 @@ Route::prefix('automotive/admin')
             Route::get('/stock-movements', [StockMovementReportController::class, 'index'])->name('stock-movements.index');
 
             Route::get('/billing', [BillingController::class, 'status'])->name('billing.status');
+            Route::post('/billing/renew', [BillingController::class, 'renew'])->name('billing.renew');
         });
 
 
