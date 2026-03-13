@@ -50,21 +50,38 @@ public function renew(Request $request): RedirectResponse
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
 
     $session = $this->paymentGatewayManager
-        ->driver()
+        ->driver('stripe')
         ->createRenewalSession([
             'tenant_id' => $tenantId,
-            'subscription_id' => $subscription->id ?? null,
+            'subscription_row_id' => $subscription->id ?? null,
             'plan_id' => $plan->id ?? null,
+            'stripe_price_id' => $plan->stripe_price_id ?? null,
             'billing_state' => $billingState['status'] ?? null,
-            'return_url' => route('automotive.admin.billing.status'),
-        ]);
+            'customer_email' => auth('automotive_admin')->user()?->email,
+                'success_url' => route('automotive.admin.billing.success'),
+                'cancel_url' => route('automotive.admin.billing.cancel'),
+            ]);
 
-    if (! empty($session['success']) && ! empty($session['checkout_url'])) {
-        return redirect()->away($session['checkout_url']);
+        if (! empty($session['success']) && ! empty($session['checkout_url'])) {
+            return redirect()->away($session['checkout_url']);
+        }
+
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
     }
 
+public function success(Request $request): RedirectResponse
+{
     return redirect()
         ->route('automotive.admin.billing.status')
-        ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
+        ->with('success', 'Your checkout session was completed successfully. Subscription sync will finalize via webhook.');
+}
+
+public function cancel(Request $request): RedirectResponse
+{
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with('error', 'Checkout was cancelled before completion.');
 }
 }

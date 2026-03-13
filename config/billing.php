@@ -2,7 +2,7 @@
 
 return [
 
-    'default_gateway' => env('BILLING_DEFAULT_GATEWAY', 'null'),
+    'default_gateway' => env('BILLING_DEFAULT_GATEWAY', 'stripe'),
 
     'grace_period_days' => env('BILLING_GRACE_PERIOD_DAYS', 3),
 
