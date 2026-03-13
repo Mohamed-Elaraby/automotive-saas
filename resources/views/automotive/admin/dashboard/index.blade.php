@@ -242,6 +242,10 @@
                                 <a href="{{ route('automotive.admin.inventory-report.index') }}" class="btn btn-outline-light text-start">
                                     <i class="isax isax-chart-35 me-2"></i>Inventory Report
                                 </a>
+                                <a href="{{ route('automotive.admin.stock-movements.index') }}" class="btn btn-outline-light text-start">
+                                    <i class="isax isax-arrow-3 me-1"></i>
+                                    Stock Movement Report
+                                </a>
                             </div>
                         </div>
                     </div>

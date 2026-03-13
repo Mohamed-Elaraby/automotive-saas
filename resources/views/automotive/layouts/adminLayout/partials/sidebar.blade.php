@@ -152,6 +152,11 @@
                                     <i class="isax isax-chart-35"></i><span>Inventory Report</span>
                                 </a>
                             </li>
+                            <li class="{{ $page === 'stock-movements' ? 'active' : '' }}">
+                                <a href="{{ route('automotive.admin.stock-movements.index') }}">
+                                    <i class="isax isax-arrow-3"></i><span>Stock Movement Report</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
