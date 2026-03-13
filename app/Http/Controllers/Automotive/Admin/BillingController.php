@@ -29,14 +29,14 @@ public function status(): View
     $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
 
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
-    $actions = BillingActionResolver::resolve($billingState);
+    $billingActions = BillingActionResolver::resolve($billingState);
 
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
         'plan',
         'billingState',
-        'actions'
+        'billingActions'
     ));
 }
 
