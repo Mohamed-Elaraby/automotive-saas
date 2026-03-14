@@ -31,6 +31,7 @@ class StripeWebhookSyncService
     protected function handleCheckoutSessionCompleted(object $session): void
     {
         $subscriptionRowId = $session->metadata->subscription_row_id ?? null;
+        $targetPlanId = $session->metadata->plan_id ?? null;
 
         if (! $subscriptionRowId) {
             return;
@@ -39,6 +40,7 @@ class StripeWebhookSyncService
         DB::table('subscriptions')
             ->where('id', $subscriptionRowId)
             ->update([
+                'plan_id' => $targetPlanId ?: DB::raw('plan_id'),
                 'gateway' => 'stripe',
                 'gateway_customer_id' => $session->customer ?? null,
                 'gateway_subscription_id' => $session->subscription ?? null,
@@ -50,6 +52,7 @@ class StripeWebhookSyncService
     protected function handleSubscriptionChanged(object $stripeSubscription): void
     {
         $subscriptionRowId = $stripeSubscription->metadata->subscription_row_id ?? null;
+        $targetPlanId = $stripeSubscription->metadata->plan_id ?? null;
 
         $query = DB::table('subscriptions');
 
@@ -75,6 +78,7 @@ class StripeWebhookSyncService
         $priceId = $stripeSubscription->items->data[0]->price->id ?? null;
 
         $query->update([
+            'plan_id' => $targetPlanId ?: DB::raw('plan_id'),
             'status' => $internalStatus,
             'gateway' => 'stripe',
             'gateway_customer_id' => $stripeSubscription->customer ?? null,

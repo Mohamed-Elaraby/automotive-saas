@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
@@ -18,11 +19,12 @@ class BillingController extends Controller
     public function __construct(
         protected TenantPlanService $tenantPlanService,
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
-        protected PaymentGatewayManager $paymentGatewayManager
+        protected PaymentGatewayManager $paymentGatewayManager,
+        protected BillingPlanCatalogService $billingPlanCatalogService
     ) {
     }
 
-public function status(): View
+public function status(Request $request): View
 {
     $tenant = tenant();
     $tenantId = $tenant->id;
@@ -32,13 +34,21 @@ public function status(): View
 
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
     $billingActions = BillingActionResolver::resolve($billingState);
+    $availablePlans = $this->billingPlanCatalogService->getPaidPlans();
+
+    $selectedPlanId = old('target_plan_id')
+        ?: $request->input('target_plan_id')
+            ?: ($plan && ($plan->billing_period ?? null) !== 'trial' ? $plan->id : null)
+                ?: optional($availablePlans->first())->id;
 
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
         'plan',
         'billingState',
-        'billingActions'
+        'billingActions',
+        'availablePlans',
+        'selectedPlanId'
     ));
 }
 
@@ -48,19 +58,25 @@ public function renew(Request $request): RedirectResponse
     $tenantId = $tenant->id;
 
     $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
-    $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
 
-    if (! $plan) {
+    $validated = $request->validate([
+        'target_plan_id' => ['required', 'integer'],
+    ]);
+
+    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
+
+    if (! $targetPlan) {
         return redirect()
             ->route('automotive.admin.billing.status')
-            ->with('error', 'No billing plan is linked to this tenant.');
+            ->with('error', 'The selected paid plan was not found or is not active.');
     }
 
-    if (empty($plan->stripe_price_id)) {
+    if (empty($targetPlan->stripe_price_id)) {
         return redirect()
-            ->route('automotive.admin.billing.status')
-            ->with('error', 'The current plan is not linked to a Stripe price yet.');
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
     }
 
     try {
@@ -69,8 +85,8 @@ public function renew(Request $request): RedirectResponse
             ->createRenewalSession([
                 'tenant_id' => $tenantId,
                 'subscription_row_id' => $subscription->id ?? null,
-                'plan_id' => $plan->id ?? null,
-                'stripe_price_id' => $plan->stripe_price_id ?? null,
+                'plan_id' => $targetPlan->id ?? null,
+                'stripe_price_id' => $targetPlan->stripe_price_id ?? null,
                 'billing_state' => $billingState['status'] ?? null,
                 'customer_email' => auth('automotive_admin')->user()?->email,
                     'success_url' => route('automotive.admin.billing.success'),
@@ -80,12 +96,13 @@ public function renew(Request $request): RedirectResponse
         Log::error('Billing renew controller fatal error', [
             'message' => $e->getMessage(),
             'tenant_id' => $tenantId,
-            'plan_id' => $plan->id ?? null,
-            'stripe_price_id' => $plan->stripe_price_id ?? null,
+            'current_plan_id' => $currentPlan->id ?? null,
+            'target_plan_id' => $targetPlan->id ?? null,
+            'stripe_price_id' => $targetPlan->stripe_price_id ?? null,
         ]);
 
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
             ->with('error', 'Billing configuration error. Please check Stripe settings.');
     }
 
@@ -94,7 +111,7 @@ public function renew(Request $request): RedirectResponse
     }
 
     return redirect()
-        ->route('automotive.admin.billing.status')
+        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
         ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
 }
 
