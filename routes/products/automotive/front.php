@@ -8,6 +8,7 @@ Route::prefix('automotive')->name('automotive.')->group(function () {
     Route::get('/register', [RegisterController::class, 'show'])->name('register');
     Route::post('/register', [RegisterController::class, 'submit'])->name('register.submit');
 
-    Route::post('/automotive/webhooks/stripe', [StripeWebhookController::class, 'handle'])
+    Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
         ->name('automotive.webhooks.stripe');
+
 });
