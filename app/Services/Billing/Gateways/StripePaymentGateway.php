@@ -4,7 +4,6 @@ namespace App\Services\Billing\Gateways;
 
 use App\Contracts\Billing\PaymentGatewayInterface;
 use Illuminate\Support\Facades\Log;
-use Stripe\Checkout\Session;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Throwable;
@@ -33,12 +32,12 @@ class StripePaymentGateway implements PaymentGatewayInterface
                 'success' => false,
                 'gateway' => 'stripe',
                 'checkout_url' => null,
-                'message' => 'The current plan is not linked to a Stripe price yet.',
+                'message' => 'The selected paid plan is not linked to a Stripe price yet.',
             ];
         }
 
         try {
-            $session = Session::create([
+            $session = $this->stripe->checkout->sessions->create([
                 'mode' => 'subscription',
                 'line_items' => [
                     [
