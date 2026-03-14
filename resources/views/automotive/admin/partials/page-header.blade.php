@@ -15,8 +15,28 @@
     </div>
 
     <div class="list-btn">
-        @if($actions)
-            {{ $actions }}
+        @if(!empty($actions))
+            @if(is_string($actions))
+                {!! $actions !!}
+            @elseif(is_array($actions))
+                <div class="d-flex gap-2 flex-wrap">
+                    @foreach($actions as $action)
+                        @php
+                            $actionLabel = $action['label'] ?? 'Action';
+                            $actionUrl = $action['url'] ?? 'javascript:void(0);';
+                            $actionClass = $action['class'] ?? 'btn btn-primary';
+                            $actionIcon = $action['icon'] ?? null;
+                        @endphp
+
+                        <a href="{{ $actionUrl }}" class="{{ $actionClass }}">
+                            @if($actionIcon)
+                                <i class="{{ $actionIcon }} me-1"></i>
+                            @endif
+                            {{ $actionLabel }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         @endif
     </div>
 </div>
@@ -26,12 +46,17 @@
         <div class="col-12">
             <ul class="breadcrumb">
                 @foreach($breadcrumbs as $breadcrumb)
-                    @if(!empty($breadcrumb['url']))
+                    @php
+                        $label = is_array($breadcrumb) ? ($breadcrumb['label'] ?? '') : (string) $breadcrumb;
+                        $url = is_array($breadcrumb) ? ($breadcrumb['url'] ?? null) : null;
+                    @endphp
+
+                    @if($url)
                         <li class="breadcrumb-item">
-                            <a href="{{ $breadcrumb['url'] }}">{{ $breadcrumb['label'] }}</a>
+                            <a href="{{ $url }}">{{ $label }}</a>
                         </li>
                     @else
-                        <li class="breadcrumb-item active">{{ $breadcrumb['label'] }}</li>
+                        <li class="breadcrumb-item active">{{ $label }}</li>
                     @endif
                 @endforeach
             </ul>
