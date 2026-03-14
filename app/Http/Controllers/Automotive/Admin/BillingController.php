@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
+use App\Services\Billing\StripeCustomerPortalService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Support\Billing\BillingActionResolver;
@@ -20,7 +21,8 @@ class BillingController extends Controller
         protected TenantPlanService $tenantPlanService,
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
         protected PaymentGatewayManager $paymentGatewayManager,
-        protected BillingPlanCatalogService $billingPlanCatalogService
+        protected BillingPlanCatalogService $billingPlanCatalogService,
+        protected StripeCustomerPortalService $stripeCustomerPortalService
     ) {
     }
 
@@ -113,6 +115,29 @@ public function renew(Request $request): RedirectResponse
     return redirect()
         ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
         ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
+}
+
+public function portal(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $tenantId = $tenant->id;
+
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+
+    $customerId = (string) ($subscription->gateway_customer_id ?? '');
+
+    $portal = $this->stripeCustomerPortalService->createSession(
+        $customerId,
+        route('automotive.admin.billing.status')
+    );
+
+    if (! empty($portal['success']) && ! empty($portal['url'])) {
+        return redirect()->away($portal['url']);
+    }
+
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with('error', $portal['message'] ?? 'Unable to open the billing portal.');
 }
 
 public function success(Request $request): RedirectResponse
