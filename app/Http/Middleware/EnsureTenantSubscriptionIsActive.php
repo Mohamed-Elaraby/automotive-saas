@@ -30,6 +30,10 @@ public function handle(Request $request, Closure $next): Response
     $allowedRoutes = [
         'automotive.admin.subscription.expired',
         'automotive.admin.billing.status',
+        'automotive.admin.billing.renew',
+        'automotive.admin.billing.portal',
+        'automotive.admin.billing.success',
+        'automotive.admin.billing.cancel',
         'automotive.admin.logout',
     ];
 
