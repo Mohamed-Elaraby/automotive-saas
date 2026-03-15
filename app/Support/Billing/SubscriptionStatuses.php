@@ -9,7 +9,7 @@ class SubscriptionStatuses
     public const PAST_DUE = 'past_due';
     public const GRACE_PERIOD = 'grace_period';
     public const SUSPENDED = 'suspended';
-    public const CANCELLED = 'cancelled';
+    public const CANCELLED = 'canceled';
     public const EXPIRED = 'expired';
 
     public static function all(): array
