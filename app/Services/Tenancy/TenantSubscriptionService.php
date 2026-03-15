@@ -2,7 +2,8 @@
 
 namespace App\Services\Tenancy;
 
-use App\Support\SubscriptionStatus;
+
+use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
 
 class TenantSubscriptionService
@@ -33,7 +34,7 @@ class TenantSubscriptionService
         $status = $subscription->status ?? null;
         $trialEndsAt = $subscription->trial_ends_at ?? null;
 
-        if ($status === SubscriptionStatus::ACTIVE) {
+        if ($status === SubscriptionStatuses::ACTIVE) {
             return [
                 'allowed' => true,
                 'reason' => 'active',
@@ -41,11 +42,11 @@ class TenantSubscriptionService
             ];
         }
 
-        if ($status === SubscriptionStatus::TRIALING) {
+        if ($status === SubscriptionStatuses::TRIALING) {
             if ($trialEndsAt && now()->greaterThan($trialEndsAt)) {
                 return [
                     'allowed' => false,
-                    'reason' => SubscriptionStatus::EXPIRED,
+                    'reason' => SubscriptionStatuses::EXPIRED,
                     'subscription' => $subscription,
                 ];
             }

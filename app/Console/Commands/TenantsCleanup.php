@@ -7,7 +7,8 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Models\Domain;
-use App\Support\SubscriptionStatus;
+use App\Support\Billing\SubscriptionStatuses;
+
 
 class TenantsCleanup extends Command
 {
@@ -32,7 +33,7 @@ class TenantsCleanup extends Command
         // 1) Expire ended trials
         $expiredSubscriptions = DB::connection($centralConnection)
             ->table('subscriptions')
-            ->where('status', SubscriptionStatus::TRIALING)
+            ->where('status', SubscriptionStatuses::TRIALING)
             ->whereNotNull('trial_ends_at')
             ->where('trial_ends_at', '<', $now)
             ->get();
@@ -47,7 +48,7 @@ class TenantsCleanup extends Command
                     ->table('subscriptions')
                     ->where('tenant_id', $subscription->tenant_id)
                     ->update([
-                        'status' => SubscriptionStatus::EXPIRED,
+                        'status' => SubscriptionStatuses::EXPIRED,
                         'updated_at' => $now,
                     ]);
             }
@@ -56,7 +57,7 @@ class TenantsCleanup extends Command
         // 2) Re-query expired tenants after updates so expire + delete can happen in same run
         $subscriptionsToDelete = DB::connection($centralConnection)
             ->table('subscriptions')
-            ->where('status', SubscriptionStatus::EXPIRED)
+            ->where('status', SubscriptionStatuses::EXPIRED)
             ->whereNotNull('trial_ends_at')
             ->where('trial_ends_at', '<', Carbon::now()->subDays($graceDays))
             ->get();

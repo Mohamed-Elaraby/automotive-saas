@@ -5,7 +5,8 @@ namespace App\Services\Automotive;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Support\SubscriptionStatus;
+
+use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -79,7 +80,7 @@ class StartTrialService
                 DB::connection($centralConnection)->table('subscriptions')->insert([
                     'tenant_id' => $tenant->id,
                     'plan_id' => $trialPlan?->id,
-                    'status' => SubscriptionStatus::TRIALING,
+                    'status' => SubscriptionStatuses::TRIALING,
                     'trial_ends_at' => Carbon::now()->addDays(14),
                     'ends_at' => null,
                     'external_id' => null,
