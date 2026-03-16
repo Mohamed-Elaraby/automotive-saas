@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\StripeCustomerPortalService;
+use App\Services\Billing\StripePriceInspectorService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Support\Billing\BillingActionResolver;
@@ -22,7 +23,8 @@ class BillingController extends Controller
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
         protected PaymentGatewayManager $paymentGatewayManager,
         protected BillingPlanCatalogService $billingPlanCatalogService,
-        protected StripeCustomerPortalService $stripeCustomerPortalService
+        protected StripeCustomerPortalService $stripeCustomerPortalService,
+        protected StripePriceInspectorService $stripePriceInspectorService
     ) {
     }
 
@@ -43,6 +45,14 @@ public function status(Request $request): View
             ?: ($plan && ($plan->billing_period ?? null) !== 'trial' ? $plan->id : null)
                 ?: optional($availablePlans->first())->id;
 
+    $selectedPlan = $selectedPlanId
+        ? $this->billingPlanCatalogService->findPaidPlanById($selectedPlanId)
+        : null;
+
+    $selectedPlanAudit = $selectedPlan
+        ? $this->stripePriceInspectorService->auditPlan($selectedPlan)
+        : null;
+
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
@@ -50,7 +60,9 @@ public function status(Request $request): View
         'billingState',
         'billingActions',
         'availablePlans',
-        'selectedPlanId'
+        'selectedPlanId',
+        'selectedPlan',
+        'selectedPlanAudit'
     ));
 }
 
@@ -81,6 +93,14 @@ public function renew(Request $request): RedirectResponse
             ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
     }
 
+    $targetPlanAudit = $this->stripePriceInspectorService->auditPlan($targetPlan);
+
+    if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before checkout.');
+    }
+
     try {
         $session = $this->paymentGatewayManager
             ->driver('stripe')
@@ -93,6 +113,7 @@ public function renew(Request $request): RedirectResponse
                 'customer_email' => auth('automotive_admin')->user()?->email,
                     'success_url' => route('automotive.admin.billing.success'),
                     'cancel_url' => route('automotive.admin.billing.cancel'),
+                    'plan_for_audit' => (array) $targetPlan,
                 ]);
         } catch (Throwable $e) {
         Log::error('Billing renew controller fatal error', [

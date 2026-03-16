@@ -24,6 +24,52 @@
                         'plan' => $plan,
                     ])
 
+                    @if(!empty($selectedPlan))
+                        <div class="card mt-4">
+                            <div class="card-body">
+                                <h6 class="mb-3">Selected Plan Pricing Verification</h6>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Selected Plan:</strong> {{ $selectedPlan->name ?? '-' }}</p>
+                                        <p class="mb-2"><strong>Local Price:</strong> {{ $selectedPlan->display_price ?? '-' }}</p>
+                                        <p class="mb-2"><strong>Local Billing Period:</strong> {{ $selectedPlan->billing_period_label ?? '-' }}</p>
+                                        <p class="mb-2"><strong>Stripe Price ID:</strong> {{ $selectedPlan->stripe_price_id ?? '-' }}</p>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Stripe Amount:</strong>
+                                            {{ isset($selectedPlanAudit['stripe']['unit_amount_decimal']) && $selectedPlanAudit['stripe']['unit_amount_decimal'] !== null
+                                                ? number_format((float) $selectedPlanAudit['stripe']['unit_amount_decimal'], 2)
+                                                : '-' }}
+                                            {{ $selectedPlanAudit['stripe']['currency'] ?? '' }}
+                                        </p>
+                                        <p class="mb-2"><strong>Stripe Interval:</strong> {{ $selectedPlanAudit['stripe']['interval'] ?? '-' }}</p>
+                                        <p class="mb-2"><strong>Stripe Product:</strong> {{ $selectedPlanAudit['stripe']['product_name'] ?? '-' }}</p>
+                                        <p class="mb-2"><strong>Verification:</strong>
+                                            @if(!empty($selectedPlanAudit['checks']['is_aligned']))
+                                                <span class="badge bg-success">Aligned</span>
+                                            @else
+                                                <span class="badge bg-danger">Mismatch</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+
+                                @if(empty($selectedPlanAudit['checks']['is_aligned']))
+                                    <div class="alert alert-danger mt-3 mb-0">
+                                        {{ $selectedPlanAudit['message'] ?? 'Selected plan pricing does not match Stripe.' }}
+                                        Renew / checkout is blocked until this mapping is corrected.
+                                    </div>
+                                @else
+                                    <div class="alert alert-success mt-3 mb-0">
+                                        Local plan pricing is aligned with Stripe for this selected plan.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('automotive.admin.billing.renew') }}" class="mt-4">
                         @csrf
 
@@ -82,6 +128,13 @@
                             @else
                                 <div class="alert alert-info mb-0">
                                     Billing portal will become available after the first Stripe subscription is linked to this tenant.
+                                </div>
+                            @endif
+
+                            @if(!empty($subscription->gateway_price_id))
+                                <div class="alert alert-secondary mt-3 mb-0">
+                                    <strong>Current Stripe Subscription Price ID:</strong><br>
+                                    {{ $subscription->gateway_price_id }}
                                 </div>
                             @endif
                         </div>

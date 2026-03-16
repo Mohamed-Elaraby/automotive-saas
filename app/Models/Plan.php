@@ -12,6 +12,7 @@ class Plan extends Model
         'price',
         'currency',
         'billing_period',
+        'stripe_price_id',
         'is_active',
         'sort_order',
         'max_users',

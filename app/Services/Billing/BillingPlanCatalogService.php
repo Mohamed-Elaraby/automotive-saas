@@ -15,9 +15,7 @@ class BillingPlanCatalogService
             ->orderBy('sort_order')
             ->get()
             ->map(function ($plan) {
-                $plan->features_array = $this->decodeFeatures($plan->features ?? null);
-
-                return $plan;
+                return $this->hydratePlan($plan);
             });
     }
 
@@ -33,9 +31,18 @@ class BillingPlanCatalogService
             return null;
         }
 
-$plan->features_array = $this->decodeFeatures($plan->features ?? null);
+return $this->hydratePlan($plan);
+}
 
-return $plan;
+protected function hydratePlan(object $plan): object
+{
+    $plan->features_array = $this->decodeFeatures($plan->features ?? null);
+    $plan->price_decimal = isset($plan->price) ? (float) $plan->price : 0.0;
+    $plan->currency_code = strtoupper((string) ($plan->currency ?? 'USD'));
+    $plan->billing_period_label = ucfirst((string) ($plan->billing_period ?? 'monthly'));
+    $plan->display_price = number_format((float) ($plan->price ?? 0), 2) . ' ' . $plan->currency_code;
+
+    return $plan;
 }
 
 protected function plansTable()
