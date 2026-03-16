@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\Billing\RunBillingLifecycleCommand;
+use App\Console\Commands\Billing\SyncStripePlanPricesCommand;
 use App\Console\Commands\Billing\VerifyBillingPlanPricesCommand;
 use App\Console\Commands\TenantsCleanup;
 use Illuminate\Console\Scheduling\Schedule;
@@ -14,6 +15,7 @@ class Kernel extends ConsoleKernel
         TenantsCleanup::class,
         RunBillingLifecycleCommand::class,
         VerifyBillingPlanPricesCommand::class,
+        SyncStripePlanPricesCommand::class,
     ];
 
     protected function schedule(Schedule $schedule): void
