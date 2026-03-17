@@ -88,10 +88,12 @@ jobs:
           echo "==> Central migrations only"
           php artisan migrate --force
 
-          echo "==> Optimize caches"
+          echo "==> Optimize caches (NO route cache for tenant dynamic routes)"
           php artisan optimize:clear
+          php artisan route:clear
+          php artisan config:clear
+          php artisan view:clear
           php artisan config:cache
-          php artisan route:cache || true
           php artisan view:cache || true
           php artisan event:cache || true
 
@@ -105,8 +107,11 @@ jobs:
           timeout 15s sudo -n /usr/bin/supervisorctl reread || true
           timeout 15s sudo -n /usr/bin/supervisorctl update || true
 
-          echo "==> Restart worker (non-blocking)"
-          timeout 15s sudo -n /usr/bin/supervisorctl restart automotive-worker:automotive-worker_00 || true
+          echo "==> Stop worker gracefully"
+          timeout 15s sudo -n /usr/bin/supervisorctl stop automotive-worker:automotive-worker_00 || true
+
+          echo "==> Start worker"
+          timeout 15s sudo -n /usr/bin/supervisorctl start automotive-worker:automotive-worker_00 || true
 
           echo "==> Check worker status"
           WORKER_STATUS="$(timeout 10s sudo -n /usr/bin/supervisorctl status automotive-worker:automotive-worker_00 || true)"
