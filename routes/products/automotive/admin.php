@@ -80,5 +80,7 @@ Route::prefix('automotive/admin')
             Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
             Route::get('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
             Route::post('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
+            Route::post('/billing/cancel-subscription', [BillingController::class, 'cancelSubscription'])->name('billing.cancel-subscription');
+            Route::post('/billing/resume-subscription', [BillingController::class, 'resumeSubscription'])->name('billing.resume-subscription');
         });
     });
