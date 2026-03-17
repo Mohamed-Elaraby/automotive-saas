@@ -97,8 +97,6 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
         return;
     }
 
-    $internalStatus = $this->mapStripeSubscriptionStatus($stripeSubscription->status ?? null);
-
     $endsAt = null;
     if (! empty($stripeSubscription->cancel_at)) {
         $endsAt = Carbon::createFromTimestamp($stripeSubscription->cancel_at);
@@ -111,6 +109,12 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
         : null;
 
     $priceId = $stripeSubscription->items->data[0]->price->id ?? null;
+    $cancelAtPeriodEnd = (bool) ($stripeSubscription->cancel_at_period_end ?? false);
+
+    $internalStatus = $this->mapStripeSubscriptionStatus(
+        $stripeSubscription->status ?? null,
+        $cancelAtPeriodEnd
+    );
 
     $this->subscriptionsTable()
         ->where('id', $subscription->id)
@@ -121,7 +125,9 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
             'gateway_subscription_id' => $stripeSubscription->id ?? null,
             'gateway_price_id' => $priceId,
             'ends_at' => $endsAt,
-            'cancelled_at' => $cancelledAt,
+            'cancelled_at' => $internalStatus === SubscriptionStatuses::CANCELLED
+                ? ($cancelledAt ?: now())
+                : null,
             'updated_at' => now(),
         ]);
 
@@ -148,7 +154,7 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
 
             SubscriptionStatuses::CANCELLED => $this->tenantBillingLifecycleService->markAsCancelled(
     $fresh,
-    $cancelledAt,
+    $cancelledAt ?: now(),
     $endsAt
 ),
 
@@ -200,8 +206,12 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
     $this->tenantBillingLifecycleService->markAsPastDue($subscription, $failedAt);
 }
 
-    protected function mapStripeSubscriptionStatus(?string $stripeStatus): string
+    protected function mapStripeSubscriptionStatus(?string $stripeStatus, bool $cancelAtPeriodEnd = false): string
 {
+    if ($cancelAtPeriodEnd && $stripeStatus === 'active') {
+        return SubscriptionStatuses::CANCELLED;
+    }
+
     return match ($stripeStatus) {
     'trialing' => SubscriptionStatuses::TRIALING,
             'active' => SubscriptionStatuses::ACTIVE,
