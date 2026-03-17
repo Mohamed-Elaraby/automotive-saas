@@ -10,10 +10,13 @@ class RefreshRouteLookups
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $routes = app('router')->getRoutes();
+        $router = app('router');
+        $routes = $router->getRoutes();
 
         $routes->refreshNameLookups();
         $routes->refreshActionLookups();
+
+        app('url')->setRoutes($routes);
 
         return $next($request);
     }
