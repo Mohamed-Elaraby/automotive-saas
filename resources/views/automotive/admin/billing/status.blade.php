@@ -56,7 +56,11 @@
                                     </div>
                                 </div>
 
-                                @if(empty($selectedPlanAudit['checks']['is_aligned']))
+                                @if($isSameCurrentPaidPlan ?? false)
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        You are already on this active plan. Use Manage Billing or choose another plan to upgrade or downgrade.
+                                    </div>
+                                @elseif(empty($selectedPlanAudit['checks']['is_aligned']))
                                     <div class="alert alert-danger mt-3 mb-0">
                                         {{ $selectedPlanAudit['message'] ?? 'Selected plan pricing does not match Stripe.' }}
                                         Renew / checkout is blocked until this mapping is corrected.
@@ -98,7 +102,8 @@
                             <p class="mb-2"><strong>Current Status:</strong> {{ ucfirst(str_replace('_', ' ', $billingState['status'] ?? 'unknown')) }}</p>
                             <p class="mb-2"><strong>Subscription ID:</strong> {{ $subscription->id ?? '-' }}</p>
                             <p class="mb-2"><strong>Gateway Customer ID:</strong> {{ $subscription->gateway_customer_id ?? '-' }}</p>
-                            <p class="mb-4"><strong>Gateway Subscription ID:</strong> {{ $subscription->gateway_subscription_id ?? '-' }}</p>
+                            <p class="mb-2"><strong>Gateway Subscription ID:</strong> {{ $subscription->gateway_subscription_id ?? '-' }}</p>
+                            <p class="mb-4"><strong>Gateway Price ID:</strong> {{ $subscription->gateway_price_id ?? '-' }}</p>
 
                             @if(!empty($subscription->gateway_customer_id))
                                 <div class="d-grid gap-2">
@@ -116,6 +121,24 @@
                                         </button>
                                     </form>
 
+                                    @if(($billingState['status'] ?? '') === 'active')
+                                        <form method="POST" action="{{ route('automotive.admin.billing.cancel-subscription') }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-danger w-100">
+                                                Cancel at Period End
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if(($billingState['status'] ?? '') === 'canceled')
+                                        <form method="POST" action="{{ route('automotive.admin.billing.resume-subscription') }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-success w-100">
+                                                Resume Subscription
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     @if(in_array($billingState['status'] ?? '', ['past_due', 'grace_period', 'suspended', 'expired'], true))
                                         <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
                                             @csrf
@@ -128,13 +151,6 @@
                             @else
                                 <div class="alert alert-info mb-0">
                                     Billing portal will become available after the first Stripe subscription is linked to this tenant.
-                                </div>
-                            @endif
-
-                            @if(!empty($subscription->gateway_price_id))
-                                <div class="alert alert-secondary mt-3 mb-0">
-                                    <strong>Current Stripe Subscription Price ID:</strong><br>
-                                    {{ $subscription->gateway_price_id }}
                                 </div>
                             @endif
                         </div>

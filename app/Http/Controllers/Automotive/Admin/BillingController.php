@@ -7,6 +7,7 @@ use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\StripeCustomerPortalService;
 use App\Services\Billing\StripePriceInspectorService;
+use App\Services\Billing\StripeSubscriptionManagementService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Support\Billing\BillingActionResolver;
@@ -24,7 +25,8 @@ class BillingController extends Controller
         protected PaymentGatewayManager $paymentGatewayManager,
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected StripeCustomerPortalService $stripeCustomerPortalService,
-        protected StripePriceInspectorService $stripePriceInspectorService
+        protected StripePriceInspectorService $stripePriceInspectorService,
+        protected StripeSubscriptionManagementService $stripeSubscriptionManagementService
     ) {
     }
 
@@ -53,6 +55,11 @@ public function status(Request $request): View
         ? $this->stripePriceInspectorService->auditPlan($selectedPlan)
         : null;
 
+    $isSameCurrentPaidPlan = $plan
+        && $selectedPlan
+        && (int) $plan->id === (int) $selectedPlan->id
+        && ($billingState['status'] ?? null) === 'active';
+
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
@@ -62,7 +69,8 @@ public function status(Request $request): View
         'availablePlans',
         'selectedPlanId',
         'selectedPlan',
-        'selectedPlanAudit'
+        'selectedPlanAudit',
+        'isSameCurrentPaidPlan'
     ));
 }
 
@@ -85,6 +93,16 @@ public function renew(Request $request): RedirectResponse
         return redirect()
             ->route('automotive.admin.billing.status')
             ->with('error', 'The selected paid plan was not found or is not active.');
+    }
+
+    if (
+        $currentPlan
+        && (int) $currentPlan->id === (int) $targetPlan->id
+        && ($billingState['status'] ?? null) === 'active'
+    ) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'You are already subscribed to this active plan. Choose another plan or use Manage Billing.');
     }
 
     if (empty($targetPlan->stripe_price_id)) {
@@ -144,7 +162,6 @@ public function portal(Request $request): RedirectResponse
     $tenantId = $tenant->id;
 
     $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
-
     $customerId = (string) ($subscription->gateway_customer_id ?? '');
 
     $portal = $this->stripeCustomerPortalService->createSession(
@@ -159,6 +176,30 @@ public function portal(Request $request): RedirectResponse
     return redirect()
         ->route('automotive.admin.billing.status')
         ->with('error', $portal['message'] ?? 'Unable to open the billing portal.');
+}
+
+public function cancelSubscription(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+
+    $result = $this->stripeSubscriptionManagementService->cancelAtPeriodEnd($subscription);
+
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with($result['success'] ? 'success' : 'error', $result['message']);
+}
+
+public function resumeSubscription(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+
+    $result = $this->stripeSubscriptionManagementService->resume($subscription);
+
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with($result['success'] ? 'success' : 'error', $result['message']);
 }
 
 public function success(Request $request): RedirectResponse
