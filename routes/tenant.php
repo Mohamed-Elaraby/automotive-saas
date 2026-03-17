@@ -24,7 +24,10 @@ Route::middleware([
     |--------------------------------------------------------------------------
     | كل product له ملفات routes منفصلة: admin + front
     */
-    require base_path('routes/products/automotive/admin.php');
+    if (! app()->bound('routes.automotive.admin.loaded')) {
+        app()->instance('routes.automotive.admin.loaded', true);
 
+        require_once base_path('routes/products/automotive/admin.php');
+    }
 
 });
