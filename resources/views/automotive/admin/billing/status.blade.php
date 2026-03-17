@@ -9,12 +9,7 @@
                 'title' => 'Plans & Billing',
                 'subtitle' => 'Trial, subscription, billing access state, and renewal actions.',
                 'breadcrumbs' => [
-                    [
-                        'label' => 'Dashboard',
-                        'url' => \Illuminate\Support\Facades\Route::has('automotive.admin.dashboard')
-                            ? route('automotive.admin.dashboard')
-                            : url('/automotive/admin/dashboard'),
-                    ],
+                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
                     ['label' => 'Plans & Billing'],
                 ],
                 'actions' => null,
