@@ -14,7 +14,7 @@ class StripeSubscriptionMigrationService
     protected StripeClient $stripe;
 
     public function __construct(
-        protected StripeSubscriptionSyncService $stripeSubscriptionSyncService
+        protected StripeWebhookSyncService $stripeWebhookSyncService
     ) {
         $secret = (string) config('billing.gateways.stripe.secret');
 
@@ -80,25 +80,8 @@ protected function migrateSingleSubscription(Subscription $subscription, bool $a
         ];
     }
 
-    if ($subscription->gateway_price_id === $expectedPriceId) {
-        return [
-            'subscription_id' => $subscription->id,
-            'tenant_id' => $subscription->tenant_id,
-            'plan_id' => $subscription->plan_id,
-            'status' => $subscription->status,
-            'old_price_id' => $subscription->gateway_price_id ?: '-',
-            'expected_price_id' => $expectedPriceId,
-            'new_price_id' => $subscription->gateway_price_id ?: '-',
-            'stripe_subscription_id' => $gatewaySubscriptionId,
-            'action' => 'ALREADY_ALIGNED',
-            'migrated' => false,
-            'message' => 'Subscription already points to the correct Stripe price.',
-        ];
-    }
-
     try {
         $stripeSubscription = $this->stripe->subscriptions->retrieve($gatewaySubscriptionId, []);
-
         $currentItemId = $stripeSubscription->items->data[0]->id ?? null;
         $currentPriceId = $stripeSubscription->items->data[0]->price->id ?? null;
 
@@ -115,6 +98,22 @@ protected function migrateSingleSubscription(Subscription $subscription, bool $a
                 'action' => 'FAILED_NO_ITEM',
                 'migrated' => false,
                 'message' => 'Stripe subscription item id could not be determined.',
+            ];
+        }
+
+        if ($currentPriceId === $expectedPriceId && $subscription->gateway_price_id === $expectedPriceId) {
+            return [
+                'subscription_id' => $subscription->id,
+                'tenant_id' => $subscription->tenant_id,
+                'plan_id' => $subscription->plan_id,
+                'status' => $subscription->status,
+                'old_price_id' => $currentPriceId ?: ($subscription->gateway_price_id ?: '-'),
+                'expected_price_id' => $expectedPriceId,
+                'new_price_id' => $expectedPriceId,
+                'stripe_subscription_id' => $gatewaySubscriptionId,
+                'action' => 'ALREADY_ALIGNED',
+                'migrated' => false,
+                'message' => 'Subscription already points to the correct Stripe price.',
             ];
         }
 
@@ -135,36 +134,34 @@ protected function migrateSingleSubscription(Subscription $subscription, bool $a
         }
 
         $updated = $this->stripe->subscriptions->update($gatewaySubscriptionId, [
-                'items' => [
-                    [
-                        'id' => $currentItemId,
-                        'price' => $expectedPriceId,
-                    ],
-                ],
-                'proration_behavior' => 'none',
-                'metadata' => array_merge(
-                    is_array($stripeSubscription->metadata?->toArray() ?? null)
-                    ? $stripeSubscription->metadata->toArray()
-                    : [],
+            'items' => [
                 [
-                    'local_subscription_id' => (string) $subscription->id,
-                    'local_plan_id' => (string) $subscription->plan_id,
-                    'migrated_by' => 'billing_step_7c',
-                ]
-                ),
-            ]);
+                    'id' => $currentItemId,
+                    'price' => $expectedPriceId,
+                ],
+            ],
+            'proration_behavior' => 'none',
+        ]);
 
-            $fresh = $this->stripeSubscriptionSyncService
-                ->syncFromStripePayload($subscription->fresh(), $updated);
+        $event = (object) [
+            'type' => 'customer.subscription.updated',
+            'data' => (object) [
+                'object' => $updated,
+            ],
+        ];
 
-            return [
-                'subscription_id' => $subscription->id,
-                'tenant_id' => $subscription->tenant_id,
-                'plan_id' => $subscription->plan_id,
-                'status' => $fresh->status,
+        $this->stripeWebhookSyncService->handleEvent($event);
+
+        $fresh = Subscription::query()->find($subscription->id);
+
+        return [
+            'subscription_id' => $subscription->id,
+            'tenant_id' => $subscription->tenant_id,
+            'plan_id' => $subscription->plan_id,
+            'status' => $fresh?->status ?? $subscription->status,
                 'old_price_id' => $currentPriceId ?: ($subscription->gateway_price_id ?: '-'),
                 'expected_price_id' => $expectedPriceId,
-                'new_price_id' => $fresh->gateway_price_id ?: '-',
+                'new_price_id' => $fresh?->gateway_price_id ?: '-',
                 'stripe_subscription_id' => $gatewaySubscriptionId,
                 'action' => 'MIGRATED',
                 'migrated' => true,
