@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class PlanController extends Controller
 {
@@ -43,16 +45,41 @@ class PlanController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $data = $this->validatedData($request);
         $data = $this->preparePlanData($data, $request);
 
-        Plan::create($data);
+        try {
+            DB::beginTransaction();
 
-        return redirect()
-            ->route('admin.plans.index')
-            ->with('success', 'Plan created successfully.');
+            $plan = Plan::create($data);
+
+            $sync = $stripePlanCatalogSyncService->syncPlan($plan);
+
+            $message = !empty($sync['skipped'])
+                ? 'Plan created successfully. Stripe sync was skipped because Stripe is not configured.'
+                : 'Plan created successfully and synced with Stripe.';
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', $message);
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', 'Plan created successfully and synced with Stripe.');
+        } catch (Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'stripe_sync' => $e->getMessage(),
+                ]);
+        }
     }
 
     public function edit(Plan $plan)
@@ -60,30 +87,80 @@ class PlanController extends Controller
         return view('admin.plans.edit', compact('plan'));
     }
 
-    public function update(Request $request, Plan $plan)
+    public function update(Request $request, Plan $plan, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $data = $this->validatedData($request, $plan->id);
         $data = $this->preparePlanData($data, $request);
 
-        $plan->update($data);
+        try {
+            DB::beginTransaction();
 
-        return redirect()
-            ->route('admin.plans.index')
-            ->with('success', 'Plan updated successfully.');
+            $plan->update($data);
+
+            $sync = $stripePlanCatalogSyncService->syncPlan($plan->fresh());
+
+            $message = !empty($sync['skipped'])
+                ? 'Plan updated successfully. Stripe sync was skipped because Stripe is not configured.'
+                : 'Plan updated successfully and synced with Stripe.';
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', $message);
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', 'Plan updated successfully and synced with Stripe.');
+        } catch (Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'stripe_sync' => $e->getMessage(),
+                ]);
+        }
     }
 
-    public function toggleActive(Plan $plan)
+    public function toggleActive(Plan $plan, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
-        $plan->update([
-            'is_active' => ! $plan->is_active,
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return redirect()
-            ->route('admin.plans.index')
-            ->with('success', 'Plan status updated successfully.');
+            $plan->update([
+                'is_active' => ! $plan->is_active,
+            ]);
+
+            $sync = $stripePlanCatalogSyncService->syncPlan($plan->fresh());
+
+            $message = !empty($sync['skipped'])
+                ? 'Plan status updated successfully. Stripe sync was skipped because Stripe is not configured.'
+                : 'Plan status updated successfully and synced with Stripe.';
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', $message);
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', 'Plan status updated successfully and synced with Stripe.');
+        } catch (Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->withErrors([
+                    'delete' => $e->getMessage(),
+                ]);
+        }
     }
 
-    public function destroy(Plan $plan)
+    public function destroy(Plan $plan, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $subscriptionsCount = DB::table('subscriptions')
             ->where('plan_id', $plan->id)
@@ -97,11 +174,36 @@ class PlanController extends Controller
                 ]);
         }
 
-        $plan->delete();
+        try {
+            DB::beginTransaction();
 
-        return redirect()
-            ->route('admin.plans.index')
-            ->with('success', 'Plan deleted successfully.');
+            $archive = $stripePlanCatalogSyncService->archivePlanResources($plan);
+
+            $message = !empty($archive['skipped'])
+                ? 'Plan deleted successfully. Stripe archive was skipped because Stripe is not configured.'
+                : 'Plan deleted successfully and archived on Stripe.';
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', $message);
+
+            $plan->delete();
+
+            DB::commit();
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->with('success', 'Plan deleted successfully and archived on Stripe.');
+        } catch (Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return redirect()
+                ->route('admin.plans.index')
+                ->withErrors([
+                    'delete' => $e->getMessage(),
+                ]);
+        }
     }
 
     protected function validatedData(Request $request, ?int $planId = null): array

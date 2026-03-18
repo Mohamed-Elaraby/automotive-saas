@@ -3,198 +3,295 @@
 namespace App\Services\Billing;
 
 use App\Models\Plan;
-use Illuminate\Support\Collection;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 use Throwable;
 
 class StripePlanCatalogSyncService
 {
-    protected StripeClient $stripe;
+    protected ?StripeClient $stripe = null;
 
-    public function __construct(
-        protected BillingPlanCatalogService $billingPlanCatalogService,
-        protected StripePriceInspectorService $stripePriceInspectorService
-    ) {
-        $secret = (string) config('billing.gateways.stripe.secret');
+    public function isConfigured(): bool
+    {
+        return trim((string) config('services.stripe.secret')) !== '';
+    }
+
+    public function syncPlan(Plan $plan): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'message' => 'Stripe sync skipped because Stripe secret key is not configured.',
+                'stripe_product_id' => $plan->stripe_product_id,
+                'stripe_price_id' => $plan->stripe_price_id,
+            ];
+        }
+
+        if ($this->isLocalOnlyTrial($plan)) {
+            $this->archivePlanResources($plan, true);
+
+            return [
+                'ok' => true,
+                'message' => 'Trial plan kept local-only and excluded from Stripe catalog.',
+                'stripe_product_id' => null,
+                'stripe_price_id' => null,
+            ];
+        }
+
+        try {
+            $product = $this->ensureProduct($plan);
+            $price = $this->ensurePrice($plan, $product->id);
+
+            $this->client()->products->update($product->id, [
+                'name' => $plan->name,
+                'description' => $plan->description ?: '',
+                'active' => (bool) $plan->is_active,
+                'default_price' => $price->id,
+                'metadata' => $this->buildMetadata($plan),
+            ]);
+
+            $plan->forceFill([
+                'stripe_product_id' => $product->id,
+                'stripe_price_id' => $price->id,
+            ])->save();
+
+            return [
+                'ok' => true,
+                'message' => 'Plan synced successfully with Stripe.',
+                'stripe_product_id' => $product->id,
+                'stripe_price_id' => $price->id,
+            ];
+        } catch (Throwable $e) {
+            report($e);
+
+            return [
+                'ok' => false,
+                'message' => 'Unable to sync the plan with Stripe right now: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    public function archivePlanResources(Plan $plan, bool $clearLocalIds = false): array
+    {
+        if (! $this->isConfigured()) {
+            if ($clearLocalIds) {
+                $plan->forceFill([
+                    'stripe_product_id' => null,
+                    'stripe_price_id' => null,
+                ])->save();
+            }
+
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'message' => 'Stripe archive skipped because Stripe secret key is not configured.',
+            ];
+        }
+
+        try {
+            if ($plan->stripe_price_id) {
+                try {
+                    $this->client()->prices->update($plan->stripe_price_id, [
+                        'active' => false,
+                    ]);
+                } catch (InvalidRequestException) {
+                    // Ignore if the price no longer exists remotely
+                }
+            }
+
+            if ($plan->stripe_product_id) {
+                try {
+                    $this->client()->products->update($plan->stripe_product_id, [
+                        'active' => false,
+                    ]);
+                } catch (InvalidRequestException) {
+                    // Ignore if the product no longer exists remotely
+                }
+            }
+
+            if ($clearLocalIds) {
+                $plan->forceFill([
+                    'stripe_product_id' => null,
+                    'stripe_price_id' => null,
+                ])->save();
+            }
+
+            return [
+                'ok' => true,
+                'message' => 'Plan resources archived successfully on Stripe.',
+            ];
+        } catch (Throwable $e) {
+            report($e);
+
+            return [
+                'ok' => false,
+                'message' => 'Unable to archive Stripe resources for this plan: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    protected function client(): StripeClient
+    {
+        if ($this->stripe instanceof StripeClient) {
+            return $this->stripe;
+        }
+
+        $secret = trim((string) config('services.stripe.secret'));
 
         if ($secret === '') {
             throw new \RuntimeException('Stripe secret key is not configured.');
         }
 
-$this->stripe = new StripeClient($secret);
-}
+        $this->stripe = new StripeClient($secret);
 
-public function syncPaidPlans(bool $apply = false, ?string $slug = null): Collection
-{
-    $plans = $this->billingPlanCatalogService->getPaidPlans();
-
-    if ($slug) {
-        $plans = $plans->where('slug', $slug)->values();
+        return $this->stripe;
     }
 
-    return $plans->map(function ($plan) use ($apply) {
-        return $this->syncSinglePlan($plan, $apply);
-    });
-}
-
-protected function syncSinglePlan(object $plan, bool $apply): array
-{
-    $beforeAudit = $this->stripePriceInspectorService->auditPlan($plan);
-
-    if ($beforeAudit['checks']['is_aligned'] ?? false) {
-        return [
-            'plan_id' => $plan->id,
-            'plan_name' => $plan->name,
-            'slug' => $plan->slug,
-            'local_price' => (float) $plan->price,
-            'currency' => strtoupper((string) $plan->currency),
-            'billing_period' => (string) $plan->billing_period,
-            'old_price_id' => $plan->stripe_price_id ?: '-',
-            'new_price_id' => $plan->stripe_price_id ?: '-',
-            'product_id' => $beforeAudit['stripe']['product_id'] ?? '-',
-            'action' => 'ALREADY_ALIGNED',
-            'aligned_before' => true,
-            'aligned_after' => true,
-            'message' => 'Plan already aligned with Stripe.',
-        ];
-    }
-
-    $product = $this->findExistingProductForPlan($plan);
-
-    if (! $product && $apply) {
-        $product = $this->createProductForPlan($plan);
-    }
-
-    $newPriceId = null;
-
-    if ($apply) {
-        $newPrice = $this->createRecurringPriceForPlan($plan, $product?->id);
-            $newPriceId = $newPrice->id ?? null;
-
-            if ($newPriceId) {
-                $planModel = Plan::query()->find($plan->id);
-
-                if ($planModel) {
-                    $planModel->update([
-                        'stripe_price_id' => $newPriceId,
-                    ]);
-                }
-
-                $plan->stripe_price_id = $newPriceId;
+    protected function ensureProduct(Plan $plan): object
+    {
+        if ($plan->stripe_product_id) {
+            try {
+                return $this->client()->products->update($plan->stripe_product_id, [
+                    'name' => $plan->name,
+                    'description' => $plan->description ?: '',
+                    'active' => (bool) $plan->is_active,
+                    'metadata' => $this->buildMetadata($plan),
+                ]);
+            } catch (InvalidRequestException) {
+                // Fall through to create a fresh product
             }
         }
 
-    $afterAudit = $this->stripePriceInspectorService->auditPlan($plan);
-
-    return [
-        'plan_id' => $plan->id,
-        'plan_name' => $plan->name,
-        'slug' => $plan->slug,
-        'local_price' => (float) $plan->price,
-        'currency' => strtoupper((string) $plan->currency),
-        'billing_period' => (string) $plan->billing_period,
-        'old_price_id' => $beforeAudit['stripe']['price_id'] ?? ($plan->stripe_price_id ?: '-'),
-        'new_price_id' => $newPriceId ?: ($plan->stripe_price_id ?: '-'),
-        'product_id' => $product->id ?? '-',
-        'action' => $apply ? 'UPDATED_STRIPE_PRICE' : 'WOULD_CREATE_NEW_STRIPE_PRICE',
-        'aligned_before' => (bool) ($beforeAudit['checks']['is_aligned'] ?? false),
-        'aligned_after' => (bool) ($afterAudit['checks']['is_aligned'] ?? false),
-        'message' => $apply
-            ? 'Created/linked a new Stripe price for this plan.'
-            : 'Plan is mismatched. A new Stripe price would be created and linked on apply.',
-    ];
-}
-
-protected function findExistingProductForPlan(object $plan): ?object
-{
-    $products = $this->stripe->products->all([
-        'limit' => 100,
-        'active' => true,
-    ]);
-
-    foreach ($products->data as $product) {
-        $metadata = $product->metadata ?? null;
-
-        if (! $metadata) {
-            continue;
-        }
-
-        $localSlug = $metadata['local_plan_slug'] ?? null;
-        $productScope = $metadata['product_scope'] ?? null;
-
-        if ($localSlug === (string) $plan->slug && $productScope === 'automotive') {
-            return $product;
-        }
+        return $this->client()->products->create([
+            'name' => $plan->name,
+            'description' => $plan->description ?: '',
+            'active' => (bool) $plan->is_active,
+            'metadata' => $this->buildMetadata($plan),
+        ]);
     }
 
-    return null;
-}
+    protected function ensurePrice(Plan $plan, string $stripeProductId): object
+    {
+        if ($plan->stripe_price_id) {
+            try {
+                $existingPrice = $this->client()->prices->retrieve($plan->stripe_price_id, []);
 
-protected function createProductForPlan(object $plan): object
-{
-    return $this->stripe->products->create([
-        'name' => (string) $plan->name,
-        'description' => (string) ($plan->description ?? ''),
-        'metadata' => [
-            'local_plan_id' => (string) $plan->id,
-            'local_plan_slug' => (string) $plan->slug,
-            'product_scope' => 'automotive',
-        ],
-    ]);
-}
+                if ($this->priceMatchesPlan($existingPrice, $plan, $stripeProductId)) {
+                    $this->client()->prices->update($existingPrice->id, [
+                        'active' => (bool) $plan->is_active,
+                        'nickname' => $this->buildPriceNickname($plan),
+                        'metadata' => $this->buildMetadata($plan),
+                    ]);
 
-protected function createRecurringPriceForPlan(object $plan, ?string $productId = null): object
-{
-    $interval = $this->mapBillingPeriodToStripeInterval((string) $plan->billing_period);
+                    return $this->client()->prices->retrieve($existingPrice->id, []);
+                }
 
-    if (! $interval) {
-        throw new \RuntimeException("Unsupported billing period [{$plan->billing_period}] for Stripe recurring pricing.");
+                $newPrice = $this->createPrice($plan, $stripeProductId);
+
+                $this->client()->prices->update($existingPrice->id, [
+                    'active' => false,
+                ]);
+
+                return $newPrice;
+            } catch (InvalidRequestException) {
+                // Fall through to create a fresh price
+            }
+        }
+
+        return $this->createPrice($plan, $stripeProductId);
     }
 
-    $unitAmount = (int) round(((float) $plan->price) * 100);
+    protected function createPrice(Plan $plan, string $stripeProductId): object
+    {
+        $payload = [
+            'product' => $stripeProductId,
+            'currency' => strtolower((string) $plan->currency),
+            'unit_amount' => $this->toMinorAmount($plan->price, $plan->currency),
+            'active' => (bool) $plan->is_active,
+            'nickname' => $this->buildPriceNickname($plan),
+            'metadata' => $this->buildMetadata($plan),
+        ];
 
-    $payload = [
-        'currency' => strtolower((string) $plan->currency),
-        'unit_amount' => $unitAmount,
-        'recurring' => [
-            'interval' => $interval,
-        ],
-        'metadata' => [
+        if ($plan->billing_period === 'monthly') {
+            $payload['recurring'] = [
+                'interval' => 'month',
+            ];
+        } elseif ($plan->billing_period === 'yearly') {
+            $payload['recurring'] = [
+                'interval' => 'year',
+            ];
+        }
+
+        return $this->client()->prices->create($payload);
+    }
+
+    protected function priceMatchesPlan(object $price, Plan $plan, string $stripeProductId): bool
+    {
+        $expectedUnitAmount = $this->toMinorAmount($plan->price, $plan->currency);
+        $expectedCurrency = strtolower((string) $plan->currency);
+
+        if (($price->product ?? null) !== $stripeProductId) {
+            return false;
+        }
+
+        if (($price->currency ?? null) !== $expectedCurrency) {
+            return false;
+        }
+
+        if ((int) ($price->unit_amount ?? -1) !== $expectedUnitAmount) {
+            return false;
+        }
+
+        $priceInterval = $price->recurring->interval ?? null;
+
+        return match ($plan->billing_period) {
+        'monthly' => $priceInterval === 'month',
+            'yearly' => $priceInterval === 'year',
+            'one_time' => $priceInterval === null,
+            default => false,
+        };
+    }
+
+    protected function isLocalOnlyTrial(Plan $plan): bool
+    {
+        return $plan->billing_period === 'trial';
+    }
+
+    protected function buildMetadata(Plan $plan): array
+    {
+        return [
             'local_plan_id' => (string) $plan->id,
-            'local_plan_slug' => (string) $plan->slug,
-            'product_scope' => 'automotive',
-        ],
-        'nickname' => sprintf(
-            '%s %s %s',
-            (string) $plan->name,
-            number_format((float) $plan->price, 2),
-            strtoupper((string) $plan->currency)
-        ),
-    ];
-
-    if ($productId) {
-        $payload['product'] = $productId;
-    } else {
-        $payload['product_data'] = [
-            'name' => (string) $plan->name,
-            'description' => (string) ($plan->description ?? ''),
-            'metadata' => [
-                'local_plan_id' => (string) $plan->id,
-                'local_plan_slug' => (string) $plan->slug,
-                'product_scope' => 'automotive',
-            ],
+            'slug' => (string) $plan->slug,
+            'billing_period' => (string) $plan->billing_period,
+            'currency' => strtoupper((string) $plan->currency),
+            'is_active' => $plan->is_active ? '1' : '0',
         ];
     }
 
-    return $this->stripe->prices->create($payload);
-}
-
-protected function mapBillingPeriodToStripeInterval(string $billingPeriod): ?string
-{
-    return match (strtolower($billingPeriod)) {
-    'monthly' => 'month',
-            'yearly' => 'year',
-            default => null,
-        };
+    protected function buildPriceNickname(Plan $plan): string
+    {
+        return sprintf(
+            '%s (%s)',
+            $plan->name,
+            ucfirst(str_replace('_', ' ', $plan->billing_period))
+        );
     }
+
+    protected function toMinorAmount(float|int|string $amount, string $currency): int
+    {
+        $currency = strtoupper($currency);
+
+        $zeroDecimalCurrencies = [
+            'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW',
+            'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF',
+            'XOF', 'XPF',
+        ];
+
+        if (in_array($currency, $zeroDecimalCurrencies, true)) {
+            return (int) round((float) $amount);
+        }
+
+return (int) round(((float) $amount) * 100);
+}
 }
