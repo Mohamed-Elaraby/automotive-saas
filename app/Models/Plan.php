@@ -12,6 +12,7 @@ class Plan extends Model
         'price',
         'currency',
         'billing_period',
+        'stripe_product_id',
         'stripe_price_id',
         'is_active',
         'sort_order',
@@ -28,9 +29,4 @@ class Plan extends Model
         'features' => 'array',
         'price' => 'decimal:2',
     ];
-
-    public function subscriptions()
-    {
-        return $this->hasMany(Subscription::class);
-    }
 }

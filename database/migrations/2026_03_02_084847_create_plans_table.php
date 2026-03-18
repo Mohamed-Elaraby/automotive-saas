@@ -15,6 +15,7 @@ return new class extends Migration
             $table->decimal('price', 10, 2)->default(0);
             $table->string('currency', 3)->default('AED');
             $table->string('billing_period')->default('monthly'); // monthly|yearly|one_time|trial
+            $table->string('stripe_product_id')->nullable();
             $table->string('stripe_price_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);
