@@ -1,51 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Plan</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 24px; background: #f8fafc; color: #111827; }
-        .wrap { max-width: 1000px; margin: 0 auto; }
-        .card { background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
-        input, select, textarea { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; margin-top:6px; }
-        label { display:block; font-weight:600; }
-        .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        .btn { display:inline-block; padding:10px 14px; border-radius:8px; text-decoration:none; border:0; cursor:pointer; }
-        .btn-primary { background:#2563eb; color:#fff; }
-        .btn-secondary { background:#374151; color:#fff; }
-        .errors { margin-bottom:16px; padding:12px 14px; background:#fee2e2; color:#991b1b; border-radius:8px; }
-        .actions { margin-top:20px; display:flex; gap:10px; }
-    </style>
-</head>
-<body>
-<div class="wrap">
-    <div class="top">
-        <h1>Create Plan</h1>
-        <a href="{{ route('admin.plans.index') }}" class="btn btn-secondary">Back</a>
-    </div>
+<?php $page = 'plan-create'; ?>
+@extends('admin.layouts.centralLayout.mainlayout')
 
-    @if ($errors->any())
-        <div class="errors">
-            <ul style="margin:0; padding-left:18px;">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+@section('content')
+    <div class="page-wrapper">
+        <div class="content content-two pb-0">
 
-    <div class="card">
-        <form method="POST" action="{{ route('admin.plans.store') }}">
-            @csrf
-
-            @include('admin.plans._form')
-
-            <div class="actions">
-                <button type="submit" class="btn btn-primary">Save Plan</button>
+            <div class="d-flex d-block align-items-center justify-content-between flex-wrap gap-3 mb-3">
+                <div>
+                    <h6>Create Plan</h6>
+                    <p class="mb-0">Add a new billing plan to the central catalog.</p>
+                </div>
+                <div>
+                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white">Back to Plans</a>
+                </div>
             </div>
-        </form>
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0 ps-3">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('admin.plans.store') }}">
+                @csrf
+
+                @include('admin.plans._form')
+
+                <div class="d-flex align-items-center justify-content-end gap-2 mt-4">
+                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Plan</button>
+                </div>
+            </form>
+
+        </div>
+
+        <div class="footer d-sm-flex align-items-center justify-content-between bg-white py-2 px-4 border-top">
+            <p class="text-dark mb-0">&copy; 2025 <a href="javascript:void(0);" class="link-primary">Kanakku</a>, All Rights Reserved</p>
+            <p class="text-dark">Version : 1.3.8</p>
+        </div>
     </div>
-</div>
-</body>
-</html>
+@endsection

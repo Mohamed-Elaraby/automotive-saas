@@ -1,1 +1,1 @@
-<?php
+Central Admin Dashboard

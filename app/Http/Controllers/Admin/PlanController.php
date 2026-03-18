@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +16,17 @@ class PlanController extends Controller
         $plans = Plan::query()
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(function (Plan $plan) {
+                $plan->subscriptions_count = DB::table('subscriptions')
+                    ->where('plan_id', $plan->id)
+                    ->count();
+
+                $plan->billing_period_label = $this->billingPeriodLabel($plan->billing_period);
+                $plan->display_price = number_format((float) $plan->price, 2) . ' ' . strtoupper((string) $plan->currency);
+
+                return $plan;
+            });
 
         return view('admin.plans.index', compact('plans'));
     }
@@ -23,16 +34,19 @@ class PlanController extends Controller
     public function create()
     {
         return view('admin.plans.create', [
-            'plan' => new Plan(),
+            'plan' => new Plan([
+                'currency' => 'USD',
+                'billing_period' => 'monthly',
+                'is_active' => true,
+                'sort_order' => 0,
+            ]),
         ]);
     }
 
     public function store(Request $request)
     {
         $data = $this->validatedData($request);
-
-        $data['features'] = $this->normalizeFeatures($request->input('features_json'));
-        $data['slug'] = Str::slug($data['slug']);
+        $data = $this->preparePlanData($data, $request);
 
         Plan::create($data);
 
@@ -49,9 +63,7 @@ class PlanController extends Controller
     public function update(Request $request, Plan $plan)
     {
         $data = $this->validatedData($request, $plan->id);
-
-        $data['features'] = $this->normalizeFeatures($request->input('features_json'));
-        $data['slug'] = Str::slug($data['slug']);
+        $data = $this->preparePlanData($data, $request);
 
         $plan->update($data);
 
@@ -71,6 +83,27 @@ class PlanController extends Controller
             ->with('success', 'Plan status updated successfully.');
     }
 
+    public function destroy(Plan $plan)
+    {
+        $subscriptionsCount = DB::table('subscriptions')
+            ->where('plan_id', $plan->id)
+            ->count();
+
+        if ($subscriptionsCount > 0) {
+            return redirect()
+                ->route('admin.plans.index')
+                ->withErrors([
+                    'delete' => 'Cannot delete a plan that is already used by subscriptions. Deactivate it instead.',
+                ]);
+        }
+
+        $plan->delete();
+
+        return redirect()
+            ->route('admin.plans.index')
+            ->with('success', 'Plan deleted successfully.');
+    }
+
     protected function validatedData(Request $request, ?int $planId = null): array
     {
         return $request->validate([
@@ -84,6 +117,7 @@ class PlanController extends Controller
                 'price' => ['required', 'numeric', 'min:0'],
                 'currency' => ['required', 'string', 'size:3'],
                 'billing_period' => ['required', 'string', Rule::in(['trial', 'monthly', 'yearly', 'one_time'])],
+                'stripe_price_id' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['nullable', 'boolean'],
                 'sort_order' => ['required', 'integer', 'min:0'],
                 'max_users' => ['nullable', 'integer', 'min:1'],
@@ -94,6 +128,21 @@ class PlanController extends Controller
             ]) + [
                 'is_active' => $request->boolean('is_active'),
             ];
+    }
+
+    protected function preparePlanData(array $data, Request $request): array
+    {
+        $data['slug'] = Str::slug((string) $data['slug']);
+        $data['currency'] = strtoupper((string) $data['currency']);
+        $data['stripe_price_id'] = trim((string) ($data['stripe_price_id'] ?? '')) ?: null;
+        $data['features'] = $this->normalizeFeatures($request->input('features_json'));
+
+        if ($data['billing_period'] === 'trial') {
+            $data['price'] = 0;
+            $data['stripe_price_id'] = null;
+        }
+
+        return $data;
     }
 
     protected function normalizeFeatures(?string $featuresJson): ?array
@@ -111,24 +160,14 @@ class PlanController extends Controller
         return $decoded;
     }
 
-    public function destroy(Plan $plan)
+    protected function billingPeriodLabel(?string $period): string
     {
-        $subscriptionsCount = \Illuminate\Support\Facades\DB::table('subscriptions')
-            ->where('plan_id', $plan->id)
-            ->count();
-
-        if ($subscriptionsCount > 0) {
-            return redirect()
-                ->route('admin.plans.index')
-                ->withErrors([
-                    'delete' => 'Cannot delete a plan that is already used by subscriptions.',
-                ]);
-        }
-
-        $plan->delete();
-
-        return redirect()
-            ->route('admin.plans.index')
-            ->with('success', 'Plan deleted successfully.');
+        return match ($period) {
+        'trial' => 'Trial',
+            'monthly' => 'Monthly',
+            'yearly' => 'Yearly',
+            'one_time' => 'One Time',
+            default => ucfirst((string) $period),
+        };
     }
 }
