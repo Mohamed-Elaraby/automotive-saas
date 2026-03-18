@@ -11,11 +11,16 @@ class StripePlanCatalogSyncService
 {
     protected ?StripeClient $stripe = null;
 
-    public function isConfigured(): bool
+    protected function stripeSecret(): string
     {
-        return trim((string) config('services.stripe.secret')) !== '';
+        return trim((string) config('billing.gateways.stripe.secret'));
     }
 
+    public function isConfigured(): bool
+    {
+        return $this->stripeSecret() !== '';
+    }
+    
     public function syncPlan(Plan $plan): array
     {
         if (! $this->isConfigured()) {
@@ -137,7 +142,7 @@ class StripePlanCatalogSyncService
             return $this->stripe;
         }
 
-        $secret = trim((string) config('services.stripe.secret'));
+        $secret = $this->stripeSecret();
 
         if ($secret === '') {
             throw new \RuntimeException('Stripe secret key is not configured.');
