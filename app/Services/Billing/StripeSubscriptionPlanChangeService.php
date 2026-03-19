@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -32,6 +33,27 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
         ];
     }
 
+    if (! $this->isEligibleForPlanChange($subscription)) {
+        return [
+            'ok' => false,
+            'message' => 'This subscription is not eligible for in-place plan change right now.',
+        ];
+    }
+
+    if (! $targetPlan->is_active) {
+        return [
+            'ok' => false,
+            'message' => 'The selected plan is inactive.',
+        ];
+    }
+
+    if ($targetPlan->billing_period === 'trial') {
+        return [
+            'ok' => false,
+            'message' => 'Trial plans cannot replace a live Stripe subscription.',
+        ];
+    }
+
     if (! $targetPlan->stripe_price_id) {
         return [
             'ok' => false,
@@ -39,15 +61,17 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
         ];
     }
 
-    if ((int) $subscription->plan_id === (int) $targetPlan->id
-        && $subscription->gateway_price_id === $targetPlan->stripe_price_id) {
+    if (
+        (int) $subscription->plan_id === (int) $targetPlan->id
+        && (string) $subscription->gateway_price_id === (string) $targetPlan->stripe_price_id
+    ) {
         return [
             'ok' => false,
             'message' => 'The subscription is already on this plan.',
         ];
     }
 
-    $stripe = new StripeClient(config('services.stripe.secret'));
+    $stripe = new StripeClient($this->stripeSecret());
 
     try {
         $stripeSubscription = $stripe->subscriptions->retrieve(
@@ -55,7 +79,16 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
             []
         );
 
-        $itemId = $stripeSubscription->items->data[0]->id ?? null;
+        $items = $stripeSubscription->items->data ?? [];
+
+        if (count($items) !== 1) {
+            return [
+                'ok' => false,
+                'message' => 'This Stripe subscription does not have the expected single subscription item structure.',
+            ];
+        }
+
+        $itemId = $items[0]->id ?? null;
 
         if (! $itemId) {
             return [
@@ -78,12 +111,14 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
                     (array) ($stripeSubscription->metadata ?? []),
                     [
                         'plan_id' => (string) $targetPlan->id,
+                        'subscription_row_id' => (string) $subscription->id,
                     ]
                 ),
             ]
         );
 
-        DB::connection($this->centralConnection())->table('subscriptions')
+        DB::connection($this->centralConnection())
+            ->table('subscriptions')
             ->where('id', $subscription->id)
             ->update([
                 'plan_id' => $targetPlan->id,
@@ -118,6 +153,26 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
             'message' => 'Unable to change the subscription plan right now.',
         ];
     }
+}
+
+protected function isEligibleForPlanChange(Subscription $subscription): bool
+{
+    $status = (string) $subscription->status;
+
+    if ($status === SubscriptionStatuses::ACTIVE) {
+        return true;
+    }
+
+    if ($status === SubscriptionStatuses::CANCELLED) {
+        return $subscription->ends_at !== null && $subscription->ends_at->isFuture();
+    }
+
+    return false;
+}
+
+protected function stripeSecret(): string
+{
+    return trim((string) config('billing.gateways.stripe.secret'));
 }
 
 protected function centralConnection(): string

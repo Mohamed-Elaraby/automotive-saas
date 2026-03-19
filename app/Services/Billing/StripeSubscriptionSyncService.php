@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Models\Subscription;
+use RuntimeException;
 use Stripe\StripeClient;
 
 class StripeSubscriptionSyncService
@@ -23,7 +24,7 @@ public function syncByGatewaySubscriptionId(string $gatewaySubscriptionId): ?Sub
         return null;
     }
 
-    $stripe = new StripeClient(config('services.stripe.secret'));
+    $stripe = new StripeClient($this->stripeSecret());
     $stripeSubscription = $stripe->subscriptions->retrieve($gatewaySubscriptionId, []);
 
     return $this->syncFromStripePayload($subscription, $stripeSubscription);
@@ -84,5 +85,16 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
     $subscription->save();
 
     return $subscription;
+}
+
+    protected function stripeSecret(): string
+{
+    $secret = trim((string) config('billing.gateways.stripe.secret'));
+
+    if ($secret === '') {
+        throw new RuntimeException('Stripe secret key is not configured.');
+    }
+
+    return $secret;
 }
 }

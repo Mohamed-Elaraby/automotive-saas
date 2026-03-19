@@ -77,6 +77,7 @@ Route::prefix('automotive/admin')
             // Billing Routes
             Route::get('/billing', [BillingController::class, 'status'])->name('billing.status');
             Route::post('/billing/renew', [BillingController::class, 'renew'])->name('billing.renew');
+            Route::post('/billing/change-plan', [BillingController::class, 'changePlan'])->name('billing.change-plan');
             Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
             Route::get('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
             Route::post('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');

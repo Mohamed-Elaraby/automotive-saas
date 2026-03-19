@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Subscription;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\StripeCustomerPortalService;
 use App\Services\Billing\StripePriceInspectorService;
 use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Support\Billing\BillingActionResolver;
+use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +29,8 @@ class BillingController extends Controller
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected StripeCustomerPortalService $stripeCustomerPortalService,
         protected StripePriceInspectorService $stripePriceInspectorService,
-        protected StripeSubscriptionManagementService $stripeSubscriptionManagementService
+        protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
+        protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService
     ) {
     }
 
@@ -58,7 +62,15 @@ public function status(Request $request): View
     $isSameCurrentPaidPlan = $plan
         && $selectedPlan
         && (int) $plan->id === (int) $selectedPlan->id
-        && ($billingState['status'] ?? null) === 'active';
+        && in_array(($billingState['status'] ?? null), [
+            SubscriptionStatuses::ACTIVE,
+            SubscriptionStatuses::CANCELLED,
+        ], true);
+
+    $canChangeCurrentSubscriptionPlan = $this->canChangePlanOnExistingStripeSubscription(
+        $subscription,
+        $billingState
+    );
 
     return view('automotive.admin.billing.status', compact(
         'tenant',
@@ -70,7 +82,8 @@ public function status(Request $request): View
         'selectedPlanId',
         'selectedPlan',
         'selectedPlanAudit',
-        'isSameCurrentPaidPlan'
+        'isSameCurrentPaidPlan',
+        'canChangeCurrentSubscriptionPlan'
     ));
 }
 
@@ -82,6 +95,12 @@ public function renew(Request $request): RedirectResponse
     $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
     $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
+
+    if ($this->canChangePlanOnExistingStripeSubscription($subscription, $billingState)) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'This tenant already has a live Stripe subscription eligible for in-place plan change. Use Change Plan instead of starting a new checkout.');
+    }
 
     $validated = $request->validate([
         'target_plan_id' => ['required', 'integer'],
@@ -98,7 +117,7 @@ public function renew(Request $request): RedirectResponse
     if (
         $currentPlan
         && (int) $currentPlan->id === (int) $targetPlan->id
-        && ($billingState['status'] ?? null) === 'active'
+        && ($billingState['status'] ?? null) === SubscriptionStatuses::ACTIVE
     ) {
         return redirect()
             ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
@@ -154,6 +173,78 @@ public function renew(Request $request): RedirectResponse
     return redirect()
         ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
         ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
+}
+
+public function changePlan(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $tenantId = $tenant->id;
+
+    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    $billingState = $this->tenantBillingLifecycleService->resolveState($subscriptionRow);
+
+    if (! $this->canChangePlanOnExistingStripeSubscription($subscriptionRow, $billingState)) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'This tenant is not eligible for in-place Stripe plan change right now. Start a checkout instead if billing setup is still needed.');
+    }
+
+    $validated = $request->validate([
+        'target_plan_id' => ['required', 'integer'],
+    ]);
+
+    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
+
+    if (! $targetPlan) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The selected paid plan was not found or is not active.');
+    }
+
+    if ((string) ($targetPlan->billing_period ?? '') === 'trial') {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'Trial plans cannot replace a live Stripe subscription.');
+    }
+
+    if (empty($targetPlan->stripe_price_id)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
+    }
+
+    $targetPlanAudit = $this->stripePriceInspectorService->auditPlan($targetPlan);
+
+    if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before changing the live subscription.');
+    }
+
+    if (
+        $currentPlan
+        && (int) $currentPlan->id === (int) $targetPlan->id
+        && (string) ($subscriptionRow->gateway_price_id ?? '') === (string) $targetPlan->stripe_price_id
+    ) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The subscription is already on this plan.');
+    }
+
+    $subscription = Subscription::query()->find($subscriptionRow->id ?? null);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The local subscription record could not be loaded for plan change.');
+    }
+
+    $result = $this->stripeSubscriptionPlanChangeService->changePlan($subscription, $targetPlan);
+
+    return redirect()
+        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+        ->with($result['ok'] ? 'success' : 'error', $result['message']);
 }
 
 public function portal(Request $request): RedirectResponse
@@ -214,5 +305,33 @@ public function cancel(Request $request): RedirectResponse
     return redirect()
         ->route('automotive.admin.billing.status')
         ->with('error', 'Checkout was cancelled before completion.');
+}
+
+protected function canChangePlanOnExistingStripeSubscription(?object $subscription, array $billingState): bool
+{
+    if (! $subscription) {
+        return false;
+    }
+
+    if (($subscription->gateway ?? null) !== 'stripe') {
+        return false;
+    }
+
+    if (empty($subscription->gateway_subscription_id)) {
+        return false;
+    }
+
+    $status = (string) ($billingState['status'] ?? '');
+
+    if ($status === SubscriptionStatuses::ACTIVE) {
+        return true;
+    }
+
+    if ($status === SubscriptionStatuses::CANCELLED) {
+        return ! empty($billingState['period_ends_at'])
+            && $billingState['period_ends_at']->isFuture();
+    }
+
+    return false;
 }
 }

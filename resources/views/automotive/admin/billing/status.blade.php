@@ -2,6 +2,17 @@
 @extends('automotive.layouts.adminLayout.mainlayout')
 
 @section('content')
+    @php
+        $canChangeCurrentSubscriptionPlan = $canChangeCurrentSubscriptionPlan ?? false;
+        $billingFormAction = $canChangeCurrentSubscriptionPlan
+            ? route('automotive.admin.billing.change-plan')
+            : route('automotive.admin.billing.renew');
+
+        $billingSubmitLabel = $canChangeCurrentSubscriptionPlan
+            ? 'Change Plan'
+            : ($billingActions['primary_label'] ?? 'Renew Subscription');
+    @endphp
+
     <div class="page-wrapper">
         <div class="content container-fluid">
 
@@ -58,12 +69,12 @@
 
                                 @if($isSameCurrentPaidPlan ?? false)
                                     <div class="alert alert-info mt-3 mb-0">
-                                        You are already on this active plan. Use Manage Billing or choose another plan to upgrade or downgrade.
+                                        You are already on this plan. Choose another plan to change it, or use Manage Billing for payment method and cancellation controls.
                                     </div>
                                 @elseif(empty($selectedPlanAudit['checks']['is_aligned']))
                                     <div class="alert alert-danger mt-3 mb-0">
                                         {{ $selectedPlanAudit['message'] ?? 'Selected plan pricing does not match Stripe.' }}
-                                        Renew / checkout is blocked until this mapping is corrected.
+                                        Billing action is blocked until this mapping is corrected.
                                     </div>
                                 @else
                                     <div class="alert alert-success mt-3 mb-0">
@@ -74,7 +85,13 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('automotive.admin.billing.renew') }}" class="mt-4">
+                    @if($canChangeCurrentSubscriptionPlan)
+                        <div class="alert alert-info mt-4">
+                            This tenant already has a live Stripe subscription. Selecting another paid plan will update the existing subscription in place and Stripe will calculate proration automatically for the remaining billing period.
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ $billingFormAction }}" class="mt-4">
                         @csrf
 
                         @include('automotive.admin.billing.partials.plan-selector', [
@@ -85,7 +102,7 @@
                         <div class="card mt-4">
                             <div class="card-body d-flex flex-wrap gap-2 justify-content-end">
                                 <button type="submit" class="btn btn-primary">
-                                    {{ $billingActions['primary_label'] ?? 'Renew Subscription' }}
+                                    {{ $billingSubmitLabel }}
                                 </button>
                             </div>
                         </div>
