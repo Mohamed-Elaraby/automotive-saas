@@ -29,4 +29,18 @@ class Plan extends Model
         'features' => 'array',
         'price' => 'decimal:2',
     ];
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        $this->setConnection(
+            config('tenancy.database.central_connection') ?? config('database.default')
+        );
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }
