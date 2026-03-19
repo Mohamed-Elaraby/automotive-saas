@@ -47,16 +47,16 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
 
         $subscription->save();
 
-        return match ($mappedStatus) {
+        match ($mappedStatus) {
         'active' => $this->billingLifecycleService->markAsRecovered($subscription),
             'trialing' => $this->markTrialing($subscription),
             'past_due' => $this->billingLifecycleService->markAsPastDue($subscription),
             'expired' => $this->billingLifecycleService->markAsExpired($subscription),
-            'suspended' => $this->billingLifecycleService->suspendIfGraceExpired(
-        $this->billingLifecycleService->markAsPastDue($subscription)
-    ),
-            default => $subscription,
+            'suspended' => $this->billingLifecycleService->markAsSuspended($subscription),
+            default => null,
         };
+
+        return Subscription::query()->findOrFail($subscription->id);
     }
 
     protected function mapStripeStatus(?string $stripeStatus): string
@@ -67,6 +67,7 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
             'past_due', 'unpaid' => 'past_due',
             'canceled', 'incomplete_expired' => 'expired',
             'incomplete' => 'past_due',
+            'paused' => 'suspended',
             default => 'past_due',
         };
     }
