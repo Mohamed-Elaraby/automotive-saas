@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
@@ -194,41 +195,41 @@ public function changePlan(Request $request): RedirectResponse
         'target_plan_id' => ['required', 'integer'],
     ]);
 
-    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
+    $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
 
-    if (! $targetPlan) {
+    if (! $targetPlanCatalogRow) {
         return redirect()
             ->route('automotive.admin.billing.status')
             ->with('error', 'The selected paid plan was not found or is not active.');
     }
 
-    if ((string) ($targetPlan->billing_period ?? '') === 'trial') {
+    if ((string) ($targetPlanCatalogRow->billing_period ?? '') === 'trial') {
         return redirect()
             ->route('automotive.admin.billing.status')
             ->with('error', 'Trial plans cannot replace a live Stripe subscription.');
     }
 
-    if (empty($targetPlan->stripe_price_id)) {
+    if (empty($targetPlanCatalogRow->stripe_price_id)) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
             ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
     }
 
-    $targetPlanAudit = $this->stripePriceInspectorService->auditPlan($targetPlan);
+    $targetPlanAudit = $this->stripePriceInspectorService->auditPlan($targetPlanCatalogRow);
 
     if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
             ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before changing the live subscription.');
     }
 
     if (
         $currentPlan
-        && (int) $currentPlan->id === (int) $targetPlan->id
-        && (string) ($subscriptionRow->gateway_price_id ?? '') === (string) $targetPlan->stripe_price_id
+        && (int) $currentPlan->id === (int) $targetPlanCatalogRow->id
+        && (string) ($subscriptionRow->gateway_price_id ?? '') === (string) $targetPlanCatalogRow->stripe_price_id
     ) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
             ->with('error', 'The subscription is already on this plan.');
     }
 
@@ -238,6 +239,14 @@ public function changePlan(Request $request): RedirectResponse
         return redirect()
             ->route('automotive.admin.billing.status')
             ->with('error', 'The local subscription record could not be loaded for plan change.');
+    }
+
+    $targetPlan = Plan::query()->find($targetPlanCatalogRow->id);
+
+    if (! $targetPlan) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The selected plan model could not be loaded.');
     }
 
     $result = $this->stripeSubscriptionPlanChangeService->changePlan($subscription, $targetPlan);
