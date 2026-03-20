@@ -1,333 +1,389 @@
-<?php $page = 'billing'; ?>
-@extends('automotive.layouts.adminLayout.mainlayout')
+<?php
 
-@section('content')
-    @php
-        $canChangeCurrentSubscriptionPlan = $canChangeCurrentSubscriptionPlan ?? false;
-        $billingFormAction = $canChangeCurrentSubscriptionPlan
-            ? route('automotive.admin.billing.change-plan')
-            : route('automotive.admin.billing.renew');
+namespace App\Http\Controllers\Automotive\Admin;
 
-        $billingSubmitLabel = $canChangeCurrentSubscriptionPlan
-            ? 'Confirm Plan Change'
-            : ($billingActions['primary_label'] ?? 'Renew Subscription');
+use App\Http\Controllers\Controller;
+use App\Models\Plan;
+use App\Models\Subscription;
+use App\Services\Billing\BillingPlanCatalogService;
+use App\Services\Billing\PaymentGatewayManager;
+use App\Services\Billing\StripeCustomerPortalService;
+use App\Services\Billing\StripeInvoiceHistoryService;
+use App\Services\Billing\StripePriceInspectorService;
+use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
+use App\Services\Billing\StripeSubscriptionPlanPreviewService;
+use App\Services\Billing\TenantBillingLifecycleService;
+use App\Services\Tenancy\TenantPlanService;
+use App\Support\Billing\BillingActionResolver;
+use App\Support\Billing\SubscriptionStatuses;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Throwable;
 
-        $previewData = ($planChangePreview['ok'] ?? false) ? ($planChangePreview['preview'] ?? null) : null;
-    @endphp
+class BillingController extends Controller
+{
+    public function __construct(
+        protected TenantPlanService $tenantPlanService,
+        protected TenantBillingLifecycleService $tenantBillingLifecycleService,
+        protected PaymentGatewayManager $paymentGatewayManager,
+        protected BillingPlanCatalogService $billingPlanCatalogService,
+        protected StripeCustomerPortalService $stripeCustomerPortalService,
+        protected StripePriceInspectorService $stripePriceInspectorService,
+        protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
+        protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService,
+        protected StripeSubscriptionPlanPreviewService $stripeSubscriptionPlanPreviewService,
+        protected StripeInvoiceHistoryService $stripeInvoiceHistoryService
+    ) {
+    }
 
-    <div class="page-wrapper">
-        <div class="content container-fluid">
+public function status(Request $request): View
+{
+    $tenant = tenant();
+    $tenantId = $tenant->id;
 
-            @include('automotive.admin.partials.page-header', [
-                'title' => 'Plans & Billing',
-                'subtitle' => 'Trial, subscription, billing access state, and renewal actions.',
-                'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Plans & Billing'],
-                ],
-                'actions' => null,
-            ])
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
 
-            @include('automotive.admin.partials.alerts')
+    $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
+    $billingActions = BillingActionResolver::resolve($billingState);
+    $availablePlans = $this->billingPlanCatalogService->getPaidPlans();
 
-            <div class="row">
-                <div class="col-lg-8">
-                    @include('automotive.admin.billing.partials.status-card', [
-                        'billingState' => $billingState,
-                        'plan' => $plan,
-                    ])
+    $selectedPlanId = old('target_plan_id')
+        ?: $request->input('target_plan_id')
+            ?: ($plan && ($plan->billing_period ?? null) !== 'trial' ? $plan->id : null)
+                ?: optional($availablePlans->first())->id;
 
-                    <form id="billing-plan-preview-form" method="GET" action="{{ route('automotive.admin.billing.status') }}" class="mt-4">
-                        @include('automotive.admin.billing.partials.plan-selector', [
-                            'availablePlans' => $availablePlans,
-                            'selectedPlanId' => $selectedPlanId,
-                        ])
-                    </form>
+    $selectedPlan = $selectedPlanId
+        ? $this->billingPlanCatalogService->findPaidPlanById($selectedPlanId)
+        : null;
 
-                    @if(!empty($selectedPlan))
-                        <div class="card mt-4">
-                            <div class="card-body">
-                                <h6 class="mb-3">Selected Plan Pricing Verification</h6>
+    $selectedPlanAudit = $selectedPlan
+        ? $this->stripePriceInspectorService->auditPlan($selectedPlan)
+        : null;
 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p class="mb-2"><strong>Selected Plan:</strong> {{ $selectedPlan->name ?? '-' }}</p>
-                                        <p class="mb-2"><strong>Local Price:</strong> {{ $selectedPlan->display_price ?? '-' }}</p>
-                                        <p class="mb-2"><strong>Local Billing Period:</strong> {{ $selectedPlan->billing_period_label ?? '-' }}</p>
-                                        <p class="mb-2"><strong>Stripe Price ID:</strong> {{ $selectedPlan->stripe_price_id ?? '-' }}</p>
-                                    </div>
+    $isSameCurrentPaidPlan = $plan
+        && $selectedPlan
+        && (int) $plan->id === (int) $selectedPlan->id
+        && in_array(($billingState['status'] ?? null), [
+            SubscriptionStatuses::ACTIVE,
+            SubscriptionStatuses::CANCELLED,
+        ], true);
 
-                                    <div class="col-md-6">
-                                        <p class="mb-2"><strong>Stripe Amount:</strong>
-                                            {{ isset($selectedPlanAudit['stripe']['unit_amount_decimal']) && $selectedPlanAudit['stripe']['unit_amount_decimal'] !== null
-                                                ? number_format((float) $selectedPlanAudit['stripe']['unit_amount_decimal'], 2)
-                                                : '-' }}
-                                            {{ $selectedPlanAudit['stripe']['currency'] ?? '' }}
-                                        </p>
-                                        <p class="mb-2"><strong>Stripe Interval:</strong> {{ $selectedPlanAudit['stripe']['interval'] ?? '-' }}</p>
-                                        <p class="mb-2"><strong>Stripe Product:</strong> {{ $selectedPlanAudit['stripe']['product_name'] ?? '-' }}</p>
-                                        <p class="mb-2"><strong>Verification:</strong>
-                                            @if(!empty($selectedPlanAudit['checks']['is_aligned']))
-                                                <span class="badge bg-success">Aligned</span>
-                                            @else
-                                                <span class="badge bg-danger">Mismatch</span>
-                                            @endif
-                                        </p>
-                                    </div>
-                                </div>
+    $canChangeCurrentSubscriptionPlan = $this->canChangePlanOnExistingStripeSubscription(
+        $subscription,
+        $billingState
+    );
 
-                                @if($isSameCurrentPaidPlan ?? false)
-                                    <div class="alert alert-info mt-3 mb-0">
-                                        You are already on this plan. Choose another plan to change it, or use Manage Billing for payment method and cancellation controls.
-                                    </div>
-                                @elseif(empty($selectedPlanAudit['checks']['is_aligned']))
-                                    <div class="alert alert-danger mt-3 mb-0">
-                                        {{ $selectedPlanAudit['message'] ?? 'Selected plan pricing does not match Stripe.' }}
-                                        Billing action is blocked until this mapping is corrected.
-                                    </div>
-                                @else
-                                    <div class="alert alert-success mt-3 mb-0">
-                                        Local plan pricing is aligned with Stripe for this selected plan.
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    @endif
+    $planChangePreview = null;
 
-                    @if($canChangeCurrentSubscriptionPlan)
-                        <div class="alert alert-info mt-4">
-                            This tenant already has a live Stripe subscription. Select a plan first to refresh the Stripe preview, then confirm the plan change.
-                        </div>
-                    @endif
+    if (
+        $canChangeCurrentSubscriptionPlan
+        && $selectedPlan
+        && ! $isSameCurrentPaidPlan
+        && ($selectedPlanAudit['checks']['is_aligned'] ?? false)
+        && ! empty($subscription->id)
+    ) {
+        $subscriptionModel = Subscription::query()->find($subscription->id);
+        $selectedPlanModel = Plan::query()->find($selectedPlan->id);
 
-                    @if($canChangeCurrentSubscriptionPlan && !empty($planChangePreview) && !($planChangePreview['ok'] ?? false))
-                        <div class="alert alert-warning mt-4">
-                            {{ $planChangePreview['message'] ?? 'Unable to preview the Stripe proration right now.' }}
-                        </div>
-                    @endif
+        if ($subscriptionModel && $selectedPlanModel) {
+            $planChangePreview = $this->stripeSubscriptionPlanPreviewService->previewPlanChange(
+                $subscriptionModel,
+                $selectedPlanModel
+            );
+        }
+    }
 
-                    @if($canChangeCurrentSubscriptionPlan && !empty($previewData))
-                        <div class="card mt-4 border-primary">
-                            <div class="card-body">
-                                <h5 class="mb-3">Stripe Change Preview</h5>
-                                <p class="text-muted mb-3">
-                                    This section shows the immediate adjustment for the current plan change only.
-                                </p>
+    $invoiceHistory = [
+        'ok' => true,
+        'invoices' => [],
+        'message' => null,
+    ];
 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p class="mb-2">
-                                            <strong>This Change Adjustment:</strong>
-                                            {{ number_format((float) ($previewData['current_change_total_decimal'] ?? 0), 2) }}
-                                            {{ $previewData['currency'] ?? 'USD' }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <strong>Current Plan:</strong> {{ $plan->name ?? '-' }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <strong>Target Plan:</strong> {{ $selectedPlan->name ?? '-' }}
-                                        </p>
-                                    </div>
+    if (($subscription->gateway ?? null) === 'stripe' && ! empty($subscription->gateway_customer_id)) {
+        $invoiceHistory = $this->stripeInvoiceHistoryService->listCustomerInvoices(
+            (string) $subscription->gateway_customer_id
+        );
+    }
 
-                                    <div class="col-md-6">
-                                        <p class="mb-2">
-                                            <strong>Preview Generated At:</strong>
-                                            {{ !empty($previewData['proration_date']) ? \Carbon\Carbon::createFromTimestamp($previewData['proration_date'])->format('Y-m-d H:i:s') : '-' }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <strong>Amount Due On Stripe Preview:</strong>
-                                            {{ number_format((float) ($previewData['amount_due_decimal'] ?? 0), 2) }}
-                                            {{ $previewData['currency'] ?? 'USD' }}
-                                        </p>
-                                    </div>
-                                </div>
+    return view('automotive.admin.billing.status', compact(
+        'tenant',
+        'subscription',
+        'plan',
+        'billingState',
+        'billingActions',
+        'availablePlans',
+        'selectedPlanId',
+        'selectedPlan',
+        'selectedPlanAudit',
+        'isSameCurrentPaidPlan',
+        'canChangeCurrentSubscriptionPlan',
+        'planChangePreview',
+        'invoiceHistory'
+    ));
+}
 
-                                @if(!empty($previewData['current_change_lines']))
-                                    <hr>
-                                    <h6 class="mb-3">Current Change Lines</h6>
+public function renew(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $tenantId = $tenant->id;
 
-                                    @foreach($previewData['current_change_lines'] as $line)
-                                        <div class="border rounded p-3 mb-2">
-                                            <div class="d-flex justify-content-between gap-3">
-                                                <div>
-                                                    <div class="fw-semibold">{{ $line['description'] ?? 'Stripe proration line' }}</div>
-                                                    <div class="small text-muted">
-                                                        @if(!empty($line['period_start']) && !empty($line['period_end']))
-                                                            {{ \Carbon\Carbon::createFromTimestamp($line['period_start'])->format('Y-m-d H:i') }}
-                                                            →
-                                                            {{ \Carbon\Carbon::createFromTimestamp($line['period_end'])->format('Y-m-d H:i') }}
-                                                        @else
-                                                            Stripe preview line
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                <div class="fw-semibold">
-                                                    {{ number_format((float) ($line['amount_decimal'] ?? 0), 2) }}
-                                                    {{ $line['currency'] ?? ($previewData['currency'] ?? 'USD') }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @else
-                                    <div class="alert alert-light mt-3 mb-0">
-                                        Stripe did not return isolated current-change proration lines for this preview.
-                                    </div>
-                                @endif
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
 
-                                @if(!empty($previewData['older_pending_proration_lines']))
-                                    <hr>
-                                    <div class="alert alert-warning mb-3">
-                                        Stripe also detected pending proration items from earlier changes in the same billing cycle.
-                                        These older pending items are not part of the current change adjustment shown above.
-                                    </div>
+    if ($this->canChangePlanOnExistingStripeSubscription($subscription, $billingState)) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'This tenant already has a live Stripe subscription eligible for in-place plan change. Use Change Plan instead of starting a new checkout.');
+    }
 
-                                    <p class="mb-2">
-                                        <strong>Older Pending Proration Total:</strong>
-                                        {{ number_format((float) ($previewData['older_pending_proration_total_decimal'] ?? 0), 2) }}
-                                        {{ $previewData['currency'] ?? 'USD' }}
-                                    </p>
+    $validated = $request->validate([
+        'target_plan_id' => ['required', 'integer'],
+    ]);
 
-                                    <details class="mt-3">
-                                        <summary class="fw-semibold">Show older pending proration lines</summary>
+    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
 
-                                        <div class="mt-3">
-                                            @foreach($previewData['older_pending_proration_lines'] as $line)
-                                                <div class="border rounded p-3 mb-2">
-                                                    <div class="d-flex justify-content-between gap-3">
-                                                        <div>
-                                                            <div class="fw-semibold">{{ $line['description'] ?? 'Older Stripe proration line' }}</div>
-                                                            <div class="small text-muted">
-                                                                @if(!empty($line['period_start']) && !empty($line['period_end']))
-                                                                    {{ \Carbon\Carbon::createFromTimestamp($line['period_start'])->format('Y-m-d H:i') }}
-                                                                    →
-                                                                    {{ \Carbon\Carbon::createFromTimestamp($line['period_end'])->format('Y-m-d H:i') }}
-                                                                @else
-                                                                    Stripe pending line
-                                                                @endif
-                                                            </div>
-                                                        </div>
-                                                        <div class="fw-semibold">
-                                                            {{ number_format((float) ($line['amount_decimal'] ?? 0), 2) }}
-                                                            {{ $line['currency'] ?? ($previewData['currency'] ?? 'USD') }}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </details>
-                                @endif
-                            </div>
-                        </div>
-                    @endif
+    if (! $targetPlan) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The selected paid plan was not found or is not active.');
+    }
 
-                    <form method="POST" action="{{ $billingFormAction }}" class="mt-4">
-                        @csrf
+    if (
+        $currentPlan
+        && (int) $currentPlan->id === (int) $targetPlan->id
+        && ($billingState['status'] ?? null) === SubscriptionStatuses::ACTIVE
+    ) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'You are already subscribed to this active plan. Choose another plan or use Manage Billing.');
+    }
 
-                        @if(!empty($selectedPlanId))
-                            <input type="hidden" name="target_plan_id" value="{{ $selectedPlanId }}">
-                        @endif
+    if (empty($targetPlan->stripe_price_id)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
+    }
 
-                        @if($canChangeCurrentSubscriptionPlan && !empty($previewData['proration_date']))
-                            <input type="hidden" name="preview_proration_date" value="{{ $previewData['proration_date'] }}">
-                        @endif
+    $targetPlanAudit = $this->stripePriceInspectorService->auditPlan($targetPlan);
 
-                        <div class="card mt-4">
-                            <div class="card-body d-flex flex-wrap gap-2 justify-content-end">
-                                <button
-                                    type="submit"
-                                    class="btn btn-primary"
-                                    @disabled(empty($selectedPlanId) || ($canChangeCurrentSubscriptionPlan && ($isSameCurrentPaidPlan ?? false)))
-                                >
-                                    {{ $billingSubmitLabel }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+    if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before checkout.');
+    }
 
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="mb-3">Billing Summary</h6>
+    try {
+        $session = $this->paymentGatewayManager
+            ->driver('stripe')
+            ->createRenewalSession([
+                'tenant_id' => $tenantId,
+                'subscription_row_id' => $subscription->id ?? null,
+                'plan_id' => $targetPlan->id ?? null,
+                'stripe_price_id' => $targetPlan->stripe_price_id ?? null,
+                'billing_state' => $billingState['status'] ?? null,
+                'customer_email' => auth('automotive_admin')->user()?->email,
+                    'success_url' => route('automotive.admin.billing.success'),
+                    'cancel_url' => route('automotive.admin.billing.cancel'),
+                    'plan_for_audit' => (array) $targetPlan,
+                ]);
+        } catch (Throwable $e) {
+        Log::error('Billing renew controller fatal error', [
+            'message' => $e->getMessage(),
+            'tenant_id' => $tenantId,
+            'current_plan_id' => $currentPlan->id ?? null,
+            'target_plan_id' => $targetPlan->id ?? null,
+            'stripe_price_id' => $targetPlan->stripe_price_id ?? null,
+        ]);
 
-                            <p class="mb-2"><strong>Tenant:</strong> {{ $tenant->id ?? '-' }}</p>
-                            <p class="mb-2"><strong>Current Plan:</strong> {{ $plan->name ?? 'N/A' }}</p>
-                            <p class="mb-2"><strong>Current Status:</strong> {{ ucfirst(str_replace('_', ' ', $billingState['status'] ?? 'unknown')) }}</p>
-                            <p class="mb-2"><strong>Subscription ID:</strong> {{ $subscription->id ?? '-' }}</p>
-                            <p class="mb-2"><strong>Gateway Customer ID:</strong> {{ $subscription->gateway_customer_id ?? '-' }}</p>
-                            <p class="mb-2"><strong>Gateway Subscription ID:</strong> {{ $subscription->gateway_subscription_id ?? '-' }}</p>
-                            <p class="mb-4"><strong>Gateway Price ID:</strong> {{ $subscription->gateway_price_id ?? '-' }}</p>
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->with('error', 'Billing configuration error. Please check Stripe settings.');
+    }
 
-                            @if(!empty($subscription->gateway_customer_id))
-                                <div class="d-grid gap-2">
-                                    <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-primary w-100">
-                                            Manage Billing
-                                        </button>
-                                    </form>
+    if (! empty($session['success']) && ! empty($session['checkout_url'])) {
+        return redirect()->away($session['checkout_url']);
+    }
 
-                                    <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-light w-100">
-                                            Update Payment Method
-                                        </button>
-                                    </form>
+    return redirect()
+        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+        ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
+}
 
-                                    @if(($billingState['status'] ?? '') === 'active')
-                                        <form method="POST" action="{{ route('automotive.admin.billing.cancel-subscription') }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-outline-danger w-100">
-                                                Cancel at Period End
-                                            </button>
-                                        </form>
-                                    @endif
+public function changePlan(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $tenantId = $tenant->id;
 
-                                    @if(($billingState['status'] ?? '') === 'canceled')
-                                        <form method="POST" action="{{ route('automotive.admin.billing.resume-subscription') }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-success w-100">
-                                                Resume Subscription
-                                            </button>
-                                        </form>
-                                    @endif
+    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    $billingState = $this->tenantBillingLifecycleService->resolveState($subscriptionRow);
 
-                                    @if(in_array($billingState['status'] ?? '', ['past_due', 'grace_period', 'suspended', 'expired'], true))
-                                        <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
-                                            @csrf
-                                            <button type="submit" class="btn btn-warning w-100">
-                                                Retry / Reactivate
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            @else
-                                <div class="alert alert-info mb-0">
-                                    Billing portal will become available after the first Stripe subscription is linked to this tenant.
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    if (! $this->canChangePlanOnExistingStripeSubscription($subscriptionRow, $billingState)) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'This tenant is not eligible for in-place Stripe plan change right now. Start a checkout instead if billing setup is still needed.');
+    }
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const previewForm = document.getElementById('billing-plan-preview-form');
+    $validated = $request->validate([
+        'target_plan_id' => ['required', 'integer'],
+        'preview_proration_date' => ['nullable', 'integer'],
+    ]);
 
-            if (!previewForm) {
-                return;
-            }
+    $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
 
-            const radios = previewForm.querySelectorAll('input[name="target_plan_id"]');
+    if (! $targetPlanCatalogRow) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The selected paid plan was not found or is not active.');
+    }
 
-            radios.forEach(function (radio) {
-                radio.addEventListener('change', function () {
-                    previewForm.submit();
-                });
-            });
-        });
-    </script>
-@endsection
+    if ((string) ($targetPlanCatalogRow->billing_period ?? '') === 'trial') {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'Trial plans cannot replace a live Stripe subscription.');
+    }
+
+    if (empty($targetPlanCatalogRow->stripe_price_id)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
+            ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
+    }
+
+    $targetPlanAudit = $this->stripePriceInspectorService->auditPlan($targetPlanCatalogRow);
+
+    if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
+            ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before changing the live subscription.');
+    }
+
+    if (
+        $currentPlan
+        && (int) $currentPlan->id === (int) $targetPlanCatalogRow->id
+        && (string) ($subscriptionRow->gateway_price_id ?? '') === (string) $targetPlanCatalogRow->stripe_price_id
+    ) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
+            ->with('error', 'The subscription is already on this plan.');
+    }
+
+    $subscription = Subscription::query()->find($subscriptionRow->id ?? null);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The local subscription record could not be loaded for plan change.');
+    }
+
+    $targetPlan = Plan::query()->find($targetPlanCatalogRow->id);
+
+    if (! $targetPlan) {
+        return redirect()
+            ->route('automotive.admin.billing.status')
+            ->with('error', 'The selected plan model could not be loaded.');
+    }
+
+    $result = $this->stripeSubscriptionPlanChangeService->changePlan(
+        $subscription,
+        $targetPlan,
+        ! empty($validated['preview_proration_date']) ? (int) $validated['preview_proration_date'] : null
+    );
+
+    return redirect()
+        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+        ->with($result['ok'] ? 'success' : 'error', $result['message']);
+}
+
+public function portal(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $tenantId = $tenant->id;
+
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    $customerId = (string) ($subscription->gateway_customer_id ?? '');
+
+    $portal = $this->stripeCustomerPortalService->createSession(
+        $customerId,
+        route('automotive.admin.billing.status')
+    );
+
+    if (! empty($portal['success']) && ! empty($portal['url'])) {
+        return redirect()->away($portal['url']);
+    }
+
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with('error', $portal['message'] ?? 'Unable to open the billing portal.');
+}
+
+public function cancelSubscription(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+
+    $result = $this->stripeSubscriptionManagementService->cancelAtPeriodEnd($subscription);
+
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with($result['success'] ? 'success' : 'error', $result['message']);
+}
+
+public function resumeSubscription(Request $request): RedirectResponse
+{
+    $tenant = tenant();
+    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+
+    $result = $this->stripeSubscriptionManagementService->resume($subscription);
+
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with($result['success'] ? 'success' : 'error', $result['message']);
+}
+
+public function success(Request $request): RedirectResponse
+{
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with('success', 'Your checkout session was completed successfully. Subscription sync will finalize via webhook.');
+}
+
+public function cancel(Request $request): RedirectResponse
+{
+    return redirect()
+        ->route('automotive.admin.billing.status')
+        ->with('error', 'Checkout was cancelled before completion.');
+}
+
+protected function canChangePlanOnExistingStripeSubscription(?object $subscription, array $billingState): bool
+{
+    if (! $subscription) {
+        return false;
+    }
+
+    if (($subscription->gateway ?? null) !== 'stripe') {
+        return false;
+    }
+
+    if (empty($subscription->gateway_subscription_id)) {
+        return false;
+    }
+
+    $status = (string) ($billingState['status'] ?? '');
+
+    if ($status === SubscriptionStatuses::ACTIVE) {
+        return true;
+    }
+
+    if ($status === SubscriptionStatuses::CANCELLED) {
+        return ! empty($billingState['period_ends_at'])
+            && $billingState['period_ends_at']->isFuture();
+    }
+
+    return false;
+}
+}

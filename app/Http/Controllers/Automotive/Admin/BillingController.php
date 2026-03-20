@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\StripeCustomerPortalService;
+use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripePriceInspectorService;
 use App\Services\Billing\StripeSubscriptionManagementService;
 use App\Services\Billing\StripeSubscriptionPlanChangeService;
@@ -33,7 +34,8 @@ class BillingController extends Controller
         protected StripePriceInspectorService $stripePriceInspectorService,
         protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
         protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService,
-        protected StripeSubscriptionPlanPreviewService $stripeSubscriptionPlanPreviewService
+        protected StripeSubscriptionPlanPreviewService $stripeSubscriptionPlanPreviewService,
+        protected StripeInvoiceHistoryService $stripeInvoiceHistoryService
     ) {
     }
 
@@ -95,6 +97,18 @@ public function status(Request $request): View
         }
     }
 
+    $invoiceHistory = [
+        'ok' => true,
+        'invoices' => [],
+        'message' => null,
+    ];
+
+    if (($subscription->gateway ?? null) === 'stripe' && ! empty($subscription->gateway_customer_id)) {
+        $invoiceHistory = $this->stripeInvoiceHistoryService->listCustomerInvoices(
+            (string) $subscription->gateway_customer_id
+        );
+    }
+
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
@@ -107,7 +121,8 @@ public function status(Request $request): View
         'selectedPlanAudit',
         'isSameCurrentPaidPlan',
         'canChangeCurrentSubscriptionPlan',
-        'planChangePreview'
+        'planChangePreview',
+        'invoiceHistory'
     ));
 }
 
