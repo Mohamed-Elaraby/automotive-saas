@@ -49,6 +49,12 @@ Route::prefix('admin')
                 Route::patch('/{plan}/toggle-active', [PlanController::class, 'toggleActive'])->name('toggle-active');
                 Route::delete('/{plan}', [PlanController::class, 'destroy'])->name('destroy');
             });
+
+        Route::prefix('subscriptions')
+            ->name('subscriptions.')
+            ->group(function () {
+                Route::get('/', [SubscriptionController::class, 'index'])->name('index');
+            });
     });
 //Route::get('/', function () {
 //    return view('index');
