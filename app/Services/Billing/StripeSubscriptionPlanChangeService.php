@@ -217,4 +217,4 @@ protected function centralConnection(): string
 {
     return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
 }
-}<
+}
