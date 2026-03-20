@@ -161,6 +161,7 @@
                                 <th>Ends At</th>
                                 <th>Grace Ends</th>
                                 <th>Updated</th>
+                                <th></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -221,10 +222,15 @@
                                     <td>
                                         {{ !empty($subscription->updated_at) ? \Carbon\Carbon::parse($subscription->updated_at)->format('Y-m-d H:i') : '-' }}
                                     </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.subscriptions.show', $subscription->id) }}" class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted">No subscriptions matched the selected filters.</td>
+                                    <td colspan="12" class="text-center text-muted">No subscriptions matched the selected filters.</td>
                                 </tr>
                             @endforelse
                             </tbody>
