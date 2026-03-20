@@ -108,7 +108,7 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
                 ],
                 'proration_behavior' => 'create_prorations',
                 'metadata' => array_merge(
-                    (array) ($stripeSubscription->metadata ?? []),
+                    $this->normalizeMetadata($stripeSubscription->metadata ?? null),
                     [
                         'plan_id' => (string) $targetPlan->id,
                         'subscription_row_id' => (string) $subscription->id,
@@ -168,6 +168,38 @@ protected function isEligibleForPlanChange(Subscription $subscription): bool
     }
 
     return false;
+}
+
+protected function normalizeMetadata(mixed $metadata): array
+{
+    if (is_array($metadata)) {
+        return $this->stringifyMetadataValues($metadata);
+    }
+
+    if (is_object($metadata) && method_exists($metadata, 'toArray')) {
+        $array = $metadata->toArray();
+
+        return is_array($array)
+            ? $this->stringifyMetadataValues($array)
+            : [];
+    }
+
+    return [];
+}
+
+protected function stringifyMetadataValues(array $metadata): array
+{
+    $normalized = [];
+
+    foreach ($metadata as $key => $value) {
+        if (! is_scalar($value) && $value !== null) {
+            continue;
+        }
+
+        $normalized[(string) $key] = $value === null ? '' : (string) $value;
+    }
+
+    return $normalized;
 }
 
 protected function stripeSecret(): string
