@@ -9,7 +9,9 @@ use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\StripeCustomerPortalService;
 use App\Services\Billing\StripeInvoiceHistoryService;
+use App\Services\Billing\StripePaymentMethodManagementService;
 use App\Services\Billing\StripePriceInspectorService;
+use App\Services\Billing\StripeSetupIntentService;
 use App\Services\Billing\StripeSubscriptionManagementService;
 use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\StripeSubscriptionPlanPreviewService;
@@ -17,6 +19,7 @@ use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Support\Billing\BillingActionResolver;
 use App\Support\Billing\SubscriptionStatuses;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -35,7 +38,9 @@ class BillingController extends Controller
         protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
         protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService,
         protected StripeSubscriptionPlanPreviewService $stripeSubscriptionPlanPreviewService,
-        protected StripeInvoiceHistoryService $stripeInvoiceHistoryService
+        protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
+        protected StripeSetupIntentService $stripeSetupIntentService,
+        protected StripePaymentMethodManagementService $stripePaymentMethodManagementService
     ) {
     }
 
@@ -109,6 +114,13 @@ public function status(Request $request): View
         );
     }
 
+    $stripePublishableKey = trim((string) config('billing.gateways.stripe.key'));
+    $canUpdatePaymentMethodInline =
+        ($subscription->gateway ?? null) === 'stripe'
+        && ! empty($subscription->gateway_customer_id)
+        && ! empty($subscription->gateway_subscription_id)
+        && $stripePublishableKey !== '';
+
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
@@ -122,7 +134,9 @@ public function status(Request $request): View
         'isSameCurrentPaidPlan',
         'canChangeCurrentSubscriptionPlan',
         'planChangePreview',
-        'invoiceHistory'
+        'invoiceHistory',
+        'stripePublishableKey',
+        'canUpdatePaymentMethodInline'
     ));
 }
 
@@ -297,6 +311,58 @@ public function changePlan(Request $request): RedirectResponse
     return redirect()
         ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
         ->with($result['ok'] ? 'success' : 'error', $result['message']);
+}
+
+public function createSetupIntent(Request $request): JsonResponse
+{
+    $tenant = tenant();
+    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+
+    if (! $subscriptionRow || ($subscriptionRow->gateway ?? null) !== 'stripe') {
+        return response()->json([
+            'ok' => false,
+            'message' => 'This tenant does not have a live Stripe billing record.',
+        ], 422);
+    }
+
+    $result = $this->stripeSetupIntentService->createForCustomer(
+        (string) ($subscriptionRow->gateway_customer_id ?? '')
+    );
+
+    return response()->json($result, $result['ok'] ? 200 : 422);
+}
+
+public function saveDefaultPaymentMethod(Request $request): JsonResponse
+{
+    $tenant = tenant();
+    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+
+    $validated = $request->validate([
+        'payment_method_id' => ['required', 'string'],
+    ]);
+
+    if (! $subscriptionRow || empty($subscriptionRow->id)) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'No local subscription record could be loaded.',
+        ], 422);
+    }
+
+    $subscription = Subscription::query()->find($subscriptionRow->id);
+
+    if (! $subscription) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'No local subscription model could be loaded.',
+        ], 422);
+    }
+
+    $result = $this->stripePaymentMethodManagementService->setDefaultPaymentMethod(
+        $subscription,
+        $validated['payment_method_id']
+    );
+
+    return response()->json($result, $result['ok'] ? 200 : 422);
 }
 
 public function portal(Request $request): RedirectResponse

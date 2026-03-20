@@ -261,17 +261,23 @@
 
                             @if(!empty($subscription->gateway_customer_id))
                                 <div class="d-grid gap-2">
+                                    @if($canUpdatePaymentMethodInline ?? false)
+                                        <button type="button" id="open-inline-payment-method" class="btn btn-light w-100">
+                                            Update Payment Method
+                                        </button>
+                                    @else
+                                        <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-light w-100">
+                                                Update Payment Method
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
                                         @csrf
                                         <button type="submit" class="btn btn-outline-primary w-100">
                                             Manage Billing
-                                        </button>
-                                    </form>
-
-                                    <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-light w-100">
-                                            Update Payment Method
                                         </button>
                                     </form>
 
@@ -309,6 +315,38 @@
                             @endif
                         </div>
                     </div>
+
+                    @if($canUpdatePaymentMethodInline ?? false)
+                        <div class="card mt-4" id="inline-payment-method-card" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="mb-3">Secure Payment Method Update</h6>
+                                <p class="text-muted mb-3">
+                                    Your card details are collected securely by Stripe inside this form.
+                                </p>
+
+                                <div id="payment-method-inline-alert" class="alert d-none"></div>
+
+                                <div id="payment-method-loader" class="text-muted small mb-3">
+                                    Loading secure payment form...
+                                </div>
+
+                                <form id="payment-method-update-form">
+                                    @csrf
+                                    <div id="payment-method-element" class="mb-3"></div>
+
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" id="payment-method-submit-btn" class="btn btn-primary" disabled>
+                                            Save Payment Method
+                                        </button>
+
+                                        <button type="button" id="close-inline-payment-method" class="btn btn-outline-secondary">
+                                            Close
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="card mt-4">
                         <div class="card-body">
@@ -412,17 +450,173 @@
         document.addEventListener('DOMContentLoaded', function () {
             const previewForm = document.getElementById('billing-plan-preview-form');
 
-            if (!previewForm) {
-                return;
-            }
+            if (previewForm) {
+                const radios = previewForm.querySelectorAll('input[name="target_plan_id"]');
 
-            const radios = previewForm.querySelectorAll('input[name="target_plan_id"]');
-
-            radios.forEach(function (radio) {
-                radio.addEventListener('change', function () {
-                    previewForm.submit();
+                radios.forEach(function (radio) {
+                    radio.addEventListener('change', function () {
+                        previewForm.submit();
+                    });
                 });
-            });
+            }
         });
     </script>
+
+    @if($canUpdatePaymentMethodInline ?? false)
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const publishableKey = @json($stripePublishableKey ?? '');
+                const openBtn = document.getElementById('open-inline-payment-method');
+                const closeBtn = document.getElementById('close-inline-payment-method');
+                const card = document.getElementById('inline-payment-method-card');
+                const loader = document.getElementById('payment-method-loader');
+                const alertBox = document.getElementById('payment-method-inline-alert');
+                const form = document.getElementById('payment-method-update-form');
+                const submitBtn = document.getElementById('payment-method-submit-btn');
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @json(csrf_token());
+
+                let stripe = null;
+                let elements = null;
+                let paymentElement = null;
+                let clientSecret = null;
+                let initialized = false;
+
+                function showAlert(type, message) {
+                    if (!alertBox) return;
+
+                    alertBox.className = 'alert';
+                    alertBox.classList.add(type === 'success' ? 'alert-success' : 'alert-danger');
+                    alertBox.classList.remove('d-none');
+                    alertBox.textContent = message;
+                }
+
+                function clearAlert() {
+                    if (!alertBox) return;
+
+                    alertBox.className = 'alert d-none';
+                    alertBox.textContent = '';
+                }
+
+                async function initializePaymentMethodForm() {
+                    if (initialized) {
+                        return;
+                    }
+
+                    clearAlert();
+
+                    try {
+                        const response = await fetch(@json(route('automotive.admin.billing.payment-method.setup-intent')), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({}),
+                        });
+
+                        const payload = await response.json();
+
+                        if (!response.ok || !payload.ok || !payload.client_secret) {
+                            throw new Error(payload.message || 'Unable to initialize the secure payment form.');
+                        }
+
+                        clientSecret = payload.client_secret;
+
+                        stripe = Stripe(publishableKey);
+                        elements = stripe.elements({ clientSecret: clientSecret });
+
+                        paymentElement = elements.create('payment');
+                        paymentElement.mount('#payment-method-element');
+
+                        initialized = true;
+                        submitBtn.disabled = false;
+
+                        if (loader) {
+                            loader.style.display = 'none';
+                        }
+                    } catch (error) {
+                        if (loader) {
+                            loader.style.display = 'none';
+                        }
+
+                        showAlert('error', error.message || 'Unable to load the secure payment form right now.');
+                    }
+                }
+
+                async function handleSubmit(event) {
+                    event.preventDefault();
+
+                    if (!stripe || !elements || !clientSecret) {
+                        showAlert('error', 'The secure payment form is not ready yet.');
+                        return;
+                    }
+
+                    clearAlert();
+                    submitBtn.disabled = true;
+
+                    try {
+                        const result = await stripe.confirmSetup({
+                            elements,
+                            confirmParams: {},
+                            redirect: 'if_required',
+                        });
+
+                        if (result.error) {
+                            throw new Error(result.error.message || 'Stripe could not confirm the payment method.');
+                        }
+
+                        const setupIntent = result.setupIntent || null;
+                        const paymentMethodId = setupIntent?.payment_method || null;
+
+                        if (!paymentMethodId) {
+                            throw new Error('Stripe did not return a payment method ID.');
+                        }
+
+                        const saveResponse = await fetch(@json(route('automotive.admin.billing.payment-method.default')), {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                payment_method_id: paymentMethodId,
+                            }),
+                        });
+
+                        const savePayload = await saveResponse.json();
+
+                        if (!saveResponse.ok || !savePayload.ok) {
+                            throw new Error(savePayload.message || 'Unable to save the default payment method.');
+                        }
+
+                        showAlert('success', savePayload.message || 'Payment method updated successfully.');
+                        submitBtn.disabled = false;
+                    } catch (error) {
+                        showAlert('error', error.message || 'Unable to update the payment method right now.');
+                        submitBtn.disabled = false;
+                    }
+                }
+
+                if (openBtn && card) {
+                    openBtn.addEventListener('click', function () {
+                        card.style.display = 'block';
+                        initializePaymentMethodForm();
+                    });
+                }
+
+                if (closeBtn && card) {
+                    closeBtn.addEventListener('click', function () {
+                        card.style.display = 'none';
+                    });
+                }
+
+                if (form) {
+                    form.addEventListener('submit', handleSubmit);
+                }
+            });
+        </script>
+    @endif
 @endsection

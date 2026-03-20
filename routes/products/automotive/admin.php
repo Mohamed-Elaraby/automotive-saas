@@ -31,7 +31,6 @@ Route::prefix('automotive/admin')
         Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-            // Users Routes
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
             Route::post('/users', [UserController::class, 'store'])
@@ -41,7 +40,6 @@ Route::prefix('automotive/admin')
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-            // Branches Routes
             Route::get('/branches', [BranchController::class, 'index'])->name('branches.index');
             Route::get('/branches/create', [BranchController::class, 'create'])->name('branches.create');
             Route::post('/branches', [BranchController::class, 'store'])->name('branches.store');
@@ -49,7 +47,6 @@ Route::prefix('automotive/admin')
             Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
             Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
 
-            // Products Routes
             Route::get('/products', [ProductController::class, 'index'])->name('products.index');
             Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
             Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -57,15 +54,12 @@ Route::prefix('automotive/admin')
             Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
             Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
-            // Inventory Adjustments Routes
             Route::get('/inventory-adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory-adjustments.index');
             Route::get('/inventory-adjustments/create', [InventoryAdjustmentController::class, 'create'])->name('inventory-adjustments.create');
             Route::post('/inventory-adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory-adjustments.store');
 
-            // Inventory report Routes
             Route::get('/inventory-report', [InventoryReportController::class, 'index'])->name('inventory-report.index');
 
-            // Stock Transfers Routes
             Route::get('/stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
             Route::get('/stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
             Route::post('/stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
@@ -74,10 +68,11 @@ Route::prefix('automotive/admin')
 
             Route::get('/stock-movements', [StockMovementReportController::class, 'index'])->name('stock-movements.index');
 
-            // Billing Routes
             Route::get('/billing', [BillingController::class, 'status'])->name('billing.status');
             Route::post('/billing/renew', [BillingController::class, 'renew'])->name('billing.renew');
             Route::post('/billing/change-plan', [BillingController::class, 'changePlan'])->name('billing.change-plan');
+            Route::post('/billing/payment-method/setup-intent', [BillingController::class, 'createSetupIntent'])->name('billing.payment-method.setup-intent');
+            Route::post('/billing/payment-method/default', [BillingController::class, 'saveDefaultPaymentMethod'])->name('billing.payment-method.default');
             Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
             Route::get('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
             Route::post('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
