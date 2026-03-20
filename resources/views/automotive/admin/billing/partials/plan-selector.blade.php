@@ -8,7 +8,9 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
                 <h5 class="mb-1">Choose Paid Plan</h5>
-                <p class="text-muted mb-0">Select the subscription plan to start or renew through Stripe.</p>
+                <p class="text-muted mb-0">
+                    Select a subscription plan. The page will refresh automatically to load pricing verification and Stripe preview for the selected plan.
+                </p>
             </div>
         </div>
 
@@ -35,7 +37,7 @@
                                         id="target_plan_{{ $billingPlan->id }}"
                                         {{ $isSelected ? 'checked' : '' }}
                                     >
-                                    <span class="form-check-label fw-semibold" for="target_plan_{{ $billingPlan->id }}">
+                                    <span class="form-check-label fw-semibold">
                                         {{ $billingPlan->name }}
                                     </span>
                                 </div>

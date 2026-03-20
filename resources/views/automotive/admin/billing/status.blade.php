@@ -37,6 +37,13 @@
                         'plan' => $plan,
                     ])
 
+                    <form id="billing-plan-preview-form" method="GET" action="{{ route('automotive.admin.billing.status') }}" class="mt-4">
+                        @include('automotive.admin.billing.partials.plan-selector', [
+                            'availablePlans' => $availablePlans,
+                            'selectedPlanId' => $selectedPlanId,
+                        ])
+                    </form>
+
                     @if(!empty($selectedPlan))
                         <div class="card mt-4">
                             <div class="card-body">
@@ -89,7 +96,7 @@
 
                     @if($canChangeCurrentSubscriptionPlan)
                         <div class="alert alert-info mt-4">
-                            This tenant already has a live Stripe subscription. Selecting another paid plan will update the existing subscription in place and Stripe will calculate proration automatically for the remaining billing period.
+                            This tenant already has a live Stripe subscription. Select a plan first to refresh the Stripe preview, then confirm the plan change.
                         </div>
                     @endif
 
@@ -178,18 +185,21 @@
                     <form method="POST" action="{{ $billingFormAction }}" class="mt-4">
                         @csrf
 
+                        @if(!empty($selectedPlanId))
+                            <input type="hidden" name="target_plan_id" value="{{ $selectedPlanId }}">
+                        @endif
+
                         @if($canChangeCurrentSubscriptionPlan && !empty($previewData['proration_date']))
                             <input type="hidden" name="preview_proration_date" value="{{ $previewData['proration_date'] }}">
                         @endif
 
-                        @include('automotive.admin.billing.partials.plan-selector', [
-                            'availablePlans' => $availablePlans,
-                            'selectedPlanId' => $selectedPlanId,
-                        ])
-
                         <div class="card mt-4">
                             <div class="card-body d-flex flex-wrap gap-2 justify-content-end">
-                                <button type="submit" class="btn btn-primary">
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    @disabled(empty($selectedPlanId) || ($canChangeCurrentSubscriptionPlan && ($isSameCurrentPaidPlan ?? false)))
+                                >
                                     {{ $billingSubmitLabel }}
                                 </button>
                             </div>
@@ -264,4 +274,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const previewForm = document.getElementById('billing-plan-preview-form');
+
+            if (!previewForm) {
+                return;
+            }
+
+            const radios = previewForm.querySelectorAll('input[name="target_plan_id"]');
+
+            radios.forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    previewForm.submit();
+                });
+            });
+        });
+    </script>
 @endsection
