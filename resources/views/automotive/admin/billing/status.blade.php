@@ -481,6 +481,8 @@
                 let paymentElement = null;
                 let clientSecret = null;
                 let initialized = false;
+                let isSubmitting = false;
+                let setupIntentConsumed = false;
 
                 function showAlert(type, message) {
                     if (!alertBox) return;
@@ -498,8 +500,41 @@
                     alertBox.textContent = '';
                 }
 
-                async function initializePaymentMethodForm() {
-                    if (initialized) {
+                function resetInlinePaymentState() {
+                    if (paymentElement) {
+                        try {
+                            paymentElement.unmount();
+                        } catch (e) {
+                        }
+                    }
+
+                    paymentElement = null;
+                    elements = null;
+                    clientSecret = null;
+                    initialized = false;
+                    isSubmitting = false;
+
+                    if (loader) {
+                        loader.style.display = 'block';
+                        loader.textContent = 'Loading secure payment form...';
+                    }
+
+                    const mountNode = document.getElementById('payment-method-element');
+                    if (mountNode) {
+                        mountNode.innerHTML = '';
+                    }
+
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                    }
+                }
+
+                async function initializePaymentMethodForm(forceFresh = false) {
+                    if (forceFresh) {
+                        resetInlinePaymentState();
+                    }
+
+                    if (initialized && !setupIntentConsumed) {
                         return;
                     }
 
@@ -531,6 +566,7 @@
                         paymentElement.mount('#payment-method-element');
 
                         initialized = true;
+                        setupIntentConsumed = false;
                         submitBtn.disabled = false;
 
                         if (loader) {
@@ -548,12 +584,17 @@
                 async function handleSubmit(event) {
                     event.preventDefault();
 
-                    if (!stripe || !elements || !clientSecret) {
-                        showAlert('error', 'The secure payment form is not ready yet.');
+                    if (isSubmitting) {
+                        return;
+                    }
+
+                    if (!stripe || !elements || !clientSecret || setupIntentConsumed) {
+                        showAlert('error', 'Please reopen the payment method form to generate a fresh secure session.');
                         return;
                     }
 
                     clearAlert();
+                    isSubmitting = true;
                     submitBtn.disabled = true;
 
                     try {
@@ -592,18 +633,20 @@
                             throw new Error(savePayload.message || 'Unable to save the default payment method.');
                         }
 
+                        setupIntentConsumed = true;
                         showAlert('success', savePayload.message || 'Payment method updated successfully.');
-                        submitBtn.disabled = false;
                     } catch (error) {
                         showAlert('error', error.message || 'Unable to update the payment method right now.');
-                        submitBtn.disabled = false;
+                    } finally {
+                        isSubmitting = false;
+                        submitBtn.disabled = setupIntentConsumed;
                     }
                 }
 
                 if (openBtn && card) {
                     openBtn.addEventListener('click', function () {
                         card.style.display = 'block';
-                        initializePaymentMethodForm();
+                        initializePaymentMethodForm(setupIntentConsumed);
                     });
                 }
 
