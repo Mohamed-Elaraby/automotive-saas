@@ -17,7 +17,7 @@ class StripeSubscriptionPlanChangeService
     ) {
     }
 
-public function changePlan(Subscription $subscription, Plan $targetPlan): array
+public function changePlan(Subscription $subscription, Plan $targetPlan, ?int $prorationDate = null): array
 {
     if ($subscription->gateway !== 'stripe') {
         return [
@@ -97,24 +97,30 @@ public function changePlan(Subscription $subscription, Plan $targetPlan): array
             ];
         }
 
+        $updatePayload = [
+            'items' => [
+                [
+                    'id' => $itemId,
+                    'price' => $targetPlan->stripe_price_id,
+                ],
+            ],
+            'proration_behavior' => 'create_prorations',
+            'metadata' => array_merge(
+                $this->normalizeMetadata($stripeSubscription->metadata ?? null),
+                [
+                    'plan_id' => (string) $targetPlan->id,
+                    'subscription_row_id' => (string) $subscription->id,
+                ]
+            ),
+        ];
+
+        if (! empty($prorationDate)) {
+            $updatePayload['proration_date'] = (int) $prorationDate;
+        }
+
         $updatedStripeSubscription = $stripe->subscriptions->update(
             $subscription->gateway_subscription_id,
-            [
-                'items' => [
-                    [
-                        'id' => $itemId,
-                        'price' => $targetPlan->stripe_price_id,
-                    ],
-                ],
-                'proration_behavior' => 'create_prorations',
-                'metadata' => array_merge(
-                    $this->normalizeMetadata($stripeSubscription->metadata ?? null),
-                    [
-                        'plan_id' => (string) $targetPlan->id,
-                        'subscription_row_id' => (string) $subscription->id,
-                    ]
-                ),
-            ]
+            $updatePayload
         );
 
         DB::connection($this->centralConnection())
@@ -211,4 +217,4 @@ protected function centralConnection(): string
 {
     return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
 }
-}
+}<

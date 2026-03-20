@@ -9,8 +9,10 @@
             : route('automotive.admin.billing.renew');
 
         $billingSubmitLabel = $canChangeCurrentSubscriptionPlan
-            ? 'Change Plan'
+            ? 'Confirm Plan Change'
             : ($billingActions['primary_label'] ?? 'Renew Subscription');
+
+        $previewData = ($planChangePreview['ok'] ?? false) ? ($planChangePreview['preview'] ?? null) : null;
     @endphp
 
     <div class="page-wrapper">
@@ -91,8 +93,94 @@
                         </div>
                     @endif
 
+                    @if($canChangeCurrentSubscriptionPlan && !empty($planChangePreview) && !($planChangePreview['ok'] ?? false))
+                        <div class="alert alert-warning mt-4">
+                            {{ $planChangePreview['message'] ?? 'Unable to preview the Stripe proration right now.' }}
+                        </div>
+                    @endif
+
+                    @if($canChangeCurrentSubscriptionPlan && !empty($previewData))
+                        <div class="card mt-4 border-primary">
+                            <div class="card-body">
+                                <h5 class="mb-3">Stripe Change Preview</h5>
+                                <p class="text-muted mb-3">
+                                    This preview is generated from Stripe before the actual change is submitted.
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2">
+                                            <strong>Proration Total:</strong>
+                                            {{ number_format((float) ($previewData['proration_total_decimal'] ?? 0), 2) }}
+                                            {{ $previewData['currency'] ?? 'USD' }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Preview Invoice Total:</strong>
+                                            {{ number_format((float) ($previewData['total_decimal'] ?? 0), 2) }}
+                                            {{ $previewData['currency'] ?? 'USD' }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Amount Due:</strong>
+                                            {{ number_format((float) ($previewData['amount_due_decimal'] ?? 0), 2) }}
+                                            {{ $previewData['currency'] ?? 'USD' }}
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <p class="mb-2">
+                                            <strong>Proration Date:</strong>
+                                            {{ !empty($previewData['proration_date']) ? \Carbon\Carbon::createFromTimestamp($previewData['proration_date'])->format('Y-m-d H:i:s') : '-' }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Current Plan:</strong> {{ $plan->name ?? '-' }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Target Plan:</strong> {{ $selectedPlan->name ?? '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                @if(!empty($previewData['proration_lines']))
+                                    <hr>
+                                    <h6 class="mb-3">Proration Lines</h6>
+
+                                    @foreach($previewData['proration_lines'] as $line)
+                                        <div class="border rounded p-3 mb-2">
+                                            <div class="d-flex justify-content-between gap-3">
+                                                <div>
+                                                    <div class="fw-semibold">{{ $line['description'] ?? 'Stripe proration line' }}</div>
+                                                    <div class="small text-muted">
+                                                        @if(!empty($line['period_start']) && !empty($line['period_end']))
+                                                            {{ \Carbon\Carbon::createFromTimestamp($line['period_start'])->format('Y-m-d H:i') }}
+                                                            →
+                                                            {{ \Carbon\Carbon::createFromTimestamp($line['period_end'])->format('Y-m-d H:i') }}
+                                                        @else
+                                                            Stripe preview line
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="fw-semibold">
+                                                    {{ number_format((float) ($line['amount_decimal'] ?? 0), 2) }}
+                                                    {{ $line['currency'] ?? ($previewData['currency'] ?? 'USD') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="alert alert-light mt-3 mb-0">
+                                        Stripe did not return isolated proration line items for this preview. The totals above still reflect the invoice preview returned by Stripe.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ $billingFormAction }}" class="mt-4">
                         @csrf
+
+                        @if($canChangeCurrentSubscriptionPlan && !empty($previewData['proration_date']))
+                            <input type="hidden" name="preview_proration_date" value="{{ $previewData['proration_date'] }}">
+                        @endif
 
                         @include('automotive.admin.billing.partials.plan-selector', [
                             'availablePlans' => $availablePlans,

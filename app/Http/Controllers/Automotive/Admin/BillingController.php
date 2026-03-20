@@ -11,6 +11,7 @@ use App\Services\Billing\StripeCustomerPortalService;
 use App\Services\Billing\StripePriceInspectorService;
 use App\Services\Billing\StripeSubscriptionManagementService;
 use App\Services\Billing\StripeSubscriptionPlanChangeService;
+use App\Services\Billing\StripeSubscriptionPlanPreviewService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Support\Billing\BillingActionResolver;
@@ -31,7 +32,8 @@ class BillingController extends Controller
         protected StripeCustomerPortalService $stripeCustomerPortalService,
         protected StripePriceInspectorService $stripePriceInspectorService,
         protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
-        protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService
+        protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService,
+        protected StripeSubscriptionPlanPreviewService $stripeSubscriptionPlanPreviewService
     ) {
     }
 
@@ -73,6 +75,26 @@ public function status(Request $request): View
         $billingState
     );
 
+    $planChangePreview = null;
+
+    if (
+        $canChangeCurrentSubscriptionPlan
+        && $selectedPlan
+        && ! $isSameCurrentPaidPlan
+        && ($selectedPlanAudit['checks']['is_aligned'] ?? false)
+        && ! empty($subscription->id)
+    ) {
+        $subscriptionModel = Subscription::query()->find($subscription->id);
+        $selectedPlanModel = Plan::query()->find($selectedPlan->id);
+
+        if ($subscriptionModel && $selectedPlanModel) {
+            $planChangePreview = $this->stripeSubscriptionPlanPreviewService->previewPlanChange(
+                $subscriptionModel,
+                $selectedPlanModel
+            );
+        }
+    }
+
     return view('automotive.admin.billing.status', compact(
         'tenant',
         'subscription',
@@ -84,7 +106,8 @@ public function status(Request $request): View
         'selectedPlan',
         'selectedPlanAudit',
         'isSameCurrentPaidPlan',
-        'canChangeCurrentSubscriptionPlan'
+        'canChangeCurrentSubscriptionPlan',
+        'planChangePreview'
     ));
 }
 
@@ -193,6 +216,7 @@ public function changePlan(Request $request): RedirectResponse
 
     $validated = $request->validate([
         'target_plan_id' => ['required', 'integer'],
+        'preview_proration_date' => ['nullable', 'integer'],
     ]);
 
     $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
@@ -249,7 +273,11 @@ public function changePlan(Request $request): RedirectResponse
             ->with('error', 'The selected plan model could not be loaded.');
     }
 
-    $result = $this->stripeSubscriptionPlanChangeService->changePlan($subscription, $targetPlan);
+    $result = $this->stripeSubscriptionPlanChangeService->changePlan(
+        $subscription,
+        $targetPlan,
+        ! empty($validated['preview_proration_date']) ? (int) $validated['preview_proration_date'] : null
+    );
 
     return redirect()
         ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
