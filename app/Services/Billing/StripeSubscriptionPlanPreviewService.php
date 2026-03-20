@@ -102,18 +102,30 @@ class StripeSubscriptionPlanPreviewService
             $lines = $previewInvoice->lines->data ?? [];
 
             $normalizedLines = [];
-            $prorationLines = [];
-            $prorationTotalMinor = 0;
+            $allProrationLines = [];
+            $currentChangeLines = [];
+            $olderPendingProrationLines = [];
 
             foreach ($lines as $line) {
                 $normalized = $this->normalizeLine($line, $currency);
                 $normalizedLines[] = $normalized;
 
-                if ($normalized['is_proration']) {
-                    $prorationLines[] = $normalized;
-                    $prorationTotalMinor += (int) ($normalized['amount_minor'] ?? 0);
+                if (! $normalized['is_proration']) {
+                    continue;
+                }
+
+                $allProrationLines[] = $normalized;
+
+                if ((int) ($normalized['period_start'] ?? 0) === $prorationDate) {
+                    $currentChangeLines[] = $normalized;
+                } else {
+                    $olderPendingProrationLines[] = $normalized;
                 }
             }
+
+            $allProrationTotalMinor = $this->sumLineAmounts($allProrationLines);
+            $currentChangeTotalMinor = $this->sumLineAmounts($currentChangeLines);
+            $olderPendingProrationTotalMinor = $this->sumLineAmounts($olderPendingProrationLines);
 
             return [
                 'ok' => true,
@@ -121,15 +133,21 @@ class StripeSubscriptionPlanPreviewService
                 'preview' => [
                     'currency' => $currency,
                     'proration_date' => $prorationDate,
-                    'subtotal_minor' => (int) ($previewInvoice->subtotal ?? 0),
-                    'subtotal_decimal' => $this->minorToDecimal((int) ($previewInvoice->subtotal ?? 0), $currency),
-                    'total_minor' => (int) ($previewInvoice->total ?? 0),
-                    'total_decimal' => $this->minorToDecimal((int) ($previewInvoice->total ?? 0), $currency),
                     'amount_due_minor' => (int) ($previewInvoice->amount_due ?? 0),
                     'amount_due_decimal' => $this->minorToDecimal((int) ($previewInvoice->amount_due ?? 0), $currency),
-                    'proration_total_minor' => $prorationTotalMinor,
-                    'proration_total_decimal' => $this->minorToDecimal($prorationTotalMinor, $currency),
-                    'proration_lines' => $prorationLines,
+
+                    'current_change_total_minor' => $currentChangeTotalMinor,
+                    'current_change_total_decimal' => $this->minorToDecimal($currentChangeTotalMinor, $currency),
+                    'current_change_lines' => $currentChangeLines,
+
+                    'all_proration_total_minor' => $allProrationTotalMinor,
+                    'all_proration_total_decimal' => $this->minorToDecimal($allProrationTotalMinor, $currency),
+                    'all_proration_lines' => $allProrationLines,
+
+                    'older_pending_proration_total_minor' => $olderPendingProrationTotalMinor,
+                    'older_pending_proration_total_decimal' => $this->minorToDecimal($olderPendingProrationTotalMinor, $currency),
+                    'older_pending_proration_lines' => $olderPendingProrationLines,
+
                     'all_lines' => $normalizedLines,
                 ],
             ];
@@ -169,6 +187,17 @@ class StripeSubscriptionPlanPreviewService
             'period_start' => ! empty($line->period->start) ? (int) $line->period->start : null,
             'period_end' => ! empty($line->period->end) ? (int) $line->period->end : null,
         ];
+    }
+
+    protected function sumLineAmounts(array $lines): int
+    {
+        $sum = 0;
+
+        foreach ($lines as $line) {
+            $sum += (int) ($line['amount_minor'] ?? 0);
+        }
+
+        return $sum;
     }
 
     protected function minorToDecimal(int $amountMinor, string $currency): float

@@ -111,32 +111,15 @@
                             <div class="card-body">
                                 <h5 class="mb-3">Stripe Change Preview</h5>
                                 <p class="text-muted mb-3">
-                                    This preview is generated from Stripe before the actual change is submitted.
+                                    This section shows the immediate adjustment for the current plan change only.
                                 </p>
 
                                 <div class="row">
                                     <div class="col-md-6">
                                         <p class="mb-2">
-                                            <strong>Proration Total:</strong>
-                                            {{ number_format((float) ($previewData['proration_total_decimal'] ?? 0), 2) }}
+                                            <strong>This Change Adjustment:</strong>
+                                            {{ number_format((float) ($previewData['current_change_total_decimal'] ?? 0), 2) }}
                                             {{ $previewData['currency'] ?? 'USD' }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <strong>Preview Invoice Total:</strong>
-                                            {{ number_format((float) ($previewData['total_decimal'] ?? 0), 2) }}
-                                            {{ $previewData['currency'] ?? 'USD' }}
-                                        </p>
-                                        <p class="mb-2">
-                                            <strong>Amount Due:</strong>
-                                            {{ number_format((float) ($previewData['amount_due_decimal'] ?? 0), 2) }}
-                                            {{ $previewData['currency'] ?? 'USD' }}
-                                        </p>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <p class="mb-2">
-                                            <strong>Proration Date:</strong>
-                                            {{ !empty($previewData['proration_date']) ? \Carbon\Carbon::createFromTimestamp($previewData['proration_date'])->format('Y-m-d H:i:s') : '-' }}
                                         </p>
                                         <p class="mb-2">
                                             <strong>Current Plan:</strong> {{ $plan->name ?? '-' }}
@@ -145,13 +128,25 @@
                                             <strong>Target Plan:</strong> {{ $selectedPlan->name ?? '-' }}
                                         </p>
                                     </div>
+
+                                    <div class="col-md-6">
+                                        <p class="mb-2">
+                                            <strong>Preview Generated At:</strong>
+                                            {{ !empty($previewData['proration_date']) ? \Carbon\Carbon::createFromTimestamp($previewData['proration_date'])->format('Y-m-d H:i:s') : '-' }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Amount Due On Stripe Preview:</strong>
+                                            {{ number_format((float) ($previewData['amount_due_decimal'] ?? 0), 2) }}
+                                            {{ $previewData['currency'] ?? 'USD' }}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                @if(!empty($previewData['proration_lines']))
+                                @if(!empty($previewData['current_change_lines']))
                                     <hr>
-                                    <h6 class="mb-3">Proration Lines</h6>
+                                    <h6 class="mb-3">Current Change Lines</h6>
 
-                                    @foreach($previewData['proration_lines'] as $line)
+                                    @foreach($previewData['current_change_lines'] as $line)
                                         <div class="border rounded p-3 mb-2">
                                             <div class="d-flex justify-content-between gap-3">
                                                 <div>
@@ -175,8 +170,51 @@
                                     @endforeach
                                 @else
                                     <div class="alert alert-light mt-3 mb-0">
-                                        Stripe did not return isolated proration line items for this preview. The totals above still reflect the invoice preview returned by Stripe.
+                                        Stripe did not return isolated current-change proration lines for this preview.
                                     </div>
+                                @endif
+
+                                @if(!empty($previewData['older_pending_proration_lines']))
+                                    <hr>
+                                    <div class="alert alert-warning mb-3">
+                                        Stripe also detected pending proration items from earlier changes in the same billing cycle.
+                                        These older pending items are not part of the current change adjustment shown above.
+                                    </div>
+
+                                    <p class="mb-2">
+                                        <strong>Older Pending Proration Total:</strong>
+                                        {{ number_format((float) ($previewData['older_pending_proration_total_decimal'] ?? 0), 2) }}
+                                        {{ $previewData['currency'] ?? 'USD' }}
+                                    </p>
+
+                                    <details class="mt-3">
+                                        <summary class="fw-semibold">Show older pending proration lines</summary>
+
+                                        <div class="mt-3">
+                                            @foreach($previewData['older_pending_proration_lines'] as $line)
+                                                <div class="border rounded p-3 mb-2">
+                                                    <div class="d-flex justify-content-between gap-3">
+                                                        <div>
+                                                            <div class="fw-semibold">{{ $line['description'] ?? 'Older Stripe proration line' }}</div>
+                                                            <div class="small text-muted">
+                                                                @if(!empty($line['period_start']) && !empty($line['period_end']))
+                                                                    {{ \Carbon\Carbon::createFromTimestamp($line['period_start'])->format('Y-m-d H:i') }}
+                                                                    →
+                                                                    {{ \Carbon\Carbon::createFromTimestamp($line['period_end'])->format('Y-m-d H:i') }}
+                                                                @else
+                                                                    Stripe pending line
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                        <div class="fw-semibold">
+                                                            {{ number_format((float) ($line['amount_decimal'] ?? 0), 2) }}
+                                                            {{ $line['currency'] ?? ($previewData['currency'] ?? 'USD') }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </details>
                                 @endif
                             </div>
                         </div>
