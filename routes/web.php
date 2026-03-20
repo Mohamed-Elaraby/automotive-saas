@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Automotive\TrialSignupController;
 use Illuminate\Support\Facades\Route;
 
