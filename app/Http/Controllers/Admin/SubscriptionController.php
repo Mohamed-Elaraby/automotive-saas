@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeSubscriptionSyncService;
+use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +21,8 @@ class SubscriptionController extends Controller
     public function __construct(
         protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
-        protected TenantBillingLifecycleService $tenantBillingLifecycleService
+        protected TenantBillingLifecycleService $tenantBillingLifecycleService,
+        protected SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService
     ) {
     }
 
@@ -112,11 +114,13 @@ public function show(int $subscriptionId): View
 
     $invoiceHistory = $this->loadInvoiceHistoryForSubscription($subscription);
     $resolvedState = $this->tenantBillingLifecycleService->resolveState($subscription);
+    $normalizationPreview = $this->subscriptionLifecycleNormalizationService->normalizeOne($subscriptionId, false);
 
     return view('admin.subscriptions.show', [
         'subscription' => $subscription,
         'invoiceHistory' => $invoiceHistory,
         'resolvedState' => $resolvedState,
+        'normalizationPreview' => $normalizationPreview,
     ]);
 }
 
@@ -180,6 +184,21 @@ public function refreshState(int $subscriptionId): RedirectResponse
     return redirect()
         ->route('admin.subscriptions.show', $subscriptionId)
         ->with('success', 'Local billing state was refreshed. Current resolved status: ' . ucfirst(str_replace('_', ' ', (string) ($resolvedState['status'] ?? 'unknown'))));
+}
+
+public function normalizeLifecycle(int $subscriptionId): RedirectResponse
+{
+    $result = $this->subscriptionLifecycleNormalizationService->normalizeOne($subscriptionId, true);
+
+    if (! ($result['ok'] ?? false)) {
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', $result['message'] ?? 'Unable to normalize lifecycle fields.');
+    }
+
+    return redirect()
+        ->route('admin.subscriptions.show', $subscriptionId)
+        ->with('success', $result['message'] ?? 'Lifecycle fields were normalized successfully.');
 }
 
 protected function loadSubscriptionRecord(int $subscriptionId): ?object

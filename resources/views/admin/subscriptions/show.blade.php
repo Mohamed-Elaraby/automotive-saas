@@ -27,6 +27,8 @@
             'expired' => 'bg-dark',
             default => 'bg-light text-dark',
         };
+
+        $normalizationChanges = $normalizationPreview['changes'] ?? [];
     @endphp
 
     <div class="page-wrapper">
@@ -129,7 +131,49 @@
                                 Refresh Local Billing State
                             </button>
                         </form>
+
+                        <form method="POST" action="{{ route('admin.subscriptions.normalize-lifecycle', $subscription->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-secondary">
+                                Normalize Lifecycle Fields
+                            </button>
+                        </form>
                     </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Lifecycle Normalization Preview</h6>
+
+                    @if(empty($normalizationChanges))
+                        <div class="alert alert-light mb-0">
+                            No lifecycle normalization changes are currently needed for this subscription.
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            The following fields can be normalized safely based on the current stored status.
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Normalized Value</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach($normalizationChanges as $field => $value)
+                                    <tr>
+                                        <td>{{ $field }}</td>
+                                        <td>{{ is_null($value) ? 'NULL' : $value }}</td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
             </div>
 
