@@ -243,6 +243,7 @@ public function markAsRecovered(?object $subscription, ?Carbon $recoveredAt = nu
             ->where('id', $subscription->id)
             ->update([
                 'status' => SubscriptionStatuses::ACTIVE,
+                'trial_ends_at' => null,
                 'last_payment_failed_at' => null,
                 'past_due_started_at' => null,
                 'grace_ends_at' => null,
