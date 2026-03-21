@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BillingReportController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Automotive\TrialSignupController;
@@ -59,6 +60,12 @@ Route::prefix('admin')
                 Route::post('/{subscription}/sync-stripe', [SubscriptionController::class, 'syncFromStripe'])->name('sync-stripe');
                 Route::post('/{subscription}/refresh-state', [SubscriptionController::class, 'refreshState'])->name('refresh-state');
                 Route::post('/{subscription}/normalize-lifecycle', [SubscriptionController::class, 'normalizeLifecycle'])->name('normalize-lifecycle');
+            });
+
+        Route::prefix('reports')
+            ->name('reports.')
+            ->group(function () {
+                Route::get('/billing', [BillingReportController::class, 'index'])->name('billing');
             });
     });
 //Route::get('/', function () {
