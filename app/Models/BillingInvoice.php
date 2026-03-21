@@ -42,6 +42,11 @@ class BillingInvoice extends Model
         'raw_payload' => 'array',
     ];
 
+    public function getConnectionName(): ?string
+    {
+        return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+    }
+
     public function subscription()
     {
         return $this->belongsTo(Subscription::class);
