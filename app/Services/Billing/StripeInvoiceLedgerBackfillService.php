@@ -3,7 +3,6 @@
 namespace App\Services\Billing;
 
 use App\Models\Subscription;
-use Stripe\Invoice;
 use Stripe\StripeClient;
 use Throwable;
 
@@ -17,15 +16,7 @@ class StripeInvoiceLedgerBackfillService
 public function backfillForSubscription(Subscription $subscription, int $limit = 100): array
 {
     try {
-        $secret = trim((string) config('services.stripe.secret'));
-
-        if ($secret === '') {
-            return [
-                'ok' => false,
-                'message' => 'Stripe secret key is not configured.',
-                'count' => 0,
-            ];
-        }
+        $secret = $this->stripeSecret();
 
         if (empty($subscription->gateway_customer_id)) {
             return [
@@ -39,7 +30,7 @@ public function backfillForSubscription(Subscription $subscription, int $limit =
 
         $invoices = $stripe->invoices->all([
             'customer' => (string) $subscription->gateway_customer_id,
-            'limit' => $limit,
+            'limit' => max(1, min($limit, 100)),
         ]);
 
         $count = 0;
@@ -63,5 +54,16 @@ public function backfillForSubscription(Subscription $subscription, int $limit =
             'count' => 0,
         ];
     }
+}
+
+protected function stripeSecret(): string
+{
+    $secret = trim((string) config('billing.gateways.stripe.secret'));
+
+    if ($secret === '') {
+        throw new \RuntimeException('Stripe secret key is not configured.');
+    }
+
+    return $secret;
 }
 }
