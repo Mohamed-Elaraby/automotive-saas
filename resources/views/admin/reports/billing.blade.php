@@ -14,7 +14,7 @@
                 <div class="content-page-header">
                     <h5>Billing Reports</h5>
                     <p class="text-muted mb-0">
-                        Central revenue snapshot, subscription health, and active plan distribution.
+                        Central revenue snapshot, subscription health, active plan distribution, and invoice activity.
                     </p>
                 </div>
             </div>
@@ -141,6 +141,95 @@
                             @endif
                         </div>
                     </div>
+
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <h6 class="mb-3">Recent Invoices</h6>
+
+                            @if($recentInvoices->isEmpty())
+                                <div class="alert alert-light mb-0">
+                                    No recent invoices were found from the current Stripe-linked subscriptions.
+                                </div>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle">
+                                        <thead>
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Tenant</th>
+                                            <th>Status</th>
+                                            <th>Total</th>
+                                            <th>Paid</th>
+                                            <th>Due</th>
+                                            <th>Created</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @foreach($recentInvoices as $invoice)
+                                            @php
+                                                $invoiceStatus = strtolower((string) ($invoice['status'] ?? 'unknown'));
+
+                                                $badgeClass = match ($invoiceStatus) {
+                                                    'paid' => 'bg-success',
+                                                    'open' => 'bg-warning text-dark',
+                                                    'draft' => 'bg-secondary',
+                                                    'void' => 'bg-dark',
+                                                    'uncollectible' => 'bg-danger',
+                                                    default => 'bg-light text-dark',
+                                                };
+                                            @endphp
+
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-semibold">{{ $invoice['number'] ?? ($invoice['id'] ?? 'Stripe invoice') }}</div>
+                                                    <div class="small text-muted">{{ $invoice['id'] ?? '-' }}</div>
+                                                </td>
+                                                <td>{{ $invoice['tenant_id'] ?? '-' }}</td>
+                                                <td>
+                                                        <span class="badge {{ $badgeClass }}">
+                                                            {{ ucfirst($invoice['status'] ?? 'unknown') }}
+                                                        </span>
+                                                </td>
+                                                <td>{{ number_format((float) ($invoice['total_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
+                                                <td>{{ number_format((float) ($invoice['amount_paid_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
+                                                <td>{{ number_format((float) ($invoice['amount_due_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
+                                                <td>
+                                                    {{ !empty($invoice['created_at']) ? \Carbon\Carbon::createFromTimestamp($invoice['created_at'])->format('Y-m-d H:i') : '-' }}
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                                        @if(!empty($invoice['hosted_invoice_url']))
+                                                            <a
+                                                                href="{{ $invoice['hosted_invoice_url'] }}"
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                class="btn btn-sm btn-outline-primary"
+                                                            >
+                                                                View
+                                                            </a>
+                                                        @endif
+
+                                                        @if(!empty($invoice['invoice_pdf']))
+                                                            <a
+                                                                href="{{ $invoice['invoice_pdf'] }}"
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                class="btn btn-sm btn-outline-secondary"
+                                                            >
+                                                                PDF
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-xl-4">
@@ -177,11 +266,51 @@
 
                     <div class="card mt-4">
                         <div class="card-body">
+                            <h6 class="mb-3">Monthly Invoice Trend</h6>
+
+                            @if($monthlyInvoiceTrend->isEmpty())
+                                <div class="alert alert-light mb-0">
+                                    No invoice trend data is available yet.
+                                </div>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Invoices</th>
+                                            <th>Paid</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @foreach($monthlyInvoiceTrend as $row)
+                                            <tr>
+                                                <td>{{ $row['month'] }}</td>
+                                                <td>{{ number_format((int) ($row['invoices_count'] ?? 0)) }}</td>
+                                                <td>{{ number_format((float) ($row['amount_paid_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
+                                            </tr>
+                                        @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <hr>
+
+                                <div class="small text-muted">
+                                    This trend is currently built from recent Stripe invoice reads across the current Stripe-linked subscriptions.
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-body">
                             <h6 class="mb-3">Interpretation Notes</h6>
                             <ul class="mb-0 ps-3">
                                 <li class="mb-2">Estimated MRR currently counts only active monthly paid subscriptions.</li>
                                 <li class="mb-2">Trial plans are excluded from revenue estimates.</li>
-                                <li class="mb-2">Canceled, past_due, suspended, and expired subscriptions are excluded from MRR in this first version.</li>
+                                <li class="mb-2">Canceled, past_due, suspended, and expired subscriptions are excluded from MRR in this version.</li>
+                                <li class="mb-2">Recent invoices and invoice trend are derived from live Stripe invoice reads for the currently linked Stripe customers.</li>
                             </ul>
                         </div>
                     </div>
