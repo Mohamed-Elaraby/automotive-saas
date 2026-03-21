@@ -56,6 +56,8 @@ Route::prefix('admin')
             ->group(function () {
                 Route::get('/', [SubscriptionController::class, 'index'])->name('index');
                 Route::get('/{subscription}', [SubscriptionController::class, 'show'])->name('show');
+                Route::post('/{subscription}/sync-stripe', [SubscriptionController::class, 'syncFromStripe'])->name('sync-stripe');
+                Route::post('/{subscription}/refresh-state', [SubscriptionController::class, 'refreshState'])->name('refresh-state');
             });
     });
 //Route::get('/', function () {

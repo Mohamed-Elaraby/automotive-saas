@@ -15,6 +15,18 @@
         };
 
         $invoiceRows = $invoiceHistory['invoices'] ?? [];
+        $resolvedStatus = strtolower((string) ($resolvedState['status'] ?? 'unknown'));
+
+        $resolvedBadgeClass = match ($resolvedStatus) {
+            'active' => 'bg-success',
+            'trialing' => 'bg-info text-dark',
+            'grace_period' => 'bg-warning text-dark',
+            'past_due' => 'bg-warning text-dark',
+            'suspended' => 'bg-danger',
+            'canceled' => 'bg-secondary',
+            'expired' => 'bg-dark',
+            default => 'bg-light text-dark',
+        };
     @endphp
 
     <div class="page-wrapper">
@@ -42,6 +54,14 @@
                     </div>
                 </div>
             </div>
+
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
 
             <div class="row">
                 <div class="col-xl-3 col-md-6">
@@ -73,7 +93,7 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Status</div>
+                            <div class="text-muted mb-1">Stored Status</div>
                             <span class="badge {{ $badgeClass }}">
                                 {{ ucfirst(str_replace('_', ' ', $status)) }}
                             </span>
@@ -86,6 +106,80 @@
                         <div class="card-body">
                             <div class="text-muted mb-1">Gateway</div>
                             <h5 class="mb-0">{{ strtoupper((string) ($subscription->gateway ?? '-')) }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Admin Actions</h6>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('admin.subscriptions.sync-stripe', $subscription->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-primary">
+                                Force Sync from Stripe
+                            </button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.subscriptions.refresh-state', $subscription->id) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-primary">
+                                Refresh Local Billing State
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3">Resolved Billing State</h6>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="mb-2">
+                                <strong>Resolved Status:</strong><br>
+                                <span class="badge {{ $resolvedBadgeClass }}">
+                                    {{ ucfirst(str_replace('_', ' ', (string) ($resolvedState['status'] ?? 'unknown'))) }}
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="col-md-4">
+                            <p class="mb-2">
+                                <strong>Allow Access:</strong><br>
+                                {{ !empty($resolvedState['allow_access']) ? 'Yes' : 'No' }}
+                            </p>
+                        </div>
+
+                        <div class="col-md-4">
+                            <p class="mb-2">
+                                <strong>Is Trial:</strong><br>
+                                {{ !empty($resolvedState['is_trial']) ? 'Yes' : 'No' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="mb-2">
+                        <strong>Resolved Message:</strong><br>
+                        {{ $resolvedState['message'] ?? '-' }}
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Resolved Period Ends At:</strong><br>
+                                {{ !empty($resolvedState['period_ends_at']) ? $resolvedState['period_ends_at']->format('Y-m-d H:i:s') : '-' }}
+                            </p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Resolved Grace Ends At:</strong><br>
+                                {{ !empty($resolvedState['grace_ends_at']) ? $resolvedState['grace_ends_at']->format('Y-m-d H:i:s') : '-' }}
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -4,16 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Services\Billing\StripeInvoiceHistoryService;
+use App\Services\Billing\StripeSubscriptionSyncService;
+use App\Services\Billing\TenantBillingLifecycleService;
 use App\Support\Billing\SubscriptionStatuses;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Throwable;
 
 class SubscriptionController extends Controller
 {
     public function __construct(
-        protected StripeInvoiceHistoryService $stripeInvoiceHistoryService
+        protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
+        protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
+        protected TenantBillingLifecycleService $tenantBillingLifecycleService
     ) {
     }
 
@@ -60,10 +67,9 @@ public function index(Request $request): View
 
     $this->applyFilters($baseQuery, $filters);
 
-    $perPage = 20;
     $subscriptions = $baseQuery
         ->orderByDesc('subscriptions.id')
-        ->paginate($perPage)
+        ->paginate(20)
         ->withQueryString();
 
     $statusCounts = $this->buildStatusCounts($connection);
@@ -100,9 +106,85 @@ public function index(Request $request): View
 
 public function show(int $subscriptionId): View
 {
-    $connection = $this->centralConnection();
+    $subscription = $this->loadSubscriptionRecord($subscriptionId);
 
-    $subscription = DB::connection($connection)
+    abort_unless($subscription, 404);
+
+    $invoiceHistory = $this->loadInvoiceHistoryForSubscription($subscription);
+    $resolvedState = $this->tenantBillingLifecycleService->resolveState($subscription);
+
+    return view('admin.subscriptions.show', [
+        'subscription' => $subscription,
+        'invoiceHistory' => $invoiceHistory,
+        'resolvedState' => $resolvedState,
+    ]);
+}
+
+public function syncFromStripe(int $subscriptionId): RedirectResponse
+{
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('admin.subscriptions.index')
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    if (($subscription->gateway ?? null) !== 'stripe') {
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', 'This subscription is not linked to the Stripe gateway.');
+    }
+
+    if (! $subscription->gateway_subscription_id) {
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', 'No Stripe subscription ID is linked to this subscription.');
+    }
+
+    try {
+        $synced = $this->stripeSubscriptionSyncService->syncByGatewaySubscriptionId(
+            (string) $subscription->gateway_subscription_id
+        );
+
+        if (! $synced) {
+            return redirect()
+                ->route('admin.subscriptions.show', $subscriptionId)
+                ->with('error', 'No local subscription could be matched for the Stripe subscription ID.');
+        }
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('success', 'Subscription data was synced successfully from Stripe.');
+    } catch (Throwable $e) {
+        report($e);
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', 'Unable to sync the subscription from Stripe right now.');
+    }
+}
+
+public function refreshState(int $subscriptionId): RedirectResponse
+{
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('admin.subscriptions.index')
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    $resolvedState = $this->tenantBillingLifecycleService->resolveState($subscription);
+
+    return redirect()
+        ->route('admin.subscriptions.show', $subscriptionId)
+        ->with('success', 'Local billing state was refreshed. Current resolved status: ' . ucfirst(str_replace('_', ' ', (string) ($resolvedState['status'] ?? 'unknown'))));
+}
+
+protected function loadSubscriptionRecord(int $subscriptionId): ?object
+{
+    return DB::connection($this->centralConnection())
         ->table('subscriptions')
         ->leftJoin('plans', 'plans.id', '=', 'subscriptions.plan_id')
         ->select([
@@ -133,9 +215,10 @@ public function show(int $subscriptionId): View
         ])
         ->where('subscriptions.id', $subscriptionId)
         ->first();
+}
 
-    abort_unless($subscription, 404);
-
+protected function loadInvoiceHistoryForSubscription(object $subscription): array
+{
     $invoiceHistory = [
         'ok' => true,
         'invoices' => [],
@@ -160,10 +243,7 @@ public function show(int $subscriptionId): View
         }
     }
 
-    return view('admin.subscriptions.show', [
-        'subscription' => $subscription,
-        'invoiceHistory' => $invoiceHistory,
-    ]);
+    return $invoiceHistory;
 }
 
 protected function applyFilters(object $query, array $filters): void
