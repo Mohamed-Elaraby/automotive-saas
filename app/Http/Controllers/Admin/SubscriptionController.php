@@ -75,6 +75,7 @@ public function index(Request $request): View
         ->withQueryString();
 
     $statusCounts = $this->buildStatusCounts($connection);
+
     $plans = Plan::query()
         ->orderBy('sort_order')
         ->orderBy('name')
@@ -183,7 +184,11 @@ public function refreshState(int $subscriptionId): RedirectResponse
 
     return redirect()
         ->route('admin.subscriptions.show', $subscriptionId)
-        ->with('success', 'Local billing state was refreshed. Current resolved status: ' . ucfirst(str_replace('_', ' ', (string) ($resolvedState['status'] ?? 'unknown'))));
+        ->with(
+            'success',
+            'Local billing state was refreshed. Current resolved status: ' .
+            ucfirst(str_replace('_', ' ', (string) ($resolvedState['status'] ?? 'unknown')))
+        );
 }
 
 public function normalizeLifecycle(int $subscriptionId): RedirectResponse
@@ -255,7 +260,8 @@ protected function loadInvoiceHistoryForSubscription(object $subscription): arra
                 ->filter(function (array $invoice) use ($subscription) {
                     $invoiceSubscriptionId = (string) ($invoice['subscription_id'] ?? '');
 
-                    return $invoiceSubscriptionId === '' || $invoiceSubscriptionId === (string) $subscription->gateway_subscription_id;
+                    return $invoiceSubscriptionId === ''
+                        || $invoiceSubscriptionId === (string) $subscription->gateway_subscription_id;
                 })
                 ->values()
                 ->all();

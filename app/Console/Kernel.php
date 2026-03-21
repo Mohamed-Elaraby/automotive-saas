@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\Billing\BackfillStripeInvoicesCommand;
 use App\Console\Commands\Billing\RunBillingLifecycleCommand;
 use App\Console\Commands\Billing\SyncStripePlanPricesCommand;
 use App\Console\Commands\Billing\VerifyBillingPlanPricesCommand;
@@ -16,6 +17,7 @@ class Kernel extends ConsoleKernel
         RunBillingLifecycleCommand::class,
         VerifyBillingPlanPricesCommand::class,
         SyncStripePlanPricesCommand::class,
+        BackfillStripeInvoicesCommand::class,
     ];
 
     protected function schedule(Schedule $schedule): void

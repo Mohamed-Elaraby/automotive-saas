@@ -5,17 +5,19 @@ namespace App\Services\Billing;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class StripeWebhookSyncService
 {
     public function __construct(
-        protected TenantBillingLifecycleService $tenantBillingLifecycleService
+        protected TenantBillingLifecycleService $tenantBillingLifecycleService,
+        protected LocalBillingInvoiceService $localBillingInvoiceService
     ) {
     }
 
 protected function centralConnection(): string
 {
-    return config('tenancy.database.central_connection') ?? config('database.default');
+    return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
 }
 
 protected function subscriptionsTable()
@@ -48,11 +50,19 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
 
     match ($type) {
     'checkout.session.completed' => $this->handleCheckoutSessionCompleted($object),
+
             'customer.subscription.created',
             'customer.subscription.updated',
             'customer.subscription.deleted' => $this->handleSubscriptionChanged($object),
+
             'invoice.paid' => $this->handleInvoicePaid($object),
             'invoice.payment_failed' => $this->handleInvoicePaymentFailed($object),
+
+            'invoice.finalized',
+            'invoice.updated',
+            'invoice.voided',
+            'invoice.marked_uncollectible' => $this->syncInvoiceToLedger($object),
+
             default => null,
         };
     }
@@ -82,7 +92,6 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
 {
     $subscriptionRowId = $stripeSubscription->metadata->subscription_row_id ?? null;
     $targetPlanId = $stripeSubscription->metadata->plan_id ?? null;
-
     $subscription = null;
 
     if ($subscriptionRowId) {
@@ -98,6 +107,7 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
     }
 
     $endsAt = null;
+
     if (! empty($stripeSubscription->cancel_at)) {
         $endsAt = Carbon::createFromTimestamp($stripeSubscription->cancel_at);
     } elseif (! empty($stripeSubscription->current_period_end)) {
@@ -125,9 +135,7 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
             'gateway_subscription_id' => $stripeSubscription->id ?? null,
             'gateway_price_id' => $priceId,
             'ends_at' => $endsAt,
-            'cancelled_at' => $internalStatus === SubscriptionStatuses::CANCELLED
-                ? ($cancelledAt ?: now())
-                : null,
+            'cancelled_at' => $internalStatus === SubscriptionStatuses::CANCELLED ? ($cancelledAt ?: now()) : null,
             'updated_at' => now(),
         ]);
 
@@ -147,9 +155,7 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
     ]),
 
             SubscriptionStatuses::ACTIVE => $this->tenantBillingLifecycleService->markAsRecovered($fresh),
-
             SubscriptionStatuses::PAST_DUE => $this->tenantBillingLifecycleService->markAsPastDue($fresh),
-
             SubscriptionStatuses::SUSPENDED => $this->tenantBillingLifecycleService->markAsSuspended($fresh),
 
             SubscriptionStatuses::CANCELLED => $this->tenantBillingLifecycleService->markAsCancelled(
@@ -166,6 +172,8 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
 
     protected function handleInvoicePaid(object $invoice): void
 {
+    $this->syncInvoiceToLedger($invoice);
+
     $gatewaySubscriptionId = $invoice->subscription ?? null;
 
     if (! $gatewaySubscriptionId) {
@@ -187,6 +195,8 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
 
     protected function handleInvoicePaymentFailed(object $invoice): void
 {
+    $this->syncInvoiceToLedger($invoice);
+
     $gatewaySubscriptionId = $invoice->subscription ?? null;
 
     if (! $gatewaySubscriptionId) {
@@ -204,6 +214,15 @@ protected function findSubscriptionById(int|string $subscriptionId): ?object
         : now();
 
     $this->tenantBillingLifecycleService->markAsPastDue($subscription, $failedAt);
+}
+
+    protected function syncInvoiceToLedger(object $invoice): void
+{
+    try {
+        $this->localBillingInvoiceService->upsertFromStripeInvoice($invoice);
+    } catch (Throwable $e) {
+        report($e);
+    }
 }
 
     protected function mapStripeSubscriptionStatus(?string $stripeStatus, bool $cancelAtPeriodEnd = false): string

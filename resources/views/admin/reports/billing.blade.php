@@ -148,7 +148,7 @@
 
                             @if($recentInvoices->isEmpty())
                                 <div class="alert alert-light mb-0">
-                                    No recent invoices were found from the current Stripe-linked subscriptions.
+                                    No recent invoices were found in the local billing ledger.
                                 </div>
                             @else
                                 <div class="table-responsive">
@@ -187,9 +187,9 @@
                                                 </td>
                                                 <td>{{ $invoice['tenant_id'] ?? '-' }}</td>
                                                 <td>
-                                                        <span class="badge {{ $badgeClass }}">
-                                                            {{ ucfirst($invoice['status'] ?? 'unknown') }}
-                                                        </span>
+                                                    <span class="badge {{ $badgeClass }}">
+                                                        {{ ucfirst($invoice['status'] ?? 'unknown') }}
+                                                    </span>
                                                 </td>
                                                 <td>{{ number_format((float) ($invoice['total_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
                                                 <td>{{ number_format((float) ($invoice['amount_paid_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
@@ -297,7 +297,7 @@
                                 <hr>
 
                                 <div class="small text-muted">
-                                    This trend is currently built from recent Stripe invoice reads across the current Stripe-linked subscriptions.
+                                    This trend is built from the local billing invoice ledger synced from Stripe.
                                 </div>
                             @endif
                         </div>
@@ -310,7 +310,7 @@
                                 <li class="mb-2">Estimated MRR currently counts only active monthly paid subscriptions.</li>
                                 <li class="mb-2">Trial plans are excluded from revenue estimates.</li>
                                 <li class="mb-2">Canceled, past_due, suspended, and expired subscriptions are excluded from MRR in this version.</li>
-                                <li class="mb-2">Recent invoices and invoice trend are derived from live Stripe invoice reads for the currently linked Stripe customers.</li>
+                                <li class="mb-2">Recent invoices and monthly invoice trend are derived from the local billing invoice ledger synced from Stripe.</li>
                             </ul>
                         </div>
                     </div>
