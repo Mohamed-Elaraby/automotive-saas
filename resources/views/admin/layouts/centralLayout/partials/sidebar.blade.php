@@ -1,3 +1,5 @@
+<?php $page = $page ?? ''; ?>
+
 <!-- Sidenav Menu Start -->
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
@@ -16,6 +18,22 @@
                    data-bs-placement="right"
                    data-bs-title="Plans">
                     <i class="isax isax-crown5"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.subscriptions.index') }}"
+                   data-bs-toggle="tooltip"
+                   data-bs-placement="right"
+                   data-bs-title="Subscriptions">
+                    <i class="isax isax-receipt-2"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.reports.billing') }}"
+                   data-bs-toggle="tooltip"
+                   data-bs-placement="right"
+                   data-bs-title="Billing Reports">
+                    <i class="isax isax-chart-21"></i>
                 </a>
             </li>
         </ul>
@@ -61,14 +79,31 @@
                     <li class="menu-title"><span>Main</span></li>
                     <li>
                         <ul>
-                            <li class="{{ ($page ?? '') === 'admin-dashboard' ? 'active subdrop' : '' }}">
+                            <li class="{{ $page === 'admin-dashboard' ? 'active subdrop' : '' }}">
                                 <a href="{{ route('admin.dashboard') }}">
-                                    <i class="isax isax-element-45"></i><span>Dashboard</span>
+                                    <i class="isax isax-element-45"></i>
+                                    <span>Dashboard</span>
                                 </a>
                             </li>
-                            <li class="{{ in_array(($page ?? ''), ['membership-plans', 'plan-create', 'plan-edit']) ? 'active subdrop' : '' }}">
+
+                            <li class="{{ in_array($page, ['membership-plans', 'plan-create', 'plan-edit'], true) ? 'active subdrop' : '' }}">
                                 <a href="{{ route('admin.plans.index') }}">
-                                    <i class="isax isax-crown5"></i><span>Plans</span>
+                                    <i class="isax isax-crown5"></i>
+                                    <span>Plans</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['subscriptions-index', 'subscription-show'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.subscriptions.index') }}">
+                                    <i class="isax isax-receipt-2"></i>
+                                    <span>Subscriptions</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ $page === 'billing-reports' ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.reports.billing') }}">
+                                    <i class="isax isax-chart-21"></i>
+                                    <span>Billing Reports</span>
                                 </a>
                             </li>
                         </ul>
@@ -91,6 +126,22 @@
                                data-bs-placement="top"
                                data-bs-title="Plans">
                                 <i class="isax isax-crown5"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.subscriptions.index') }}"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               data-bs-title="Subscriptions">
+                                <i class="isax isax-receipt-2"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.reports.billing') }}"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               data-bs-title="Billing Reports">
+                                <i class="isax isax-chart-21"></i>
                             </a>
                         </li>
                     </ul>
