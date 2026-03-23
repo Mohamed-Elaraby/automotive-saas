@@ -273,13 +273,81 @@
 
                             @php
                                 $normalizationPreview = is_array($normalizationPreview ?? null) ? $normalizationPreview : [];
+                                $previewChanges = $normalizationPreview['changes'] ?? [];
                             @endphp
 
                             <div class="small text-muted mb-3">
                                 Review the current lifecycle normalization preview before applying any corrections.
                             </div>
 
-                            <pre class="bg-light p-3 rounded small mb-0" style="white-space: pre-wrap;">{{ json_encode($normalizationPreview, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <tbody>
+                                    <tr>
+                                        <th style="width: 180px;">OK</th>
+                                        <td>
+                                            @if(($normalizationPreview['ok'] ?? false) === true)
+                                                <span class="badge bg-success">Yes</span>
+                                            @else
+                                                <span class="badge bg-danger">No</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Applied</th>
+                                        <td>
+                                            @if(($normalizationPreview['applied'] ?? false) === true)
+                                                <span class="badge bg-success">Yes</span>
+                                            @else
+                                                <span class="badge bg-secondary">No</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Subscription ID</th>
+                                        <td>{{ $normalizationPreview['subscription_id'] ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status</th>
+                                        <td>{{ ucfirst(str_replace('_', ' ', (string) ($normalizationPreview['status'] ?? 'unknown'))) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Message</th>
+                                        <td>{{ $normalizationPreview['message'] ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Changes Count</th>
+                                        <td>{{ is_array($previewChanges) ? count($previewChanges) : 0 }}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if(!empty($previewChanges) && is_array($previewChanges))
+                                <div class="mt-3">
+                                    <h6 class="mb-2">Pending Changes</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered align-middle mb-0">
+                                            <thead>
+                                            <tr>
+                                                <th>Field</th>
+                                                <th>From</th>
+                                                <th>To</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            @foreach($previewChanges as $change)
+                                                <tr>
+                                                    <td>{{ $change['field'] ?? '-' }}</td>
+                                                    <td>{{ $change['from'] ?? '-' }}</td>
+                                                    <td>{{ $change['to'] ?? '-' }}</td>
+                                                </tr>
+                                            @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
