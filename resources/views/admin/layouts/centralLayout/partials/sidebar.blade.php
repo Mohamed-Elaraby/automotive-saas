@@ -1,46 +1,37 @@
 <?php $page = $page ?? ''; ?>
 
-<!-- Sidenav Menu Start -->
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
         <ul class="menu-list">
             <li>
-                <a href="{{ route('admin.dashboard') }}"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="right"
-                   data-bs-title="Dashboard">
+                <a href="{{ route('admin.dashboard') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Dashboard">
                     <i class="isax isax-element-45"></i>
                 </a>
             </li>
             <li>
-                <a href="{{ route('admin.plans.index') }}"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="right"
-                   data-bs-title="Plans">
+                <a href="{{ route('admin.plans.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Plans">
                     <i class="isax isax-crown5"></i>
                 </a>
             </li>
             <li>
-                <a href="{{ route('admin.subscriptions.index') }}"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="right"
-                   data-bs-title="Subscriptions">
+                <a href="{{ route('admin.subscriptions.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Subscriptions">
                     <i class="isax isax-receipt-2"></i>
                 </a>
             </li>
             <li>
-                <a href="{{ route('admin.reports.billing') }}"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="right"
-                   data-bs-title="Billing Reports">
+                <a href="{{ route('admin.reports.billing') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Billing Reports">
                     <i class="isax isax-chart-21"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.reference-data.currencies.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Reference Data">
+                    <i class="isax isax-location"></i>
                 </a>
             </li>
         </ul>
     </div>
 
     <div class="sidebar" id="sidebar-two">
-        <!-- Start Logo -->
         <div class="sidebar-logo">
             <a href="{{ route('admin.dashboard') }}" class="logo logo-normal">
                 <img src="{{ url('theme/img/logo.svg') }}" alt="Logo">
@@ -59,9 +50,7 @@
                 <i class="isax isax-menu-1"></i>
             </a>
         </div>
-        <!-- End Logo -->
 
-        <!-- Search -->
         <div class="sidebar-search">
             <div class="input-icon-end position-relative">
                 <input type="text" class="form-control" placeholder="Search">
@@ -70,9 +59,7 @@
                 </span>
             </div>
         </div>
-        <!-- /Search -->
 
-        <!--- Sidenav Menu -->
         <div class="sidebar-inner" data-simplebar>
             <div id="sidebar-menu" class="sidebar-menu">
                 <ul>
@@ -108,40 +95,66 @@
                             </li>
                         </ul>
                     </li>
+
+                    <li class="menu-title"><span>Reference Data</span></li>
+                    <li>
+                        <ul>
+                            <li class="{{ in_array($page, ['reference-currencies-index', 'reference-currencies-create', 'reference-currencies-edit'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.reference-data.currencies.index') }}">
+                                    <i class="isax isax-money-4"></i>
+                                    <span>Currencies</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['reference-countries-index', 'reference-countries-create', 'reference-countries-edit'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.reference-data.countries.index') }}">
+                                    <i class="isax isax-global"></i>
+                                    <span>Countries</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['reference-states-index', 'reference-states-create', 'reference-states-edit'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.reference-data.states.index') }}">
+                                    <i class="isax isax-map"></i>
+                                    <span>States</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['reference-cities-index', 'reference-cities-create', 'reference-cities-edit'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.reference-data.cities.index') }}">
+                                    <i class="isax isax-building-3"></i>
+                                    <span>Cities</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
 
                 <div class="sidebar-footer">
                     <ul class="menu-list">
                         <li>
-                            <a href="{{ route('admin.dashboard') }}"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="top"
-                               data-bs-title="Dashboard">
+                            <a href="{{ route('admin.dashboard') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Dashboard">
                                 <i class="isax isax-element-45"></i>
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('admin.plans.index') }}"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="top"
-                               data-bs-title="Plans">
+                            <a href="{{ route('admin.plans.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Plans">
                                 <i class="isax isax-crown5"></i>
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('admin.subscriptions.index') }}"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="top"
-                               data-bs-title="Subscriptions">
+                            <a href="{{ route('admin.subscriptions.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Subscriptions">
                                 <i class="isax isax-receipt-2"></i>
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('admin.reports.billing') }}"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="top"
-                               data-bs-title="Billing Reports">
+                            <a href="{{ route('admin.reports.billing') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Billing Reports">
                                 <i class="isax isax-chart-21"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.reference-data.currencies.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Reference Data">
+                                <i class="isax isax-location"></i>
                             </a>
                         </li>
                     </ul>
@@ -150,4 +163,3 @@
         </div>
     </div>
 </div>
-<!-- Sidenav Menu End -->

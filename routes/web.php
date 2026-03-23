@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\BillingReportController;
+use App\Http\Controllers\Admin\CityController;
+use App\Http\Controllers\Admin\CountryController;
+use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Automotive\TrialSignupController;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +72,50 @@ Route::prefix('admin')
             ->group(function () {
                 Route::get('/billing', [BillingReportController::class, 'index'])->name('billing');
                 Route::get('/billing/export-csv', [BillingReportController::class, 'exportCsv'])->name('billing.export-csv');
+            });
+
+        Route::prefix('reference-data')
+            ->name('reference-data.')
+            ->group(function () {
+                Route::prefix('currencies')
+                    ->name('currencies.')
+                    ->group(function () {
+                        Route::get('/', [CurrencyController::class, 'index'])->name('index');
+                        Route::get('/create', [CurrencyController::class, 'create'])->name('create');
+                        Route::post('/', [CurrencyController::class, 'store'])->name('store');
+                        Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
+                        Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
+                    });
+
+                Route::prefix('countries')
+                    ->name('countries.')
+                    ->group(function () {
+                        Route::get('/', [CountryController::class, 'index'])->name('index');
+                        Route::get('/create', [CountryController::class, 'create'])->name('create');
+                        Route::post('/', [CountryController::class, 'store'])->name('store');
+                        Route::get('/{country}/edit', [CountryController::class, 'edit'])->name('edit');
+                        Route::put('/{country}', [CountryController::class, 'update'])->name('update');
+                    });
+
+                Route::prefix('states')
+                    ->name('states.')
+                    ->group(function () {
+                        Route::get('/', [StateController::class, 'index'])->name('index');
+                        Route::get('/create', [StateController::class, 'create'])->name('create');
+                        Route::post('/', [StateController::class, 'store'])->name('store');
+                        Route::get('/{state}/edit', [StateController::class, 'edit'])->name('edit');
+                        Route::put('/{state}', [StateController::class, 'update'])->name('update');
+                    });
+
+                Route::prefix('cities')
+                    ->name('cities.')
+                    ->group(function () {
+                        Route::get('/', [CityController::class, 'index'])->name('index');
+                        Route::get('/create', [CityController::class, 'create'])->name('create');
+                        Route::post('/', [CityController::class, 'store'])->name('store');
+                        Route::get('/{city}/edit', [CityController::class, 'edit'])->name('edit');
+                        Route::put('/{city}', [CityController::class, 'update'])->name('update');
+                    });
             });
     });
 //Route::get('/', function () {
