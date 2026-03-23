@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BillingReportController extends Controller
 {
@@ -17,13 +18,7 @@ class BillingReportController extends Controller
     {
         $connection = $this->centralConnection();
 
-        $filters = [
-            'tenant_id' => trim((string) $request->string('tenant_id')),
-            'status' => trim((string) $request->string('status')),
-            'gateway' => trim((string) $request->string('gateway')),
-            'month' => trim((string) $request->string('month')),
-            'currency' => strtoupper(trim((string) $request->string('currency'))),
-        ];
+        $filters = $this->resolveFilters($request);
 
         $baseSubscriptions = DB::connection($connection)->table('subscriptions');
 
@@ -171,11 +166,89 @@ class BillingReportController extends Controller
         ]);
     }
 
+    public function exportCsv(Request $request): StreamedResponse
+    {
+        $filters = $this->resolveFilters($request);
+        $currencyMap = $this->currencyMap();
+
+        $query = BillingInvoice::query()
+            ->orderByDesc('issued_at')
+            ->orderByDesc('id');
+
+        $this->applyInvoiceFilters($query, $filters);
+
+        $filename = $this->buildExportFilename($filters);
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        return response()->streamDownload(function () use ($query, $currencyMap) {
+            $handle = fopen('php://output', 'w');
+
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($handle, [
+                'invoice_id',
+                'invoice_number',
+                'tenant_id',
+                'subscription_id',
+                'gateway',
+                'gateway_customer_id',
+                'gateway_subscription_id',
+                'status',
+                'billing_reason',
+                'currency',
+                'currency_name',
+                'total_decimal',
+                'amount_paid_decimal',
+                'amount_due_decimal',
+                'issued_at',
+                'paid_at',
+                'hosted_invoice_url',
+                'invoice_pdf',
+                'created_at',
+                'updated_at',
+            ]);
+
+            $query->chunk(500, function ($invoices) use ($handle, $currencyMap) {
+                foreach ($invoices as $invoice) {
+                    $currencyCode = strtoupper((string) ($invoice->currency ?? 'USD'));
+                    $currency = $currencyMap->get($currencyCode);
+
+                    fputcsv($handle, [
+                        (string) $invoice->gateway_invoice_id,
+                        (string) ($invoice->invoice_number ?: $invoice->gateway_invoice_id),
+                        (string) ($invoice->tenant_id ?? ''),
+                        (string) ($invoice->subscription_id ?? ''),
+                        strtoupper((string) ($invoice->gateway ?? 'stripe')),
+                        (string) ($invoice->gateway_customer_id ?? ''),
+                        (string) ($invoice->gateway_subscription_id ?? ''),
+                        (string) ($invoice->status ?? ''),
+                        (string) ($invoice->billing_reason ?? ''),
+                        $currencyCode,
+                        (string) ($currency?->name ?? $currencyCode),
+                        number_format((float) ($invoice->total_decimal ?? 0), 2, '.', ''),
+                        number_format((float) ($invoice->amount_paid_decimal ?? 0), 2, '.', ''),
+                        number_format((float) ($invoice->amount_due_decimal ?? 0), 2, '.', ''),
+                        optional($invoice->issued_at)?->format('Y-m-d H:i:s'),
+                        optional($invoice->paid_at)?->format('Y-m-d H:i:s'),
+                        (string) ($invoice->hosted_invoice_url ?? ''),
+                        (string) ($invoice->invoice_pdf ?? ''),
+                        optional($invoice->created_at)?->format('Y-m-d H:i:s'),
+                        optional($invoice->updated_at)?->format('Y-m-d H:i:s'),
+                    ]);
+                }
+            });
+
+            fclose($handle);
+        }, $filename, $headers);
+    }
+
     protected function buildInvoiceReport(array $filters): array
     {
-        $currencyMap = Currency::query()
-            ->get(['code', 'name', 'symbol', 'native_symbol', 'decimal_places'])
-            ->keyBy(fn (Currency $currency) => strtoupper((string) $currency->code));
+        $currencyMap = $this->currencyMap();
 
         $invoiceQuery = BillingInvoice::query()->orderByDesc('issued_at')->orderByDesc('id');
 
@@ -291,6 +364,53 @@ class BillingReportController extends Controller
         if (($filters['month'] ?? '') !== '') {
             $query->whereRaw('DATE_FORMAT(issued_at, "%Y-%m") = ?', [$filters['month']]);
         }
+    }
+
+    protected function resolveFilters(Request $request): array
+    {
+        return [
+            'tenant_id' => trim((string) $request->string('tenant_id')),
+            'status' => trim((string) $request->string('status')),
+            'gateway' => trim((string) $request->string('gateway')),
+            'month' => trim((string) $request->string('month')),
+            'currency' => strtoupper(trim((string) $request->string('currency'))),
+        ];
+    }
+
+    protected function buildExportFilename(array $filters): string
+    {
+        $parts = ['billing-invoices'];
+
+        if (($filters['tenant_id'] ?? '') !== '') {
+            $parts[] = 'tenant-' . preg_replace('/[^a-zA-Z0-9\-_]/', '-', $filters['tenant_id']);
+        }
+
+        if (($filters['status'] ?? '') !== '') {
+            $parts[] = 'status-' . strtolower($filters['status']);
+        }
+
+        if (($filters['gateway'] ?? '') !== '') {
+            $parts[] = 'gateway-' . strtolower($filters['gateway']);
+        }
+
+        if (($filters['currency'] ?? '') !== '') {
+            $parts[] = 'currency-' . strtoupper($filters['currency']);
+        }
+
+        if (($filters['month'] ?? '') !== '') {
+            $parts[] = 'month-' . $filters['month'];
+        }
+
+        $parts[] = now()->format('Ymd_His');
+
+        return implode('_', $parts) . '.csv';
+    }
+
+    protected function currencyMap()
+    {
+        return Currency::query()
+            ->get(['code', 'name', 'symbol', 'native_symbol', 'decimal_places'])
+            ->keyBy(fn (Currency $currency) => strtoupper((string) $currency->code));
     }
 
     protected function centralConnection(): string

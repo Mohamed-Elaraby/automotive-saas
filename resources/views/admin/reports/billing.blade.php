@@ -12,11 +12,22 @@
             @endcomponent
 
             <div class="page-header">
-                <div class="content-page-header">
-                    <h5>Billing Reports</h5>
-                    <p class="text-muted mb-0">
-                        Central revenue snapshot, subscription health, active plan distribution, and invoice activity.
-                    </p>
+                <div class="content-page-header d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div>
+                        <h5>Billing Reports</h5>
+                        <p class="text-muted mb-0">
+                            Central revenue snapshot, subscription health, active plan distribution, and invoice activity.
+                        </p>
+                    </div>
+
+                    <div>
+                        <a
+                            href="{{ route('admin.reports.billing.export-csv', request()->query()) }}"
+                            class="btn btn-outline-primary"
+                        >
+                            Export CSV
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -32,7 +43,16 @@
 
             <div class="card mb-4">
                 <div class="card-body">
-                    <h6 class="mb-3">Invoice Filters</h6>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <h6 class="mb-0">Invoice Filters</h6>
+
+                        <a
+                            href="{{ route('admin.reports.billing.export-csv', request()->query()) }}"
+                            class="btn btn-sm btn-outline-dark"
+                        >
+                            Export Current Filter Set
+                        </a>
+                    </div>
 
                     <form method="GET" action="{{ route('admin.reports.billing') }}">
                         <div class="row g-3">
@@ -448,7 +468,7 @@
                                 <li class="mb-2">Trial plans are excluded from revenue estimates.</li>
                                 <li class="mb-2">Canceled, past_due, suspended, and expired subscriptions are excluded from MRR in this version.</li>
                                 <li class="mb-2">Recent invoices and monthly invoice trend are derived from the local billing invoice ledger synced from Stripe.</li>
-                                <li class="mb-2">The report now uses the central currencies reference data to improve clarity and prepare billing exports.</li>
+                                <li class="mb-2">CSV export respects the current report filters and downloads the current invoice slice directly from the billing report screen.</li>
                             </ul>
                         </div>
                     </div>

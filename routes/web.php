@@ -67,6 +67,7 @@ Route::prefix('admin')
             ->name('reports.')
             ->group(function () {
                 Route::get('/billing', [BillingReportController::class, 'index'])->name('billing');
+                Route::get('/billing/export-csv', [BillingReportController::class, 'exportCsv'])->name('billing.export-csv');
             });
     });
 //Route::get('/', function () {
