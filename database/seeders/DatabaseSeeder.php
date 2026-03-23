@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         // <seven-scaffold-seeders>
         $this->call(PlanSeeder::class);
+        $this->call(ReferenceDataSeeder::class);
 
 // \App\Models\User::factory(10)->create();
 
