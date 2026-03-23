@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Billing\StripeInvoiceHistoryService;
+use App\Services\Billing\StripeInvoiceLedgerBackfillService;
 use App\Services\Billing\StripeSubscriptionSyncService;
 use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
@@ -21,6 +22,7 @@ class SubscriptionController extends Controller
     public function __construct(
         protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
+        protected StripeInvoiceLedgerBackfillService $stripeInvoiceLedgerBackfillService,
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
         protected SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService
     ) {
@@ -167,6 +169,43 @@ public function syncFromStripe(int $subscriptionId): RedirectResponse
         return redirect()
             ->route('admin.subscriptions.show', $subscriptionId)
             ->with('error', 'Unable to sync the subscription from Stripe right now.');
+    }
+}
+
+public function backfillInvoices(int $subscriptionId): RedirectResponse
+{
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('admin.subscriptions.index')
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    if (($subscription->gateway ?? null) !== 'stripe') {
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', 'This subscription is not linked to the Stripe gateway.');
+    }
+
+    if (! $subscription->gateway_customer_id) {
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', 'No Stripe customer ID is linked to this subscription.');
+    }
+
+    try {
+        $result = $this->stripeInvoiceLedgerBackfillService->backfillForSubscription($subscription, 100);
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with($result['ok'] ? 'success' : 'error', $result['message']);
+    } catch (Throwable $e) {
+        report($e);
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', 'Unable to backfill Stripe invoices for this subscription right now.');
     }
 }
 

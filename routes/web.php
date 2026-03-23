@@ -58,6 +58,7 @@ Route::prefix('admin')
                 Route::get('/', [SubscriptionController::class, 'index'])->name('index');
                 Route::get('/{subscription}', [SubscriptionController::class, 'show'])->name('show');
                 Route::post('/{subscription}/sync-stripe', [SubscriptionController::class, 'syncFromStripe'])->name('sync-stripe');
+                Route::post('/{subscription}/backfill-invoices', [SubscriptionController::class, 'backfillInvoices'])->name('backfill-invoices');
                 Route::post('/{subscription}/refresh-state', [SubscriptionController::class, 'refreshState'])->name('refresh-state');
                 Route::post('/{subscription}/normalize-lifecycle', [SubscriptionController::class, 'normalizeLifecycle'])->name('normalize-lifecycle');
             });
