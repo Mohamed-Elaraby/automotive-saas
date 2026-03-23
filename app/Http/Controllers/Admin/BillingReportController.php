@@ -5,15 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BillingInvoice;
 use App\Support\Billing\SubscriptionStatuses;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class BillingReportController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $connection = $this->centralConnection();
+
+        $filters = [
+            'tenant_id' => trim((string) $request->string('tenant_id')),
+            'status' => trim((string) $request->string('status')),
+            'gateway' => trim((string) $request->string('gateway')),
+            'month' => trim((string) $request->string('month')),
+            'currency' => strtoupper(trim((string) $request->string('currency'))),
+        ];
 
         $baseSubscriptions = DB::connection($connection)
             ->table('subscriptions');
@@ -99,7 +108,7 @@ class BillingReportController extends Controller
             ->orderByDesc('subscriptions_count')
             ->get();
 
-        $invoiceReport = $this->buildInvoiceReport();
+        $invoiceReport = $this->buildInvoiceReport($filters);
 
         return view('admin.reports.billing', [
             'summary' => [
@@ -117,17 +126,25 @@ class BillingReportController extends Controller
             'gatewayBreakdown' => $gatewayBreakdown,
             'recentInvoices' => $invoiceReport['recentInvoices'],
             'monthlyInvoiceTrend' => $invoiceReport['monthlyInvoiceTrend'],
+            'filters' => $filters,
+            'filterOptions' => [
+                'statuses' => $invoiceReport['statuses'],
+                'gateways' => $invoiceReport['gateways'],
+                'currencies' => $invoiceReport['currencies'],
+                'months' => $invoiceReport['months'],
+            ],
         ]);
     }
 
-    protected function buildInvoiceReport(): array
+    protected function buildInvoiceReport(array $filters): array
     {
-        $allInvoices = BillingInvoice::query()
-            ->orderByDesc('issued_at')
-            ->orderByDesc('id')
-            ->get();
+        $invoiceQuery = BillingInvoice::query()->orderByDesc('issued_at')->orderByDesc('id');
 
-        $recentInvoices = $allInvoices
+        $this->applyInvoiceFilters($invoiceQuery, $filters);
+
+        $filteredInvoices = $invoiceQuery->get();
+
+        $recentInvoices = $filteredInvoices
             ->sortByDesc(fn (BillingInvoice $invoice) => (int) ($invoice->issued_at?->timestamp ?? 0))
             ->take(15)
         ->map(function (BillingInvoice $invoice) {
@@ -136,6 +153,7 @@ class BillingReportController extends Controller
                 'number' => (string) ($invoice->invoice_number ?: $invoice->gateway_invoice_id),
                 'status' => (string) ($invoice->status ?? 'unknown'),
                 'currency' => strtoupper((string) ($invoice->currency ?? 'USD')),
+                'gateway' => strtoupper((string) ($invoice->gateway ?? 'stripe')),
                 'total_decimal' => (float) ($invoice->total_decimal ?? 0),
                 'amount_paid_decimal' => (float) ($invoice->amount_paid_decimal ?? 0),
                 'amount_due_decimal' => (float) ($invoice->amount_due_decimal ?? 0),
@@ -149,7 +167,7 @@ class BillingReportController extends Controller
             })
         ->values();
 
-        $monthlyInvoiceTrend = $allInvoices
+        $monthlyInvoiceTrend = $filteredInvoices
             ->filter(fn (BillingInvoice $invoice) => ! empty($invoice->issued_at))
             ->groupBy(function (BillingInvoice $invoice) {
                 return $invoice->issued_at?->format('Y-m');
@@ -173,7 +191,59 @@ class BillingReportController extends Controller
         return [
             'recentInvoices' => $recentInvoices,
             'monthlyInvoiceTrend' => $monthlyInvoiceTrend,
+            'statuses' => BillingInvoice::query()
+                ->whereNotNull('status')
+                ->where('status', '!=', '')
+                ->distinct()
+                ->orderBy('status')
+                ->pluck('status')
+                ->values(),
+            'gateways' => BillingInvoice::query()
+                ->whereNotNull('gateway')
+                ->where('gateway', '!=', '')
+                ->distinct()
+                ->orderBy('gateway')
+                ->pluck('gateway')
+                ->values(),
+            'currencies' => BillingInvoice::query()
+                ->whereNotNull('currency')
+                ->where('currency', '!=', '')
+                ->distinct()
+                ->orderBy('currency')
+                ->pluck('currency')
+                ->values(),
+            'months' => BillingInvoice::query()
+                ->whereNotNull('issued_at')
+                ->get()
+                ->map(fn (BillingInvoice $invoice) => $invoice->issued_at?->format('Y-m'))
+                ->filter()
+        ->unique()
+        ->sortDesc()
+        ->values(),
         ];
+    }
+
+    protected function applyInvoiceFilters(object $query, array $filters): void
+    {
+        if (($filters['tenant_id'] ?? '') !== '') {
+            $query->where('tenant_id', 'like', '%' . $filters['tenant_id'] . '%');
+        }
+
+        if (($filters['status'] ?? '') !== '') {
+            $query->where('status', $filters['status']);
+        }
+
+        if (($filters['gateway'] ?? '') !== '') {
+            $query->where('gateway', strtolower($filters['gateway']));
+        }
+
+        if (($filters['currency'] ?? '') !== '') {
+            $query->where('currency', strtoupper($filters['currency']));
+        }
+
+        if (($filters['month'] ?? '') !== '') {
+            $query->whereRaw('DATE_FORMAT(issued_at, "%Y-%m") = ?', [$filters['month']]);
+        }
     }
 
     protected function centralConnection(): string

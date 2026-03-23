@@ -1,3 +1,4 @@
+<?php $page = 'billing-reports'; ?>
 @extends('admin.layouts.centralLayout.mainlayout')
 
 @section('content')
@@ -16,6 +17,94 @@
                     <p class="text-muted mb-0">
                         Central revenue snapshot, subscription health, active plan distribution, and invoice activity.
                     </p>
+                </div>
+            </div>
+
+            @php
+                $filters = is_array($filters ?? null) ? $filters : [];
+                $filterOptions = is_array($filterOptions ?? null) ? $filterOptions : [];
+                $statusOptions = $filterOptions['statuses'] ?? collect();
+                $gatewayOptions = $filterOptions['gateways'] ?? collect();
+                $currencyOptions = $filterOptions['currencies'] ?? collect();
+                $monthOptions = $filterOptions['months'] ?? collect();
+            @endphp
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3">Invoice Filters</h6>
+
+                    <form method="GET" action="{{ route('admin.reports.billing') }}">
+                        <div class="row g-3">
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">Tenant ID</label>
+                                <input
+                                    type="text"
+                                    name="tenant_id"
+                                    value="{{ $filters['tenant_id'] ?? '' }}"
+                                    class="form-control"
+                                    placeholder="Search tenant id"
+                                >
+                            </div>
+
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">All</option>
+                                    @foreach($statusOptions as $status)
+                                        <option value="{{ $status }}" {{ ($filters['status'] ?? '') === $status ? 'selected' : '' }}>
+                                            {{ ucfirst((string) $status) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Gateway</label>
+                                <select name="gateway" class="form-select">
+                                    <option value="">All</option>
+                                    @foreach($gatewayOptions as $gateway)
+                                        <option value="{{ $gateway }}" {{ ($filters['gateway'] ?? '') === $gateway ? 'selected' : '' }}>
+                                            {{ strtoupper((string) $gateway) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Currency</label>
+                                <select name="currency" class="form-select">
+                                    <option value="">All</option>
+                                    @foreach($currencyOptions as $currency)
+                                        <option value="{{ $currency }}" {{ strtoupper((string) ($filters['currency'] ?? '')) === strtoupper((string) $currency) ? 'selected' : '' }}>
+                                            {{ strtoupper((string) $currency) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label">Month</label>
+                                <select name="month" class="form-select">
+                                    <option value="">All</option>
+                                    @foreach($monthOptions as $month)
+                                        <option value="{{ $month }}" {{ ($filters['month'] ?? '') === $month ? 'selected' : '' }}>
+                                            {{ $month }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 d-flex flex-wrap gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    Apply Filters
+                                </button>
+
+                                <a href="{{ route('admin.reports.billing') }}" class="btn btn-light">
+                                    Reset
+                                </a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -148,7 +237,7 @@
 
                             @if($recentInvoices->isEmpty())
                                 <div class="alert alert-light mb-0">
-                                    No recent invoices were found in the local billing ledger.
+                                    No recent invoices were found for the current filters.
                                 </div>
                             @else
                                 <div class="table-responsive">
@@ -157,6 +246,7 @@
                                         <tr>
                                             <th>Invoice</th>
                                             <th>Tenant</th>
+                                            <th>Gateway</th>
                                             <th>Status</th>
                                             <th>Total</th>
                                             <th>Paid</th>
@@ -186,9 +276,10 @@
                                                     <div class="small text-muted">{{ $invoice['id'] ?? '-' }}</div>
                                                 </td>
                                                 <td>{{ $invoice['tenant_id'] ?? '-' }}</td>
+                                                <td>{{ $invoice['gateway'] ?? 'STRIPE' }}</td>
                                                 <td>
                                                     <span class="badge {{ $badgeClass }}">
-                                                        {{ ucfirst($invoice['status'] ?? 'unknown') }}
+                                                        {{ ucfirst((string) ($invoice['status'] ?? 'unknown')) }}
                                                     </span>
                                                 </td>
                                                 <td>{{ number_format((float) ($invoice['total_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
@@ -270,7 +361,7 @@
 
                             @if($monthlyInvoiceTrend->isEmpty())
                                 <div class="alert alert-light mb-0">
-                                    No invoice trend data is available yet.
+                                    No invoice trend data is available for the current filters.
                                 </div>
                             @else
                                 <div class="table-responsive">
@@ -279,7 +370,9 @@
                                         <tr>
                                             <th>Month</th>
                                             <th>Invoices</th>
+                                            <th>Total</th>
                                             <th>Paid</th>
+                                            <th>Due</th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -287,7 +380,9 @@
                                             <tr>
                                                 <td>{{ $row['month'] }}</td>
                                                 <td>{{ number_format((int) ($row['invoices_count'] ?? 0)) }}</td>
+                                                <td>{{ number_format((float) ($row['total_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
                                                 <td>{{ number_format((float) ($row['amount_paid_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
+                                                <td>{{ number_format((float) ($row['amount_due_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
                                             </tr>
                                         @endforeach
                                         </tbody>
@@ -297,7 +392,7 @@
                                 <hr>
 
                                 <div class="small text-muted">
-                                    This trend is built from the local billing invoice ledger synced from Stripe.
+                                    This trend is built from the local billing invoice ledger synced from Stripe and filtered using the current report controls.
                                 </div>
                             @endif
                         </div>
@@ -311,6 +406,7 @@
                                 <li class="mb-2">Trial plans are excluded from revenue estimates.</li>
                                 <li class="mb-2">Canceled, past_due, suspended, and expired subscriptions are excluded from MRR in this version.</li>
                                 <li class="mb-2">Recent invoices and monthly invoice trend are derived from the local billing invoice ledger synced from Stripe.</li>
+                                <li class="mb-2">The current filter set now controls the invoice tables and trend widgets, preparing this report for export actions in the next step.</li>
                             </ul>
                         </div>
                     </div>
