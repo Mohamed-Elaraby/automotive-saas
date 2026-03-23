@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
+use App\Http\Controllers\Admin\SystemErrorLogController;
 use App\Http\Controllers\Automotive\TrialSignupController;
 use Illuminate\Support\Facades\Route;
 
@@ -120,6 +121,15 @@ Route::prefix('admin')
                         Route::put('/{city}', [CityController::class, 'update'])->name('update');
                         Route::delete('/{city}', [CityController::class, 'destroy'])->name('destroy');
                     });
+            });
+
+        Route::prefix('system-errors')
+            ->name('system-errors.')
+            ->group(function () {
+                Route::get('/', [SystemErrorLogController::class, 'index'])->name('index');
+                Route::get('/{systemError}', [SystemErrorLogController::class, 'show'])->name('show');
+                Route::post('/{systemError}/mark-read', [SystemErrorLogController::class, 'markRead'])->name('mark-read');
+                Route::post('/{systemError}/mark-resolved', [SystemErrorLogController::class, 'markResolved'])->name('mark-resolved');
             });
     });
 //Route::get('/', function () {

@@ -1,4 +1,14 @@
-<?php $page = $page ?? ''; ?>
+<?php
+$page = $page ?? '';
+
+try {
+    $systemErrorUnreadCount = \App\Models\SystemErrorLog::query()
+        ->where('is_read', false)
+        ->count();
+} catch (\Throwable $e) {
+    $systemErrorUnreadCount = 0;
+}
+?>
 
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
@@ -26,6 +36,11 @@
             <li>
                 <a href="{{ route('admin.reference-data.currencies.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Reference Data">
                     <i class="isax isax-location"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.system-errors.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="System Errors">
+                    <i class="isax isax-warning-2"></i>
                 </a>
             </li>
         </ul>
@@ -128,6 +143,21 @@
                             </li>
                         </ul>
                     </li>
+
+                    <li class="menu-title"><span>Monitoring</span></li>
+                    <li>
+                        <ul>
+                            <li class="{{ in_array($page, ['system-errors-index', 'system-errors-show'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.system-errors.index') }}">
+                                    <i class="isax isax-warning-2"></i>
+                                    <span>System Errors</span>
+                                    @if($systemErrorUnreadCount > 0)
+                                        <span class="badge bg-danger ms-2">{{ $systemErrorUnreadCount }}</span>
+                                    @endif
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
 
                 <div class="sidebar-footer">
@@ -155,6 +185,11 @@
                         <li>
                             <a href="{{ route('admin.reference-data.currencies.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Reference Data">
                                 <i class="isax isax-location"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.system-errors.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="System Errors">
+                                <i class="isax isax-warning-2"></i>
                             </a>
                         </li>
                     </ul>
