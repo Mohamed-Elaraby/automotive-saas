@@ -27,6 +27,7 @@
                 $gatewayOptions = $filterOptions['gateways'] ?? collect();
                 $currencyOptions = $filterOptions['currencies'] ?? collect();
                 $monthOptions = $filterOptions['months'] ?? collect();
+                $estimatedMrrByCurrency = $summary['estimated_mrr_by_currency'] ?? collect();
             @endphp
 
             <div class="card mb-4">
@@ -139,13 +140,26 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Estimated MRR</div>
-                            <h3 class="mb-0 text-primary">
-                                {{ number_format((float) ($summary['estimated_mrr'] ?? 0), 2) }} USD
-                            </h3>
-                            <div class="small text-muted mt-1">
-                                Active monthly paid subscriptions only
-                            </div>
+                            <div class="text-muted mb-2">Estimated MRR</div>
+
+                            @if(collect($estimatedMrrByCurrency)->isEmpty())
+                                <div class="text-muted">No monthly recurring revenue found.</div>
+                            @else
+                                @foreach($estimatedMrrByCurrency as $mrrRow)
+                                    <div class="mb-2">
+                                        <div class="fw-semibold">
+                                            {{ number_format((float) ($mrrRow['estimated_mrr'] ?? 0), (int) ($mrrRow['decimal_places'] ?? 2)) }}
+                                            {{ $mrrRow['currency'] ?? '' }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            {{ $mrrRow['currency_name'] ?? ($mrrRow['currency'] ?? '') }}
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <div class="small text-muted mt-2">
+                                    Active monthly paid subscriptions only
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -218,10 +232,19 @@
                                                     <div class="small text-muted">{{ $row->plan_slug }}</div>
                                                 </td>
                                                 <td>{{ ucfirst((string) $row->billing_period) }}</td>
-                                                <td>{{ number_format((float) $row->price, 2) }} {{ strtoupper((string) ($row->currency ?? 'USD')) }}</td>
+                                                <td>
+                                                    {{ number_format((float) $row->price, 2) }}
+                                                    {{ strtoupper((string) ($row->currency ?? '')) }}
+                                                    @if(!empty($row->currency_name))
+                                                        <div class="small text-muted">{{ $row->currency_name }}</div>
+                                                    @endif
+                                                </td>
                                                 <td>{{ number_format((int) $row->active_subscriptions_count) }}</td>
                                                 <td>{{ number_format((int) $row->active_tenants_count) }}</td>
-                                                <td>{{ number_format((float) $row->estimated_monthly_revenue, 2) }} {{ strtoupper((string) ($row->currency ?? 'USD')) }}</td>
+                                                <td>
+                                                    {{ number_format((float) $row->estimated_monthly_revenue, 2) }}
+                                                    {{ strtoupper((string) ($row->currency ?? '')) }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                         </tbody>
@@ -282,9 +305,21 @@
                                                         {{ ucfirst((string) ($invoice['status'] ?? 'unknown')) }}
                                                     </span>
                                                 </td>
-                                                <td>{{ number_format((float) ($invoice['total_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
-                                                <td>{{ number_format((float) ($invoice['amount_paid_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
-                                                <td>{{ number_format((float) ($invoice['amount_due_decimal'] ?? 0), 2) }} {{ $invoice['currency'] ?? 'USD' }}</td>
+                                                <td>
+                                                    {{ number_format((float) ($invoice['total_decimal'] ?? 0), 2) }}
+                                                    {{ $invoice['currency'] ?? '' }}
+                                                    @if(!empty($invoice['currency_name']))
+                                                        <div class="small text-muted">{{ $invoice['currency_name'] }}</div>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    {{ number_format((float) ($invoice['amount_paid_decimal'] ?? 0), 2) }}
+                                                    {{ $invoice['currency'] ?? '' }}
+                                                </td>
+                                                <td>
+                                                    {{ number_format((float) ($invoice['amount_due_decimal'] ?? 0), 2) }}
+                                                    {{ $invoice['currency'] ?? '' }}
+                                                </td>
                                                 <td>
                                                     {{ !empty($invoice['created_at']) ? \Carbon\Carbon::createFromTimestamp($invoice['created_at'])->format('Y-m-d H:i') : '-' }}
                                                 </td>
@@ -369,6 +404,7 @@
                                         <thead>
                                         <tr>
                                             <th>Month</th>
+                                            <th>Currency</th>
                                             <th>Invoices</th>
                                             <th>Total</th>
                                             <th>Paid</th>
@@ -379,10 +415,16 @@
                                         @foreach($monthlyInvoiceTrend as $row)
                                             <tr>
                                                 <td>{{ $row['month'] }}</td>
+                                                <td>
+                                                    {{ $row['currency'] ?? '' }}
+                                                    @if(!empty($row['currency_name']))
+                                                        <div class="small text-muted">{{ $row['currency_name'] }}</div>
+                                                    @endif
+                                                </td>
                                                 <td>{{ number_format((int) ($row['invoices_count'] ?? 0)) }}</td>
-                                                <td>{{ number_format((float) ($row['total_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
-                                                <td>{{ number_format((float) ($row['amount_paid_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
-                                                <td>{{ number_format((float) ($row['amount_due_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? 'USD' }}</td>
+                                                <td>{{ number_format((float) ($row['total_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? '' }}</td>
+                                                <td>{{ number_format((float) ($row['amount_paid_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? '' }}</td>
+                                                <td>{{ number_format((float) ($row['amount_due_decimal'] ?? 0), 2) }} {{ $row['currency'] ?? '' }}</td>
                                             </tr>
                                         @endforeach
                                         </tbody>
@@ -392,7 +434,7 @@
                                 <hr>
 
                                 <div class="small text-muted">
-                                    This trend is built from the local billing invoice ledger synced from Stripe and filtered using the current report controls.
+                                    This trend is built from the local billing invoice ledger synced from Stripe and grouped by month and currency.
                                 </div>
                             @endif
                         </div>
@@ -402,11 +444,11 @@
                         <div class="card-body">
                             <h6 class="mb-3">Interpretation Notes</h6>
                             <ul class="mb-0 ps-3">
-                                <li class="mb-2">Estimated MRR currently counts only active monthly paid subscriptions.</li>
+                                <li class="mb-2">Estimated MRR is now grouped by currency instead of assuming a single static currency.</li>
                                 <li class="mb-2">Trial plans are excluded from revenue estimates.</li>
                                 <li class="mb-2">Canceled, past_due, suspended, and expired subscriptions are excluded from MRR in this version.</li>
                                 <li class="mb-2">Recent invoices and monthly invoice trend are derived from the local billing invoice ledger synced from Stripe.</li>
-                                <li class="mb-2">The current filter set now controls the invoice tables and trend widgets, preparing this report for export actions in the next step.</li>
+                                <li class="mb-2">The report now uses the central currencies reference data to improve clarity and prepare billing exports.</li>
                             </ul>
                         </div>
                     </div>
