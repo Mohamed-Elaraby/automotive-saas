@@ -149,7 +149,7 @@ class PlanController extends Controller
             ->route('admin.plans.index')
             ->with('success', $message);
     }
-    
+
     protected function validatedData(Request $request, ?int $planId = null): array
     {
         return $request->validate([

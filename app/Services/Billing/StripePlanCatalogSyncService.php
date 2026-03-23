@@ -20,7 +20,7 @@ class StripePlanCatalogSyncService
     {
         return $this->stripeSecret() !== '';
     }
-    
+
     public function syncPlan(Plan $plan): array
     {
         if (! $this->isConfigured()) {

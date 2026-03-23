@@ -6,22 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('currencies', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        Schema::connection(config('tenancy.database.central_connection') ?? config('database.default'))
+            ->create('currencies', function (Blueprint $table) {
+                $table->id();
+                $table->string('code', 3)->unique();
+                $table->string('name');
+                $table->string('symbol', 10)->nullable();
+                $table->string('native_symbol', 20)->nullable();
+                $table->unsignedTinyInteger('decimal_places')->default(2);
+                $table->string('thousands_separator', 5)->default(',');
+                $table->string('decimal_separator', 5)->default('.');
+                $table->boolean('is_active')->default(true)->index();
+                $table->unsignedInteger('sort_order')->default(0)->index();
+                $table->timestamps();
+            });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('currencies');
+        Schema::connection(config('tenancy.database.central_connection') ?? config('database.default'))
+            ->dropIfExists('currencies');
     }
 };
