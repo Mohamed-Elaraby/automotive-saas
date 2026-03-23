@@ -104,6 +104,15 @@ class CityController extends Controller
             ->with('success', 'City updated successfully.');
     }
 
+    public function destroy(City $city): RedirectResponse
+    {
+        $city->delete();
+
+        return redirect()
+            ->route('admin.reference-data.cities.index')
+            ->with('success', 'City deleted successfully.');
+    }
+
     protected function validateRequest(Request $request, ?int $cityId = null): array
     {
         return $request->validate([

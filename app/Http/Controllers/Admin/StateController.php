@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\City;
 use App\Models\Country;
 use App\Models\State;
 use Illuminate\Http\RedirectResponse;
@@ -55,7 +56,12 @@ class StateController extends Controller
             'states' => $states,
             'filters' => $filters,
             'countries' => Country::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
-            'types' => State::query()->whereNotNull('type')->where('type', '!=', '')->distinct()->orderBy('type')->pluck('type'),
+            'types' => State::query()
+                ->whereNotNull('type')
+                ->where('type', '!=', '')
+                ->distinct()
+                ->orderBy('type')
+                ->pluck('type'),
         ]);
     }
 
@@ -95,6 +101,23 @@ class StateController extends Controller
         return redirect()
             ->route('admin.reference-data.states.index')
             ->with('success', 'State updated successfully.');
+    }
+
+    public function destroy(State $state): RedirectResponse
+    {
+        $hasCities = City::query()->where('state_id', $state->id)->exists();
+
+        if ($hasCities) {
+            return redirect()
+                ->route('admin.reference-data.states.index')
+                ->with('error', 'This state cannot be deleted because it has related cities.');
+        }
+
+        $state->delete();
+
+        return redirect()
+            ->route('admin.reference-data.states.index')
+            ->with('success', 'State deleted successfully.');
     }
 
     protected function validateRequest(Request $request, ?int $stateId = null): array

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -81,6 +82,25 @@ class CurrencyController extends Controller
         return redirect()
             ->route('admin.reference-data.currencies.index')
             ->with('success', 'Currency updated successfully.');
+    }
+
+    public function destroy(Currency $currency): RedirectResponse
+    {
+        $isUsedByCountries = Country::query()
+            ->where('currency_code', $currency->code)
+            ->exists();
+
+        if ($isUsedByCountries) {
+            return redirect()
+                ->route('admin.reference-data.currencies.index')
+                ->with('error', 'This currency cannot be deleted because it is linked to one or more countries.');
+        }
+
+        $currency->delete();
+
+        return redirect()
+            ->route('admin.reference-data.currencies.index')
+            ->with('success', 'Currency deleted successfully.');
     }
 
     protected function validateRequest(Request $request, ?int $currencyId = null): array

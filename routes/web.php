@@ -85,6 +85,7 @@ Route::prefix('admin')
                         Route::post('/', [CurrencyController::class, 'store'])->name('store');
                         Route::get('/{currency}/edit', [CurrencyController::class, 'edit'])->name('edit');
                         Route::put('/{currency}', [CurrencyController::class, 'update'])->name('update');
+                        Route::delete('/{currency}', [CurrencyController::class, 'destroy'])->name('destroy');
                     });
 
                 Route::prefix('countries')
@@ -95,6 +96,7 @@ Route::prefix('admin')
                         Route::post('/', [CountryController::class, 'store'])->name('store');
                         Route::get('/{country}/edit', [CountryController::class, 'edit'])->name('edit');
                         Route::put('/{country}', [CountryController::class, 'update'])->name('update');
+                        Route::delete('/{country}', [CountryController::class, 'destroy'])->name('destroy');
                     });
 
                 Route::prefix('states')
@@ -105,6 +107,7 @@ Route::prefix('admin')
                         Route::post('/', [StateController::class, 'store'])->name('store');
                         Route::get('/{state}/edit', [StateController::class, 'edit'])->name('edit');
                         Route::put('/{state}', [StateController::class, 'update'])->name('update');
+                        Route::delete('/{state}', [StateController::class, 'destroy'])->name('destroy');
                     });
 
                 Route::prefix('cities')
@@ -115,6 +118,7 @@ Route::prefix('admin')
                         Route::post('/', [CityController::class, 'store'])->name('store');
                         Route::get('/{city}/edit', [CityController::class, 'edit'])->name('edit');
                         Route::put('/{city}', [CityController::class, 'update'])->name('update');
+                        Route::delete('/{city}', [CityController::class, 'destroy'])->name('destroy');
                     });
             });
     });

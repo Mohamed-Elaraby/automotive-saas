@@ -19,6 +19,10 @@
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
             <div class="card mb-4">
                 <div class="card-body">
                     <form method="GET" action="{{ route('admin.reference-data.countries.index') }}">
@@ -93,9 +97,19 @@
                                         </td>
                                         <td>{{ $country->sort_order }}</td>
                                         <td class="text-end">
-                                            <a href="{{ route('admin.reference-data.countries.edit', $country->id) }}" class="btn btn-sm btn-outline-primary">
-                                                Edit
-                                            </a>
+                                            <div class="d-inline-flex gap-2">
+                                                <a href="{{ route('admin.reference-data.countries.edit', $country->id) }}" class="btn btn-sm btn-outline-primary">
+                                                    Edit
+                                                </a>
+
+                                                <form method="POST" action="{{ route('admin.reference-data.countries.destroy', $country->id) }}" onsubmit="return confirm('Delete this country?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
