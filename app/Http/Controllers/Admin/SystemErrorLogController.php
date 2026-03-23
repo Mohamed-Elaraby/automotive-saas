@@ -6,12 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\SystemErrorLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class SystemErrorLogController extends Controller
 {
     public function index(Request $request): View
     {
+        if (! $this->hasSystemErrorLogsTable()) {
+            return view('admin.system-errors.index', [
+                'logs' => SystemErrorLog::query()->whereRaw('1 = 0')->paginate(25),
+                'filters' => [
+                    'search' => '',
+                    'route_name' => '',
+                    'is_read' => '',
+                    'is_resolved' => '',
+                    'level' => '',
+                ],
+                'routeNames' => collect(),
+                'levels' => collect(),
+                'stats' => [
+                    'total' => 0,
+                    'unread' => 0,
+                    'unresolved' => 0,
+                    'today' => 0,
+                ],
+            ]);
+        }
+
         $filters = [
             'search' => trim((string) $request->string('search')),
             'route_name' => trim((string) $request->string('route_name')),
@@ -118,5 +140,12 @@ class SystemErrorLogController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Error log marked as resolved.');
+    }
+
+    protected function hasSystemErrorLogsTable(): bool
+    {
+        $connection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+
+        return Schema::connection($connection)->hasTable('system_error_logs');
     }
 }

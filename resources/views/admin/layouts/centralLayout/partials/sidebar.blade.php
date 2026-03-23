@@ -1,10 +1,16 @@
 <?php
 $page = $page ?? '';
 
+$systemErrorUnreadCount = 0;
+
 try {
-    $systemErrorUnreadCount = \App\Models\SystemErrorLog::query()
-        ->where('is_read', false)
-        ->count();
+    $systemErrorConnection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+
+    if (\Illuminate\Support\Facades\Schema::connection($systemErrorConnection)->hasTable('system_error_logs')) {
+        $systemErrorUnreadCount = \App\Models\SystemErrorLog::query()
+            ->where('is_read', false)
+            ->count();
+    }
 } catch (\Throwable $e) {
     $systemErrorUnreadCount = 0;
 }
