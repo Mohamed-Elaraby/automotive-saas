@@ -5,82 +5,89 @@ $topbarNotifications = AdminNotificationController::topbarData();
 $topbarNotificationCount = (int) ($topbarNotifications['count'] ?? 0);
 $topbarNotificationItems = $topbarNotifications['items'] ?? collect();
 
-$severityBadgeMap = [
+$severityClassMap = [
     'info' => 'bg-primary',
     'success' => 'bg-success',
-    'warning' => 'bg-warning text-dark',
+    'warning' => 'bg-warning',
     'error' => 'bg-danger',
 ];
 ?>
 
-<li class="nav-item dropdown notification-nav">
-    <a href="#" class="dropdown-toggle nav-link position-relative" data-bs-toggle="dropdown">
-        <i class="isax isax-notification-bing"></i>
+<div class="notification_item me-2">
+    <a href="#" class="btn btn-menubar position-relative" id="notification_popup" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+        <i class="isax isax-notification-bing5"></i>
         @if($topbarNotificationCount > 0)
-            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
+            <span class="position-absolute badge bg-danger border border-white rounded-pill" style="top: 6px; right: 6px;">
                 {{ $topbarNotificationCount > 99 ? '99+' : $topbarNotificationCount }}
             </span>
+        @else
+            <span class="position-absolute badge bg-success border border-white"></span>
         @endif
     </a>
 
-    <div class="dropdown-menu notifications dropdown-menu-end">
-        <div class="topnav-dropdown-header d-flex justify-content-between align-items-center">
-            <span class="notification-title">Notifications</span>
-            <a href="{{ route('admin.notifications.index') }}" class="text-decoration-none small">
-                View All
-            </a>
+    <div class="dropdown-menu p-0 dropdown-menu-end dropdown-menu-lg" style="min-height: 300px;">
+        <div class="p-2 border-bottom">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h6 class="m-0 fs-16 fw-semibold">Notifications</h6>
+                </div>
+                <div class="col-auto">
+                    <span class="badge bg-light text-dark">{{ $topbarNotificationCount }}</span>
+                </div>
+            </div>
         </div>
 
-        <div class="noti-content">
-            <ul class="notification-list">
-                @forelse($topbarNotificationItems as $notification)
-                    <li class="notification-message">
-                        <div class="d-flex flex-column gap-2 p-2">
-                            <a href="{{ $notification->resolvedUrl() }}" class="text-decoration-none">
-                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <div class="fw-semibold text-dark">
-                                        {{ \Illuminate\Support\Str::limit((string) $notification->title, 70) }}
-                                    </div>
-                                    <span class="badge {{ $severityBadgeMap[$notification->severity] ?? 'bg-secondary' }}">
-                                        {{ strtoupper((string) $notification->severity) }}
-                                    </span>
-                                </div>
+        <div class="notification-body position-relative z-2 rounded-0" data-simplebar>
+            @forelse($topbarNotificationItems as $notification)
+                <div class="dropdown-item notification-item py-3 border-bottom">
+                    <div class="d-flex align-items-start gap-2">
+                        <div class="flex-shrink-0">
+                            <span class="badge {{ $severityClassMap[$notification->severity] ?? 'bg-secondary' }}">
+                                {{ strtoupper((string) $notification->severity) }}
+                            </span>
+                        </div>
 
-                                <div class="small text-muted">
-                                    {{ \Illuminate\Support\Str::limit((string) $notification->message, 90) }}
+                        <div class="flex-grow-1">
+                            <a href="{{ route('admin.notifications.show', $notification->id) }}" class="text-decoration-none">
+                                <div class="fw-semibold text-dark mb-1">
+                                    {{ \Illuminate\Support\Str::limit((string) $notification->title, 70) }}
                                 </div>
-
-                                <div class="small text-muted">
+                                <div class="text-muted small mb-1">
+                                    {{ \Illuminate\Support\Str::limit((string) $notification->message, 100) }}
+                                </div>
+                                <div class="text-muted small">
                                     {{ optional($notification->notified_at)->format('Y-m-d H:i:s') ?: '-' }}
                                 </div>
                             </a>
 
-                            <div class="d-flex gap-2">
+                            <div class="mt-2 d-flex gap-2">
                                 <a href="{{ route('admin.notifications.show', $notification->id) }}" class="btn btn-sm btn-outline-primary">
                                     Open
                                 </a>
 
-                                <form method="POST" action="{{ route('admin.notifications.mark-read', $notification->id) }}">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-dark">
-                                        Mark Read
-                                    </button>
-                                </form>
+                                @if(! $notification->is_read)
+                                    <form method="POST" action="{{ route('admin.notifications.mark-read', $notification->id) }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-dark">
+                                            Mark Read
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </div>
-                    </li>
-                @empty
-                    <li class="notification-message">
-                        <div class="p-3 text-muted">
-                            No unread notifications.
-                        </div>
-                    </li>
-                @endforelse
-            </ul>
+                    </div>
+                </div>
+            @empty
+                <div class="dropdown-item notification-item py-4 text-center text-muted">
+                    No notifications yet.
+                </div>
+            @endforelse
         </div>
 
-        <div class="topnav-dropdown-footer">
-            <a href="{{ route('admin.notifications.index') }}">Open Notification Center</a>
+        <div class="p-2 rounded-bottom border-top text-center">
+            <a href="{{ route('admin.notifications.index') }}" class="text-center fw-medium fs-14 mb-0">
+                View All
+            </a>
         </div>
     </div>
-</li>
+</div>
