@@ -4,6 +4,11 @@ use App\Http\Controllers\Admin\SystemErrorLogController;
 $topbarSystemErrors = SystemErrorLogController::topbarData();
 $topbarSystemErrorCount = (int) ($topbarSystemErrors['count'] ?? 0);
 $topbarSystemErrorItems = $topbarSystemErrors['items'] ?? collect();
+
+$headerUser = auth()->user();
+$headerUserName = $headerUser?->name ?: 'Admin User';
+$headerUserEmail = $headerUser?->email ?: 'no-email@example.com';
+$headerUserInitial = strtoupper(substr((string) $headerUserName, 0, 1));
 ?>
 
 <div class="header">
@@ -94,36 +99,40 @@ $topbarSystemErrorItems = $topbarSystemErrors['items'] ?? collect();
                     <a href="#" class="dropdown-toggle nav-link userset" data-bs-toggle="dropdown">
                         <span class="user-info">
                             <span class="user-letter">
-                                {{ strtoupper(substr((string) auth()->user()->name, 0, 1)) }}
+                                {{ $headerUserInitial }}
                             </span>
                             <span class="user-detail">
-                                <span class="user-name">{{ auth()->user()->name }}</span>
-                                <span class="user-role">{{ auth()->user()->email }}</span>
+                                <span class="user-name">{{ $headerUserName }}</span>
+                                <span class="user-role">{{ $headerUserEmail }}</span>
                             </span>
                         </span>
                     </a>
+
                     <div class="dropdown-menu menu-drop-user dropdown-menu-end">
                         <div class="profilename">
                             <div class="profileset">
                                 <span class="user-img">
                                     <span class="user-letter">
-                                        {{ strtoupper(substr((string) auth()->user()->name, 0, 1)) }}
+                                        {{ $headerUserInitial }}
                                     </span>
                                 </span>
                                 <div class="profilesets">
-                                    <h6>{{ auth()->user()->name }}</h6>
-                                    <h5>{{ auth()->user()->email }}</h5>
+                                    <h6>{{ $headerUserName }}</h6>
+                                    <h5>{{ $headerUserEmail }}</h5>
                                 </div>
                             </div>
                             <hr class="m-0">
-                            <a class="dropdown-item logout pb-0" href="{{ route('logout') }}"
-                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                <i class="me-2 isax isax-logout"></i>Logout
-                            </a>
 
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
+                            @if($headerUser)
+                                <a class="dropdown-item logout pb-0" href="{{ route('logout') }}"
+                                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="me-2 isax isax-logout"></i>Logout
+                                </a>
+
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                    @csrf
+                                </form>
+                            @endif
                         </div>
                     </div>
                 </li>
