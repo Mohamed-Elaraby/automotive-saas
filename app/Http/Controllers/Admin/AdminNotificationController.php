@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminNotificationController extends Controller
 {
@@ -109,26 +112,84 @@ class AdminNotificationController extends Controller
             ->with('success', 'Notification archived successfully.');
     }
 
+    public function unreadSummary(): JsonResponse
+    {
+        return response()->json($this->topbarPayload());
+    }
+
+    public function stream(): StreamedResponse
+    {
+        $response = Response::stream(function () {
+            @ini_set('output_buffering', 'off');
+            @ini_set('zlib.output_compression', false);
+            @ini_set('implicit_flush', true);
+
+            while (true) {
+                if (connection_aborted()) {
+                    break;
+                }
+
+                $payload = $this->topbarPayload();
+
+                echo "event: notifications\n";
+                echo 'data: ' . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n\n";
+
+                @ob_flush();
+                @flush();
+
+                sleep(10);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no',
+        ]);
+
+        return $response;
+    }
+
     public static function topbarData(): array
     {
         try {
-            $items = AdminNotification::query()
-                ->active()
-                ->unread()
-                ->orderByDesc('notified_at')
-                ->orderByDesc('id')
-                ->limit(8)
-                ->get();
-
-            return [
-                'count' => AdminNotification::query()->active()->unread()->count(),
-                'items' => $items,
-            ];
+            return app(self::class)->topbarPayload();
         } catch (\Throwable $e) {
             return [
                 'count' => 0,
                 'items' => collect(),
             ];
         }
+    }
+
+    protected function topbarPayload(): array
+    {
+        $items = AdminNotification::query()
+            ->active()
+            ->unread()
+            ->orderByDesc('notified_at')
+            ->orderByDesc('id')
+            ->limit(8)
+            ->get()
+            ->map(function (AdminNotification $notification) {
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->type,
+                    'title' => $notification->title,
+                    'message' => $notification->message,
+                    'severity' => $notification->severity,
+                    'is_read' => (bool) $notification->is_read,
+                    'notified_at' => optional($notification->notified_at)->format('Y-m-d H:i:s'),
+                    'show_url' => route('admin.notifications.show', $notification->id),
+                    'mark_read_url' => route('admin.notifications.mark-read', $notification->id),
+                    'target_url' => $notification->resolvedUrl(),
+                ];
+            })
+            ->values();
+
+        return [
+            'count' => AdminNotification::query()->active()->unread()->count(),
+            'items' => $items,
+            'index_url' => route('admin.notifications.index'),
+        ];
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Exceptions;
 
-use App\Models\AdminNotification;
+use App\Services\Notifications\AdminNotificationService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
@@ -160,12 +160,6 @@ class Handler extends ExceptionHandler
                 return;
             }
 
-            $connection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
-
-            if (! Schema::connection($connection)->hasTable('admin_notifications')) {
-                return;
-            }
-
             $request = request();
             $user = null;
 
@@ -175,20 +169,13 @@ class Handler extends ExceptionHandler
                 $user = null;
             }
 
-            AdminNotification::query()->create([
-                'type' => 'system_error',
-                'title' => 'System Error Detected',
-                'message' => Str::limit((string) $e->getMessage(), 1000, '...[truncated]'),
-                'severity' => 'error',
-                'source_type' => get_class($e),
-                'source_id' => null,
-                'route_name' => 'admin.system-errors.index',
-                'route_params' => [],
-                'target_url' => null,
-                'tenant_id' => $user->tenant_id ?? null,
-                'user_id' => $user?->id,
-                'user_email' => $user?->email,
-                'context_payload' => [
+            app(AdminNotificationService::class)->createSystemErrorNotification(
+                message: Str::limit((string) $e->getMessage(), 1000, '...[truncated]'),
+                exceptionClass: get_class($e),
+                tenantId: $user->tenant_id ?? null,
+                userId: $user?->id,
+                userEmail: $user?->email,
+                contextPayload: [
                 'exception_class' => get_class($e),
                 'request_url' => $request?->fullUrl(),
                     'request_method' => $request?->method(),
@@ -198,12 +185,7 @@ class Handler extends ExceptionHandler
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
                 ],
-                'is_read' => false,
-                'read_at' => null,
-                'is_archived' => false,
-                'archived_at' => null,
-                'notified_at' => now(),
-            ]);
+            );
         } catch (Throwable $notificationException) {
         }
     }
