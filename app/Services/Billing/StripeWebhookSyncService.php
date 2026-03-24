@@ -2,243 +2,74 @@
 
 namespace App\Services\Billing;
 
-use App\Support\Billing\SubscriptionStatuses;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Throwable;
+use App\Models\Subscription;
+use Illuminate\Support\Arr;
 
 class StripeWebhookSyncService
 {
     public function __construct(
-        protected TenantBillingLifecycleService $tenantBillingLifecycleService,
-        protected LocalBillingInvoiceService $localBillingInvoiceService
+        protected TenantBillingLifecycleService $lifecycleService,
+        protected BillingNotificationService $billingNotificationService
     ) {
     }
 
-protected function centralConnection(): string
+public function handleEvent(string $eventType, array $payload): void
 {
-    return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
-}
-
-protected function subscriptionsTable()
-{
-    return DB::connection($this->centralConnection())->table('subscriptions');
-}
-
-protected function findSubscriptionById(int|string $subscriptionId): ?object
-    {
-        return $this->subscriptionsTable()
-            ->where('id', $subscriptionId)
-            ->first();
+    if ($eventType === 'invoice.payment_failed') {
+        $this->handleInvoicePaymentFailed($payload);
+        return;
     }
 
-    protected function findSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?object
+    if ($eventType === 'invoice.paid') {
+        $this->handleInvoicePaid($payload);
+        return;
+    }
+}
+
+protected function handleInvoicePaymentFailed(array $payload): void
 {
-    return $this->subscriptionsTable()
+    $gatewaySubscriptionId = (string) Arr::get($payload, 'data.object.subscription', '');
+
+    if ($gatewaySubscriptionId === '') {
+        return;
+    }
+
+    $subscription = Subscription::query()
+        ->where('gateway', 'stripe')
         ->where('gateway_subscription_id', $gatewaySubscriptionId)
         ->first();
-}
-
-    public function handleEvent(object $event): void
-{
-    $type = $event->type ?? null;
-    $object = $event->data->object ?? null;
-
-    if (! $type || ! $object) {
-        return;
-    }
-
-    match ($type) {
-    'checkout.session.completed' => $this->handleCheckoutSessionCompleted($object),
-
-            'customer.subscription.created',
-            'customer.subscription.updated',
-            'customer.subscription.deleted' => $this->handleSubscriptionChanged($object),
-
-            'invoice.paid' => $this->handleInvoicePaid($object),
-            'invoice.payment_failed' => $this->handleInvoicePaymentFailed($object),
-
-            'invoice.finalized',
-            'invoice.updated',
-            'invoice.voided',
-            'invoice.marked_uncollectible' => $this->syncInvoiceToLedger($object),
-
-            default => null,
-        };
-    }
-
-    protected function handleCheckoutSessionCompleted(object $session): void
-{
-    $subscriptionRowId = $session->metadata->subscription_row_id ?? null;
-    $targetPlanId = $session->metadata->plan_id ?? null;
-
-    if (! $subscriptionRowId) {
-        return;
-    }
-
-    $this->subscriptionsTable()
-        ->where('id', $subscriptionRowId)
-        ->update([
-            'plan_id' => $targetPlanId ?: DB::raw('plan_id'),
-            'gateway' => 'stripe',
-            'gateway_customer_id' => $session->customer ?? null,
-            'gateway_subscription_id' => $session->subscription ?? null,
-            'gateway_checkout_session_id' => $session->id ?? null,
-            'updated_at' => now(),
-        ]);
-}
-
-    protected function handleSubscriptionChanged(object $stripeSubscription): void
-{
-    $subscriptionRowId = $stripeSubscription->metadata->subscription_row_id ?? null;
-    $targetPlanId = $stripeSubscription->metadata->plan_id ?? null;
-    $subscription = null;
-
-    if ($subscriptionRowId) {
-        $subscription = $this->findSubscriptionById($subscriptionRowId);
-    }
-
-    if (! $subscription && ! empty($stripeSubscription->id)) {
-        $subscription = $this->findSubscriptionByGatewaySubscriptionId((string) $stripeSubscription->id);
-    }
 
     if (! $subscription) {
         return;
     }
 
-    $endsAt = null;
+    $this->lifecycleService->markAsPastDue($subscription, now());
 
-    if (! empty($stripeSubscription->cancel_at)) {
-        $endsAt = Carbon::createFromTimestamp($stripeSubscription->cancel_at);
-    } elseif (! empty($stripeSubscription->current_period_end)) {
-        $endsAt = Carbon::createFromTimestamp($stripeSubscription->current_period_end);
-    }
+    $this->billingNotificationService->paymentFailed($subscription->fresh(), [
+        'stripe_event' => 'invoice.payment_failed',
+        'invoice_id' => Arr::get($payload, 'data.object.id'),
+        'billing_reason' => Arr::get($payload, 'data.object.billing_reason'),
+        'attempt_count' => Arr::get($payload, 'data.object.attempt_count'),
+    ]);
+}
 
-    $cancelledAt = ! empty($stripeSubscription->canceled_at)
-        ? Carbon::createFromTimestamp($stripeSubscription->canceled_at)
-        : null;
-
-    $priceId = $stripeSubscription->items->data[0]->price->id ?? null;
-    $cancelAtPeriodEnd = (bool) ($stripeSubscription->cancel_at_period_end ?? false);
-
-    $internalStatus = $this->mapStripeSubscriptionStatus(
-        $stripeSubscription->status ?? null,
-        $cancelAtPeriodEnd
-    );
-
-    $this->subscriptionsTable()
-        ->where('id', $subscription->id)
-        ->update([
-            'plan_id' => $targetPlanId ?: DB::raw('plan_id'),
-            'gateway' => 'stripe',
-            'gateway_customer_id' => $stripeSubscription->customer ?? null,
-            'gateway_subscription_id' => $stripeSubscription->id ?? null,
-            'gateway_price_id' => $priceId,
-            'ends_at' => $endsAt,
-            'cancelled_at' => $internalStatus === SubscriptionStatuses::CANCELLED ? ($cancelledAt ?: now()) : null,
-            'updated_at' => now(),
-        ]);
-
-    $fresh = $this->findSubscriptionById($subscription->id);
-
-    match ($internalStatus) {
-    SubscriptionStatuses::TRIALING => $this->subscriptionsTable()
-    ->where('id', $subscription->id)
-    ->update([
-        'status' => SubscriptionStatuses::TRIALING,
-        'grace_ends_at' => null,
-        'last_payment_failed_at' => null,
-        'past_due_started_at' => null,
-        'suspended_at' => null,
-        'payment_failures_count' => 0,
-        'updated_at' => now(),
-    ]),
-
-            SubscriptionStatuses::ACTIVE => $this->tenantBillingLifecycleService->markAsRecovered($fresh),
-            SubscriptionStatuses::PAST_DUE => $this->tenantBillingLifecycleService->markAsPastDue($fresh),
-            SubscriptionStatuses::SUSPENDED => $this->tenantBillingLifecycleService->markAsSuspended($fresh),
-
-            SubscriptionStatuses::CANCELLED => $this->tenantBillingLifecycleService->markAsCancelled(
-    $fresh,
-    $cancelledAt ?: now(),
-    $endsAt
-),
-
-            SubscriptionStatuses::EXPIRED => $this->tenantBillingLifecycleService->markAsExpired($fresh),
-
-            default => null,
-        };
-    }
-
-    protected function handleInvoicePaid(object $invoice): void
+protected function handleInvoicePaid(array $payload): void
 {
-    $this->syncInvoiceToLedger($invoice);
+    $gatewaySubscriptionId = (string) Arr::get($payload, 'data.object.subscription', '');
 
-    $gatewaySubscriptionId = $invoice->subscription ?? null;
-
-    if (! $gatewaySubscriptionId) {
+    if ($gatewaySubscriptionId === '') {
         return;
     }
 
-    $subscription = $this->findSubscriptionByGatewaySubscriptionId((string) $gatewaySubscriptionId);
+    $subscription = Subscription::query()
+        ->where('gateway', 'stripe')
+        ->where('gateway_subscription_id', $gatewaySubscriptionId)
+        ->first();
 
     if (! $subscription) {
         return;
     }
 
-    $paidAt = ! empty($invoice->status_transitions->paid_at)
-        ? Carbon::createFromTimestamp($invoice->status_transitions->paid_at)
-        : now();
-
-    $this->tenantBillingLifecycleService->markAsRecovered($subscription, $paidAt);
+    $this->lifecycleService->markAsRecovered($subscription, now());
 }
-
-    protected function handleInvoicePaymentFailed(object $invoice): void
-{
-    $this->syncInvoiceToLedger($invoice);
-
-    $gatewaySubscriptionId = $invoice->subscription ?? null;
-
-    if (! $gatewaySubscriptionId) {
-        return;
-    }
-
-    $subscription = $this->findSubscriptionByGatewaySubscriptionId((string) $gatewaySubscriptionId);
-
-    if (! $subscription) {
-        return;
-    }
-
-    $failedAt = ! empty($invoice->created)
-        ? Carbon::createFromTimestamp($invoice->created)
-        : now();
-
-    $this->tenantBillingLifecycleService->markAsPastDue($subscription, $failedAt);
-}
-
-    protected function syncInvoiceToLedger(object $invoice): void
-{
-    try {
-        $this->localBillingInvoiceService->upsertFromStripeInvoice($invoice);
-    } catch (Throwable $e) {
-        report($e);
-    }
-}
-
-    protected function mapStripeSubscriptionStatus(?string $stripeStatus, bool $cancelAtPeriodEnd = false): string
-{
-    if ($cancelAtPeriodEnd && $stripeStatus === 'active') {
-        return SubscriptionStatuses::CANCELLED;
-    }
-
-    return match ($stripeStatus) {
-    'trialing' => SubscriptionStatuses::TRIALING,
-            'active' => SubscriptionStatuses::ACTIVE,
-            'past_due', 'unpaid', 'incomplete' => SubscriptionStatuses::PAST_DUE,
-            'canceled' => SubscriptionStatuses::CANCELLED,
-            'paused' => SubscriptionStatuses::SUSPENDED,
-            'incomplete_expired' => SubscriptionStatuses::EXPIRED,
-            default => SubscriptionStatuses::EXPIRED,
-        };
-    }
 }

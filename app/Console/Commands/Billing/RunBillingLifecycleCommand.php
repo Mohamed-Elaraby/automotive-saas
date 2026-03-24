@@ -2,56 +2,44 @@
 
 namespace App\Console\Commands\Billing;
 
+use App\Models\Subscription;
 use App\Services\Billing\TenantBillingLifecycleService;
+use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 
 class RunBillingLifecycleCommand extends Command
 {
-    protected $signature = 'billing:run-lifecycle {--dry-run}';
+    protected $signature = 'billing:run-lifecycle';
 
-    protected $description = 'Run billing lifecycle transitions such as past_due grace expiration and cancelled subscription expiry';
+    protected $description = 'Run billing lifecycle transitions and alerts';
 
-    public function __construct(
-        protected TenantBillingLifecycleService $tenantBillingLifecycleService
-    ) {
-        parent::__construct();
-    }
+    public function handle(TenantBillingLifecycleService $lifecycleService): int
+    {
+        $now = now();
 
-public function handle(): int
-{
-    if ($this->option('dry-run')) {
-        $this->info('Dry run mode is enabled. No updates will be written.');
+        $trialEndingSoonSubscriptions = Subscription::query()
+            ->where('status', SubscriptionStatuses::TRIALING)
+            ->whereNotNull('trial_ends_at')
+            ->whereBetween('trial_ends_at', [$now->copy(), $now->copy()->addDays(2)])
+            ->get();
 
-        $pastDueToSuspend = \DB::connection(
-            config('tenancy.database.central_connection') ?? config('database.default')
-        )
-            ->table('subscriptions')
-            ->where('status', \App\Support\Billing\SubscriptionStatuses::PAST_DUE)
+        foreach ($trialEndingSoonSubscriptions as $subscription) {
+            $lifecycleService->emitTrialEndingSoon($subscription, Carbon::now());
+            $this->info("Trial ending notification emitted for subscription #{$subscription->id}");
+        }
+
+        $pastDueToSuspend = Subscription::query()
+            ->where('status', SubscriptionStatuses::PAST_DUE)
             ->whereNotNull('grace_ends_at')
-            ->where('grace_ends_at', '<=', now())
-            ->count();
+            ->where('grace_ends_at', '<=', $now)
+            ->get();
 
-        $cancelledToExpire = \DB::connection(
-            config('tenancy.database.central_connection') ?? config('database.default')
-        )
-            ->table('subscriptions')
-            ->where('status', \App\Support\Billing\SubscriptionStatuses::CANCELLED)
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '<=', now())
-            ->count();
-
-        $this->line('Would suspend: ' . $pastDueToSuspend);
-        $this->line('Would expire cancelled: ' . $cancelledToExpire);
+        foreach ($pastDueToSuspend as $subscription) {
+            $lifecycleService->markAsSuspended($subscription, Carbon::now());
+            $this->info("Subscription #{$subscription->id} marked as suspended.");
+        }
 
         return self::SUCCESS;
     }
-
-    $result = $this->tenantBillingLifecycleService->runDailyLifecycle();
-
-    $this->info('Billing lifecycle completed successfully.');
-    $this->line('Suspended: ' . ($result['suspended'] ?? 0));
-    $this->line('Expired cancelled: ' . ($result['expired_cancelled'] ?? 0));
-
-    return self::SUCCESS;
-}
 }
