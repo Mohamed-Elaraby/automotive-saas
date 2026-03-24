@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\Auth\ForgotPasswordController as AdminForgotPasswordController;
+use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\Auth\RegisterController as AdminRegisterController;
+use App\Http\Controllers\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
 use App\Http\Controllers\Admin\BillingReportController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
@@ -8,7 +13,7 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\SystemErrorLogController;
-use App\Http\Controllers\Automotive\TrialSignupController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,7 +45,34 @@ require base_path('routes/products/automotive/front.php');
 */
 Route::prefix('admin')
     ->name('admin.')
+    ->group(function () {
+        Route::middleware('guest:web')->group(function () {
+            Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');
+            Route::post('/login', [AdminLoginController::class, 'login'])->name('login.submit');
+
+            Route::get('/register', [AdminRegisterController::class, 'showRegistrationForm'])->name('register');
+            Route::post('/register', [AdminRegisterController::class, 'register'])->name('register.submit');
+
+            Route::get('/password/reset', [AdminForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+            Route::post('/password/email', [AdminForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+
+            Route::get('/password/reset/{token}', [AdminResetPasswordController::class, 'showResetForm'])->name('password.reset');
+            Route::post('/password/reset', [AdminResetPasswordController::class, 'reset'])->name('password.update');
+        });
+
+        Route::post('/logout', [AdminLoginController::class, 'logout'])
+            ->middleware('auth:web')
+            ->name('logout');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Central Admin Protected Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')
     ->middleware(['auth:web'])
+    ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', function () {
             return view('admin-dashboard');
@@ -137,6 +169,8 @@ Route::prefix('admin')
             ->name('notifications.')
             ->group(function () {
                 Route::get('/', [AdminNotificationController::class, 'index'])->name('index');
+                Route::get('/summary/unread', [AdminNotificationController::class, 'unreadSummary'])->name('unread-summary');
+                Route::get('/stream', [AdminNotificationController::class, 'stream'])->name('stream');
                 Route::get('/{notification}', [AdminNotificationController::class, 'show'])->name('show');
                 Route::post('/{notification}/mark-read', [AdminNotificationController::class, 'markRead'])->name('mark-read');
                 Route::post('/{notification}/archive', [AdminNotificationController::class, 'archive'])->name('archive');
