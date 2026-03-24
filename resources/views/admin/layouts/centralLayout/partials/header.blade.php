@@ -1,10 +1,4 @@
 <?php
-use App\Http\Controllers\Admin\SystemErrorLogController;
-
-$topbarSystemErrors = SystemErrorLogController::topbarData();
-$topbarSystemErrorCount = (int) ($topbarSystemErrors['count'] ?? 0);
-$topbarSystemErrorItems = $topbarSystemErrors['items'] ?? collect();
-
 $headerUser = auth()->user();
 $headerUserName = $headerUser?->name ?: 'Admin User';
 $headerUserEmail = $headerUser?->email ?: 'no-email@example.com';
@@ -30,70 +24,7 @@ $headerUserInitial = strtoupper(substr((string) $headerUserName, 0, 1));
         <div class="header-user">
             <ul class="nav user-menu">
 
-                <li class="nav-item dropdown notification-nav">
-                    <a href="#" class="dropdown-toggle nav-link position-relative" data-bs-toggle="dropdown">
-                        <i class="isax isax-notification-bing"></i>
-                        @if($topbarSystemErrorCount > 0)
-                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
-                                {{ $topbarSystemErrorCount > 99 ? '99+' : $topbarSystemErrorCount }}
-                            </span>
-                        @endif
-                    </a>
-
-                    <div class="dropdown-menu notifications dropdown-menu-end">
-                        <div class="topnav-dropdown-header d-flex justify-content-between align-items-center">
-                            <span class="notification-title">System Errors</span>
-                            <a href="{{ route('admin.system-errors.index') }}" class="text-decoration-none small">
-                                View All
-                            </a>
-                        </div>
-
-                        <div class="noti-content">
-                            <ul class="notification-list">
-                                @forelse($topbarSystemErrorItems as $errorItem)
-                                    <li class="notification-message">
-                                        <div class="d-flex flex-column gap-2 p-2">
-                                            <a href="{{ route('admin.system-errors.show', $errorItem->id) }}" class="text-decoration-none">
-                                                <div class="fw-semibold text-dark">
-                                                    {{ \Illuminate\Support\Str::limit((string) $errorItem->message, 80) }}
-                                                </div>
-                                                <div class="small text-muted">
-                                                    {{ $errorItem->exception_class ?? '-' }}
-                                                </div>
-                                                <div class="small text-muted">
-                                                    {{ optional($errorItem->occurred_at)->format('Y-m-d H:i:s') ?: '-' }}
-                                                </div>
-                                            </a>
-
-                                            <div class="d-flex gap-2">
-                                                <a href="{{ route('admin.system-errors.show', $errorItem->id) }}" class="btn btn-sm btn-outline-primary">
-                                                    Open
-                                                </a>
-
-                                                <form method="POST" action="{{ route('admin.system-errors.mark-read', $errorItem->id) }}">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-dark">
-                                                        Mark Read
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </li>
-                                @empty
-                                    <li class="notification-message">
-                                        <div class="p-3 text-muted">
-                                            No unread system errors.
-                                        </div>
-                                    </li>
-                                @endforelse
-                            </ul>
-                        </div>
-
-                        <div class="topnav-dropdown-footer">
-                            <a href="{{ route('admin.system-errors.index') }}">Open Error Center</a>
-                        </div>
-                    </div>
-                </li>
+                @include('admin.layouts.centralLayout.partials.topbar-notifications')
 
                 <li class="nav-item dropdown has-arrow main-drop">
                     <a href="#" class="dropdown-toggle nav-link userset" data-bs-toggle="dropdown">

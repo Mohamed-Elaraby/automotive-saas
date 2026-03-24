@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Models\AdminNotification;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             $this->storeExceptionInDatabase($e);
+            $this->storeExceptionNotification($e);
         });
     }
 
@@ -40,21 +42,17 @@ class Handler extends ExceptionHandler
         return array_filter([
             'app_env' => config('app.env'),
             'app_url' => config('app.url'),
-
             'request_id' => $request?->headers->get('X-Request-Id'),
             'request_method' => $request?->method(),
             'request_url' => $request?->fullUrl(),
             'request_path' => $request?->path(),
             'route_name' => optional($request?->route())->getName(),
             'route_action' => optional($request?->route())->getActionName(),
-
             'ip' => $request?->ip(),
             'user_agent' => $request?->userAgent(),
-
             'user_id' => $user?->id,
             'user_email' => $user?->email,
             'tenant_id' => $user->tenant_id ?? null,
-
             'input' => $this->safeInput($request),
         ], function ($value) {
         return ! is_null($value);
@@ -110,7 +108,6 @@ class Handler extends ExceptionHandler
             }
 
             $request = request();
-
             $user = null;
 
             try {
@@ -153,7 +150,61 @@ class Handler extends ExceptionHandler
                     'updated_at' => now(),
                 ]);
         } catch (Throwable $loggingException) {
-            // Never allow exception logging to break the original exception flow.
+        }
+    }
+
+    protected function storeExceptionNotification(Throwable $e): void
+    {
+        try {
+            if ($this->shouldntReport($e)) {
+                return;
+            }
+
+            $connection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+
+            if (! Schema::connection($connection)->hasTable('admin_notifications')) {
+                return;
+            }
+
+            $request = request();
+            $user = null;
+
+            try {
+                $user = auth()->user();
+            } catch (Throwable $exception) {
+                $user = null;
+            }
+
+            AdminNotification::query()->create([
+                'type' => 'system_error',
+                'title' => 'System Error Detected',
+                'message' => Str::limit((string) $e->getMessage(), 1000, '...[truncated]'),
+                'severity' => 'error',
+                'source_type' => get_class($e),
+                'source_id' => null,
+                'route_name' => 'admin.system-errors.index',
+                'route_params' => [],
+                'target_url' => null,
+                'tenant_id' => $user->tenant_id ?? null,
+                'user_id' => $user?->id,
+                'user_email' => $user?->email,
+                'context_payload' => [
+                'exception_class' => get_class($e),
+                'request_url' => $request?->fullUrl(),
+                    'request_method' => $request?->method(),
+                    'route_name' => optional($request?->route())->getName(),
+                    'route_action' => optional($request?->route())->getActionName(),
+                    'ip' => $request?->ip(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ],
+                'is_read' => false,
+                'read_at' => null,
+                'is_archived' => false,
+                'archived_at' => null,
+                'notified_at' => now(),
+            ]);
+        } catch (Throwable $notificationException) {
         }
     }
 }

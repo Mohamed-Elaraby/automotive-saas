@@ -131,6 +131,15 @@ Route::prefix('admin')
                 Route::post('/{systemError}/mark-read', [SystemErrorLogController::class, 'markRead'])->name('mark-read');
                 Route::post('/{systemError}/mark-resolved', [SystemErrorLogController::class, 'markResolved'])->name('mark-resolved');
             });
+
+        Route::prefix('notifications')
+            ->name('notifications.')
+            ->group(function () {
+                Route::get('/', [AdminNotificationController::class, 'index'])->name('index');
+                Route::get('/{notification}', [AdminNotificationController::class, 'show'])->name('show');
+                Route::post('/{notification}/mark-read', [AdminNotificationController::class, 'markRead'])->name('mark-read');
+                Route::post('/{notification}/archive', [AdminNotificationController::class, 'archive'])->name('archive');
+            });
     });
 //Route::get('/', function () {
 //    return view('index');
