@@ -1,8 +1,14 @@
-<!-- Topbar Start -->
+<?php
+use App\Http\Controllers\Admin\SystemErrorLogController;
+
+$topbarSystemErrors = SystemErrorLogController::topbarData();
+$topbarSystemErrorCount = (int) ($topbarSystemErrors['count'] ?? 0);
+$topbarSystemErrorItems = $topbarSystemErrors['items'] ?? collect();
+?>
+
 <div class="header">
     <div class="main-header">
 
-        <!-- Logo -->
         <div class="header-left">
             <a href="{{ route('admin.dashboard') }}" class="logo">
                 <img src="{{ url('theme/img/logo.svg') }}" alt="Logo">
@@ -12,243 +18,117 @@
             </a>
         </div>
 
-        <!-- Sidebar Menu Toggle Button -->
         <a id="mobile_btn" class="mobile_btn" href="#sidebar">
-            <span class="bar-icon">
-                <span></span>
-                <span></span>
-                <span></span>
-            </span>
+            <i class="isax isax-menu-1"></i>
         </a>
 
         <div class="header-user">
-            <div class="nav user-menu nav-list">
-                <div class="me-auto d-flex align-items-center" id="header-search">
+            <ul class="nav user-menu">
 
-                    <!-- Add -->
-                    <div class="dropdown me-3">
-                        <a class="btn btn-primary bg-gradient btn-xs btn-icon rounded-circle d-flex align-items-center justify-content-center"
-                           data-bs-toggle="dropdown"
-                           href="javascript:void(0);"
-                           role="button">
-                            <i class="isax isax-add text-white"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-start p-2">
-                            <li>
-                                <a href="{{ route('admin.plans.create') }}" class="dropdown-item d-flex align-items-center">
-                                    <i class="isax isax-add-circle me-2"></i>New Plan
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('admin.plans.index') }}" class="dropdown-item d-flex align-items-center">
-                                    <i class="isax isax-transaction-minus me-2"></i>All Plans
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                <li class="nav-item dropdown notification-nav">
+                    <a href="#" class="dropdown-toggle nav-link position-relative" data-bs-toggle="dropdown">
+                        <i class="isax isax-notification-bing"></i>
+                        @if($topbarSystemErrorCount > 0)
+                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
+                                {{ $topbarSystemErrorCount > 99 ? '99+' : $topbarSystemErrorCount }}
+                            </span>
+                        @endif
+                    </a>
 
-                    <!-- Breadcrumb -->
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb breadcrumb-divide mb-0">
-                            @if(Route::is('admin.dashboard'))
-                                <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
-                            @endif
+                    <div class="dropdown-menu notifications dropdown-menu-end">
+                        <div class="topnav-dropdown-header d-flex justify-content-between align-items-center">
+                            <span class="notification-title">System Errors</span>
+                            <a href="{{ route('admin.system-errors.index') }}" class="text-decoration-none small">
+                                View All
+                            </a>
+                        </div>
 
-                            @if(Route::is('admin.plans.index'))
-                                <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Plans</li>
-                            @endif
-
-                            @if(Route::is('admin.plans.create'))
-                                <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.plans.index') }}">Plans</a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Create</li>
-                            @endif
-
-                            @if(Route::is('admin.plans.edit'))
-                                <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
-                                    </a>
-                                </li>
-                                <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.plans.index') }}">Plans</a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">Edit</li>
-                            @endif
-                        </ol>
-                    </nav>
-                </div>
-
-                <div class="d-flex align-items-center">
-
-                    <!-- Search -->
-                    <div class="input-icon-end position-relative me-2">
-                        <input type="text" class="form-control" placeholder="Search">
-                        <span class="input-icon-addon">
-                            <i class="isax isax-search-normal"></i>
-                        </span>
-                    </div>
-                    <!-- /Search -->
-
-                    <!-- Language Dropdown -->
-                    <div class="nav-item dropdown has-arrow flag-nav me-2">
-                        <a class="btn btn-menubar" data-bs-toggle="dropdown" href="javascript:void(0);" role="button">
-                            <img src="{{ url('theme/img/flags/us.svg') }}" alt="Language" class="img-fluid">
-                        </a>
-                        <ul class="dropdown-menu p-2">
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/us.svg') }}" alt="flag" class="me-2">English
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/de.svg') }}" alt="flag" class="me-2">German
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/fr.svg') }}" alt="flag" class="me-2">French
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/ae.svg') }}" alt="flag" class="me-2">Arabic
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Notification -->
-                    <div class="notification_item me-2">
-                        <a href="#" class="btn btn-menubar position-relative" id="notification_popup" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                            <i class="isax isax-notification-bing5"></i>
-                            <span class="position-absolute badge bg-success border border-white"></span>
-                        </a>
-                        <div class="dropdown-menu p-0 dropdown-menu-end dropdown-menu-lg" style="min-height: 300px;">
-                            <div class="p-2 border-bottom">
-                                <div class="row align-items-center">
-                                    <div class="col">
-                                        <h6 class="m-0 fs-16 fw-semibold">Notifications</h6>
-                                    </div>
-                                    <div class="col-auto">
-                                        <div class="dropdown">
-                                            <a href="#" class="dropdown-toggle drop-arrow-none link-dark" data-bs-toggle="dropdown" data-bs-offset="0,15" aria-expanded="false">
-                                                <i class="isax isax-setting-2 fs-16 text-body align-middle"></i>
+                        <div class="noti-content">
+                            <ul class="notification-list">
+                                @forelse($topbarSystemErrorItems as $errorItem)
+                                    <li class="notification-message">
+                                        <div class="d-flex flex-column gap-2 p-2">
+                                            <a href="{{ route('admin.system-errors.show', $errorItem->id) }}" class="text-decoration-none">
+                                                <div class="fw-semibold text-dark">
+                                                    {{ \Illuminate\Support\Str::limit((string) $errorItem->message, 80) }}
+                                                </div>
+                                                <div class="small text-muted">
+                                                    {{ $errorItem->exception_class ?? '-' }}
+                                                </div>
+                                                <div class="small text-muted">
+                                                    {{ optional($errorItem->occurred_at)->format('Y-m-d H:i:s') ?: '-' }}
+                                                </div>
                                             </a>
-                                            <div class="dropdown-menu dropdown-menu-end">
-                                                <a href="javascript:void(0);" class="dropdown-item"><i class="ti ti-bell-check me-1"></i>Mark as Read</a>
-                                                <a href="javascript:void(0);" class="dropdown-item"><i class="ti ti-trash me-1"></i>Delete All</a>
+
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ route('admin.system-errors.show', $errorItem->id) }}" class="btn btn-sm btn-outline-primary">
+                                                    Open
+                                                </a>
+
+                                                <form method="POST" action="{{ route('admin.system-errors.mark-read', $errorItem->id) }}">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-dark">
+                                                        Mark Read
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
+                                    </li>
+                                @empty
+                                    <li class="notification-message">
+                                        <div class="p-3 text-muted">
+                                            No unread system errors.
+                                        </div>
+                                    </li>
+                                @endforelse
+                            </ul>
+                        </div>
 
-                            <div class="notification-body position-relative z-2 rounded-0" data-simplebar>
-                                <div class="dropdown-item notification-item py-4 text-center text-muted">
-                                    No notifications yet.
-                                </div>
-                            </div>
-
-                            <div class="p-2 rounded-bottom border-top text-center">
-                                <a href="javascript:void(0);" class="text-center fw-medium fs-14 mb-0">
-                                    View All
-                                </a>
-                            </div>
+                        <div class="topnav-dropdown-footer">
+                            <a href="{{ route('admin.system-errors.index') }}">Open Error Center</a>
                         </div>
                     </div>
+                </li>
 
-                    <!-- Light/Dark Mode Button -->
-                    <div class="me-2 theme-item">
-                        <a href="javascript:void(0);" id="dark-mode-toggle" class="theme-toggle btn btn-menubar">
-                            <i class="isax isax-moon"></i>
-                        </a>
-                        <a href="javascript:void(0);" id="light-mode-toggle" class="theme-toggle btn btn-menubar">
-                            <i class="isax isax-sun-1"></i>
-                        </a>
-                    </div>
-
-                    <!-- User Dropdown -->
-                    <div class="dropdown profile-dropdown">
-                        <a href="javascript:void(0);" class="dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                            <span class="avatar online">
-                                <img src="{{ url('theme/img/profiles/avatar-01.jpg') }}" alt="Img" class="img-fluid rounded-circle">
+                <li class="nav-item dropdown has-arrow main-drop">
+                    <a href="#" class="dropdown-toggle nav-link userset" data-bs-toggle="dropdown">
+                        <span class="user-info">
+                            <span class="user-letter">
+                                {{ strtoupper(substr((string) auth()->user()->name, 0, 1)) }}
                             </span>
-                        </a>
-                        <div class="dropdown-menu p-2">
-                            <div class="d-flex align-items-center bg-light rounded-1 p-2 mb-2">
-                                <span class="avatar avatar-lg me-2">
-                                    <img src="{{ url('theme/img/profiles/avatar-01.jpg') }}" alt="img" class="rounded-circle">
+                            <span class="user-detail">
+                                <span class="user-name">{{ auth()->user()->name }}</span>
+                                <span class="user-role">{{ auth()->user()->email }}</span>
+                            </span>
+                        </span>
+                    </a>
+                    <div class="dropdown-menu menu-drop-user dropdown-menu-end">
+                        <div class="profilename">
+                            <div class="profileset">
+                                <span class="user-img">
+                                    <span class="user-letter">
+                                        {{ strtoupper(substr((string) auth()->user()->name, 0, 1)) }}
+                                    </span>
                                 </span>
-                                <div>
-                                    <h6 class="fs-14 fw-medium mb-1">{{ auth()->user()?->name ?? 'Admin User' }}</h6>
-                                    <p class="fs-13">{{ auth()->user()?->email ?? 'Administrator' }}</p>
+                                <div class="profilesets">
+                                    <h6>{{ auth()->user()->name }}</h6>
+                                    <h5>{{ auth()->user()->email }}</h5>
                                 </div>
                             </div>
-
-                            <a class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
-                                <i class="isax isax-profile-circle me-2"></i>Profile Settings
+                            <hr class="m-0">
+                            <a class="dropdown-item logout pb-0" href="{{ route('logout') }}"
+                               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="me-2 isax isax-logout"></i>Logout
                             </a>
 
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('admin.plans.index') }}">
-                                <i class="isax isax-document-text me-2"></i>Plans
-                            </a>
-
-                            <div class="form-check form-switch form-check-reverse d-flex align-items-center justify-content-between dropdown-item mb-0">
-                                <label class="form-check-label" for="notify"><i class="isax isax-notification me-2"></i>Notifications</label>
-                                <input class="form-check-input" type="checkbox" role="switch" id="notify">
-                            </div>
-
-                            <hr class="dropdown-divider my-2">
-
-                            <a class="dropdown-item logout d-flex align-items-center" href="{{ route('login') }}">
-                                <i class="isax isax-logout me-2"></i>Sign Out
-                            </a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                @csrf
+                            </form>
                         </div>
                     </div>
+                </li>
 
-                </div>
-            </div>
+            </ul>
         </div>
     </div>
-
-    <!-- Mobile Menu -->
-    <div class="dropdown mobile-user-menu profile-dropdown">
-        <a href="javascript:void(0);" class="dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-            <span class="avatar avatar-md online">
-                <img src="{{ url('theme/img/profiles/avatar-01.jpg') }}" alt="Img" class="img-fluid rounded-circle">
-            </span>
-        </a>
-        <div class="dropdown-menu p-2 mt-0">
-            <a class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
-                <i class="isax isax-profile-circle me-2"></i>Profile Settings
-            </a>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('admin.plans.index') }}">
-                <i class="isax isax-document-text me-2"></i>Plans
-            </a>
-            <a class="dropdown-item logout d-flex align-items-center" href="{{ route('login') }}">
-                <i class="isax isax-logout me-2"></i>Sign Out
-            </a>
-        </div>
-    </div>
-    <!-- /Mobile Menu -->
-
 </div>
-<!-- Topbar End -->
