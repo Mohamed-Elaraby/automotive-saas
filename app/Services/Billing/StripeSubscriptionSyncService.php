@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Models\Plan;
 use App\Models\Subscription;
 use RuntimeException;
 use Stripe\StripeClient;
@@ -34,15 +35,30 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
     {
         $payload = is_array($stripeSubscription) ? $stripeSubscription : $stripeSubscription->toArray();
         $stripeStatus = $payload['status'] ?? null;
-
         $mappedStatus = $this->mapStripeStatus($stripeStatus);
 
+        $gatewaySubscriptionId = (string) ($payload['id'] ?? '');
+        $gatewayCustomerId = (string) ($payload['customer'] ?? '');
+
+        $gatewayPriceId = null;
+        if (! empty($payload['items']['data'][0]['price']['id'])) {
+            $gatewayPriceId = (string) $payload['items']['data'][0]['price']['id'];
+        }
+
+        $resolvedPlanId = $this->resolveLocalPlanId($payload, $gatewayPriceId);
+
         $subscription->fill([
-            'gateway_customer_id' => $payload['customer'] ?? $subscription->gateway_customer_id,
+            'gateway' => 'stripe',
+            'gateway_customer_id' => $gatewayCustomerId !== '' ? $gatewayCustomerId : $subscription->gateway_customer_id,
+            'gateway_subscription_id' => $gatewaySubscriptionId !== '' ? $gatewaySubscriptionId : $subscription->gateway_subscription_id,
         ]);
 
-        if (! empty($payload['items']['data'][0]['price']['id'])) {
-            $subscription->gateway_price_id = $payload['items']['data'][0]['price']['id'];
+        if ($gatewayPriceId !== null && $gatewayPriceId !== '') {
+            $subscription->gateway_price_id = $gatewayPriceId;
+        }
+
+        if ($resolvedPlanId !== null) {
+            $subscription->plan_id = $resolvedPlanId;
         }
 
         $subscription->save();
@@ -58,6 +74,27 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
 
         return Subscription::query()->findOrFail($subscription->id);
     }
+
+    protected function resolveLocalPlanId(array $payload, ?string $gatewayPriceId): ?int
+{
+    $metadataPlanId = (int) ($payload['metadata']['plan_id'] ?? 0);
+
+    if ($metadataPlanId > 0 && Plan::query()->whereKey($metadataPlanId)->exists()) {
+        return $metadataPlanId;
+    }
+
+    if ($gatewayPriceId !== null && $gatewayPriceId !== '') {
+        $plan = Plan::query()
+            ->where('stripe_price_id', $gatewayPriceId)
+            ->first();
+
+        if ($plan) {
+            return (int) $plan->id;
+        }
+    }
+
+    return null;
+}
 
     protected function mapStripeStatus(?string $stripeStatus): string
 {

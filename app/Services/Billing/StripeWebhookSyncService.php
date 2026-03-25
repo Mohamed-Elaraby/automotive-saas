@@ -209,6 +209,9 @@ protected function handleCheckoutSessionCompleted(array $payload): void
 {
     $session = (array) Arr::get($payload, 'data.object', []);
     $sessionId = (string) ($session['id'] ?? '');
+    $sessionSubscriptionId = (string) ($session['subscription'] ?? '');
+    $sessionCustomerId = (string) ($session['customer'] ?? '');
+    $subscriptionRowId = (int) Arr::get($session, 'metadata.subscription_row_id', 0);
 
     if ($sessionId === '') {
         return;
@@ -219,22 +222,44 @@ protected function handleCheckoutSessionCompleted(array $payload): void
         ->where('gateway_checkout_session_id', $sessionId)
         ->first();
 
+    if (! $subscription && $subscriptionRowId > 0) {
+        $subscription = Subscription::query()->find($subscriptionRowId);
+    }
+
     if (! $subscription) {
         return;
     }
 
-    if (! empty($subscription->gateway_subscription_id)) {
-        $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId((string) $subscription->gateway_subscription_id)
+    $subscription->fill([
+        'gateway' => 'stripe',
+        'gateway_checkout_session_id' => $sessionId,
+    ]);
+
+    if ($sessionCustomerId !== '') {
+        $subscription->gateway_customer_id = $sessionCustomerId;
+    }
+
+    if ($sessionSubscriptionId !== '') {
+        $subscription->gateway_subscription_id = $sessionSubscriptionId;
+    }
+
+    $subscription->save();
+
+    if ($sessionSubscriptionId !== '') {
+        $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($sessionSubscriptionId)
             ?? $subscription->fresh();
+    } else {
+        $subscription = $subscription->fresh();
     }
 
     $this->billingNotificationService->checkoutCompleted($subscription, [
         'stripe_event' => 'checkout.session.completed',
         'checkout_session_id' => $sessionId,
         'checkout_mode' => $session['mode'] ?? null,
-        'customer_id' => $session['customer'] ?? null,
+        'customer_id' => $sessionCustomerId !== '' ? $sessionCustomerId : null,
         'payment_status' => $session['payment_status'] ?? null,
-        'subscription_id_from_session' => $session['subscription'] ?? null,
+        'subscription_id_from_session' => $sessionSubscriptionId !== '' ? $sessionSubscriptionId : null,
+        'subscription_row_id_from_metadata' => $subscriptionRowId > 0 ? $subscriptionRowId : null,
     ]);
 }
 

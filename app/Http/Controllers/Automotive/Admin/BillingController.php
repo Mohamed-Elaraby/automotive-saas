@@ -219,7 +219,30 @@ public function renew(Request $request): RedirectResponse
             ->with('error', 'Billing configuration error. Please check Stripe settings.');
     }
 
-    if (! empty($session['success']) && ! empty($session['checkout_url'])) {
+    if (! empty($session['success']) && ! empty($session['checkout_url']) && ! empty($session['session_id'])) {
+        $subscriptionModel = null;
+
+        if (! empty($subscription->id)) {
+            $subscriptionModel = Subscription::query()->find($subscription->id);
+        }
+
+        if (! $subscriptionModel) {
+            return redirect()
+                ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+                ->with('error', 'The local subscription record could not be loaded before redirecting to Stripe checkout.');
+        }
+
+        $subscriptionModel->fill([
+            'gateway' => 'stripe',
+            'gateway_checkout_session_id' => (string) $session['session_id'],
+        ]);
+
+        // Fresh checkout bootstrap: keep local record ready for webhook matching.
+        // Do not force plan/status active before Stripe confirms payment/subscription creation.
+        $subscriptionModel->gateway_subscription_id = null;
+
+        $subscriptionModel->save();
+
         return redirect()->away($session['checkout_url']);
     }
 
