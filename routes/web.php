@@ -174,6 +174,11 @@ Route::prefix('admin')
                 Route::get('/{notification}', [AdminNotificationController::class, 'show'])->name('show');
                 Route::post('/{notification}/mark-read', [AdminNotificationController::class, 'markRead'])->name('mark-read');
                 Route::post('/{notification}/archive', [AdminNotificationController::class, 'archive'])->name('archive');
+
+
+                Route::post('/seed-demo', [AdminNotificationController::class, 'seedDemo'])->name('seed-demo');
+                Route::post('/clear-demo', [AdminNotificationController::class, 'clearDemo'])->name('clear-demo');
+
             });
     });
 //Route::get('/', function () {

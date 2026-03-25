@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Data\AdminNotificationData;
 use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
 use App\Services\Notifications\AdminNotificationSchemaService;
+use App\Services\Notifications\AdminNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +42,9 @@ public function index(Request $request): View
                 'unread' => 0,
                 'active' => 0,
                 'today' => 0,
+                'errors' => 0,
+                'warnings' => 0,
+                'successes' => 0,
             ],
             'schemaWarnings' => ['The admin_notifications table does not exist yet.'],
         ]);
@@ -56,6 +61,9 @@ public function index(Request $request): View
                 'unread' => 0,
                 'active' => 0,
                 'today' => 0,
+                'errors' => 0,
+                'warnings' => 0,
+                'successes' => 0,
             ],
             'schemaWarnings' => [
                 'The admin_notifications table is using an older schema. Missing columns: ' . implode(', ', $this->schemaService->missingRequiredColumns()),
@@ -108,6 +116,9 @@ public function index(Request $request): View
             'unread' => AdminNotification::query()->where('is_read', false)->count(),
             'active' => AdminNotification::query()->where('is_archived', false)->count(),
             'today' => AdminNotification::query()->whereDate('notified_at', now()->toDateString())->count(),
+            'errors' => AdminNotification::query()->where('severity', 'error')->count(),
+            'warnings' => AdminNotification::query()->where('severity', 'warning')->count(),
+            'successes' => AdminNotification::query()->where('severity', 'success')->count(),
         ],
         'schemaWarnings' => [],
     ]);
@@ -172,6 +183,136 @@ public function archive(AdminNotification $notification): RedirectResponse
     $notification->update($payload);
 
     return back()->with('success', 'Notification archived successfully.');
+}
+
+public function seedDemo(AdminNotificationService $notificationService): RedirectResponse
+{
+    $demoItems = [
+        new AdminNotificationData(
+            type: 'system_error',
+                title: 'System Error Detected',
+                message: 'A simulated server exception was captured for UI testing.',
+                severity: 'error',
+                sourceType: 'demo',
+                sourceId: null,
+                routeName: 'admin.system-errors.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-01',
+                userId: null,
+                userEmail: 'demo-admin@example.com',
+                contextPayload: ['demo' => true, 'event' => 'system_error']
+            ),
+            new AdminNotificationData(
+                type: 'billing',
+                title: 'Subscription Synced from Stripe',
+                message: 'Subscription #101 was manually synced from Stripe.',
+                severity: 'info',
+                sourceType: 'subscription',
+                sourceId: 101,
+                routeName: 'admin.subscriptions.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-02',
+                userId: null,
+                userEmail: 'billing@example.com',
+                contextPayload: ['demo' => true, 'event' => 'manual_sync']
+            ),
+            new AdminNotificationData(
+                type: 'billing',
+                title: 'Subscription State Refreshed',
+                message: 'Subscription #102 state was refreshed manually.',
+                severity: 'info',
+                sourceType: 'subscription',
+                sourceId: 102,
+                routeName: 'admin.subscriptions.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-03',
+                userId: null,
+                userEmail: 'billing@example.com',
+                contextPayload: ['demo' => true, 'event' => 'manual_refresh_state']
+            ),
+            new AdminNotificationData(
+                type: 'billing',
+                title: 'Lifecycle Normalization Applied',
+                message: 'Lifecycle normalization applied to subscription #103.',
+                severity: 'warning',
+                sourceType: 'subscription',
+                sourceId: 103,
+                routeName: 'admin.subscriptions.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-04',
+                userId: null,
+                userEmail: 'billing@example.com',
+                contextPayload: ['demo' => true, 'event' => 'manual_normalize_lifecycle']
+            ),
+            new AdminNotificationData(
+                type: 'billing',
+                title: 'Trial Ending Soon',
+                message: 'Tenant demo-tenant-05 trial is ending within 2 days.',
+                severity: 'warning',
+                sourceType: 'subscription',
+                sourceId: 104,
+                routeName: 'admin.subscriptions.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-05',
+                userId: null,
+                userEmail: 'billing@example.com',
+                contextPayload: ['demo' => true, 'event' => 'trial_ending']
+            ),
+            new AdminNotificationData(
+                type: 'billing',
+                title: 'Subscription Suspended',
+                message: 'Tenant demo-tenant-06 subscription was suspended after grace period.',
+                severity: 'error',
+                sourceType: 'subscription',
+                sourceId: 105,
+                routeName: 'admin.subscriptions.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-06',
+                userId: null,
+                userEmail: 'billing@example.com',
+                contextPayload: ['demo' => true, 'event' => 'suspended']
+            ),
+            new AdminNotificationData(
+                type: 'billing',
+                title: 'Subscription Recovered',
+                message: 'Tenant demo-tenant-07 subscription recovered successfully.',
+                severity: 'success',
+                sourceType: 'subscription',
+                sourceId: 106,
+                routeName: 'admin.subscriptions.index',
+                routeParams: [],
+                targetUrl: null,
+                tenantId: 'demo-tenant-07',
+                userId: null,
+                userEmail: 'billing@example.com',
+                contextPayload: ['demo' => true, 'event' => 'recovered']
+            ),
+        ];
+
+        foreach ($demoItems as $item) {
+            $notificationService->create($item);
+        }
+
+        return redirect()
+            ->route('admin.notifications.index')
+            ->with('success', 'Demo notifications generated successfully.');
+    }
+
+public function clearDemo(): RedirectResponse
+{
+    AdminNotification::query()
+        ->whereJsonContains('context_payload->demo', true)
+        ->delete();
+
+    return redirect()
+        ->route('admin.notifications.index')
+        ->with('success', 'Demo notifications removed successfully.');
 }
 
 public function unreadSummary(): JsonResponse

@@ -17,15 +17,24 @@
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
+            @php
+                $severityClass = match($notification->severity) {
+                    'error' => 'bg-danger',
+                    'warning' => 'bg-warning text-dark',
+                    'success' => 'bg-success',
+                    default => 'bg-primary',
+                };
+            @endphp
+
             <div class="row">
                 <div class="col-xl-8">
-                    <div class="card">
+                    <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <table class="table table-sm table-striped align-middle mb-0">
                                 <tbody>
                                 <tr>
                                     <th style="width: 220px;">Type</th>
-                                    <td>{{ $notification->type }}</td>
+                                    <td>{{ strtoupper(str_replace('_', ' ', $notification->type)) }}</td>
                                 </tr>
                                 <tr>
                                     <th>Title</th>
@@ -37,7 +46,7 @@
                                 </tr>
                                 <tr>
                                     <th>Severity</th>
-                                    <td>{{ strtoupper($notification->severity) }}</td>
+                                    <td><span class="badge {{ $severityClass }}">{{ strtoupper($notification->severity) }}</span></td>
                                 </tr>
                                 <tr>
                                     <th>Route Name</th>
@@ -72,7 +81,7 @@
                         </div>
                     </div>
 
-                    <div class="card mt-4">
+                    <div class="card mt-4 border-0 shadow-sm">
                         <div class="card-body">
                             <h6 class="mb-3">Context Payload</h6>
                             <pre class="bg-light p-3 rounded small mb-0" style="white-space: pre-wrap;">{{ json_encode($notification->context_payload ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</pre>
@@ -81,7 +90,7 @@
                 </div>
 
                 <div class="col-xl-4">
-                    <div class="card">
+                    <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <h6 class="mb-3">Actions</h6>
 
@@ -103,6 +112,18 @@
                                 <a href="{{ $notification->resolvedUrl() }}" class="btn btn-primary w-100">Open Target</a>
                                 <a href="{{ route('admin.notifications.index') }}" class="btn btn-light w-100">Back to Notifications</a>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4 border-0 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="mb-3">Quick Summary</h6>
+                            <ul class="mb-0">
+                                <li><strong>Type:</strong> {{ strtoupper(str_replace('_', ' ', $notification->type)) }}</li>
+                                <li><strong>Severity:</strong> {{ strtoupper($notification->severity) }}</li>
+                                <li><strong>Tenant:</strong> {{ $notification->tenant_id ?: '-' }}</li>
+                                <li><strong>Email:</strong> {{ $notification->user_email ?: '-' }}</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
