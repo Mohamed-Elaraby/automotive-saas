@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
 use App\Services\Billing\StripeSubscriptionSyncService;
@@ -24,7 +25,8 @@ class SubscriptionController extends Controller
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
         protected StripeInvoiceLedgerBackfillService $stripeInvoiceLedgerBackfillService,
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
-        protected SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService
+        protected SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService,
+        protected BillingNotificationService $billingNotificationService
     ) {
     }
 
@@ -160,6 +162,13 @@ public function syncFromStripe(int $subscriptionId): RedirectResponse
                 ->with('error', 'No local subscription could be matched for the Stripe subscription ID.');
         }
 
+        $subscription->refresh();
+
+        $this->billingNotificationService->manualSync($subscription->fresh(), [
+            'source' => 'admin.sync_from_stripe',
+            'gateway_subscription_id' => $subscription->gateway_subscription_id,
+        ]);
+
         return redirect()
             ->route('admin.subscriptions.show', $subscriptionId)
             ->with('success', 'Subscription data was synced successfully from Stripe.');
@@ -221,6 +230,11 @@ public function refreshState(int $subscriptionId): RedirectResponse
 
     $resolvedState = $this->tenantBillingLifecycleService->resolveState($subscription);
 
+    $this->billingNotificationService->manualRefreshState($subscription->fresh(), [
+        'source' => 'admin.refresh_state',
+        'resolved_state' => $resolvedState,
+    ]);
+
     return redirect()
         ->route('admin.subscriptions.show', $subscriptionId)
         ->with(
@@ -232,6 +246,14 @@ public function refreshState(int $subscriptionId): RedirectResponse
 
 public function normalizeLifecycle(int $subscriptionId): RedirectResponse
 {
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('admin.subscriptions.index')
+            ->with('error', 'The subscription record was not found.');
+    }
+
     $result = $this->subscriptionLifecycleNormalizationService->normalizeOne($subscriptionId, true);
 
     if (! ($result['ok'] ?? false)) {
@@ -239,6 +261,15 @@ public function normalizeLifecycle(int $subscriptionId): RedirectResponse
             ->route('admin.subscriptions.show', $subscriptionId)
             ->with('error', $result['message'] ?? 'Unable to normalize lifecycle fields.');
     }
+
+    $this->billingNotificationService->manualNormalizeLifecycle(
+        $subscription->fresh(),
+        (bool) ($result['applied'] ?? false),
+        [
+            'source' => 'admin.normalize_lifecycle',
+            'normalization_result' => $result,
+        ]
+    );
 
     return redirect()
         ->route('admin.subscriptions.show', $subscriptionId)

@@ -13,18 +13,80 @@ class BillingNotificationService
     ) {
     }
 
-public function create(
+public function manualSync(Subscription $subscription, array $context = []): void
+{
+    $this->create(
+        event: 'manual_sync',
+            title: 'Subscription Synced from Stripe',
+            severity: 'info',
+            subscription: $subscription,
+            message: "Subscription #{$subscription->id} was manually synced from Stripe.",
+            contextPayload: $context
+        );
+    }
+
+public function manualRefreshState(Subscription $subscription, array $context = []): void
+{
+    $this->create(
+        event: 'manual_refresh_state',
+            title: 'Subscription State Refreshed',
+            severity: 'info',
+            subscription: $subscription,
+            message: "Subscription #{$subscription->id} state was refreshed manually.",
+            contextPayload: $context
+        );
+    }
+
+public function manualNormalizeLifecycle(Subscription $subscription, bool $applied, array $context = []): void
+{
+    $this->create(
+        event: 'manual_normalize_lifecycle',
+            title: $applied ? 'Lifecycle Normalization Applied' : 'Lifecycle Normalization Checked',
+            severity: $applied ? 'warning' : 'info',
+            subscription: $subscription,
+            message: $applied
+    ? "Lifecycle normalization applied to subscription #{$subscription->id}."
+    : "Lifecycle normalization check completed for subscription #{$subscription->id}. No changes were needed.",
+            contextPayload: $context
+        );
+    }
+
+public function trialEnding(Subscription $subscription, array $context = []): void
+{
+    $this->create(
+        event: 'trial_ending',
+            title: 'Trial Ending Soon',
+            severity: 'warning',
+            subscription: $subscription,
+            message: "Tenant {$subscription->tenant_id} trial is ending soon for subscription #{$subscription->id}.",
+            contextPayload: $context
+        );
+    }
+
+public function suspended(Subscription $subscription, array $context = []): void
+{
+    $this->create(
+        event: 'suspended',
+            title: 'Subscription Suspended',
+            severity: 'error',
+            subscription: $subscription,
+            message: "Tenant {$subscription->tenant_id} subscription #{$subscription->id} was suspended.",
+            contextPayload: $context
+        );
+    }
+
+protected function create(
     string $event,
     string $title,
     string $severity,
     Subscription $subscription,
-    ?string $message = null,
+    string $message,
     array $contextPayload = []
 ): void {
     $this->adminNotificationService->create(new AdminNotificationData(
         type: 'billing',
             title: $title,
-            message: $message ?: $this->defaultMessage($subscription, $event),
+            message: $message,
             severity: $severity,
             sourceType: 'subscription',
             sourceId: (int) $subscription->id,
@@ -57,9 +119,4 @@ protected function baseContext(Subscription $subscription): array
             'ends_at' => optional($subscription->ends_at)?->format('Y-m-d H:i:s'),
         ];
     }
-
-protected function defaultMessage(Subscription $subscription, string $event): string
-{
-    return "Tenant {$subscription->tenant_id} / Subscription #{$subscription->id} / Event {$event}.";
-}
 }
