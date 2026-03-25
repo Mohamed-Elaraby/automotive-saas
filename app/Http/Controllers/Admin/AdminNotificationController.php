@@ -188,6 +188,65 @@ public function markRead(AdminNotification $notification, Request $request): Red
         ->with('success', "Deleted {$deletedCount} notification(s) from the current view.");
 }
 
+    public function bulkAction(Request $request): RedirectResponse
+{
+    $validated = $request->validate([
+        'action' => ['required', 'in:mark_read,archive,delete'],
+        'selected_ids' => ['required', 'array', 'min:1'],
+        'selected_ids.*' => ['integer'],
+    ]);
+
+    $notifications = AdminNotification::query()
+        ->whereIn('id', $validated['selected_ids'])
+        ->get();
+
+    $count = $notifications->count();
+
+    if ($count === 0) {
+        return back()->with('error', 'No notifications were selected.');
+    }
+
+    if ($validated['action'] === 'mark_read') {
+        foreach ($notifications as $notification) {
+            $payload = ['is_read' => true];
+
+            if ($this->schemaService->hasColumn('read_at')) {
+                $payload['read_at'] = now();
+            }
+
+            $notification->update($payload);
+        }
+
+        return back()->with('success', "Marked {$count} notification(s) as read.");
+    }
+
+    if ($validated['action'] === 'archive') {
+        foreach ($notifications as $notification) {
+            $payload = ['is_archived' => true];
+
+            if ($this->schemaService->hasColumn('archived_at')) {
+                $payload['archived_at'] = now();
+            }
+
+            if ($this->schemaService->hasColumn('is_read')) {
+                $payload['is_read'] = true;
+            }
+
+            if ($this->schemaService->hasColumn('read_at')) {
+                $payload['read_at'] = $notification->read_at ?: now();
+            }
+
+            $notification->update($payload);
+        }
+
+        return back()->with('success', "Archived {$count} notification(s).");
+    }
+
+    $notifications->each->delete();
+
+    return back()->with('success', "Deleted {$count} notification(s).");
+}
+
     public function seedDemo(AdminNotificationService $notificationService): RedirectResponse
 {
     $demoItems = [

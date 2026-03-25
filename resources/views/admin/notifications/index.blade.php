@@ -24,16 +24,12 @@
                 <div class="d-flex gap-2 flex-wrap">
                     <form method="POST" action="{{ route('admin.notifications.seed-demo') }}">
                         @csrf
-                        <button type="submit" class="btn btn-primary">
-                            Generate Demo Notifications
-                        </button>
+                        <button type="submit" class="btn btn-primary">Generate Demo Notifications</button>
                     </form>
 
                     <form method="POST" action="{{ route('admin.notifications.clear-demo') }}" onsubmit="return confirm('Remove demo notifications only?');">
                         @csrf
-                        <button type="submit" class="btn btn-outline-danger">
-                            Clear Demo Notifications
-                        </button>
+                        <button type="submit" class="btn btn-outline-danger">Clear Demo Notifications</button>
                     </form>
 
                     <form method="POST" action="{{ route('admin.notifications.destroy-all') }}" onsubmit="return confirm('Delete all notifications in the current view?');">
@@ -43,9 +39,7 @@
                                 <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                             @endif
                         @endforeach
-                        <button type="submit" class="btn btn-danger">
-                            Delete Current View
-                        </button>
+                        <button type="submit" class="btn btn-danger">Delete Current View</button>
                     </form>
                 </div>
             </div>
@@ -65,44 +59,20 @@
             @endif
 
             <div class="row mb-4">
-                <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Total</div><h4 class="mb-0">{{ number_format((int) ($stats['total'] ?? 0)) }}</h4></div></div>
-                </div>
-                <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Unread</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['unread'] ?? 0)) }}</h4></div></div>
-                </div>
-                <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Active</div><h4 class="mb-0 text-primary">{{ number_format((int) ($stats['active'] ?? 0)) }}</h4></div></div>
-                </div>
-                <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Today</div><h4 class="mb-0 text-success">{{ number_format((int) ($stats['today'] ?? 0)) }}</h4></div></div>
-                </div>
-                <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Errors</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['errors'] ?? 0)) }}</h4></div></div>
-                </div>
-                <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Warnings</div><h4 class="mb-0 text-warning">{{ number_format((int) ($stats['warnings'] ?? 0)) }}</h4></div></div>
-                </div>
+                <div class="col-xl-2 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Total</div><h4 class="mb-0">{{ number_format((int) ($stats['total'] ?? 0)) }}</h4></div></div></div>
+                <div class="col-xl-2 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Unread</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['unread'] ?? 0)) }}</h4></div></div></div>
+                <div class="col-xl-2 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Active</div><h4 class="mb-0 text-primary">{{ number_format((int) ($stats['active'] ?? 0)) }}</h4></div></div></div>
+                <div class="col-xl-2 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Today</div><h4 class="mb-0 text-success">{{ number_format((int) ($stats['today'] ?? 0)) }}</h4></div></div></div>
+                <div class="col-xl-2 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Errors</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['errors'] ?? 0)) }}</h4></div></div></div>
+                <div class="col-xl-2 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Warnings</div><h4 class="mb-0 text-warning">{{ number_format((int) ($stats['warnings'] ?? 0)) }}</h4></div></div></div>
             </div>
 
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body">
                     <ul class="nav nav-pills gap-2">
-                        <li class="nav-item">
-                            <a class="nav-link {{ $currentTab === 'all' ? 'active' : '' }}" href="{{ $tabLink('all') }}">
-                                All <span class="badge bg-light text-dark ms-1">{{ $allCount }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ $currentTab === 'system_error' ? 'active' : '' }}" href="{{ $tabLink('system_error') }}">
-                                System Errors <span class="badge bg-light text-dark ms-1">{{ $systemErrorCount }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ $currentTab === 'billing' ? 'active' : '' }}" href="{{ $tabLink('billing') }}">
-                                Billing <span class="badge bg-light text-dark ms-1">{{ $billingCount }}</span>
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link {{ $currentTab === 'all' ? 'active' : '' }}" href="{{ $tabLink('all') }}">All <span class="badge bg-light text-dark ms-1">{{ $allCount }}</span></a></li>
+                        <li class="nav-item"><a class="nav-link {{ $currentTab === 'system_error' ? 'active' : '' }}" href="{{ $tabLink('system_error') }}">System Errors <span class="badge bg-light text-dark ms-1">{{ $systemErrorCount }}</span></a></li>
+                        <li class="nav-item"><a class="nav-link {{ $currentTab === 'billing' ? 'active' : '' }}" href="{{ $tabLink('billing') }}">Billing <span class="badge bg-light text-dark ms-1">{{ $billingCount }}</span></a></li>
                     </ul>
                 </div>
             </div>
@@ -168,98 +138,132 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    @if($notifications->isEmpty())
-                        <div class="alert alert-light mb-0">No notifications found.</div>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-striped align-middle">
-                                <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Type</th>
-                                    <th>Title</th>
-                                    <th>Severity</th>
-                                    <th>Status</th>
-                                    <th></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($notifications as $notification)
-                                    @php
-                                        $severityClass = match($notification->severity) {
-                                            'error' => 'bg-danger',
-                                            'warning' => 'bg-warning text-dark',
-                                            'success' => 'bg-success',
-                                            default => 'bg-primary',
-                                        };
-
-                                        $typeLabel = strtoupper(str_replace('_', ' ', $notification->type));
-                                    @endphp
-                                    <tr>
-                                        <td>{{ optional($notification->notified_at)->format('Y-m-d H:i:s') ?: '-' }}</td>
-                                        <td><span class="badge bg-light text-dark">{{ $typeLabel }}</span></td>
-                                        <td>
-                                            <div class="fw-semibold">{{ $notification->title }}</div>
-                                            <div class="small text-muted">{{ \Illuminate\Support\Str::limit((string) $notification->message, 100) }}</div>
-                                            @if($notification->tenant_id)
-                                                <div class="small text-muted">Tenant: {{ $notification->tenant_id }}</div>
-                                            @endif
-                                        </td>
-                                        <td><span class="badge {{ $severityClass }}">{{ strtoupper($notification->severity) }}</span></td>
-                                        <td>
-                                            <div class="d-flex flex-column gap-1">
-                                                <span class="badge {{ $notification->is_read ? 'bg-success' : 'bg-warning text-dark' }}">
-                                                    {{ $notification->is_read ? 'Read' : 'Unread' }}
-                                                </span>
-                                                <span class="badge {{ $notification->is_archived ? 'bg-secondary' : 'bg-primary' }}">
-                                                    {{ $notification->is_archived ? 'Archived' : 'Active' }}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="text-end">
-                                            <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
-                                                <a href="{{ route('admin.notifications.show', $notification->id) }}" class="btn btn-sm btn-outline-primary">
-                                                    View
-                                                </a>
-
-                                                @if(! $notification->is_read)
-                                                    <form method="POST" action="{{ route('admin.notifications.mark-read', $notification->id) }}">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-outline-dark">
-                                                            Mark Read
-                                                        </button>
-                                                    </form>
-                                                @endif
-
-                                                @if(! $notification->is_archived)
-                                                    <form method="POST" action="{{ route('admin.notifications.archive', $notification->id) }}">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                                            Archive
-                                                        </button>
-                                                    </form>
-                                                @endif
-
-                                                <form method="POST" action="{{ route('admin.notifications.destroy', $notification->id) }}" onsubmit="return confirm('Delete this notification?');">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        Delete
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
+            <form method="POST" action="{{ route('admin.notifications.bulk-action') }}" id="bulkNotificationsForm">
+                @csrf
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="selectAllNotifications">
+                            <label class="form-check-label" for="selectAllNotifications">Select All Visible</label>
                         </div>
 
-                        {{ $notifications->links() }}
-                    @endif
+                        <select name="action" class="form-select" style="max-width: 220px;" required>
+                            <option value="">Bulk Action</option>
+                            <option value="mark_read">Mark Read Selected</option>
+                            <option value="archive">Archive Selected</option>
+                            <option value="delete">Delete Selected</option>
+                        </select>
+
+                        <button type="submit" class="btn btn-dark" onclick="return confirm('Apply bulk action to selected notifications?');">
+                            Apply
+                        </button>
+                    </div>
                 </div>
-            </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        @if($notifications->isEmpty())
+                            <div class="alert alert-light mb-0">No notifications found.</div>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle">
+                                    <thead>
+                                    <tr>
+                                        <th style="width: 40px;"></th>
+                                        <th>Time</th>
+                                        <th>Type</th>
+                                        <th>Title</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($notifications as $notification)
+                                        @php
+                                            $severityClass = match($notification->severity) {
+                                                'error' => 'bg-danger',
+                                                'warning' => 'bg-warning text-dark',
+                                                'success' => 'bg-success',
+                                                default => 'bg-primary',
+                                            };
+
+                                            $typeLabel = strtoupper(str_replace('_', ' ', $notification->type));
+                                        @endphp
+                                        <tr>
+                                            <td>
+                                                <input class="form-check-input notification-row-checkbox" type="checkbox" name="selected_ids[]" value="{{ $notification->id }}">
+                                            </td>
+                                            <td>{{ optional($notification->notified_at)->format('Y-m-d H:i:s') ?: '-' }}</td>
+                                            <td><span class="badge bg-light text-dark">{{ $typeLabel }}</span></td>
+                                            <td>
+                                                <div class="fw-semibold">{{ $notification->title }}</div>
+                                                <div class="small text-muted">{{ \Illuminate\Support\Str::limit((string) $notification->message, 100) }}</div>
+                                                @if($notification->tenant_id)
+                                                    <div class="small text-muted">Tenant: {{ $notification->tenant_id }}</div>
+                                                @endif
+                                            </td>
+                                            <td><span class="badge {{ $severityClass }}">{{ strtoupper($notification->severity) }}</span></td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <span class="badge {{ $notification->is_read ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                        {{ $notification->is_read ? 'Read' : 'Unread' }}
+                                                    </span>
+                                                    <span class="badge {{ $notification->is_archived ? 'bg-secondary' : 'bg-primary' }}">
+                                                        {{ $notification->is_archived ? 'Archived' : 'Active' }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                                                    <a href="{{ route('admin.notifications.show', $notification->id) }}" class="btn btn-sm btn-outline-primary">View</a>
+
+                                                    @if(! $notification->is_read)
+                                                        <form method="POST" action="{{ route('admin.notifications.mark-read', $notification->id) }}">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-outline-dark">Mark Read</button>
+                                                        </form>
+                                                    @endif
+
+                                                    @if(! $notification->is_archived)
+                                                        <form method="POST" action="{{ route('admin.notifications.archive', $notification->id) }}">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Archive</button>
+                                                        </form>
+                                                    @endif
+
+                                                    <form method="POST" action="{{ route('admin.notifications.destroy', $notification->id) }}" onsubmit="return confirm('Delete this notification?');">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{ $notifications->links() }}
+                        @endif
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectAll = document.getElementById('selectAllNotifications');
+            const rowCheckboxes = document.querySelectorAll('.notification-row-checkbox');
+
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    rowCheckboxes.forEach(function (checkbox) {
+                        checkbox.checked = selectAll.checked;
+                    });
+                });
+            }
+        });
+    </script>
 @endsection

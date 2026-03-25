@@ -30,7 +30,15 @@ $severityClassMap = [
                 <div class="col">
                     <h6 class="m-0 fs-16 fw-semibold">Notifications</h6>
                 </div>
-                <div class="col-auto">
+                <div class="col-auto d-flex gap-2 align-items-center">
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" id="notificationToastToggle" checked>
+                        <label class="form-check-label small" for="notificationToastToggle">Toasts</label>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" id="notificationSoundToggle" checked>
+                        <label class="form-check-label small" for="notificationSoundToggle">Sound</label>
+                    </div>
                     <span id="topbar-notification-count-pill" class="badge bg-light text-dark">{{ $topbarNotificationCount }}</span>
                 </div>
             </div>
@@ -61,6 +69,9 @@ $severityClassMap = [
                                 >
                                     <div class="fw-semibold text-dark mb-1">
                                         {{ \Illuminate\Support\Str::limit((string) ($notification['title'] ?? ''), 70) }}
+                                    </div>
+                                    <div class="small text-muted mb-1">
+                                        {{ strtoupper(str_replace('_', ' ', (string) ($notification['type'] ?? 'notification'))) }}
                                     </div>
                                     <div class="text-muted small mb-1">
                                         {{ \Illuminate\Support\Str::limit((string) ($notification['message'] ?? ''), 100) }}
@@ -120,8 +131,11 @@ $severityClassMap = [
         const summaryUrl = @json(route('admin.notifications.unread-summary'));
         const csrfToken = @json(csrf_token());
         const toastContainer = document.getElementById('notification-toast-container');
+        const toastToggle = document.getElementById('notificationToastToggle');
+        const soundToggle = document.getElementById('notificationSoundToggle');
 
         let lastKnownCount = Number({{ $topbarNotificationCount }});
+        let lastSeenNotificationIds = new Set(@json(collect($topbarNotificationItems)->pluck('id')->values()));
 
         const severityClassMap = {
             info: 'bg-primary',
@@ -139,31 +153,68 @@ $severityClassMap = [
                 .replace(/'/g, '&#039;');
         }
 
-        function showToast(message) {
+        function playCriticalSound() {
+            if (!soundToggle.checked) {
+                return;
+            }
+
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.06, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.18);
+        }
+
+        function showToast(item) {
+            if (!toastToggle.checked) {
+                return;
+            }
+
             const toastId = 'toast-' + Date.now();
 
             const wrapper = document.createElement('div');
-            wrapper.className = 'toast align-items-center text-bg-dark border-0';
+            wrapper.className = 'toast border-0 shadow';
             wrapper.id = toastId;
             wrapper.setAttribute('role', 'alert');
             wrapper.setAttribute('aria-live', 'assertive');
             wrapper.setAttribute('aria-atomic', 'true');
 
+            const severity = String(item.severity || 'info').toLowerCase();
+            const badgeClass = severityClassMap[severity] || 'bg-secondary';
+
             wrapper.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${escapeHtml(message)}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <div class="toast-header">
+                <span class="badge ${badgeClass} me-2">${escapeHtml(severity.toUpperCase())}</span>
+                <strong class="me-auto">${escapeHtml(item.title || 'Notification')}</strong>
+                <small>${escapeHtml(item.notified_at || '')}</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <div class="small text-muted mb-1">${escapeHtml((item.type || 'notification').replaceAll('_', ' ').toUpperCase())}</div>
+                <div>${escapeHtml(item.message || '')}</div>
             </div>
         `;
 
             toastContainer.appendChild(wrapper);
 
-            const toast = new bootstrap.Toast(wrapper, { delay: 3500 });
+            const toast = new bootstrap.Toast(wrapper, { delay: 4500 });
             toast.show();
 
             wrapper.addEventListener('hidden.bs.toast', function () {
                 wrapper.remove();
             });
+
+            if (severity === 'error') {
+                playCriticalSound();
+            }
         }
 
         function updateCounters(count) {
@@ -177,10 +228,6 @@ $severityClassMap = [
             } else {
                 badgeWrapper.classList.add('d-none');
                 badge.textContent = '0';
-            }
-
-            if (normalized > lastKnownCount) {
-                showToast('New notification received');
             }
 
             lastKnownCount = normalized;
@@ -204,6 +251,15 @@ $severityClassMap = [
         function renderNotifications(payload) {
             const items = Array.isArray(payload.items) ? payload.items : [];
 
+            const currentIds = new Set(items.map(item => item.id));
+
+            items.forEach((item) => {
+                if (!lastSeenNotificationIds.has(item.id)) {
+                    showToast(item);
+                }
+            });
+
+            lastSeenNotificationIds = currentIds;
             updateCounters(payload.count || 0);
 
             if (items.length === 0) {
@@ -237,6 +293,9 @@ $severityClassMap = [
                             >
                                 <div class="fw-semibold text-dark mb-1">
                                     ${escapeHtml(item.title || '')}
+                                </div>
+                                <div class="small text-muted mb-1">
+                                    ${escapeHtml((item.type || 'notification').replaceAll('_', ' ').toUpperCase())}
                                 </div>
                                 <div class="text-muted small mb-1">
                                     ${escapeHtml(item.message || '')}
@@ -299,9 +358,9 @@ $severityClassMap = [
                 if (payload.ok) {
                     removeNotificationItem(notificationId);
                     updateCounters(payload.count || 0);
+                    lastSeenNotificationIds.delete(Number(notificationId));
                 }
             } catch (error) {
-                // ignore and continue with navigation
             }
 
             window.location.href = url;
