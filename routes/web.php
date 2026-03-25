@@ -36,6 +36,7 @@ Auth::routes();
 // Central product routes
 require base_path('routes/products/automotive/front.php');
 
+
 /*
 |--------------------------------------------------------------------------
 | Central Admin Routes
