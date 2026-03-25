@@ -30,7 +30,7 @@ $severityClassMap = [
                 <div class="col">
                     <h6 class="m-0 fs-16 fw-semibold">Notifications</h6>
                 </div>
-                <div class="col-auto d-flex gap-2 align-items-center">
+                <div class="col-auto d-flex gap-2 align-items-center flex-wrap justify-content-end">
                     <div class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" id="notificationToastToggle" checked>
                         <label class="form-check-label small" for="notificationToastToggle">Toasts</label>
@@ -39,6 +39,9 @@ $severityClassMap = [
                         <input class="form-check-input" type="checkbox" id="notificationSoundToggle" checked>
                         <label class="form-check-label small" for="notificationSoundToggle">Sound</label>
                     </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="desktopNotificationPermissionBtn">
+                        Enable Desktop Alerts
+                    </button>
                     <span id="topbar-notification-count-pill" class="badge bg-light text-dark">{{ $topbarNotificationCount }}</span>
                 </div>
             </div>
@@ -133,6 +136,7 @@ $severityClassMap = [
         const toastContainer = document.getElementById('notification-toast-container');
         const toastToggle = document.getElementById('notificationToastToggle');
         const soundToggle = document.getElementById('notificationSoundToggle');
+        const desktopPermissionBtn = document.getElementById('desktopNotificationPermissionBtn');
 
         let lastKnownCount = Number({{ $topbarNotificationCount }});
         let lastSeenNotificationIds = new Set(@json(collect($topbarNotificationItems)->pluck('id')->values()));
@@ -151,6 +155,44 @@ $severityClassMap = [
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function updateDesktopPermissionButton() {
+            if (!('Notification' in window)) {
+                desktopPermissionBtn.textContent = 'Desktop Alerts Unsupported';
+                desktopPermissionBtn.disabled = true;
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                desktopPermissionBtn.textContent = 'Desktop Alerts Enabled';
+                desktopPermissionBtn.classList.remove('btn-outline-primary');
+                desktopPermissionBtn.classList.add('btn-outline-success');
+                return;
+            }
+
+            if (Notification.permission === 'denied') {
+                desktopPermissionBtn.textContent = 'Desktop Alerts Blocked';
+                desktopPermissionBtn.classList.remove('btn-outline-primary');
+                desktopPermissionBtn.classList.add('btn-outline-danger');
+                return;
+            }
+
+            desktopPermissionBtn.textContent = 'Enable Desktop Alerts';
+            desktopPermissionBtn.classList.remove('btn-outline-success', 'btn-outline-danger');
+            desktopPermissionBtn.classList.add('btn-outline-primary');
+        }
+
+        async function requestDesktopPermission() {
+            if (!('Notification' in window)) {
+                return;
+            }
+
+            try {
+                await Notification.requestPermission();
+                updateDesktopPermissionButton();
+            } catch (error) {
+            }
         }
 
         function playCriticalSound() {
@@ -173,12 +215,38 @@ $severityClassMap = [
             oscillator.stop(audioContext.currentTime + 0.18);
         }
 
+        function showDesktopNotification(item) {
+            if (!('Notification' in window)) {
+                return;
+            }
+
+            if (Notification.permission !== 'granted') {
+                return;
+            }
+
+            const severity = String(item.severity || 'info').toUpperCase();
+            const title = `${severity} • ${item.title || 'Notification'}`;
+            const body = `${(item.type || 'notification').replaceAll('_', ' ').toUpperCase()}\n${item.message || ''}`;
+
+            const browserNotification = new Notification(title, {
+                body: body,
+                tag: `admin-notification-${item.id}`,
+            });
+
+            browserNotification.onclick = function () {
+                window.focus();
+                window.location.href = item.show_url || item.target_url || @json(route('admin.notifications.index'));
+            };
+        }
+
         function showToast(item) {
             if (!toastToggle.checked) {
                 return;
             }
 
             const toastId = 'toast-' + Date.now();
+            const severity = String(item.severity || 'info').toLowerCase();
+            const badgeClass = severityClassMap[severity] || 'bg-secondary';
 
             const wrapper = document.createElement('div');
             wrapper.className = 'toast border-0 shadow';
@@ -186,9 +254,7 @@ $severityClassMap = [
             wrapper.setAttribute('role', 'alert');
             wrapper.setAttribute('aria-live', 'assertive');
             wrapper.setAttribute('aria-atomic', 'true');
-
-            const severity = String(item.severity || 'info').toLowerCase();
-            const badgeClass = severityClassMap[severity] || 'bg-secondary';
+            wrapper.style.cursor = 'pointer';
 
             wrapper.innerHTML = `
             <div class="toast-header">
@@ -203,6 +269,15 @@ $severityClassMap = [
             </div>
         `;
 
+            wrapper.addEventListener('click', function (event) {
+                const closeButton = event.target.closest('.btn-close');
+                if (closeButton) {
+                    return;
+                }
+
+                window.location.href = item.show_url || item.target_url || @json(route('admin.notifications.index'));
+            });
+
             toastContainer.appendChild(wrapper);
 
             const toast = new bootstrap.Toast(wrapper, { delay: 4500 });
@@ -215,6 +290,8 @@ $severityClassMap = [
             if (severity === 'error') {
                 playCriticalSound();
             }
+
+            showDesktopNotification(item);
         }
 
         function updateCounters(count) {
@@ -250,7 +327,6 @@ $severityClassMap = [
 
         function renderNotifications(payload) {
             const items = Array.isArray(payload.items) ? payload.items : [];
-
             const currentIds = new Set(items.map(item => item.id));
 
             items.forEach((item) => {
@@ -381,6 +457,9 @@ $severityClassMap = [
 
             markReadAndOpen(url, notificationId, markReadUrl);
         });
+
+        desktopPermissionBtn.addEventListener('click', requestDesktopPermission);
+        updateDesktopPermissionButton();
 
         try {
             const eventSource = new EventSource(streamUrl, { withCredentials: true });
