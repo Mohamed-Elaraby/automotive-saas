@@ -3,7 +3,7 @@ use App\Http\Controllers\Admin\AdminNotificationController;
 
 $topbarNotifications = AdminNotificationController::topbarData();
 $topbarNotificationCount = (int) ($topbarNotifications['count'] ?? 0);
-$topbarNotificationItems = $topbarNotifications['items'] ?? collect();
+$topbarNotificationItems = $topbarNotifications['items'] ?? [];
 
 $severityClassMap = [
     'info' => 'bg-primary',
@@ -201,9 +201,7 @@ $severityClassMap = [
 
         function fetchFallback() {
             fetch(summaryUrl, {
-                headers: {
-                    'Accept': 'application/json'
-                },
+                headers: { 'Accept': 'application/json' },
                 credentials: 'same-origin'
             })
                 .then(response => response.json())
