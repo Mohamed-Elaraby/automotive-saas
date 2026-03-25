@@ -44,7 +44,7 @@ $severityClassMap = [
                         $severityClass = $severityClassMap[$severity] ?? 'bg-secondary';
                     @endphp
 
-                    <div class="dropdown-item notification-item py-3 border-bottom">
+                    <div class="dropdown-item notification-item py-3 border-bottom" data-notification-id="{{ $notification['id'] ?? '' }}">
                         <div class="d-flex align-items-start gap-2">
                             <div class="flex-shrink-0">
                                 <span class="badge {{ $severityClass }}">
@@ -53,7 +53,12 @@ $severityClassMap = [
                             </div>
 
                             <div class="flex-grow-1">
-                                <a href="{{ $notification['show_url'] ?? '#' }}" class="text-decoration-none">
+                                <a
+                                    href="{{ $notification['show_url'] ?? '#' }}"
+                                    class="text-decoration-none notification-open-link"
+                                    data-notification-id="{{ $notification['id'] ?? '' }}"
+                                    data-mark-read-url="{{ $notification['mark_read_url'] ?? '#' }}"
+                                >
                                     <div class="fw-semibold text-dark mb-1">
                                         {{ \Illuminate\Support\Str::limit((string) ($notification['title'] ?? ''), 70) }}
                                     </div>
@@ -66,7 +71,12 @@ $severityClassMap = [
                                 </a>
 
                                 <div class="mt-2 d-flex gap-2">
-                                    <a href="{{ $notification['show_url'] ?? '#' }}" class="btn btn-sm btn-outline-primary">
+                                    <a
+                                        href="{{ $notification['show_url'] ?? '#' }}"
+                                        class="btn btn-sm btn-outline-primary notification-open-link"
+                                        data-notification-id="{{ $notification['id'] ?? '' }}"
+                                        data-mark-read-url="{{ $notification['mark_read_url'] ?? '#' }}"
+                                    >
                                         Open
                                     </a>
 
@@ -98,6 +108,8 @@ $severityClassMap = [
     </div>
 </div>
 
+<div id="notification-toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;"></div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const listContainer = document.getElementById('topbar-notification-list');
@@ -107,6 +119,9 @@ $severityClassMap = [
         const streamUrl = @json(route('admin.notifications.stream'));
         const summaryUrl = @json(route('admin.notifications.unread-summary'));
         const csrfToken = @json(csrf_token());
+        const toastContainer = document.getElementById('notification-toast-container');
+
+        let lastKnownCount = Number({{ $topbarNotificationCount }});
 
         const severityClassMap = {
             info: 'bg-primary',
@@ -124,6 +139,33 @@ $severityClassMap = [
                 .replace(/'/g, '&#039;');
         }
 
+        function showToast(message) {
+            const toastId = 'toast-' + Date.now();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'toast align-items-center text-bg-dark border-0';
+            wrapper.id = toastId;
+            wrapper.setAttribute('role', 'alert');
+            wrapper.setAttribute('aria-live', 'assertive');
+            wrapper.setAttribute('aria-atomic', 'true');
+
+            wrapper.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${escapeHtml(message)}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+
+            toastContainer.appendChild(wrapper);
+
+            const toast = new bootstrap.Toast(wrapper, { delay: 3500 });
+            toast.show();
+
+            wrapper.addEventListener('hidden.bs.toast', function () {
+                wrapper.remove();
+            });
+        }
+
         function updateCounters(count) {
             const normalized = Number(count || 0);
 
@@ -135,6 +177,27 @@ $severityClassMap = [
             } else {
                 badgeWrapper.classList.add('d-none');
                 badge.textContent = '0';
+            }
+
+            if (normalized > lastKnownCount) {
+                showToast('New notification received');
+            }
+
+            lastKnownCount = normalized;
+        }
+
+        function removeNotificationItem(notificationId) {
+            const row = listContainer.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (row) {
+                row.remove();
+            }
+
+            if (!listContainer.querySelector('[data-notification-id]')) {
+                listContainer.innerHTML = `
+                <div class="dropdown-item notification-item py-4 text-center text-muted" id="topbar-notification-empty-state">
+                    No notifications yet.
+                </div>
+            `;
             }
         }
 
@@ -157,7 +220,7 @@ $severityClassMap = [
                 const severityClass = severityClassMap[severity] || 'bg-secondary';
 
                 return `
-                <div class="dropdown-item notification-item py-3 border-bottom">
+                <div class="dropdown-item notification-item py-3 border-bottom" data-notification-id="${escapeHtml(item.id)}">
                     <div class="d-flex align-items-start gap-2">
                         <div class="flex-shrink-0">
                             <span class="badge ${severityClass}">
@@ -166,7 +229,12 @@ $severityClassMap = [
                         </div>
 
                         <div class="flex-grow-1">
-                            <a href="${escapeHtml(item.show_url || '#')}" class="text-decoration-none">
+                            <a
+                                href="${escapeHtml(item.show_url || '#')}"
+                                class="text-decoration-none notification-open-link"
+                                data-notification-id="${escapeHtml(item.id)}"
+                                data-mark-read-url="${escapeHtml(item.mark_read_url || '#')}"
+                            >
                                 <div class="fw-semibold text-dark mb-1">
                                     ${escapeHtml(item.title || '')}
                                 </div>
@@ -179,7 +247,12 @@ $severityClassMap = [
                             </a>
 
                             <div class="mt-2 d-flex gap-2">
-                                <a href="${escapeHtml(item.show_url || '#')}" class="btn btn-sm btn-outline-primary">
+                                <a
+                                    href="${escapeHtml(item.show_url || '#')}"
+                                    class="btn btn-sm btn-outline-primary notification-open-link"
+                                    data-notification-id="${escapeHtml(item.id)}"
+                                    data-mark-read-url="${escapeHtml(item.mark_read_url || '#')}"
+                                >
                                     Open
                                 </a>
 
@@ -208,6 +281,47 @@ $severityClassMap = [
                 .then(payload => renderNotifications(payload))
                 .catch(() => {});
         }
+
+        async function markReadAndOpen(url, notificationId, markReadUrl) {
+            try {
+                const response = await fetch(markReadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+
+                const payload = await response.json();
+
+                if (payload.ok) {
+                    removeNotificationItem(notificationId);
+                    updateCounters(payload.count || 0);
+                }
+            } catch (error) {
+                // ignore and continue with navigation
+            }
+
+            window.location.href = url;
+        }
+
+        document.addEventListener('click', function (event) {
+            const link = event.target.closest('.notification-open-link');
+
+            if (!link) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const url = link.getAttribute('href');
+            const notificationId = link.dataset.notificationId;
+            const markReadUrl = link.dataset.markReadUrl;
+
+            markReadAndOpen(url, notificationId, markReadUrl);
+        });
 
         try {
             const eventSource = new EventSource(streamUrl, { withCredentials: true });

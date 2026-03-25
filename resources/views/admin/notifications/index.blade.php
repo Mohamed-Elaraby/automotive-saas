@@ -2,6 +2,17 @@
 @extends('admin.layouts.centralLayout.mainlayout')
 
 @section('content')
+    @php
+        $currentTab = $filters['tab'] ?? 'all';
+        $allCount = (int) ($stats['total'] ?? 0);
+        $systemErrorCount = (int) ($typeCounts['system_error'] ?? 0);
+        $billingCount = (int) ($typeCounts['billing'] ?? 0);
+
+        $tabLink = function (string $tab) use ($filters) {
+            return route('admin.notifications.index', array_merge($filters, ['tab' => $tab]));
+        };
+    @endphp
+
     <div class="page-wrapper">
         <div class="content">
             <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -24,6 +35,18 @@
                             Clear Demo Notifications
                         </button>
                     </form>
+
+                    <form method="POST" action="{{ route('admin.notifications.destroy-all') }}" onsubmit="return confirm('Delete all notifications in the current view?');">
+                        @csrf
+                        @foreach(request()->query() as $key => $value)
+                            @if(!is_array($value))
+                                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                            @endif
+                        @endforeach
+                        <button type="submit" class="btn btn-danger">
+                            Delete Current View
+                        </button>
+                    </form>
                 </div>
             </div>
 
@@ -43,63 +66,51 @@
 
             <div class="row mb-4">
                 <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Total</div>
-                            <h4 class="mb-0">{{ number_format((int) ($stats['total'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Total</div><h4 class="mb-0">{{ number_format((int) ($stats['total'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Unread</div>
-                            <h4 class="mb-0 text-danger">{{ number_format((int) ($stats['unread'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Unread</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['unread'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Active</div>
-                            <h4 class="mb-0 text-primary">{{ number_format((int) ($stats['active'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Active</div><h4 class="mb-0 text-primary">{{ number_format((int) ($stats['active'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Today</div>
-                            <h4 class="mb-0 text-success">{{ number_format((int) ($stats['today'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Today</div><h4 class="mb-0 text-success">{{ number_format((int) ($stats['today'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Errors</div>
-                            <h4 class="mb-0 text-danger">{{ number_format((int) ($stats['errors'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Errors</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['errors'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-2 col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Warnings</div>
-                            <h4 class="mb-0 text-warning">{{ number_format((int) ($stats['warnings'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted mb-1">Warnings</div><h4 class="mb-0 text-warning">{{ number_format((int) ($stats['warnings'] ?? 0)) }}</h4></div></div>
+                </div>
+            </div>
+
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <ul class="nav nav-pills gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link {{ $currentTab === 'all' ? 'active' : '' }}" href="{{ $tabLink('all') }}">
+                                All <span class="badge bg-light text-dark ms-1">{{ $allCount }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ $currentTab === 'system_error' ? 'active' : '' }}" href="{{ $tabLink('system_error') }}">
+                                System Errors <span class="badge bg-light text-dark ms-1">{{ $systemErrorCount }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ $currentTab === 'billing' ? 'active' : '' }}" href="{{ $tabLink('billing') }}">
+                                Billing <span class="badge bg-light text-dark ms-1">{{ $billingCount }}</span>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
 
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body">
                     <form method="GET" action="{{ route('admin.notifications.index') }}">
+                        <input type="hidden" name="tab" value="{{ $currentTab }}">
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label">Search</label>
@@ -188,9 +199,7 @@
                                     @endphp
                                     <tr>
                                         <td>{{ optional($notification->notified_at)->format('Y-m-d H:i:s') ?: '-' }}</td>
-                                        <td>
-                                            <span class="badge bg-light text-dark">{{ $typeLabel }}</span>
-                                        </td>
+                                        <td><span class="badge bg-light text-dark">{{ $typeLabel }}</span></td>
                                         <td>
                                             <div class="fw-semibold">{{ $notification->title }}</div>
                                             <div class="small text-muted">{{ \Illuminate\Support\Str::limit((string) $notification->message, 100) }}</div>
@@ -198,11 +207,7 @@
                                                 <div class="small text-muted">Tenant: {{ $notification->tenant_id }}</div>
                                             @endif
                                         </td>
-                                        <td>
-                                            <span class="badge {{ $severityClass }}">
-                                                {{ strtoupper($notification->severity) }}
-                                            </span>
-                                        </td>
+                                        <td><span class="badge {{ $severityClass }}">{{ strtoupper($notification->severity) }}</span></td>
                                         <td>
                                             <div class="d-flex flex-column gap-1">
                                                 <span class="badge {{ $notification->is_read ? 'bg-success' : 'bg-warning text-dark' }}">
@@ -236,6 +241,13 @@
                                                         </button>
                                                     </form>
                                                 @endif
+
+                                                <form method="POST" action="{{ route('admin.notifications.destroy', $notification->id) }}" onsubmit="return confirm('Delete this notification?');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        Delete
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

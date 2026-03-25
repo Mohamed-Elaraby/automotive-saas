@@ -4,52 +4,43 @@
 @section('content')
     <div class="page-wrapper">
         <div class="content">
-            <div class="page-header">
+            <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="content-page-header">
                     <h5>System Errors</h5>
                     <p class="text-muted mb-0">Track exceptions captured by the system with request, route, and user context.</p>
                 </div>
+
+                <form method="POST" action="{{ route('admin.system-errors.destroy-all') }}" onsubmit="return confirm('Delete all system errors in the current view?');">
+                    @csrf
+                    @foreach(request()->query() as $key => $value)
+                        @if(!is_array($value))
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endif
+                    @endforeach
+                    <button type="submit" class="btn btn-danger">Delete Current View</button>
+                </form>
             </div>
 
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
             <div class="row mb-4">
                 <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Total Errors</div>
-                            <h4 class="mb-0">{{ number_format((int) ($stats['total'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card"><div class="card-body"><div class="text-muted mb-1">Total Errors</div><h4 class="mb-0">{{ number_format((int) ($stats['total'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Unread</div>
-                            <h4 class="mb-0 text-danger">{{ number_format((int) ($stats['unread'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card"><div class="card-body"><div class="text-muted mb-1">Unread</div><h4 class="mb-0 text-danger">{{ number_format((int) ($stats['unread'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Unresolved</div>
-                            <h4 class="mb-0 text-warning">{{ number_format((int) ($stats['unresolved'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card"><div class="card-body"><div class="text-muted mb-1">Unresolved</div><h4 class="mb-0 text-warning">{{ number_format((int) ($stats['unresolved'] ?? 0)) }}</h4></div></div>
                 </div>
-
                 <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-muted mb-1">Today</div>
-                            <h4 class="mb-0 text-primary">{{ number_format((int) ($stats['today'] ?? 0)) }}</h4>
-                        </div>
-                    </div>
+                    <div class="card"><div class="card-body"><div class="text-muted mb-1">Today</div><h4 class="mb-0 text-primary">{{ number_format((int) ($stats['today'] ?? 0)) }}</h4></div></div>
                 </div>
             </div>
 
@@ -135,9 +126,7 @@
                                 @foreach($logs as $log)
                                     <tr>
                                         <td>{{ optional($log->occurred_at)->format('Y-m-d H:i:s') ?: '-' }}</td>
-                                        <td>
-                                            <span class="badge bg-danger">{{ strtoupper($log->level) }}</span>
-                                        </td>
+                                        <td><span class="badge bg-danger">{{ strtoupper($log->level) }}</span></td>
                                         <td>
                                             <div class="fw-semibold">{{ \Illuminate\Support\Str::limit($log->message, 120) }}</div>
                                             <div class="small text-muted">{{ $log->exception_class }}</div>
@@ -147,9 +136,7 @@
                                             @if($log->user_email)
                                                 <div>{{ $log->user_email }}</div>
                                             @endif
-                                            <div class="small text-muted">
-                                                {{ $log->tenant_id ?: '-' }}
-                                            </div>
+                                            <div class="small text-muted">{{ $log->tenant_id ?: '-' }}</div>
                                         </td>
                                         <td>
                                             <span class="badge {{ $log->is_read ? 'bg-success' : 'bg-warning text-dark' }}">
@@ -184,6 +171,13 @@
                                                         </button>
                                                     </form>
                                                 @endif
+
+                                                <form method="POST" action="{{ route('admin.system-errors.destroy', $log->id) }}" onsubmit="return confirm('Delete this system error?');">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        Delete
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

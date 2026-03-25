@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdminNotification;
 use App\Services\Notifications\AdminNotificationSchemaService;
 use App\Services\Notifications\AdminNotificationService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,29 +24,16 @@ class AdminNotificationController extends Controller
 
 public function index(Request $request): View
 {
-    $filters = [
-        'search' => trim((string) $request->string('search')),
-        'type' => trim((string) $request->string('type')),
-        'severity' => trim((string) $request->string('severity')),
-        'is_read' => (string) $request->string('is_read'),
-        'is_archived' => (string) $request->string('is_archived'),
-    ];
+    $filters = $this->filtersFromRequest($request);
 
     if (! $this->schemaService->tableExists()) {
         return view('admin.notifications.index', [
             'notifications' => AdminNotification::query()->whereRaw('1 = 0')->paginate(25),
             'filters' => $filters,
             'types' => collect(),
+            'typeCounts' => [],
             'severities' => collect(),
-            'stats' => [
-                'total' => 0,
-                'unread' => 0,
-                'active' => 0,
-                'today' => 0,
-                'errors' => 0,
-                'warnings' => 0,
-                'successes' => 0,
-            ],
+            'stats' => $this->emptyStats(),
             'schemaWarnings' => ['The admin_notifications table does not exist yet.'],
         ]);
     }
@@ -55,16 +43,9 @@ public function index(Request $request): View
             'notifications' => AdminNotification::query()->whereRaw('1 = 0')->paginate(25),
             'filters' => $filters,
             'types' => collect(),
+            'typeCounts' => [],
             'severities' => collect(),
-            'stats' => [
-                'total' => 0,
-                'unread' => 0,
-                'active' => 0,
-                'today' => 0,
-                'errors' => 0,
-                'warnings' => 0,
-                'successes' => 0,
-            ],
+            'stats' => $this->emptyStats(),
             'schemaWarnings' => [
                 'The admin_notifications table is using an older schema. Missing columns: ' . implode(', ', $this->schemaService->missingRequiredColumns()),
             ],
@@ -72,33 +53,7 @@ public function index(Request $request): View
     }
 
     $query = AdminNotification::query();
-
-    if ($filters['search'] !== '') {
-        $search = $filters['search'];
-
-        $query->where(function ($builder) use ($search) {
-            $builder->where('title', 'like', '%' . $search . '%')
-                ->orWhere('message', 'like', '%' . $search . '%')
-                ->orWhere('user_email', 'like', '%' . $search . '%')
-                ->orWhere('tenant_id', 'like', '%' . $search . '%');
-        });
-    }
-
-    if ($filters['type'] !== '') {
-        $query->where('type', $filters['type']);
-    }
-
-    if ($filters['severity'] !== '') {
-        $query->where('severity', $filters['severity']);
-    }
-
-    if ($filters['is_read'] !== '') {
-        $query->where('is_read', (bool) $filters['is_read']);
-    }
-
-    if ($filters['is_archived'] !== '') {
-        $query->where('is_archived', (bool) $filters['is_archived']);
-    }
+    $this->applyFilters($query, $filters);
 
     $notifications = $query
         ->orderByDesc('notified_at')
@@ -106,10 +61,17 @@ public function index(Request $request): View
         ->paginate(25)
         ->withQueryString();
 
+    $typeCounts = AdminNotification::query()
+        ->selectRaw('type, COUNT(*) as aggregate_count')
+        ->groupBy('type')
+        ->pluck('aggregate_count', 'type')
+        ->toArray();
+
     return view('admin.notifications.index', [
         'notifications' => $notifications,
         'filters' => $filters,
         'types' => AdminNotification::query()->distinct()->orderBy('type')->pluck('type'),
+        'typeCounts' => $typeCounts,
         'severities' => AdminNotification::query()->distinct()->orderBy('severity')->pluck('severity'),
         'stats' => [
             'total' => AdminNotification::query()->count(),
@@ -141,24 +103,39 @@ public function show(AdminNotification $notification): View
     ]);
 }
 
-public function markRead(AdminNotification $notification): RedirectResponse
-{
-    if (! $this->schemaService->hasColumn('is_read')) {
-        return back()->with('error', 'Read tracking columns are missing from admin_notifications.');
+public function markRead(AdminNotification $notification, Request $request): RedirectResponse|JsonResponse
+    {
+        if (! $this->schemaService->hasColumn('is_read')) {
+            if ($request->expectsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Read tracking columns are missing.'], 422);
+            }
+
+            return back()->with('error', 'Read tracking columns are missing from admin_notifications.');
+        }
+
+        $payload = ['is_read' => true];
+
+        if ($this->schemaService->hasColumn('read_at')) {
+            $payload['read_at'] = now();
+        }
+
+        $notification->update($payload);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'id' => $notification->id,
+                'count' => AdminNotification::query()
+                    ->where('is_archived', false)
+                    ->where('is_read', false)
+                    ->count(),
+            ]);
+        }
+
+        return back()->with('success', 'Notification marked as read.');
     }
 
-    $payload = ['is_read' => true];
-
-    if ($this->schemaService->hasColumn('read_at')) {
-        $payload['read_at'] = now();
-    }
-
-    $notification->update($payload);
-
-    return back()->with('success', 'Notification marked as read.');
-}
-
-public function archive(AdminNotification $notification): RedirectResponse
+    public function archive(AdminNotification $notification): RedirectResponse
 {
     if (! $this->schemaService->hasColumn('is_archived')) {
         return back()->with('error', 'Archive tracking columns are missing from admin_notifications.');
@@ -185,7 +162,33 @@ public function archive(AdminNotification $notification): RedirectResponse
     return back()->with('success', 'Notification archived successfully.');
 }
 
-public function seedDemo(AdminNotificationService $notificationService): RedirectResponse
+    public function destroy(AdminNotification $notification): RedirectResponse
+{
+    $notification->delete();
+
+    return back()->with('success', 'Notification deleted successfully.');
+}
+
+    public function destroyAll(Request $request): RedirectResponse
+{
+    if (! $this->schemaService->tableExists()) {
+        return back()->with('error', 'Notification table does not exist.');
+    }
+
+    $filters = $this->filtersFromRequest($request);
+
+    $query = AdminNotification::query();
+    $this->applyFilters($query, $filters);
+
+    $deletedCount = (clone $query)->count();
+    $query->delete();
+
+    return redirect()
+        ->route('admin.notifications.index')
+        ->with('success', "Deleted {$deletedCount} notification(s) from the current view.");
+}
+
+    public function seedDemo(AdminNotificationService $notificationService): RedirectResponse
 {
     $demoItems = [
         new AdminNotificationData(
@@ -304,7 +307,7 @@ public function seedDemo(AdminNotificationService $notificationService): Redirec
             ->with('success', 'Demo notifications generated successfully.');
     }
 
-public function clearDemo(): RedirectResponse
+    public function clearDemo(): RedirectResponse
 {
     AdminNotification::query()
         ->whereJsonContains('context_payload->demo', true)
@@ -315,12 +318,12 @@ public function clearDemo(): RedirectResponse
         ->with('success', 'Demo notifications removed successfully.');
 }
 
-public function unreadSummary(): JsonResponse
+    public function unreadSummary(): JsonResponse
 {
     return response()->json($this->topbarPayload());
 }
 
-public function stream(): StreamedResponse
+    public function stream(): StreamedResponse
 {
     $pollSeconds = max(3, (int) config('notifications.admin.sse_poll_seconds', 10));
 
@@ -352,20 +355,20 @@ public function stream(): StreamedResponse
     ]);
 }
 
-public static function topbarData(): array
+    public static function topbarData(): array
 {
     try {
         return app(self::class)->topbarPayload();
     } catch (\Throwable $e) {
         return [
             'count' => 0,
-            'items' => collect(),
+            'items' => [],
             'index_url' => route('admin.notifications.index'),
         ];
     }
 }
 
-protected function topbarPayload(): array
+    protected function topbarPayload(): array
 {
     if (! $this->schemaService->tableExists() || ! $this->schemaService->hasRequiredColumns()) {
         return [
@@ -406,6 +409,65 @@ protected function topbarPayload(): array
             ->count(),
         'items' => $items,
         'index_url' => route('admin.notifications.index'),
+    ];
+}
+
+    protected function filtersFromRequest(Request $request): array
+{
+    return [
+        'search' => trim((string) $request->string('search')),
+        'tab' => trim((string) $request->string('tab', 'all')),
+        'type' => trim((string) $request->string('type')),
+        'severity' => trim((string) $request->string('severity')),
+        'is_read' => (string) $request->string('is_read'),
+        'is_archived' => (string) $request->string('is_archived'),
+    ];
+}
+
+    protected function applyFilters(Builder $query, array $filters): void
+{
+    if (($filters['tab'] ?? 'all') !== '' && ($filters['tab'] ?? 'all') !== 'all') {
+        $query->where('type', $filters['tab']);
+    }
+
+    if (($filters['search'] ?? '') !== '') {
+        $search = $filters['search'];
+
+        $query->where(function ($builder) use ($search) {
+            $builder->where('title', 'like', '%' . $search . '%')
+                ->orWhere('message', 'like', '%' . $search . '%')
+                ->orWhere('user_email', 'like', '%' . $search . '%')
+                ->orWhere('tenant_id', 'like', '%' . $search . '%');
+        });
+    }
+
+    if (($filters['type'] ?? '') !== '') {
+        $query->where('type', $filters['type']);
+    }
+
+    if (($filters['severity'] ?? '') !== '') {
+        $query->where('severity', $filters['severity']);
+    }
+
+    if (($filters['is_read'] ?? '') !== '') {
+        $query->where('is_read', (bool) $filters['is_read']);
+    }
+
+    if (($filters['is_archived'] ?? '') !== '') {
+        $query->where('is_archived', (bool) $filters['is_archived']);
+    }
+}
+
+    protected function emptyStats(): array
+{
+    return [
+        'total' => 0,
+        'unread' => 0,
+        'active' => 0,
+        'today' => 0,
+        'errors' => 0,
+        'warnings' => 0,
+        'successes' => 0,
     ];
 }
 }
