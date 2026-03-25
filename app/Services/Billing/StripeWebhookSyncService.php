@@ -3,73 +3,264 @@
 namespace App\Services\Billing;
 
 use App\Models\Subscription;
+use Carbon\Carbon;
 use Illuminate\Support\Arr;
+use Throwable;
 
 class StripeWebhookSyncService
 {
     public function __construct(
-        protected TenantBillingLifecycleService $lifecycleService,
+        protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
         protected BillingNotificationService $billingNotificationService
     ) {
     }
 
-public function handleEvent(string $eventType, array $payload): void
+public function handleEvent(object $event): void
 {
-    if ($eventType === 'invoice.payment_failed') {
-        $this->handleInvoicePaymentFailed($payload);
+    $payload = $this->eventToArray($event);
+    $eventType = (string) ($payload['type'] ?? '');
+
+    if ($eventType === '') {
         return;
     }
 
-    if ($eventType === 'invoice.paid') {
-        $this->handleInvoicePaid($payload);
-        return;
+    try {
+        match ($eventType) {
+        'invoice.payment_failed' => $this->handleInvoicePaymentFailed($payload),
+                'invoice.paid' => $this->handleInvoicePaid($payload),
+                'customer.subscription.updated' => $this->handleCustomerSubscriptionUpdated($payload),
+                'customer.subscription.deleted' => $this->handleCustomerSubscriptionDeleted($payload),
+                'checkout.session.completed' => $this->handleCheckoutSessionCompleted($payload),
+                default => null,
+            };
+        } catch (Throwable $e) {
+        report($e);
     }
 }
 
 protected function handleInvoicePaymentFailed(array $payload): void
 {
-    $gatewaySubscriptionId = (string) Arr::get($payload, 'data.object.subscription', '');
+    $invoice = (array) Arr::get($payload, 'data.object', []);
+    $gatewaySubscriptionId = (string) ($invoice['subscription'] ?? '');
 
     if ($gatewaySubscriptionId === '') {
         return;
     }
 
-    $subscription = Subscription::query()
-        ->where('gateway', 'stripe')
-        ->where('gateway_subscription_id', $gatewaySubscriptionId)
-        ->first();
+    $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
 
     if (! $subscription) {
         return;
     }
 
-    $this->lifecycleService->markAsPastDue($subscription, now());
+    $billingReason = (string) ($invoice['billing_reason'] ?? '');
+    $attemptCount = (int) ($invoice['attempt_count'] ?? 0);
 
-    $this->billingNotificationService->paymentFailed($subscription->fresh(), [
+    $this->billingNotificationService->paymentFailed($subscription, [
         'stripe_event' => 'invoice.payment_failed',
-        'invoice_id' => Arr::get($payload, 'data.object.id'),
-        'billing_reason' => Arr::get($payload, 'data.object.billing_reason'),
-        'attempt_count' => Arr::get($payload, 'data.object.attempt_count'),
+        'invoice_id' => $invoice['id'] ?? null,
+        'billing_reason' => $billingReason,
+        'attempt_count' => $attemptCount,
+        'amount_due' => $invoice['amount_due'] ?? null,
+        'amount_paid' => $invoice['amount_paid'] ?? null,
+        'currency' => $invoice['currency'] ?? null,
     ]);
+
+    if (in_array($billingReason, ['subscription_cycle', 'subscription_update'], true)) {
+        $this->billingNotificationService->renewalFailed($subscription, [
+            'stripe_event' => 'invoice.payment_failed',
+            'invoice_id' => $invoice['id'] ?? null,
+            'billing_reason' => $billingReason,
+            'attempt_count' => $attemptCount,
+        ]);
+    }
 }
 
 protected function handleInvoicePaid(array $payload): void
 {
-    $gatewaySubscriptionId = (string) Arr::get($payload, 'data.object.subscription', '');
+    $invoice = (array) Arr::get($payload, 'data.object', []);
+    $gatewaySubscriptionId = (string) ($invoice['subscription'] ?? '');
 
     if ($gatewaySubscriptionId === '') {
         return;
     }
 
+    $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+    if (! $subscription) {
+        return;
+    }
+
+    $billingReason = (string) ($invoice['billing_reason'] ?? '');
+
+    $this->billingNotificationService->invoicePaid($subscription, [
+        'stripe_event' => 'invoice.paid',
+        'invoice_id' => $invoice['id'] ?? null,
+        'billing_reason' => $billingReason,
+        'amount_due' => $invoice['amount_due'] ?? null,
+        'amount_paid' => $invoice['amount_paid'] ?? null,
+        'currency' => $invoice['currency'] ?? null,
+    ]);
+
+    if (in_array($billingReason, ['subscription_cycle', 'subscription_update'], true)) {
+        $this->billingNotificationService->renewalSucceeded($subscription, [
+            'stripe_event' => 'invoice.paid',
+            'invoice_id' => $invoice['id'] ?? null,
+            'billing_reason' => $billingReason,
+        ]);
+    }
+}
+
+protected function handleCustomerSubscriptionUpdated(array $payload): void
+{
+    $stripeSubscription = (array) Arr::get($payload, 'data.object', []);
+    $gatewaySubscriptionId = (string) ($stripeSubscription['id'] ?? '');
+
+    if ($gatewaySubscriptionId === '') {
+        return;
+    }
+
+    $before = $this->findSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+    $beforePlanId = $before?->plan_id;
+        $beforeGatewayPriceId = $before?->gateway_price_id;
+        $beforeStatus = $before?->status;
+        $beforeCancelledAt = $before?->cancelled_at;
+        $beforeEndsAt = $before?->ends_at;
+
+        $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+        if (! $subscription) {
+            return;
+        }
+
+        $afterPlanId = $subscription->plan_id;
+        $afterGatewayPriceId = $subscription->gateway_price_id;
+        $afterStatus = $subscription->status;
+        $afterCancelledAt = $subscription->cancelled_at;
+        $afterEndsAt = $subscription->ends_at;
+
+        if (
+            (string) $beforePlanId !== (string) $afterPlanId
+            || (string) $beforeGatewayPriceId !== (string) $afterGatewayPriceId
+        ) {
+            $this->billingNotificationService->planChanged($subscription, [
+                'stripe_event' => 'customer.subscription.updated',
+                'old_plan_id' => $beforePlanId,
+                'new_plan_id' => $afterPlanId,
+                'old_gateway_price_id' => $beforeGatewayPriceId,
+                'new_gateway_price_id' => $afterGatewayPriceId,
+            ]);
+        }
+
+        $cancelAtPeriodEnd = (bool) ($stripeSubscription['cancel_at_period_end'] ?? false);
+        $stripeStatus = (string) ($stripeSubscription['status'] ?? '');
+
+        if (
+            $cancelAtPeriodEnd
+            && (string) $beforeCancelledAt !== (string) $afterCancelledAt
+        ) {
+            $this->billingNotificationService->subscriptionCancelled($subscription, [
+                'stripe_event' => 'customer.subscription.updated',
+                'cancel_at_period_end' => true,
+                'stripe_status' => $stripeStatus,
+                'old_status' => $beforeStatus,
+                'new_status' => $afterStatus,
+                'old_ends_at' => optional($beforeEndsAt)?->format('Y-m-d H:i:s'),
+                'new_ends_at' => optional($afterEndsAt)?->format('Y-m-d H:i:s'),
+            ]);
+        }
+    }
+
+protected function handleCustomerSubscriptionDeleted(array $payload): void
+{
+    $stripeSubscription = (array) Arr::get($payload, 'data.object', []);
+    $gatewaySubscriptionId = (string) ($stripeSubscription['id'] ?? '');
+
+    if ($gatewaySubscriptionId === '') {
+        return;
+    }
+
+    $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+    if (! $subscription) {
+        return;
+    }
+
+    $periodEndUnix = (int) ($stripeSubscription['current_period_end'] ?? 0);
+    $periodEnd = $periodEndUnix > 0 ? Carbon::createFromTimestamp($periodEndUnix) : null;
+
+    if ($periodEnd && $periodEnd->isPast()) {
+        $this->billingNotificationService->subscriptionExpired($subscription, [
+            'stripe_event' => 'customer.subscription.deleted',
+            'current_period_end' => $periodEnd->format('Y-m-d H:i:s'),
+        ]);
+
+        return;
+    }
+
+    $this->billingNotificationService->subscriptionCancelled($subscription, [
+        'stripe_event' => 'customer.subscription.deleted',
+        'current_period_end' => $periodEnd?->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+protected function handleCheckoutSessionCompleted(array $payload): void
+{
+    $session = (array) Arr::get($payload, 'data.object', []);
+    $sessionId = (string) ($session['id'] ?? '');
+
+    if ($sessionId === '') {
+        return;
+    }
+
     $subscription = Subscription::query()
         ->where('gateway', 'stripe')
-        ->where('gateway_subscription_id', $gatewaySubscriptionId)
+        ->where('gateway_checkout_session_id', $sessionId)
         ->first();
 
     if (! $subscription) {
         return;
     }
 
-    $this->lifecycleService->markAsRecovered($subscription, now());
+    if (! empty($subscription->gateway_subscription_id)) {
+        $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId((string) $subscription->gateway_subscription_id)
+            ?? $subscription->fresh();
+    }
+
+    $this->billingNotificationService->checkoutCompleted($subscription, [
+        'stripe_event' => 'checkout.session.completed',
+        'checkout_session_id' => $sessionId,
+        'checkout_mode' => $session['mode'] ?? null,
+        'customer_id' => $session['customer'] ?? null,
+        'payment_status' => $session['payment_status'] ?? null,
+        'subscription_id_from_session' => $session['subscription'] ?? null,
+    ]);
+}
+
+protected function syncAndFindSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?Subscription
+{
+    if (method_exists($this->stripeSubscriptionSyncService, 'syncByGatewaySubscriptionId')) {
+        try {
+            $this->stripeSubscriptionSyncService->syncByGatewaySubscriptionId($gatewaySubscriptionId);
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    return $this->findSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+}
+
+protected function findSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?Subscription
+{
+    return Subscription::query()
+        ->where('gateway', 'stripe')
+        ->where('gateway_subscription_id', $gatewaySubscriptionId)
+        ->first();
+}
+
+protected function eventToArray(object $event): array
+{
+    return json_decode(json_encode($event, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), true) ?: [];
 }
 }
