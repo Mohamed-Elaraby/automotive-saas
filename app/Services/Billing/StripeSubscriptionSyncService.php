@@ -64,7 +64,7 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
         $subscription->save();
 
         match ($mappedStatus) {
-        'active' => $this->billingLifecycleService->markAsRecovered($subscription),
+        'active' => $this->markPaidActive($subscription),
             'trialing' => $this->markTrialing($subscription),
             'past_due' => $this->billingLifecycleService->markAsPastDue($subscription),
             'expired' => $this->billingLifecycleService->markAsExpired($subscription),
@@ -74,6 +74,27 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
 
         return Subscription::query()->findOrFail($subscription->id);
     }
+
+    protected function markPaidActive(Subscription $subscription): Subscription
+{
+    $this->billingLifecycleService->markAsRecovered($subscription);
+
+    $subscription->refresh();
+
+    $subscription->fill([
+        'status' => 'active',
+        'trial_ends_at' => null,
+        'grace_ends_at' => null,
+        'last_payment_failed_at' => null,
+        'past_due_started_at' => null,
+        'suspended_at' => null,
+        'cancelled_at' => null,
+    ]);
+
+    $subscription->save();
+
+    return $subscription;
+}
 
     protected function resolveLocalPlanId(array $payload, ?string $gatewayPriceId): ?int
 {
