@@ -1,0 +1,438 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+class TenantController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $tenantModelClass = $this->tenantModelClass();
+
+        abort_unless(class_exists($tenantModelClass), 500, 'Configured tenant model class does not exist.');
+
+        /** @var \Illuminate\Database\Eloquent\Builder $query */
+        $query = $tenantModelClass::query();
+
+        $filters = [
+            'q' => trim((string) $request->input('q', '')),
+            'status' => trim((string) $request->input('status', '')),
+        ];
+
+        $matchingIdsFromDomain = [];
+        if ($filters['q'] !== '') {
+            $matchingIdsFromDomain = $this->matchingTenantIdsByDomain($filters['q']);
+
+            $query->where(function ($builder) use ($filters, $matchingIdsFromDomain) {
+                $builder->where('id', 'like', '%' . $filters['q'] . '%');
+
+                if (! empty($matchingIdsFromDomain)) {
+                    $builder->orWhereIn('id', $matchingIdsFromDomain);
+                }
+            });
+        }
+
+        if ($filters['status'] !== '') {
+            $matchingIdsFromStatus = $this->matchingTenantIdsBySubscriptionStatus($filters['status']);
+
+            if (empty($matchingIdsFromStatus)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('id', $matchingIdsFromStatus);
+            }
+        }
+
+        if ($this->tenantTableHasColumn('created_at')) {
+            $query->latest('created_at');
+        } else {
+            $query->orderBy('id');
+        }
+
+        /** @var LengthAwarePaginator $tenants */
+        $tenants = $query->paginate(20)->withQueryString();
+
+        $tenantRows = $this->buildTenantSummaries(collect($tenants->items()));
+
+        return view('admin.tenants.index', [
+            'tenants' => $tenants,
+            'tenantRows' => $tenantRows,
+            'filters' => $filters,
+            'stats' => $this->indexStats(),
+        ]);
+    }
+
+    public function show(string $tenantId): View
+    {
+        $tenant = $this->findTenantOrFail($tenantId);
+
+        $tenantRows = $this->buildTenantSummaries(collect([$tenant]));
+        $row = $tenantRows[$tenantId] ?? null;
+
+        $domains = $this->domainsByTenantIds([$tenantId])->get($tenantId, collect())->values();
+        $subscription = $this->latestSubscriptionsByTenantIds([$tenantId])->get($tenantId);
+        $tenantData = $this->normalizedTenantData($tenant);
+
+        return view('admin.tenants.show', [
+            'tenant' => $tenant,
+            'row' => $row,
+            'domains' => $domains,
+            'subscription' => $subscription,
+            'tenantData' => $tenantData,
+        ]);
+    }
+
+    protected function tenantModelClass(): string
+    {
+        return (string) (Config::get('tenancy.tenant_model') ?: \App\Models\Tenant::class);
+    }
+
+    protected function tenantModelInstance(): Model
+    {
+        $class = $this->tenantModelClass();
+
+        /** @var Model $instance */
+        $instance = new $class();
+
+        return $instance;
+    }
+
+    protected function tenantConnectionName(): string
+    {
+        return $this->tenantModelInstance()->getConnectionName()
+            ?: (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
+    }
+
+    protected function tenantTableName(): string
+    {
+        return $this->tenantModelInstance()->getTable();
+    }
+
+    protected function centralConnectionName(): string
+    {
+        return (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
+    }
+
+    protected function tenantTableHasColumn(string $column): bool
+    {
+        return Schema::connection($this->tenantConnectionName())->hasColumn($this->tenantTableName(), $column);
+    }
+
+    protected function domainsTableExists(): bool
+    {
+        return Schema::connection($this->centralConnectionName())->hasTable('domains');
+    }
+
+    protected function subscriptionsTableExists(): bool
+    {
+        return Schema::connection($this->centralConnectionName())->hasTable('subscriptions');
+    }
+
+    protected function plansTableExists(): bool
+    {
+        return Schema::connection($this->centralConnectionName())->hasTable('plans');
+    }
+
+    protected function matchingTenantIdsByDomain(string $search): array
+    {
+        if (! $this->domainsTableExists()) {
+            return [];
+        }
+
+        return DB::connection($this->centralConnectionName())
+            ->table('domains')
+            ->where('domain', 'like', '%' . $search . '%')
+            ->pluck('tenant_id')
+            ->filter()
+            ->unique()
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+    }
+
+    protected function matchingTenantIdsBySubscriptionStatus(string $status): array
+    {
+        if (! $this->subscriptionsTableExists()) {
+            return [];
+        }
+
+        return DB::connection($this->centralConnectionName())
+            ->table('subscriptions')
+            ->where('status', $status)
+            ->pluck('tenant_id')
+            ->filter()
+            ->unique()
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, Model>  $tenants
+     * @return array<string, array<string, mixed>>
+     */
+    protected function buildTenantSummaries(Collection $tenants): array
+    {
+        $tenantIds = $tenants
+            ->map(fn (Model $tenant) => (string) $tenant->getKey())
+            ->values()
+            ->all();
+
+        $domainsByTenant = $this->domainsByTenantIds($tenantIds);
+        $subscriptionsByTenant = $this->latestSubscriptionsByTenantIds($tenantIds);
+
+        $rows = [];
+
+        foreach ($tenants as $tenant) {
+            $tenantId = (string) $tenant->getKey();
+            $domains = $domainsByTenant->get($tenantId, collect())->values();
+            $subscription = $subscriptionsByTenant->get($tenantId);
+            $tenantData = $this->normalizedTenantData($tenant);
+
+            $primaryDomain = $domains->first();
+            $primaryDomainString = $primaryDomain['domain'] ?? null;
+
+            $rows[$tenantId] = [
+                'tenant_id' => $tenantId,
+                'primary_domain' => $primaryDomainString,
+                'domains' => $domains,
+                'domains_count' => $domains->count(),
+                'open_url' => $this->domainToUrl($primaryDomainString),
+                'company_name' => $this->firstFilledValue($tenantData, [
+                    'company_name',
+                    'business_name',
+                    'company',
+                    'name',
+                ]),
+                'owner_email' => $this->firstFilledValue($tenantData, [
+                    'owner_email',
+                    'admin_email',
+                    'email',
+                ]),
+                'created_at' => $tenant->getAttribute('created_at'),
+                'subscription' => $subscription,
+                'subscription_status' => $subscription['status'] ?? null,
+                'plan_name' => $subscription['plan_name'] ?? null,
+                'billing_period' => $subscription['billing_period'] ?? null,
+                'subscription_show_url' => ! empty($subscription['id'])
+                    ? route('admin.subscriptions.show', $subscription['id'])
+                    : null,
+                'show_url' => route('admin.tenants.show', $tenantId),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  array<int, string>  $tenantIds
+     * @return Collection<string, Collection<int, array<string, mixed>>>
+     */
+    protected function domainsByTenantIds(array $tenantIds): Collection
+    {
+        if (empty($tenantIds) || ! $this->domainsTableExists()) {
+            return collect();
+        }
+
+        $rows = DB::connection($this->centralConnectionName())
+            ->table('domains')
+            ->whereIn('tenant_id', $tenantIds)
+            ->orderBy('domain')
+            ->get(['tenant_id', 'domain']);
+
+        return $rows
+            ->groupBy(fn ($row) => (string) $row->tenant_id)
+            ->map(function (Collection $group): Collection {
+                return $group->map(function ($row): array {
+                    return [
+                        'tenant_id' => (string) $row->tenant_id,
+                        'domain' => (string) $row->domain,
+                        'url' => $this->domainToUrl((string) $row->domain),
+                    ];
+                })->values();
+            });
+    }
+
+    /**
+     * @param  array<int, string>  $tenantIds
+     * @return Collection<string, array<string, mixed>>
+     */
+    protected function latestSubscriptionsByTenantIds(array $tenantIds): Collection
+    {
+        if (empty($tenantIds) || ! $this->subscriptionsTableExists()) {
+            return collect();
+        }
+
+        $subscriptions = DB::connection($this->centralConnectionName())
+            ->table('subscriptions')
+            ->whereIn('tenant_id', $tenantIds)
+            ->orderByDesc('id')
+            ->get();
+
+        if ($subscriptions->isEmpty()) {
+            return collect();
+        }
+
+        $planNames = collect();
+
+        if ($this->plansTableExists()) {
+            $planIds = $subscriptions
+                ->pluck('plan_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if (! empty($planIds)) {
+                $planNames = DB::connection($this->centralConnectionName())
+                    ->table('plans')
+                    ->whereIn('id', $planIds)
+                    ->get(['id', 'name', 'slug'])
+                    ->mapWithKeys(function ($plan): array {
+                        return [
+                            (string) $plan->id => [
+                                'name' => (string) ($plan->name ?? ''),
+                                'slug' => (string) ($plan->slug ?? ''),
+                            ],
+                        ];
+                    });
+            }
+        }
+
+        return $subscriptions
+            ->groupBy(fn ($row) => (string) $row->tenant_id)
+            ->map(function (Collection $group) use ($planNames): array {
+                $subscription = $group->first();
+
+                $plan = $planNames->get((string) ($subscription->plan_id ?? ''), [
+                    'name' => null,
+                    'slug' => null,
+                ]);
+
+                return [
+                    'id' => $subscription->id,
+                    'tenant_id' => (string) $subscription->tenant_id,
+                    'plan_id' => $subscription->plan_id,
+                    'plan_name' => $plan['name'] ?: $plan['slug'],
+                    'status' => $subscription->status ?? null,
+                    'billing_period' => $subscription->billing_period ?? null,
+                    'trial_ends_at' => $subscription->trial_ends_at ?? null,
+                    'grace_ends_at' => $subscription->grace_ends_at ?? null,
+                    'past_due_started_at' => $subscription->past_due_started_at ?? null,
+                    'suspended_at' => $subscription->suspended_at ?? null,
+                    'cancelled_at' => $subscription->cancelled_at ?? null,
+                    'ends_at' => $subscription->ends_at ?? null,
+                    'gateway' => $subscription->gateway ?? null,
+                    'gateway_customer_id' => $subscription->gateway_customer_id ?? null,
+                    'gateway_subscription_id' => $subscription->gateway_subscription_id ?? null,
+                ];
+            });
+    }
+
+    protected function normalizedTenantData(Model $tenant): array
+    {
+        $data = $tenant->getAttribute('data');
+
+        if (is_string($data)) {
+            $decoded = json_decode($data, true);
+            $data = is_array($decoded) ? $decoded : [];
+        } elseif (is_object($data)) {
+            $data = (array) $data;
+        } elseif (! is_array($data)) {
+            $data = [];
+        }
+
+        $attributes = Arr::except($tenant->getAttributes(), [
+            'data',
+        ]);
+
+        return [
+            'attributes' => $attributes,
+            'data' => $data,
+        ];
+    }
+
+    protected function firstFilledValue(array $tenantData, array $keys): ?string
+    {
+        foreach ($keys as $key) {
+            $value = data_get($tenantData, 'data.' . $key);
+
+            if (filled($value)) {
+                return (string) $value;
+            }
+        }
+
+        return null;
+    }
+
+    protected function domainToUrl(?string $domain): ?string
+    {
+        if (blank($domain)) {
+            return null;
+        }
+
+        if (str_starts_with($domain, 'http://') || str_starts_with($domain, 'https://')) {
+            return $domain;
+        }
+
+        return 'https://' . $domain;
+    }
+
+    protected function findTenantOrFail(string $tenantId): Model
+    {
+        $tenantModelClass = $this->tenantModelClass();
+
+        /** @var Model|null $tenant */
+        $tenant = $tenantModelClass::query()->find($tenantId);
+
+        if (! $tenant) {
+            throw new NotFoundHttpException();
+        }
+
+        return $tenant;
+    }
+
+    protected function indexStats(): array
+    {
+        $tenantModelClass = $this->tenantModelClass();
+
+        $totalTenants = $tenantModelClass::query()->count();
+
+        $tenantsWithDomains = 0;
+        if ($this->domainsTableExists()) {
+            $tenantsWithDomains = (int) DB::connection($this->centralConnectionName())
+                ->table('domains')
+                ->distinct('tenant_id')
+                ->count('tenant_id');
+        }
+
+        $latestSubscriptions = collect();
+        if ($this->subscriptionsTableExists()) {
+            $latestSubscriptions = DB::connection($this->centralConnectionName())
+                ->table('subscriptions')
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy(fn ($row) => (string) $row->tenant_id)
+                ->map(fn (Collection $group) => $group->first());
+        }
+
+        return [
+            'total_tenants' => $totalTenants,
+            'tenants_with_domains' => $tenantsWithDomains,
+            'active_subscriptions' => $latestSubscriptions->filter(fn ($row) => ($row->status ?? null) === 'active')->count(),
+            'trialing_subscriptions' => $latestSubscriptions->filter(fn ($row) => ($row->status ?? null) === 'trialing')->count(),
+            'past_due_subscriptions' => $latestSubscriptions->filter(fn ($row) => ($row->status ?? null) === 'past_due')->count(),
+            'suspended_subscriptions' => $latestSubscriptions->filter(fn ($row) => ($row->status ?? null) === 'suspended')->count(),
+        ];
+    }
+}
