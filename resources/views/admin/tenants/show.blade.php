@@ -14,6 +14,12 @@
             'expired' => 'bg-dark',
             default => 'bg-light text-dark',
         };
+
+        $yesNoBadge = function (bool $value): string {
+            return $value
+                ? '<span class="badge bg-success">Yes</span>'
+                : '<span class="badge bg-danger">No</span>';
+        };
     @endphp
 
     <div class="page-wrapper">
@@ -24,11 +30,19 @@
                     <p class="text-muted mb-0">Operational tenant snapshot for central SaaS administration.</p>
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Back</a>
 
                     @if(!empty($row['subscription_show_url']))
                         <a href="{{ $row['subscription_show_url'] }}" class="btn btn-primary">Open Subscription</a>
+                    @endif
+
+                    @if(!empty($row['admin_login_url']))
+                        <a href="{{ $row['admin_login_url'] }}" target="_blank" class="btn btn-outline-primary">Tenant Admin Login</a>
+                    @endif
+
+                    @if(!empty($row['open_url']))
+                        <a href="{{ $row['open_url'] }}" target="_blank" class="btn btn-outline-secondary">Open Tenant Site</a>
                     @endif
                 </div>
             </div>
@@ -181,6 +195,16 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <th>Tenant Admin Login</th>
+                                    <td>
+                                        @if(!empty($row['admin_login_url']))
+                                            <a href="{{ $row['admin_login_url'] }}" target="_blank">{{ $row['admin_login_url'] }}</a>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th>Domains Count</th>
                                     <td>{{ $row['domains_count'] ?? 0 }}</td>
                                 </tr>
@@ -193,6 +217,46 @@
                                             -
                                         @endif
                                     </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">Customer / Owner Snapshot</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm table-striped align-middle mb-0">
+                                <tbody>
+                                <tr>
+                                    <th style="width: 240px;">Owner Name</th>
+                                    <td>{{ $ownerSnapshot['owner_name'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Owner Email</th>
+                                    <td>{{ $ownerSnapshot['owner_email'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Phone</th>
+                                    <td>{{ $ownerSnapshot['phone'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Country</th>
+                                    <td>{{ $ownerSnapshot['country'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>State</th>
+                                    <td>{{ $ownerSnapshot['state'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>City</th>
+                                    <td>{{ $ownerSnapshot['city'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Address</th>
+                                    <td>{{ $ownerSnapshot['address'] ?: '-' }}</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -300,15 +364,90 @@
                                     @foreach($domains as $domain)
                                         <div class="list-group-item px-0">
                                             <div class="fw-semibold">{{ $domain['domain'] }}</div>
-                                            @if(!empty($domain['url']))
-                                                <a href="{{ $domain['url'] }}" target="_blank" class="small">Open Domain</a>
-                                            @endif
+
+                                            <div class="d-flex flex-column gap-1 mt-2">
+                                                @if(!empty($domain['url']))
+                                                    <a href="{{ $domain['url'] }}" target="_blank" class="small">Open Domain</a>
+                                                @endif
+
+                                                @if(!empty($domain['admin_login_url']))
+                                                    <a href="{{ $domain['admin_login_url'] }}" target="_blank" class="small">Open Tenant Admin Login</a>
+                                                @endif
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @else
                                 <div class="alert alert-warning mb-0">No domains were found for this tenant.</div>
                             @endif
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">Diagnostics</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm align-middle mb-0">
+                                <tbody>
+                                <tr>
+                                    <th style="width: 220px;">Tenant Exists</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['tenant_exists'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Primary Domain</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_primary_domain'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Has Subscription</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_subscription'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Has Plan</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_plan'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Has Gateway</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_gateway'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Stripe Customer ID</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_gateway_customer_id'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Stripe Subscription ID</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_gateway_subscription_id'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Owner Email</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_owner_email'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Domains Count</th>
+                                    <td>{{ $diagnostics['domains_count'] ?? 0 }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tenant Model</th>
+                                    <td><code>{{ $diagnostics['tenant_model_class'] ?? '-' }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Tenant Connection</th>
+                                    <td><code>{{ $diagnostics['tenant_connection'] ?? '-' }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Central Connection</th>
+                                    <td><code>{{ $diagnostics['central_connection'] ?? '-' }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Tenant Table</th>
+                                    <td><code>{{ $diagnostics['tenant_table'] ?? '-' }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Database Hint</th>
+                                    <td>{{ $diagnostics['database_name_hint'] ?: '-' }}</td>
+                                </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -325,6 +464,10 @@
 
                             @if(!empty($row['open_url']))
                                 <a href="{{ $row['open_url'] }}" target="_blank" class="btn btn-outline-primary">Open Tenant Domain</a>
+                            @endif
+
+                            @if(!empty($row['admin_login_url']))
+                                <a href="{{ $row['admin_login_url'] }}" target="_blank" class="btn btn-outline-secondary">Open Tenant Admin Login</a>
                             @endif
                         </div>
                     </div>

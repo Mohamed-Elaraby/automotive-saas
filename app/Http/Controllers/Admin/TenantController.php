@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminTenantLifecycleService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -90,6 +89,8 @@ public function show(string $tenantId): View
     $domains = $this->domainsByTenantIds([$tenantId])->get($tenantId, collect())->values();
     $subscription = $this->latestSubscriptionsByTenantIds([$tenantId])->get($tenantId);
     $tenantData = $this->normalizedTenantData($tenant);
+    $ownerSnapshot = $this->ownerSnapshot($tenantData);
+    $diagnostics = $this->tenantDiagnostics($tenant, $row, $domains, $subscription, $tenantData);
 
     return view('admin.tenants.show', [
         'tenant' => $tenant,
@@ -97,6 +98,8 @@ public function show(string $tenantId): View
         'domains' => $domains,
         'subscription' => $subscription,
         'tenantData' => $tenantData,
+        'ownerSnapshot' => $ownerSnapshot,
+        'diagnostics' => $diagnostics,
     ]);
 }
 
@@ -271,6 +274,7 @@ protected function buildTenantSummaries(Collection $tenants): array
             'domains' => $domains,
             'domains_count' => $domains->count(),
             'open_url' => $this->domainToUrl($primaryDomainString),
+            'admin_login_url' => $this->tenantAdminLoginUrl($primaryDomainString),
             'company_name' => $this->firstFilledValue($tenantData, [
                 'company_name',
                 'business_name',
@@ -321,6 +325,7 @@ protected function domainsByTenantIds(array $tenantIds): Collection
                     'tenant_id' => (string) $row->tenant_id,
                     'domain' => (string) $row->domain,
                     'url' => $this->domainToUrl((string) $row->domain),
+                    'admin_login_url' => $this->tenantAdminLoginUrl((string) $row->domain),
                 ];
             })->values();
         });
@@ -425,6 +430,55 @@ protected function normalizedTenantData(Model $tenant): array
     ];
 }
 
+protected function ownerSnapshot(array $tenantData): array
+{
+    return [
+        'company_name' => $this->firstFilledValue($tenantData, ['company_name', 'business_name', 'company', 'name']),
+        'owner_name' => $this->firstFilledValue($tenantData, ['owner_name', 'admin_name', 'contact_name', 'name']),
+        'owner_email' => $this->firstFilledValue($tenantData, ['owner_email', 'admin_email', 'email']),
+        'phone' => $this->firstFilledValue($tenantData, ['phone', 'mobile', 'owner_phone']),
+        'country' => $this->firstFilledValue($tenantData, ['country_name', 'country']),
+        'state' => $this->firstFilledValue($tenantData, ['state_name', 'state']),
+        'city' => $this->firstFilledValue($tenantData, ['city_name', 'city']),
+        'address' => $this->firstFilledValue($tenantData, ['address', 'street_address']),
+    ];
+}
+
+protected function tenantDiagnostics(
+    Model $tenant,
+    ?array $row,
+    Collection $domains,
+    ?array $subscription,
+    array $tenantData
+): array {
+    $attributes = $tenantData['attributes'] ?? [];
+    $data = $tenantData['data'] ?? [];
+
+    $databaseName = $attributes['tenancy_db_name']
+        ?? $attributes['database']
+        ?? $data['database']
+        ?? $data['db_name']
+        ?? null;
+
+    return [
+        'tenant_model_class' => $this->tenantModelClass(),
+        'tenant_connection' => $this->tenantConnectionName(),
+        'central_connection' => $this->centralConnectionName(),
+        'tenant_table' => $this->tenantTableName(),
+        'tenant_exists' => true,
+        'domains_count' => $domains->count(),
+        'has_primary_domain' => ! empty($row['primary_domain']),
+        'has_subscription' => ! empty($subscription),
+        'has_plan' => ! empty($subscription['plan_name']),
+        'has_gateway' => ! empty($subscription['gateway']),
+        'has_gateway_customer_id' => ! empty($subscription['gateway_customer_id']),
+        'has_gateway_subscription_id' => ! empty($subscription['gateway_subscription_id']),
+        'has_owner_email' => filled($this->firstFilledValue($tenantData, ['owner_email', 'admin_email', 'email'])),
+        'database_name_hint' => $databaseName,
+        'admin_login_url' => $row['admin_login_url'] ?? null,
+    ];
+}
+
 protected function firstFilledValue(array $tenantData, array $keys): ?string
 {
     foreach ($keys as $key) {
@@ -449,6 +503,17 @@ protected function domainToUrl(?string $domain): ?string
     }
 
     return 'https://' . $domain;
+}
+
+protected function tenantAdminLoginUrl(?string $domain): ?string
+{
+    $baseUrl = $this->domainToUrl($domain);
+
+    if (! $baseUrl) {
+        return null;
+    }
+
+    return rtrim($baseUrl, '/') . '/automotive/admin/login';
 }
 
 protected function findTenantOrFail(string $tenantId): Model
