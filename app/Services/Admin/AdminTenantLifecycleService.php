@@ -57,9 +57,18 @@ class AdminTenantLifecycleService
 
         $trialEndsAt = $this->nullableCarbon($subscription->trial_ends_at ?? null);
 
-        $restoredStatus = $trialEndsAt && $trialEndsAt->isFuture()
-            ? 'trialing'
-            : 'active';
+        $hasPaidGatewaySignals =
+            filled($subscription->gateway ?? null) ||
+            filled($subscription->gateway_customer_id ?? null) ||
+            filled($subscription->gateway_subscription_id ?? null);
+
+        if ($hasPaidGatewaySignals) {
+            $restoredStatus = 'active';
+        } elseif ($trialEndsAt && $trialEndsAt->isFuture()) {
+            $restoredStatus = 'trialing';
+        } else {
+            $restoredStatus = 'active';
+        }
 
         DB::connection($this->centralConnectionName())
             ->table('subscriptions')
