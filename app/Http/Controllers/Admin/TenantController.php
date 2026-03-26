@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminTenantLifecycleService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
