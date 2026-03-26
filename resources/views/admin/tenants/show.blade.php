@@ -158,6 +158,60 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">Change Plan</h6>
+                    </div>
+                    <div class="card-body">
+                        @php
+                            $isStripeLinked = !empty($subscription['gateway']) && $subscription['gateway'] === 'stripe'
+                                || !empty($subscription['gateway_subscription_id']);
+                        @endphp
+
+                        @if($isStripeLinked)
+                            <div class="alert alert-warning mb-0">
+                                This subscription is linked to Stripe. Change the plan from the Stripe-aware billing flow to keep local billing data synchronized with Stripe.
+                            </div>
+                        @else
+                            <form method="POST" action="{{ route('admin.tenants.change-plan', $row['tenant_id'] ?? $tenant->getKey()) }}">
+                                @csrf
+
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-xl-8">
+                                        <label class="form-label">Select Plan</label>
+                                        <select name="plan_id" class="form-select">
+                                            @foreach($availablePlans as $plan)
+                                                @php
+                                                    $planLabel = $plan->name ?: $plan->slug ?: ('Plan #' . $plan->id);
+                                                    $periodLabel = $plan->billing_period ? strtoupper($plan->billing_period) : 'N/A';
+                                                    $activeLabel = (int) ($plan->is_active ?? 0) === 1 ? 'Active' : 'Inactive';
+                                                    $priceLabel = isset($plan->price) ? $plan->price : null;
+                                                    $currencyLabel = $plan->currency_code ?: '';
+                                                @endphp
+                                                <option value="{{ $plan->id }}" @selected((int) ($subscription['plan_id'] ?? 0) === (int) $plan->id)>
+                                                {{ $planLabel }} | {{ $periodLabel }} | {{ $priceLabel !== null ? $priceLabel : '-' }} {{ $currencyLabel }} | {{ $activeLabel }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-xl-4">
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                Change Latest Subscription Plan
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <small class="text-muted d-block mt-2">
+                                    This action updates the latest local subscription only. Stripe-linked subscriptions are intentionally blocked from this form.
+                                </small>
+                            </form>
+                        @endif
+                    </div>
+                </div>
             @endif
 
             <div class="row">

@@ -92,6 +92,7 @@ public function show(string $tenantId): View
     $tenantData = $this->normalizedTenantData($tenant);
     $ownerSnapshot = $this->ownerSnapshot($tenantData);
     $diagnostics = $this->tenantDiagnostics($tenant, $row, $domains, $subscription, $tenantData);
+    $availablePlans = $this->lifecycleService->availablePlans();
 
     return view('admin.tenants.show', [
         'tenant' => $tenant,
@@ -101,6 +102,7 @@ public function show(string $tenantId): View
         'tenantData' => $tenantData,
         'ownerSnapshot' => $ownerSnapshot,
         'diagnostics' => $diagnostics,
+        'availablePlans' => $availablePlans,
     ]);
 }
 
@@ -152,6 +154,27 @@ public function extendTrial(Request $request, string $tenantId): RedirectRespons
         return redirect()
             ->route('admin.tenants.show', $tenantId)
             ->with('success', 'The tenant trial was extended successfully.');
+    } catch (RuntimeException $exception) {
+        return redirect()
+            ->route('admin.tenants.show', $tenantId)
+            ->with('error', $exception->getMessage());
+    }
+}
+
+public function changePlan(Request $request, string $tenantId): RedirectResponse
+{
+    $this->findTenantOrFail($tenantId);
+
+    $validated = $request->validate([
+        'plan_id' => ['required', 'integer'],
+    ]);
+
+    try {
+        $this->lifecycleService->changeLatestPlan($tenantId, (int) $validated['plan_id']);
+
+        return redirect()
+            ->route('admin.tenants.show', $tenantId)
+            ->with('success', 'The latest subscription plan was changed successfully.');
     } catch (RuntimeException $exception) {
         return redirect()
             ->route('admin.tenants.show', $tenantId)

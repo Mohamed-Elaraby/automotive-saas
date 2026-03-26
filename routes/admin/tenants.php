@@ -16,5 +16,6 @@ Route::prefix('admin')
                 Route::post('/{tenantId}/suspend', [TenantController::class, 'suspend'])->name('suspend');
                 Route::post('/{tenantId}/activate', [TenantController::class, 'activate'])->name('activate');
                 Route::post('/{tenantId}/extend-trial', [TenantController::class, 'extendTrial'])->name('extend-trial');
+                Route::post('/{tenantId}/change-plan', [TenantController::class, 'changePlan'])->name('change-plan');
             });
     });

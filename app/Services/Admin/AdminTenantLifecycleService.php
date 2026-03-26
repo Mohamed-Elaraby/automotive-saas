@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -104,6 +105,61 @@ class AdminTenantLifecycleService
             ->update([
                 'trial_ends_at' => $newTrialEndsAt,
                 'status' => 'trialing',
+                'updated_at' => now(),
+            ]);
+    }
+
+    public function availablePlans(): Collection
+    {
+        return DB::connection($this->centralConnectionName())
+            ->table('plans')
+            ->orderByDesc('is_active')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'name',
+                'slug',
+                'billing_period',
+                'price',
+                'currency_code',
+                'is_active',
+            ]);
+    }
+
+    public function changeLatestPlan(string $tenantId, int $planId): void
+    {
+        $subscription = $this->latestSubscriptionByTenantId($tenantId);
+
+        if (! $subscription) {
+            throw new RuntimeException('No linked subscription was found for this tenant.');
+        }
+
+        $plan = DB::connection($this->centralConnectionName())
+            ->table('plans')
+            ->where('id', $planId)
+            ->first();
+
+        if (! $plan) {
+            throw new RuntimeException('The selected plan does not exist.');
+        }
+
+        $isStripeLinked =
+            (string) ($subscription->gateway ?? '') === 'stripe' ||
+            filled($subscription->gateway_subscription_id ?? null);
+
+        if ($isStripeLinked) {
+            throw new RuntimeException(
+                'This subscription is linked to Stripe. Change plan for Stripe-linked subscriptions from the dedicated Stripe-aware billing flow, not from this local admin action.'
+            );
+        }
+
+        DB::connection($this->centralConnectionName())
+            ->table('subscriptions')
+            ->where('id', $subscription->id)
+            ->update([
+                'plan_id' => $plan->id,
+                'billing_period' => $plan->billing_period ?? $subscription->billing_period,
                 'updated_at' => now(),
             ]);
     }
