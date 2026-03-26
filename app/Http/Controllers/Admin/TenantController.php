@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +21,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class TenantController extends Controller
 {
     public function __construct(
-        protected AdminTenantLifecycleService $lifecycleService
+        protected AdminTenantLifecycleService $lifecycleService,
+        protected AdminActivityLogger $activityLogger
     ) {
     }
 
@@ -110,13 +112,34 @@ public function suspend(string $tenantId): RedirectResponse
 {
     $this->findTenantOrFail($tenantId);
 
+    $before = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
     try {
         $this->lifecycleService->suspendLatestSubscription($tenantId);
 
-        return redirect()
-            ->route('admin.tenants.show', $tenantId)
-            ->with('success', 'The latest subscription was suspended successfully.');
-    } catch (RuntimeException $exception) {
+        $after = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
+        $this->activityLogger->log(
+            action: 'tenant.subscription.suspended',
+                subjectType: 'subscription',
+                subjectId: $after?->id ?? $before?->id,
+                tenantId: $tenantId,
+                contextPayload: [
+            'before' => [
+                'status' => $before->status ?? null,
+                'suspended_at' => $before->suspended_at ?? null,
+            ],
+            'after' => [
+                'status' => $after->status ?? null,
+                'suspended_at' => $after->suspended_at ?? null,
+            ],
+        ]
+            );
+
+            return redirect()
+                ->route('admin.tenants.show', $tenantId)
+                ->with('success', 'The latest subscription was suspended successfully.');
+        } catch (RuntimeException $exception) {
         return redirect()
             ->route('admin.tenants.show', $tenantId)
             ->with('error', $exception->getMessage());
@@ -127,13 +150,34 @@ public function activate(string $tenantId): RedirectResponse
 {
     $this->findTenantOrFail($tenantId);
 
+    $before = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
     try {
         $this->lifecycleService->activateLatestSubscription($tenantId);
 
-        return redirect()
-            ->route('admin.tenants.show', $tenantId)
-            ->with('success', 'The latest subscription was activated successfully.');
-    } catch (RuntimeException $exception) {
+        $after = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
+        $this->activityLogger->log(
+            action: 'tenant.subscription.activated',
+                subjectType: 'subscription',
+                subjectId: $after?->id ?? $before?->id,
+                tenantId: $tenantId,
+                contextPayload: [
+            'before' => [
+                'status' => $before->status ?? null,
+                'suspended_at' => $before->suspended_at ?? null,
+            ],
+            'after' => [
+                'status' => $after->status ?? null,
+                'suspended_at' => $after->suspended_at ?? null,
+            ],
+        ]
+            );
+
+            return redirect()
+                ->route('admin.tenants.show', $tenantId)
+                ->with('success', 'The latest subscription was activated successfully.');
+        } catch (RuntimeException $exception) {
         return redirect()
             ->route('admin.tenants.show', $tenantId)
             ->with('error', $exception->getMessage());
@@ -148,13 +192,35 @@ public function extendTrial(Request $request, string $tenantId): RedirectRespons
         'days' => ['required', 'integer', 'min:1', 'max:90'],
     ]);
 
+    $before = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
     try {
         $this->lifecycleService->extendLatestTrial($tenantId, (int) $validated['days']);
 
-        return redirect()
-            ->route('admin.tenants.show', $tenantId)
-            ->with('success', 'The tenant trial was extended successfully.');
-    } catch (RuntimeException $exception) {
+        $after = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
+        $this->activityLogger->log(
+            action: 'tenant.trial.extended',
+                subjectType: 'subscription',
+                subjectId: $after?->id ?? $before?->id,
+                tenantId: $tenantId,
+                contextPayload: [
+            'days_added' => (int) $validated['days'],
+            'before' => [
+                'trial_ends_at' => $before->trial_ends_at ?? null,
+                'status' => $before->status ?? null,
+            ],
+            'after' => [
+                'trial_ends_at' => $after->trial_ends_at ?? null,
+                'status' => $after->status ?? null,
+            ],
+        ]
+            );
+
+            return redirect()
+                ->route('admin.tenants.show', $tenantId)
+                ->with('success', 'The tenant trial was extended successfully.');
+        } catch (RuntimeException $exception) {
         return redirect()
             ->route('admin.tenants.show', $tenantId)
             ->with('error', $exception->getMessage());
@@ -169,13 +235,37 @@ public function changePlan(Request $request, string $tenantId): RedirectResponse
         'plan_id' => ['required', 'integer'],
     ]);
 
+    $before = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
     try {
         $this->lifecycleService->changeLatestPlan($tenantId, (int) $validated['plan_id']);
 
-        return redirect()
-            ->route('admin.tenants.show', $tenantId)
-            ->with('success', 'The latest subscription plan was changed successfully.');
-    } catch (RuntimeException $exception) {
+        $after = $this->lifecycleService->latestSubscriptionByTenantId($tenantId);
+
+        $this->activityLogger->log(
+            action: 'tenant.plan.changed',
+                subjectType: 'subscription',
+                subjectId: $after?->id ?? $before?->id,
+                tenantId: $tenantId,
+                contextPayload: [
+            'requested_plan_id' => (int) $validated['plan_id'],
+            'before' => [
+                'plan_id' => $before->plan_id ?? null,
+                'billing_period' => $before->billing_period ?? null,
+                'status' => $before->status ?? null,
+            ],
+            'after' => [
+                'plan_id' => $after->plan_id ?? null,
+                'billing_period' => $after->billing_period ?? null,
+                'status' => $after->status ?? null,
+            ],
+        ]
+            );
+
+            return redirect()
+                ->route('admin.tenants.show', $tenantId)
+                ->with('success', 'The latest subscription plan was changed successfully.');
+        } catch (RuntimeException $exception) {
         return redirect()
             ->route('admin.tenants.show', $tenantId)
             ->with('error', $exception->getMessage());
