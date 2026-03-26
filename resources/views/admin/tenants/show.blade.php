@@ -33,6 +33,24 @@
                 </div>
             </div>
 
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0 ps-3">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="row mb-4">
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100">
@@ -72,6 +90,61 @@
                     </div>
                 </div>
             </div>
+
+            @if($subscription)
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">Lifecycle Actions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-xl-4">
+                                <form method="POST" action="{{ route('admin.tenants.suspend', $row['tenant_id'] ?? $tenant->getKey()) }}">
+                                    @csrf
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-danger">
+                                            Suspend Latest Subscription
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-xl-4">
+                                <form method="POST" action="{{ route('admin.tenants.activate', $row['tenant_id'] ?? $tenant->getKey()) }}">
+                                    @csrf
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success">
+                                            Activate Latest Subscription
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="col-xl-4">
+                                <form method="POST" action="{{ route('admin.tenants.extend-trial', $row['tenant_id'] ?? $tenant->getKey()) }}">
+                                    @csrf
+                                    <div class="input-group">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="90"
+                                            step="1"
+                                            name="days"
+                                            value="7"
+                                            class="form-control"
+                                            placeholder="Days"
+                                        >
+                                        <button type="submit" class="btn btn-primary">
+                                            Extend Trial
+                                        </button>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">Adds the selected number of days to the current trial end date, or from now if the trial already expired.</small>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="row">
                 <div class="col-xl-8">
