@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 class AdminTenantLifecycleService
@@ -111,20 +112,36 @@ class AdminTenantLifecycleService
 
     public function availablePlans(): Collection
     {
-        return DB::connection($this->centralConnectionName())
+        $connection = $this->centralConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('plans')) {
+            return collect();
+        }
+
+        $columns = Schema::connection($connection)->getColumnListing('plans');
+
+        $selectColumns = array_values(array_filter([
+            'id',
+            'name',
+            'slug',
+            'billing_period',
+            'price',
+            in_array('currency_code', $columns, true) ? 'currency_code' : null,
+            'is_active',
+        ]));
+
+        $query = DB::connection($connection)
             ->table('plans')
-            ->orderByDesc('is_active')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get([
-                'id',
-                'name',
-                'slug',
-                'billing_period',
-                'price',
-                'currency_code',
-                'is_active',
-            ]);
+            ->select($selectColumns)
+            ->orderByDesc('is_active');
+
+        if (in_array('sort_order', $columns, true)) {
+            $query->orderBy('sort_order');
+        }
+
+        $query->orderBy('id');
+
+        return $query->get();
     }
 
     public function changeLatestPlan(string $tenantId, int $planId): void
