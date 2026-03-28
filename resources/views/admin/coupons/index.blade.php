@@ -122,7 +122,11 @@
                                             <div>End: {{ optional($coupon->ends_at)->format('Y-m-d H:i') ?: '-' }}</div>
                                         </td>
                                         <td class="text-end">
-                                            <div class="d-inline-flex gap-2">
+                                            <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                                                <a href="{{ route('admin.coupons.show', $coupon) }}" class="btn btn-sm btn-outline-primary">
+                                                    View
+                                                </a>
+
                                                 <a href="{{ route('admin.coupons.edit', $coupon) }}" class="btn btn-sm btn-primary">
                                                     Edit
                                                 </a>
