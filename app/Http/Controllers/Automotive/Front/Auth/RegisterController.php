@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Front\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Services\Admin\AppSettingsService;
 use App\Services\Automotive\StartTrialService;
 use App\Services\Automotive\TenantUrlBuilder;
 use App\Services\Billing\TrialSignupCouponService;
@@ -12,37 +13,60 @@ use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends Controller
 {
-    public function show()
-    {
-        return view('automotive.front.auth.register');
+    public function __construct(
+        protected AppSettingsService $settingsService
+    ) {
     }
 
-    public function previewCoupon(
-        Request $request,
-        TrialSignupCouponService $trialSignupCouponService
-    ) {
-        $validator = Validator::make($request->all(), [
-            'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
-            'coupon_code' => ['required', 'string', 'max:100'],
-        ]);
+public function show()
+{
+    if (! $this->settingsService->freeTrialEnabled()) {
+        return redirect()
+            ->route('automotive.get-started')
+            ->withErrors([
+                'register' => 'Free trial registration is currently unavailable.',
+            ]);
+    }
 
-        if ($validator->fails()) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'Please enter a valid subdomain and coupon code first.',
-                'errors' => $validator->errors()->toArray(),
-            ], 422);
-        }
+    return view('automotive.front.auth.register');
+}
 
-        $data = $validator->validated();
+public function previewCoupon(
+    Request $request,
+    TrialSignupCouponService $trialSignupCouponService
+) {
+    if (! $this->settingsService->freeTrialEnabled()) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'Free trial registration is currently unavailable.',
+            'errors' => [
+                'coupon_code' => ['Free trial registration is currently unavailable.'],
+            ],
+        ], 422);
+    }
 
-        $trialPlan = Plan::query()
-            ->where('slug', 'trial')
-            ->where('is_active', true)
-            ->first();
+    $validator = Validator::make($request->all(), [
+        'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
+        'coupon_code' => ['required', 'string', 'max:100'],
+    ]);
 
-        $result = $trialSignupCouponService->validateForTrialSignup(
-            couponCode: $data['coupon_code'],
+    if ($validator->fails()) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'Please enter a valid subdomain and coupon code first.',
+            'errors' => $validator->errors()->toArray(),
+        ], 422);
+    }
+
+    $data = $validator->validated();
+
+    $trialPlan = Plan::query()
+        ->where('slug', 'trial')
+        ->where('is_active', true)
+        ->first();
+
+    $result = $trialSignupCouponService->validateForTrialSignup(
+        couponCode: $data['coupon_code'],
             tenantId: strtolower(trim($data['subdomain'])),
             planId: $trialPlan?->id
         );
@@ -75,45 +99,53 @@ class RegisterController extends Controller
         ]);
     }
 
-    public function submit(
-        Request $request,
-        StartTrialService $service,
-        TenantUrlBuilder $tenantUrlBuilder
-    ) {
-        $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
-            'company_name' => ['required', 'string', 'max:255'],
-            'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
-            'coupon_code' => ['nullable', 'string', 'max:100'],
-        ]);
+public function submit(
+    Request $request,
+    StartTrialService $service,
+    TenantUrlBuilder $tenantUrlBuilder
+) {
+    if (! $this->settingsService->freeTrialEnabled()) {
+        return redirect()
+            ->route('automotive.get-started')
+            ->withErrors([
+                'register' => 'Free trial registration is currently unavailable.',
+            ]);
+    }
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
+    $validator = Validator::make($request->all(), [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255'],
+        'password' => ['required', 'string', 'min:6', 'confirmed'],
+        'company_name' => ['required', 'string', 'max:255'],
+        'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
+        'coupon_code' => ['nullable', 'string', 'max:100'],
+    ]);
 
-        $data = $validator->validated();
-        $data['base_host'] = $request->getHost();
-        $data['coupon_code'] = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
+    if ($validator->fails()) {
+        return back()->withErrors($validator)->withInput();
+    }
 
-        $result = $service->start($data);
+    $data = $validator->validated();
+    $data['base_host'] = $request->getHost();
+    $data['coupon_code'] = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
 
-        if (! ($result['ok'] ?? false)) {
-            if (($result['status'] ?? 500) === 422) {
-                return back()
-                    ->withErrors($result['errors'] ?? ['register' => $result['message'] ?? 'Validation error'])
-                    ->withInput();
-            }
+    $result = $service->start($data);
 
+    if (! ($result['ok'] ?? false)) {
+        if (($result['status'] ?? 500) === 422) {
             return back()
-                ->withErrors(['register' => $result['message'] ?? 'Provisioning failed.'])
+                ->withErrors($result['errors'] ?? ['register' => $result['message'] ?? 'Validation error'])
                 ->withInput();
         }
 
-        $loginUrl = $tenantUrlBuilder->tenantLoginUrl($request, $data['subdomain']);
-
-        return redirect()->away($loginUrl)
-            ->with('success', 'Your trial account has been created successfully.');
+        return back()
+            ->withErrors(['register' => $result['message'] ?? 'Provisioning failed.'])
+            ->withInput();
     }
+
+    $loginUrl = $tenantUrlBuilder->tenantLoginUrl($request, $data['subdomain']);
+
+    return redirect()->away($loginUrl)
+        ->with('success', 'Your trial account has been created successfully.');
+}
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\SystemErrorLogController;
@@ -27,9 +28,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-//Route::get('/', function () {
-//    return view('welcome');
-//});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
 
 Auth::routes();
 
@@ -39,13 +40,10 @@ require base_path('routes/admin/tenants.php');
 require base_path('routes/admin/activity_logs.php');
 require base_path('routes/admin/coupons.php');
 
-
 /*
 |--------------------------------------------------------------------------
 | Central Admin Routes
 |--------------------------------------------------------------------------
-| Temporary central admin dashboard route until the final central admin
-| module structure is completed.
 */
 Route::prefix('admin')
     ->name('admin.')
@@ -81,6 +79,13 @@ Route::prefix('admin')
         Route::get('/dashboard', function () {
             return view('admin.dashboard');
         })->name('dashboard');
+
+        Route::prefix('settings')
+            ->name('settings.')
+            ->group(function () {
+                Route::get('/general', [SaasSettingsController::class, 'edit'])->name('general.edit');
+                Route::put('/general', [SaasSettingsController::class, 'update'])->name('general.update');
+            });
 
         Route::prefix('plans')
             ->name('plans.')
