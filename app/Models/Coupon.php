@@ -52,6 +52,11 @@ class Coupon extends Model
             ->withTimestamps();
     }
 
+    public function redemptions()
+    {
+        return $this->hasMany(CouponRedemption::class, 'coupon_id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
