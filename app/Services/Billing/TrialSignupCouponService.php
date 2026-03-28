@@ -58,26 +58,49 @@ public function validateForTrialSignup(?string $couponCode, string $tenantId, ?i
     $eligibility = $this->eligibilityService->evaluate(
         coupon: $coupon,
             tenantId: $tenantId,
-            planId: $planId,
+            planId: null,
             isFirstBillingCycle: true
         );
 
-        if (! ($eligibility['eligible'] ?? false)) {
+        $reasons = collect($eligibility['reasons'] ?? [])
+            ->reject(fn (string $reason) => $reason === 'Coupon is restricted to selected plans and no plan was supplied.')
+            ->values()
+            ->all();
+
+        $eligibleForTrialReservation = count($reasons) === 0;
+
+        if (! $eligibleForTrialReservation) {
             return [
                 'ok' => false,
-                'message' => $eligibility['summary'] ?? 'This coupon cannot be applied.',
+                'message' => 'This coupon cannot be reserved for the new trial.',
                 'errors' => [
-                    'coupon_code' => $eligibility['reasons'] ?? ['This coupon cannot be applied.'],
+                    'coupon_code' => $reasons,
                 ],
                 'coupon' => $coupon,
-                'eligibility' => $eligibility,
+                'eligibility' => [
+                    ...$eligibility,
+                    'eligible' => false,
+                    'reasons' => $reasons,
+                    'summary' => 'This coupon cannot be reserved for the new trial.',
+                ],
             ];
         }
 
         return [
             'ok' => true,
             'coupon' => $coupon,
-            'eligibility' => $eligibility,
+            'eligibility' => [
+                ...$eligibility,
+                'eligible' => true,
+                'reasons' => [],
+                'summary' => 'Coupon is valid for reservation during trial signup. Plan-specific validation will run later when the paid plan is selected.',
+                'meta' => [
+                    ...($eligibility['meta'] ?? []),
+                    'reserved_during_trial_signup' => true,
+                    'plan_validation_deferred' => true,
+                    'trial_plan_id' => $planId,
+                ],
+            ],
         ];
     }
 
@@ -109,6 +132,7 @@ public function attachCouponToSubscription(
                 'first_billing_cycle_only' => (bool) $coupon->first_billing_cycle_only,
                 'applies_to_all_plans' => (bool) $coupon->applies_to_all_plans,
                 'reserved_at' => now()->toDateTimeString(),
+                'plan_validation_deferred_until_paid_selection' => true,
             ], JSON_UNESCAPED_SLASHES),
             'created_at' => now(),
             'updated_at' => now(),
