@@ -5,7 +5,7 @@ namespace App\Services\Automotive;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
-
+use App\Services\Billing\TrialSignupCouponService;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -15,46 +15,67 @@ use Stancl\Tenancy\Database\Models\Domain;
 
 class StartTrialService
 {
-    public function start(array $data): array
-    {
-        $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
+    public function __construct(
+        protected TrialSignupCouponService $trialSignupCouponService
+    ) {
+    }
 
-        $sub = strtolower(trim($data['subdomain']));
-        $baseHost = strtolower(trim($data['base_host'] ?? 'automotive.seven-scapital.com'));
+public function start(array $data): array
+{
+    $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
 
-        $tenantId = $sub;
-        $fullDomain = "{$sub}.{$baseHost}";
+    $sub = strtolower(trim($data['subdomain']));
+    $baseHost = strtolower(trim($data['base_host'] ?? 'automotive.seven-scapital.com'));
+    $couponCode = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
 
-        if (Domain::query()->where('domain', $fullDomain)->exists()) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'This subdomain is already taken.',
-                'errors' => ['subdomain' => ['This subdomain is already taken.']],
-            ];
-        }
+    $tenantId = $sub;
+    $fullDomain = "{$sub}.{$baseHost}";
 
-        if (Tenant::query()->where('id', $tenantId)->exists()) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'This subdomain is not available.',
-                'errors' => ['subdomain' => ['This subdomain is not available.']],
-            ];
-        }
+    if (Domain::query()->where('domain', $fullDomain)->exists()) {
+        return [
+            'ok' => false,
+            'status' => 422,
+            'message' => 'This subdomain is already taken.',
+            'errors' => ['subdomain' => ['This subdomain is already taken.']],
+        ];
+    }
 
-        $centralUser = User::query()->firstOrCreate(
-            ['email' => $data['email']],
-            [
-                'name' => $data['name'],
-                'password' => Hash::make($data['password']),
-            ]
+    if (Tenant::query()->where('id', $tenantId)->exists()) {
+        return [
+            'ok' => false,
+            'status' => 422,
+            'message' => 'This subdomain is not available.',
+            'errors' => ['subdomain' => ['This subdomain is not available.']],
+        ];
+    }
+
+    $centralUser = User::query()->firstOrCreate(
+        ['email' => $data['email']],
+        [
+            'name' => $data['name'],
+            'password' => Hash::make($data['password']),
+        ]
+    );
+
+    $trialPlan = Plan::query()
+        ->where('slug', 'trial')
+        ->where('is_active', true)
+        ->first();
+
+    $couponValidation = $this->trialSignupCouponService->validateForTrialSignup(
+        couponCode: $couponCode,
+            tenantId: $tenantId,
+            planId: $trialPlan?->id
         );
 
-        $trialPlan = Plan::query()
-            ->where('slug', 'trial')
-            ->where('is_active', true)
-            ->first();
+        if (! ($couponValidation['ok'] ?? false)) {
+            return [
+                'ok' => false,
+                'status' => 422,
+                'message' => $couponValidation['message'] ?? 'Coupon validation failed.',
+                'errors' => $couponValidation['errors'] ?? ['coupon_code' => ['Coupon validation failed.']],
+            ];
+        }
 
         $tenant = Tenant::create([
             'id' => $tenantId,
@@ -70,14 +91,15 @@ class StartTrialService
                 $centralUser,
                 $fullDomain,
                 $centralConnection,
-                $trialPlan
+                $trialPlan,
+                $couponValidation
             ) {
                 DB::connection($centralConnection)->table('domains')->insert([
                     'domain' => $fullDomain,
                     'tenant_id' => $tenant->id,
                 ]);
 
-                DB::connection($centralConnection)->table('subscriptions')->insert([
+                $subscriptionId = DB::connection($centralConnection)->table('subscriptions')->insertGetId([
                     'tenant_id' => $tenant->id,
                     'plan_id' => $trialPlan?->id,
                     'status' => SubscriptionStatuses::TRIALING,
@@ -95,6 +117,15 @@ class StartTrialService
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+
+                if (! empty($couponValidation['coupon'])) {
+                    $this->trialSignupCouponService->attachCouponToSubscription(
+                        coupon: $couponValidation['coupon'],
+                        tenantId: $tenant->id,
+                        subscriptionId: (int) $subscriptionId,
+                        planId: $trialPlan?->id
+                    );
+                }
             });
 
             Artisan::call('tenants:migrate', [
@@ -139,6 +170,12 @@ class StartTrialService
                 DB::connection($centralConnection)->table('tenant_users')
                     ->where('tenant_id', $tenant->id)
                     ->delete();
+
+                if (DB::connection($centralConnection)->getSchemaBuilder()->hasTable('coupon_redemptions')) {
+                    DB::connection($centralConnection)->table('coupon_redemptions')
+                        ->where('tenant_id', $tenant->id)
+                        ->delete();
+                }
 
                 DB::connection($centralConnection)->table('tenants')
                     ->where('id', $tenant->id)

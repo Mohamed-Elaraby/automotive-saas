@@ -124,6 +124,13 @@
             </div>
 
             <div class="form-group">
+                <label for="coupon_code">Coupon Code</label>
+                <input id="coupon_code" type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="Optional coupon code">
+                <div class="hint">Optional. If valid, it will be reserved on your new trial subscription for future billing rules.</div>
+                @error('coupon_code') <div class="field-error">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-group">
                 <label for="password">Password</label>
                 <input id="password" type="password" name="password" required>
                 @error('password') <div class="field-error">{{ $message }}</div> @enderror

@@ -26,6 +26,7 @@ class RegisterController extends Controller
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'company_name' => ['required', 'string', 'max:255'],
             'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
+            'coupon_code' => ['nullable', 'string', 'max:100'],
         ]);
 
         if ($validator->fails()) {
@@ -34,6 +35,7 @@ class RegisterController extends Controller
 
         $data = $validator->validated();
         $data['base_host'] = $request->getHost();
+        $data['coupon_code'] = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
 
         $result = $service->start($data);
 
