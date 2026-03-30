@@ -150,7 +150,7 @@
         </div>
 
         <div class="foot-links">
-            <a href="{{ route('automotive.admin.login') }}">Tenant Login</a>
+            <a href="{{ route('login') }}">Tenant Login</a>
         </div>
     </div>
 </div>
