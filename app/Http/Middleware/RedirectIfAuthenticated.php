@@ -25,6 +25,12 @@ class RedirectIfAuthenticated
                     return redirect('/automotive/admin/dashboard');
                 }
 
+                if ($guard === 'web' || $guard === null) {
+                    if ($request->is('automotive') || $request->is('automotive/*')) {
+                        return redirect()->route('automotive.portal');
+                    }
+                }
+
                 return redirect(RouteServiceProvider::HOME);
             }
         }
