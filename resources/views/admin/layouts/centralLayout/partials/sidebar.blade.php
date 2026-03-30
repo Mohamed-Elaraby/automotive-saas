@@ -30,8 +30,18 @@ try {
                 </a>
             </li>
             <li>
+                <a href="{{ route('admin.tenants.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Tenants">
+                    <i class="isax isax-buildings-2"></i>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('admin.subscriptions.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Subscriptions">
                     <i class="isax isax-receipt-2"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.coupons.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Coupons">
+                    <i class="isax isax-ticket-discount"></i>
                 </a>
             </li>
             <li>
@@ -40,15 +50,30 @@ try {
                 </a>
             </li>
             <li>
+                <a href="{{ route('admin.settings.general.edit') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="General Settings">
+                    <i class="isax isax-setting-2"></i>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('admin.reference-data.currencies.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Reference Data">
                     <i class="isax isax-location"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.notifications.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Notifications">
+                    <i class="isax isax-notification-bing"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('admin.activity-logs.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Activity Logs">
+                    <i class="isax isax-document-text"></i>
                 </a>
             </li>
             <li>
                 <a href="{{ route('admin.system-errors.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="System Errors">
                     <i class="isax isax-warning-2"></i>
                 </a>
-            </li>
+                </li>
         </ul>
     </div>
 
@@ -101,6 +126,13 @@ try {
                                 </a>
                             </li>
 
+                            <li class="{{ in_array($page, ['tenants-index', 'tenants-show'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.tenants.index') }}">
+                                    <i class="isax isax-buildings-2"></i>
+                                    <span>Tenants</span>
+                                </a>
+                            </li>
+
                             <li class="{{ in_array($page, ['subscriptions-index', 'subscription-show'], true) ? 'active subdrop' : '' }}">
                                 <a href="{{ route('admin.subscriptions.index') }}">
                                     <i class="isax isax-receipt-2"></i>
@@ -108,10 +140,24 @@ try {
                                 </a>
                             </li>
 
+                            <li class="{{ in_array($page, ['coupons-index', 'coupons-create', 'coupons-show', 'coupons-edit'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.coupons.index') }}">
+                                    <i class="isax isax-ticket-discount"></i>
+                                    <span>Coupons</span>
+                                </a>
+                            </li>
+
                             <li class="{{ $page === 'billing-reports' ? 'active subdrop' : '' }}">
                                 <a href="{{ route('admin.reports.billing') }}">
                                     <i class="isax isax-chart-21"></i>
                                     <span>Billing Reports</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['saas-settings-general'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.settings.general.edit') }}">
+                                    <i class="isax isax-setting-2"></i>
+                                    <span>General Settings</span>
                                 </a>
                             </li>
                         </ul>
@@ -153,6 +199,20 @@ try {
                     <li class="menu-title"><span>Monitoring</span></li>
                     <li>
                         <ul>
+                            <li class="{{ in_array($page, ['admin-notifications-index', 'admin-notifications-show'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.notifications.index') }}">
+                                    <i class="isax isax-notification-bing"></i>
+                                    <span>Notifications</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['activity-logs-index', 'activity-logs-show'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.activity-logs.index') }}">
+                                    <i class="isax isax-document-text"></i>
+                                    <span>Activity Logs</span>
+                                </a>
+                            </li>
+
                             <li class="{{ in_array($page, ['system-errors-index', 'system-errors-show'], true) ? 'active subdrop' : '' }}">
                                 <a href="{{ route('admin.system-errors.index') }}">
                                     <i class="isax isax-warning-2"></i>
@@ -179,8 +239,18 @@ try {
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('admin.tenants.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Tenants">
+                                <i class="isax isax-buildings-2"></i>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('admin.subscriptions.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Subscriptions">
                                 <i class="isax isax-receipt-2"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Coupons">
+                                <i class="isax isax-ticket-discount"></i>
                             </a>
                         </li>
                         <li>
@@ -189,8 +259,23 @@ try {
                             </a>
                         </li>
                         <li>
+                            <a href="{{ route('admin.settings.general.edit') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="General Settings">
+                                <i class="isax isax-setting-2"></i>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{{ route('admin.reference-data.currencies.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Reference Data">
                                 <i class="isax isax-location"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.notifications.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Notifications">
+                                <i class="isax isax-notification-bing"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.activity-logs.index') }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Activity Logs">
+                                <i class="isax isax-document-text"></i>
                             </a>
                         </li>
                         <li>
