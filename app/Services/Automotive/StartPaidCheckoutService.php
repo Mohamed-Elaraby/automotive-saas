@@ -128,15 +128,8 @@ class StartPaidCheckoutService
             $subscription->fill([
                 'gateway' => 'stripe',
                 'gateway_checkout_session_id' => (string) $session['session_id'],
+                'gateway_price_id' => (string) $plan->stripe_price_id,
             ]);
-
-            if ((string) $subscription->status !== SubscriptionStatuses::TRIALING) {
-                $subscription->plan_id = (int) $plan->id;
-
-                if (blank($subscription->status)) {
-                    $subscription->status = SubscriptionStatuses::PAST_DUE;
-                }
-            }
 
             $subscription->save();
 
@@ -200,8 +193,8 @@ class StartPaidCheckoutService
 
         return Subscription::query()->create([
             'tenant_id' => $tenantId,
-            'plan_id' => $planId,
-            'status' => SubscriptionStatuses::PAST_DUE,
+            'plan_id' => null,
+            'status' => null,
             'trial_ends_at' => null,
             'ends_at' => null,
             'external_id' => null,
@@ -271,8 +264,8 @@ class StartPaidCheckoutService
 
                 $subscriptionId = DB::connection($centralConnection)->table('subscriptions')->insertGetId([
                     'tenant_id' => $tenant->id,
-                    'plan_id' => $planId,
-                    'status' => SubscriptionStatuses::PAST_DUE,
+                    'plan_id' => null,
+                    'status' => null,
                     'trial_ends_at' => null,
                     'ends_at' => null,
                     'external_id' => null,

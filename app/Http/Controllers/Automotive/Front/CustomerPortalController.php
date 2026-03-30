@@ -62,22 +62,17 @@ class CustomerPortalController extends Controller
             && (string) ($subscription->gateway ?? '') === 'stripe'
             && filled($subscription->gateway_subscription_id);
         $hasPendingPaidCheckout = $subscription
-            && (string) ($subscription->gateway ?? '') === 'stripe'
             && filled($subscription->gateway_checkout_session_id)
-            && ! filled($subscription->gateway_subscription_id)
-            && ! in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true);
+            && ! filled($subscription->gateway_subscription_id);
         $canStartPaidCheckout = ! $hasLiveStripeSubscription
             && (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE;
-        $displayPlan = $hasPendingPaidCheckout ? null : $plan;
-        $displayStatus = $hasPendingPaidCheckout ? '' : $status;
 
         return view('automotive.front.portal', [
             'user' => $user,
             'profile' => $profile,
             'subscription' => $subscription,
-            'plan' => $displayPlan,
+            'plan' => $plan,
             'status' => $status,
-            'displayStatus' => $displayStatus,
             'trialEndsAt' => $trialEndsAt,
             'trialDaysRemaining' => $trialDaysRemaining,
             'domains' => $domains,
