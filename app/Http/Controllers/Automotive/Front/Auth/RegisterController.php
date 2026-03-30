@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Automotive\Front\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Billing\TrialSignupCouponService;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Stancl\Tenancy\Database\Models\Domain;
 
 class RegisterController extends Controller
 {
@@ -47,10 +49,19 @@ public function previewCoupon(
         'coupon_code' => ['required', 'string', 'max:100'],
     ]);
 
+    $validator->after(function ($validator) use ($request) {
+        $subdomain = strtolower(trim((string) $request->input('subdomain')));
+        $baseHost = strtolower(trim((string) $request->getHost()));
+
+        if (! $this->subdomainIsAvailable($subdomain, $baseHost)) {
+            $validator->errors()->add('subdomain', 'This subdomain is not available.');
+        }
+    });
+
     if ($validator->fails()) {
         return response()->json([
             'ok' => false,
-            'message' => 'Please enter a valid subdomain and coupon code first.',
+            'message' => $validator->errors()->first('subdomain') ?: 'Please enter a valid subdomain and coupon code first.',
             'errors' => $validator->errors()->toArray(),
         ], 422);
     }
@@ -119,6 +130,15 @@ public function submit(Request $request): RedirectResponse
         'coupon_code' => ['nullable', 'string', 'max:100'],
     ]);
 
+    $validator->after(function ($validator) use ($request) {
+        $subdomain = strtolower(trim((string) $request->input('subdomain')));
+        $baseHost = strtolower(trim((string) $request->getHost()));
+
+        if (! $this->subdomainIsAvailable($subdomain, $baseHost)) {
+            $validator->errors()->add('subdomain', 'This subdomain is not available.');
+        }
+    });
+
     if ($validator->fails()) {
         return back()->withErrors($validator)->withInput();
     }
@@ -147,5 +167,24 @@ public function submit(Request $request): RedirectResponse
     return redirect()
         ->route('automotive.portal')
         ->with('success', 'Your account was created successfully. Choose how you want to continue from your customer portal.');
+}
+
+protected function subdomainIsAvailable(string $subdomain, string $baseHost): bool
+{
+    if ($subdomain === '') {
+        return false;
+    }
+
+    $fullDomain = $baseHost !== '' ? "{$subdomain}.{$baseHost}" : $subdomain;
+
+    if (Tenant::query()->where('id', $subdomain)->exists()) {
+        return false;
+    }
+
+    if ($fullDomain !== '' && Domain::query()->where('domain', $fullDomain)->exists()) {
+        return false;
+    }
+
+    return true;
 }
 }
