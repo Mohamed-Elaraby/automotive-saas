@@ -1,5 +1,5 @@
 <?php $page = 'profile'; ?>
-@extends('automotive.layouts.adminLayout.mainlayout')
+@extends('layout.mainlayout')
 
 @section('content')
     <div class="page-wrapper">
