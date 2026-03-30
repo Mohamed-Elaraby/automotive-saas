@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Models\Subscription;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
@@ -11,7 +12,8 @@ class StripeWebhookSyncService
 {
     public function __construct(
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
-        protected BillingNotificationService $billingNotificationService
+        protected BillingNotificationService $billingNotificationService,
+        protected ProvisionTenantWorkspaceService $provisionTenantWorkspaceService
     ) {
     }
 
@@ -252,6 +254,8 @@ protected function handleCheckoutSessionCompleted(array $payload): void
         $subscription = $subscription->fresh();
     }
 
+    $this->provisionWorkspaceAfterSuccessfulCheckout($subscription);
+
     $this->billingNotificationService->checkoutCompleted($subscription, [
         'stripe_event' => 'checkout.session.completed',
         'checkout_session_id' => $sessionId,
@@ -287,5 +291,29 @@ protected function findSubscriptionByGatewaySubscriptionId(string $gatewaySubscr
 protected function eventToArray(object $event): array
 {
     return json_decode(json_encode($event, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), true) ?: [];
+}
+
+protected function provisionWorkspaceAfterSuccessfulCheckout(Subscription $subscription): void
+{
+    $tenantId = (string) ($subscription->tenant_id ?? '');
+
+    if ($tenantId === '') {
+        return;
+    }
+
+    $ownerUserId = (int) \DB::table('tenant_users')
+        ->where('tenant_id', $tenantId)
+        ->orderBy('id')
+        ->value('user_id');
+
+    if ($ownerUserId <= 0) {
+        return;
+    }
+
+    try {
+        $this->provisionTenantWorkspaceService->ensureProvisioned($tenantId, $ownerUserId);
+    } catch (Throwable $e) {
+        report($e);
+    }
 }
 }

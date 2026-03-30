@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Support\Billing\SubscriptionStatuses;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Models\Domain;
 
@@ -286,37 +285,7 @@ class StartPaidCheckoutService
                     'updated_at' => now(),
                 ]);
             });
-
-            Artisan::call('tenants:migrate', [
-                '--tenants' => [$tenant->id],
-                '--force' => true,
-            ]);
-
-            tenancy()->initialize($tenant);
-
-            try {
-                User::query()->firstOrCreate(
-                    ['email' => $user->email],
-                    [
-                        'name' => $user->name,
-                        'password' => $user->password,
-                    ]
-                );
-            } finally {
-                tenancy()->end();
-                DB::purge('tenant');
-            }
         } catch (\Throwable $e) {
-            try {
-                if (function_exists('tenancy') && tenancy()->initialized) {
-                    tenancy()->end();
-                }
-            } catch (\Throwable) {
-                //
-            }
-
-            DB::purge('tenant');
-
             DB::connection($centralConnection)->transaction(function () use ($tenant, $centralConnection) {
                 DB::connection($centralConnection)->table('domains')
                     ->where('tenant_id', $tenant->id)
