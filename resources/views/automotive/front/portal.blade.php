@@ -63,7 +63,11 @@
                         </div>
                     @elseif(empty($subscription))
                         <div class="alert alert-primary mb-3">
-                            Your account is ready. Choose how you want to continue: start a free trial or subscribe to a paid plan.
+                            @if($freeTrialEnabled)
+                                Your account is ready. Choose how you want to continue: start a free trial or subscribe to a paid plan.
+                            @else
+                                Your account is ready. Choose a paid plan and continue to checkout.
+                            @endif
                         </div>
                     @endif
 
