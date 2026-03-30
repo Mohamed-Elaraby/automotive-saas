@@ -20,6 +20,9 @@ Route::prefix('automotive')
         Route::middleware('auth:web')->group(function () {
             Route::get('/portal', [CustomerPortalController::class, 'index'])->name('portal');
             Route::post('/portal/start-trial', [CustomerPortalController::class, 'startTrial'])->name('portal.start-trial');
+            Route::post('/portal/subscribe', [CustomerPortalController::class, 'startPaidCheckout'])->name('portal.subscribe');
+            Route::get('/portal/checkout/success', [CustomerPortalController::class, 'checkoutSuccess'])->name('portal.checkout.success');
+            Route::get('/portal/checkout/cancel', [CustomerPortalController::class, 'checkoutCancel'])->name('portal.checkout.cancel');
         });
 
         Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
