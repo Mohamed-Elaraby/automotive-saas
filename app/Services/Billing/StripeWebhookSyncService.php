@@ -295,23 +295,12 @@ protected function eventToArray(object $event): array
 
 protected function provisionWorkspaceAfterSuccessfulCheckout(Subscription $subscription): void
 {
-    $tenantId = (string) ($subscription->tenant_id ?? '');
-
-    if ($tenantId === '') {
-        return;
-    }
-
-    $ownerUserId = (int) \DB::table('tenant_users')
-        ->where('tenant_id', $tenantId)
-        ->orderBy('id')
-        ->value('user_id');
-
-    if ($ownerUserId <= 0) {
+    if (blank($subscription->tenant_id)) {
         return;
     }
 
     try {
-        $this->provisionTenantWorkspaceService->ensureProvisioned($tenantId, $ownerUserId);
+        $this->provisionTenantWorkspaceService->ensureProvisioned((string) $subscription->tenant_id);
     } catch (Throwable $e) {
         report($e);
     }

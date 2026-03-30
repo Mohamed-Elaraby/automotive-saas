@@ -4,13 +4,11 @@ namespace App\Services\Automotive;
 
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Subscription;
-use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Database\Models\Domain;
 
 class StartPaidCheckoutService
 {
@@ -23,6 +21,7 @@ class StartPaidCheckoutService
     public function start(User $user, CustomerOnboardingProfile $profile, int $planId): array
     {
         $plan = $this->billingPlanCatalogService->findPaidPlanById($planId);
+        $reservedTenantId = strtolower(trim((string) $profile->subdomain));
 
         if (! $plan) {
             return [
@@ -87,7 +86,7 @@ class StartPaidCheckoutService
                 (int) $plan->id
             );
         } else {
-            $created = $this->createWorkspaceWithPendingSubscription($user, $profile, (int) $plan->id);
+            $created = $this->createPendingSubscriptionWithoutProvisioning($reservedTenantId);
 
             if (! ($created['ok'] ?? false)) {
                 return $created;
@@ -162,9 +161,27 @@ class StartPaidCheckoutService
             ->first();
 
         if (! $tenantLink) {
+            $profile = CustomerOnboardingProfile::query()
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (! $profile || blank($profile->subdomain)) {
+                return [
+                    'tenant_id' => null,
+                    'subscription' => null,
+                ];
+            }
+
+            $reservedTenantId = strtolower(trim((string) $profile->subdomain));
+            $subscription = DB::connection($connection)
+                ->table('subscriptions')
+                ->where('tenant_id', $reservedTenantId)
+                ->orderByDesc('id')
+                ->first();
+
             return [
-                'tenant_id' => null,
-                'subscription' => null,
+                'tenant_id' => $subscription ? $reservedTenantId : null,
+                'subscription' => $subscription,
             ];
         }
 
@@ -205,64 +222,21 @@ class StartPaidCheckoutService
         ]);
     }
 
-    protected function createWorkspaceWithPendingSubscription(
-        User $user,
-        CustomerOnboardingProfile $profile,
-        int $planId
+    protected function createPendingSubscriptionWithoutProvisioning(
+        string $tenantId
     ): array {
         $centralConnection = $this->centralConnectionName();
-        $tenantId = strtolower(trim((string) $profile->subdomain));
-        $baseHost = strtolower(trim((string) ($profile->base_host ?: request()->getHost())));
-        $fullDomain = "{$tenantId}.{$baseHost}";
-
-        if (Domain::query()->where('domain', $fullDomain)->exists()) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'This subdomain is already taken.',
-                'errors' => [
-                    'subdomain' => ['This subdomain is already taken.'],
-                ],
-            ];
-        }
-
-        if (Tenant::query()->where('id', $tenantId)->exists()) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'This subdomain is not available.',
-                'errors' => [
-                    'subdomain' => ['This subdomain is not available.'],
-                ],
-            ];
-        }
-
-        $tenant = Tenant::create([
-            'id' => $tenantId,
-            'data' => [
-                'company_name' => $profile->company_name,
-                'db_name' => 'tenant_' . $tenantId,
-            ],
-        ]);
 
         $subscriptionId = null;
 
         try {
             DB::connection($centralConnection)->transaction(function () use (
-                $tenant,
-                $user,
-                $fullDomain,
+                $tenantId,
                 $centralConnection,
-                $planId,
                 &$subscriptionId
             ) {
-                DB::connection($centralConnection)->table('domains')->insert([
-                    'domain' => $fullDomain,
-                    'tenant_id' => $tenant->id,
-                ]);
-
                 $subscriptionId = DB::connection($centralConnection)->table('subscriptions')->insertGetId([
-                    'tenant_id' => $tenant->id,
+                    'tenant_id' => $tenantId,
                     'plan_id' => null,
                     'status' => null,
                     'trial_ends_at' => null,
@@ -276,31 +250,11 @@ class StartPaidCheckoutService
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-
-                DB::connection($centralConnection)->table('tenant_users')->insert([
-                    'tenant_id' => $tenant->id,
-                    'user_id' => $user->id,
-                    'role' => 'owner',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
             });
         } catch (\Throwable $e) {
-            DB::connection($centralConnection)->transaction(function () use ($tenant, $centralConnection) {
-                DB::connection($centralConnection)->table('domains')
-                    ->where('tenant_id', $tenant->id)
-                    ->delete();
-
+            DB::connection($centralConnection)->transaction(function () use ($tenantId, $centralConnection) {
                 DB::connection($centralConnection)->table('subscriptions')
-                    ->where('tenant_id', $tenant->id)
-                    ->delete();
-
-                DB::connection($centralConnection)->table('tenant_users')
-                    ->where('tenant_id', $tenant->id)
-                    ->delete();
-
-                DB::connection($centralConnection)->table('tenants')
-                    ->where('id', $tenant->id)
+                    ->where('tenant_id', $tenantId)
                     ->delete();
             });
 
@@ -320,7 +274,7 @@ class StartPaidCheckoutService
 
         return [
             'ok' => true,
-            'tenant_id' => $tenant->id,
+            'tenant_id' => $tenantId,
             'subscription' => $subscription,
         ];
     }
