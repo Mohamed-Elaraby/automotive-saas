@@ -25,7 +25,6 @@ return new class extends Migration
             $table->string('status', 30)->default('applied'); // applied | consumed | reversed
             $table->decimal('discount_amount', 12, 2)->nullable();
             $table->string('currency_code', 10)->nullable();
-
             $table->json('context_payload')->nullable();
 
             $table->timestamps();
