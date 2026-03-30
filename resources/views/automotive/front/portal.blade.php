@@ -1,5 +1,5 @@
 <?php $page = 'profile'; ?>
-@extends('layout.mainlayout')
+@extends('automotive.front.layouts.portal')
 
 @section('content')
     <div class="page-wrapper">

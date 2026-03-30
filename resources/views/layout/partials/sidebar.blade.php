@@ -159,6 +159,22 @@
                                         <li><a href="{{url('search-list')}}" class="{{ Request::is('search-list') ? 'active' : '' }}">Search List</a></li>
                                     </ul>
                                 </li>
+                                <li class="submenu">
+                                    <a href="javascript:void(0);" class="{{ Request::is('admin/tenants*', 'admin/plans*', 'admin/subscriptions*', 'admin/coupons*', 'admin/activity-logs*', 'admin/notifications*', 'admin/reports/billing*', 'admin/settings/general*') ? 'active subdrop' : '' }}">
+                                        <i class="isax isax-shapes-1"></i><span>SaaS Admin</span>
+                                        <span class="menu-arrow"></span>
+                                    </a>
+                                    <ul>
+                                        <li><a href="{{ route('admin.tenants.index') }}" class="{{ Request::is('admin/tenants*') ? 'active' : '' }}">Tenants</a></li>
+                                        <li><a href="{{ route('admin.plans.index') }}" class="{{ Request::is('admin/plans*') ? 'active' : '' }}">Plans</a></li>
+                                        <li><a href="{{ route('admin.subscriptions.index') }}" class="{{ Request::is('admin/subscriptions*') ? 'active' : '' }}">Subscriptions</a></li>
+                                        <li><a href="{{ route('admin.coupons.index') }}" class="{{ Request::is('admin/coupons*') ? 'active' : '' }}">Coupons</a></li>
+                                        <li><a href="{{ route('admin.activity-logs.index') }}" class="{{ Request::is('admin/activity-logs*') ? 'active' : '' }}">Activity Logs</a></li>
+                                        <li><a href="{{ route('admin.notifications.index') }}" class="{{ Request::is('admin/notifications*') ? 'active' : '' }}">Notifications</a></li>
+                                        <li><a href="{{ route('admin.reports.billing') }}" class="{{ Request::is('admin/reports/billing*') ? 'active' : '' }}">Billing Reports</a></li>
+                                        <li><a href="{{ route('admin.settings.general.edit') }}" class="{{ Request::is('admin/settings/general*') ? 'active' : '' }}">General Settings</a></li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                         <li class="menu-title"><span>Inventory & Sales</span></li>
