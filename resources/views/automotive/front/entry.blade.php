@@ -109,48 +109,48 @@
 <div class="wrapper">
     <div class="container">
         <div class="hero">
-            <h1>Choose How You Want to Get Started</h1>
-            <p>Start with a free trial or go straight to paid plans, depending on how ready you are.</p>
+            <h1>Create Your Account First</h1>
+            <p>After registration, you will enter your customer portal and choose either free trial or a paid plan.</p>
         </div>
 
         <div class="grid">
             @if($freeTrialEnabled)
                 <div class="card">
                     <span class="badge badge-success">Free Trial</span>
-                    <div class="title">Start Free Trial</div>
+                    <div class="title">Register Then Start Trial</div>
                     <div class="desc">
-                        Create your account, reserve your coupon if needed, and start from a trial experience before moving to a paid plan.
+                        Create your account first, reserve your preferred subdomain, then start your free trial from the customer portal.
                     </div>
                     <ul class="features">
-                        <li>14-day trial onboarding</li>
-                        <li>Trial coupon reservation supported</li>
-                        <li>Upgrade later from your customer profile</li>
+                        <li>Account registration first</li>
+                        <li>14-day trial starts later from portal</li>
+                        <li>Upgrade to paid when ready</li>
                     </ul>
                     <div class="actions">
-                        <a href="{{ route('automotive.register') }}" class="btn-primary">Start Free Trial</a>
+                        <a href="{{ route('automotive.register') }}" class="btn-primary">Create Account</a>
                     </div>
                 </div>
             @endif
 
             <div class="card">
                 <span class="badge badge-primary">Paid Plans</span>
-                <div class="title">View Plans & Subscribe</div>
+                <div class="title">Register Then View Paid Plans</div>
                 <div class="desc">
-                    Skip the trial and choose a paid plan directly. This will become your main paid onboarding entry path.
+                    Create your account first, then open the customer portal to choose a paid plan and continue to checkout.
                 </div>
                 <ul class="features">
-                    <li>Choose the plan that fits your business</li>
-                    <li>Use coupons in the paid flow</li>
-                    <li>Access your customer portal after subscription</li>
+                    <li>Account registration first</li>
+                    <li>Paid plan selection inside portal</li>
+                    <li>Stripe checkout starts from portal</li>
                 </ul>
                 <div class="actions">
-                    <a href="#" class="btn-secondary">View Paid Plans</a>
+                    <a href="{{ route('automotive.register') }}" class="btn-secondary">Create Account To Continue</a>
                 </div>
             </div>
         </div>
 
         <div class="foot-links">
-            <a href="{{ route('login') }}">Tenant Login</a>
+            <a href="{{ route('login') }}">Customer Portal Login</a>
         </div>
     </div>
 </div>

@@ -25,14 +25,6 @@ class RegisterController extends Controller
 
 public function show()
 {
-    if (! $this->settingsService->freeTrialEnabled()) {
-        return redirect()
-            ->route('automotive.get-started')
-            ->withErrors([
-                'register' => 'Free trial registration is currently unavailable.',
-            ]);
-    }
-
     return view('automotive.front.auth.register');
 }
 
@@ -106,14 +98,6 @@ public function previewCoupon(
 
 public function submit(Request $request): RedirectResponse
 {
-    if (! $this->settingsService->freeTrialEnabled()) {
-        return redirect()
-            ->route('automotive.get-started')
-            ->withErrors([
-                'register' => 'Free trial registration is currently unavailable.',
-            ]);
-    }
-
     $validator = Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255'],
         'email' => [

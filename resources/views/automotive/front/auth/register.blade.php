@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Start Free Trial - Automotive SaaS</title>
+    <title>Create Account - Automotive SaaS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -126,8 +126,8 @@
 <body>
 <div class="wrapper">
     <div class="card">
-        <h1>Start Your 14-Day Free Trial</h1>
-        <p>Create your Automotive SaaS account and get your own subdomain instantly.</p>
+        <h1>Create Your Customer Portal Account</h1>
+        <p>Register first, reserve your preferred subdomain, then continue from the customer portal to start a free trial or choose a paid plan.</p>
 
         @if ($errors->any())
             <div class="error">
@@ -162,7 +162,7 @@
             <div class="form-group">
                 <label for="subdomain">Subdomain</label>
                 <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" required>
-                <div class="hint">Example: mido → mido.automotive.seven-scapital.com</div>
+                <div class="hint">Example: mido -> mido.automotive.seven-scapital.com</div>
                 @error('subdomain') <div class="field-error">{{ $message }}</div> @enderror
             </div>
 
@@ -172,7 +172,7 @@
                     <input id="coupon_code" type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="Optional coupon code">
                     <button type="button" id="checkCouponButton" class="secondary-button">Check Coupon</button>
                 </div>
-                <div class="hint">Optional. If valid, it will be reserved on your new trial subscription for future billing rules.</div>
+                <div class="hint">Optional. If valid for trial reservation, it will be stored on your account and reused later from the portal.</div>
                 @error('coupon_code') <div class="field-error">{{ $message }}</div> @enderror
 
                 <div id="couponPreviewBox" class="coupon-preview"></div>
@@ -189,7 +189,7 @@
                 <input id="password_confirmation" type="password" name="password_confirmation" required>
             </div>
 
-            <button type="submit">Start Free Trial</button>
+            <button type="submit">Create Account &amp; Continue</button>
         </form>
     </div>
 </div>
