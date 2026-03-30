@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Automotive\Front\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
+use App\Models\User;
 use App\Services\Admin\AppSettingsService;
-use App\Services\Automotive\StartTrialService;
-use App\Services\Automotive\TenantUrlBuilder;
 use App\Services\Billing\TrialSignupCouponService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class RegisterController extends Controller
 {
@@ -99,11 +104,8 @@ public function previewCoupon(
         ]);
     }
 
-public function submit(
-    Request $request,
-    StartTrialService $service,
-    TenantUrlBuilder $tenantUrlBuilder
-) {
+public function submit(Request $request): RedirectResponse
+{
     if (! $this->settingsService->freeTrialEnabled()) {
         return redirect()
             ->route('automotive.get-started')
@@ -114,10 +116,22 @@ public function submit(
 
     $validator = Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'email', 'max:255'],
+        'email' => [
+            'required',
+            'email',
+            'max:255',
+            Rule::unique('users', 'email'),
+        ],
         'password' => ['required', 'string', 'min:6', 'confirmed'],
         'company_name' => ['required', 'string', 'max:255'],
-        'subdomain' => ['required', 'string', 'alpha_dash', 'min:3', 'max:50'],
+        'subdomain' => [
+            'required',
+            'string',
+            'alpha_dash',
+            'min:3',
+            'max:50',
+            Rule::unique('customer_onboarding_profiles', 'subdomain'),
+        ],
         'coupon_code' => ['nullable', 'string', 'max:100'],
     ]);
 
@@ -126,26 +140,28 @@ public function submit(
     }
 
     $data = $validator->validated();
-    $data['base_host'] = $request->getHost();
-    $data['coupon_code'] = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
 
-    $result = $service->start($data);
+    $user = User::query()->create([
+        'name' => $data['name'],
+        'email' => strtolower(trim((string) $data['email'])),
+        'password' => Hash::make((string) $data['password']),
+    ]);
 
-    if (! ($result['ok'] ?? false)) {
-        if (($result['status'] ?? 500) === 422) {
-            return back()
-                ->withErrors($result['errors'] ?? ['register' => $result['message'] ?? 'Validation error'])
-                ->withInput();
-        }
+    CustomerOnboardingProfile::query()->updateOrCreate(
+        ['user_id' => $user->id],
+        [
+            'company_name' => $data['company_name'],
+            'subdomain' => strtolower(trim((string) $data['subdomain'])),
+            'coupon_code' => strtoupper(trim((string) ($data['coupon_code'] ?? ''))),
+            'base_host' => $request->getHost(),
+            'password_payload' => Crypt::encryptString((string) $data['password']),
+        ]
+    );
 
-        return back()
-            ->withErrors(['register' => $result['message'] ?? 'Provisioning failed.'])
-            ->withInput();
-    }
+    Auth::guard('web')->login($user);
 
-    $loginUrl = $tenantUrlBuilder->tenantLoginUrl($request, $data['subdomain']);
-
-    return redirect()->away($loginUrl)
-        ->with('success', 'Your trial account has been created successfully.');
+    return redirect()
+        ->route('automotive.portal')
+        ->with('success', 'Your account was created successfully. Choose how you want to continue from your customer portal.');
 }
 }

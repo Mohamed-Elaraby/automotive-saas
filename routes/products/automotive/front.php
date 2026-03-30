@@ -1,17 +1,27 @@
 <?php
 
 use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
+use App\Http\Controllers\Automotive\Front\CustomerPortalController;
 use App\Http\Controllers\Automotive\Front\EntryController;
 use App\Http\Controllers\Automotive\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('automotive')->name('automotive.')->group(function () {
-    Route::get('/get-started', [EntryController::class, 'index'])->name('get-started');
+Route::prefix('automotive')
+    ->name('automotive.')
+    ->group(function () {
+        Route::get('/get-started', [EntryController::class, 'index'])->name('get-started');
 
-    Route::get('/register', [RegisterController::class, 'show'])->name('register');
-    Route::post('/register', [RegisterController::class, 'submit'])->name('register.submit');
-    Route::post('/register/coupon-preview', [RegisterController::class, 'previewCoupon'])->name('register.coupon-preview');
+        Route::middleware('guest:web')->group(function () {
+            Route::get('/register', [RegisterController::class, 'show'])->name('register');
+            Route::post('/register', [RegisterController::class, 'submit'])->name('register.submit');
+            Route::post('/register/coupon-preview', [RegisterController::class, 'previewCoupon'])->name('register.coupon-preview');
+        });
 
-    Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
-        ->name('automotive.webhooks.stripe');
-});
+        Route::middleware('auth:web')->group(function () {
+            Route::get('/portal', [CustomerPortalController::class, 'index'])->name('portal');
+            Route::post('/portal/start-trial', [CustomerPortalController::class, 'startTrial'])->name('portal.start-trial');
+        });
+
+        Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
+            ->name('webhooks.stripe');
+    });

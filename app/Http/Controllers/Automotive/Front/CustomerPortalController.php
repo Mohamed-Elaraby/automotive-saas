@@ -1,0 +1,242 @@
+<?php
+
+namespace App\Http\Controllers\Automotive\Front;
+
+use App\Http\Controllers\Controller;
+use App\Models\CustomerOnboardingProfile;
+use App\Services\Admin\AppSettingsService;
+use App\Services\Automotive\StartTrialService;
+use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+class CustomerPortalController extends Controller
+{
+    public function __construct(
+        protected AppSettingsService $settingsService
+    ) {
+    }
+
+public function index(): View
+{
+    $user = Auth::guard('web')->user();
+
+    abort_unless($user, 403);
+
+    $profile = CustomerOnboardingProfile::query()
+        ->where('user_id', $user->id)
+        ->first();
+
+    $subscription = $this->latestSubscriptionForUser($user);
+    $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
+    $domains = $subscription && ! empty($subscription->tenant_id)
+        ? $this->domainsForTenant((string) $subscription->tenant_id)
+        : collect();
+
+    $primaryDomain = $domains->first();
+    $primaryDomainValue = $primaryDomain['domain'] ?? null;
+    $systemUrl = $primaryDomain['admin_login_url'] ?? null;
+
+    $status = (string) ($subscription->status ?? '');
+    $trialEndsAt = $this->nullableCarbon($subscription->trial_ends_at ?? null);
+
+    $trialDaysRemaining = null;
+    if ($trialEndsAt && $trialEndsAt->isFuture()) {
+        $trialDaysRemaining = now()->diffInDays($trialEndsAt, false);
+    }
+
+    $allowSystemAccess = in_array($status, ['trialing', 'active'], true) && filled($systemUrl);
+
+    return view('automotive.front.portal', [
+        'user' => $user,
+        'profile' => $profile,
+        'subscription' => $subscription,
+        'plan' => $plan,
+        'status' => $status,
+        'trialEndsAt' => $trialEndsAt,
+        'trialDaysRemaining' => $trialDaysRemaining,
+        'domains' => $domains,
+        'primaryDomainValue' => $primaryDomainValue,
+        'systemUrl' => $systemUrl,
+        'allowSystemAccess' => $allowSystemAccess,
+        'freeTrialEnabled' => $this->settingsService->freeTrialEnabled(),
+    ]);
+}
+
+public function startTrial(StartTrialService $service): RedirectResponse
+{
+    $user = Auth::guard('web')->user();
+
+    abort_unless($user, 403);
+
+    if (! $this->settingsService->freeTrialEnabled()) {
+        return redirect()
+            ->route('automotive.portal')
+            ->withErrors([
+                'portal' => 'Free trial is currently unavailable.',
+            ]);
+    }
+
+    $profile = CustomerOnboardingProfile::query()
+        ->where('user_id', $user->id)
+        ->first();
+
+    if (! $profile) {
+        return redirect()
+            ->route('automotive.portal')
+            ->withErrors([
+                'portal' => 'Your onboarding profile is missing. Please register again or contact support.',
+            ]);
+    }
+
+    $existingSubscription = $this->latestSubscriptionForUser($user);
+    if ($existingSubscription) {
+        return redirect()
+            ->route('automotive.portal')
+            ->withErrors([
+                'portal' => 'A subscription already exists for your account.',
+            ]);
+    }
+
+    try {
+        $password = filled($profile->password_payload)
+            ? Crypt::decryptString((string) $profile->password_payload)
+            : null;
+    } catch (\Throwable) {
+        $password = null;
+    }
+
+    if (! filled($password)) {
+        return redirect()
+            ->route('automotive.portal')
+            ->withErrors([
+                'portal' => 'Your original setup password is no longer available. Please contact support to restart onboarding safely.',
+            ]);
+    }
+
+    $data = [
+        'name' => $user->name,
+        'email' => $user->email,
+        'password' => $password,
+        'company_name' => $profile->company_name,
+        'subdomain' => strtolower(trim((string) $profile->subdomain)),
+        'coupon_code' => strtoupper(trim((string) ($profile->coupon_code ?? ''))),
+        'base_host' => $profile->base_host ?: request()->getHost(),
+    ];
+
+    $result = $service->start($data);
+
+    if (! ($result['ok'] ?? false)) {
+        if (($result['status'] ?? 500) === 422) {
+            return redirect()
+                ->route('automotive.portal')
+                ->withErrors($result['errors'] ?? ['portal' => $result['message'] ?? 'Trial setup validation failed.']);
+        }
+
+        return redirect()
+            ->route('automotive.portal')
+            ->withErrors([
+                'portal' => $result['message'] ?? 'Trial provisioning failed.',
+            ]);
+    }
+
+    $profile->update([
+        'password_payload' => null,
+    ]);
+
+    return redirect()
+        ->route('automotive.portal')
+        ->with('success', 'Your free trial system is ready now.');
+}
+
+protected function centralConnectionName(): string
+{
+    return (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
+}
+
+protected function latestSubscriptionForUser(object $user): ?object
+{
+    $connection = $this->centralConnectionName();
+
+    if (! Schema::connection($connection)->hasTable('subscriptions')) {
+        return null;
+    }
+
+    $columns = Schema::connection($connection)->getColumnListing('subscriptions');
+    $query = DB::connection($connection)->table('subscriptions');
+
+    if (in_array('user_id', $columns, true) && ! empty($user->id)) {
+        $query->where('user_id', $user->id);
+    } elseif (in_array('user_email', $columns, true) && ! empty($user->email)) {
+        $query->where('user_email', $user->email);
+    } elseif (in_array('email', $columns, true) && ! empty($user->email)) {
+        $query->where('email', $user->email);
+    } else {
+        return null;
+    }
+
+    return $query->orderByDesc('id')->first();
+}
+
+protected function planById(int $planId): ?object
+{
+    if ($planId <= 0) {
+        return null;
+    }
+
+    $connection = $this->centralConnectionName();
+
+    if (! Schema::connection($connection)->hasTable('plans')) {
+        return null;
+    }
+
+    return DB::connection($connection)
+        ->table('plans')
+        ->where('id', $planId)
+        ->first();
+}
+
+protected function domainsForTenant(string $tenantId): Collection
+{
+    $connection = $this->centralConnectionName();
+
+    if (! Schema::connection($connection)->hasTable('domains')) {
+        return collect();
+    }
+
+    return DB::connection($connection)
+        ->table('domains')
+        ->where('tenant_id', $tenantId)
+        ->orderBy('domain')
+        ->get(['tenant_id', 'domain'])
+        ->map(function ($row): array {
+            $domain = (string) $row->domain;
+            $baseUrl = str_starts_with($domain, 'http://') || str_starts_with($domain, 'https://')
+                ? $domain
+                : 'https://' . $domain;
+
+            return [
+                'tenant_id' => (string) $row->tenant_id,
+                'domain' => $domain,
+                'url' => $baseUrl,
+                'admin_login_url' => rtrim($baseUrl, '/') . '/automotive/admin/login',
+            ];
+        })
+        ->values();
+}
+
+protected function nullableCarbon(mixed $value): ?Carbon
+{
+    if (blank($value)) {
+        return null;
+    }
+
+    return Carbon::parse($value);
+}
+}
