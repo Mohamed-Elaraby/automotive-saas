@@ -57,9 +57,13 @@
                         </div>
                     @elseif($status === 'past_due' || $status === 'suspended' || $status === 'expired')
                         <div class="alert alert-warning mb-3">
-                            Your current subscription status is
-                            <strong>{{ strtoupper(str_replace('_', ' ', $status)) }}</strong>.
-                            Please review your plan and billing before opening the system workspace.
+                            @if($hasPendingPaidCheckout)
+                                Your paid checkout was not completed yet. Continue checkout when you are ready before your workspace can be activated.
+                            @else
+                                Your current subscription status is
+                                <strong>{{ strtoupper(str_replace('_', ' ', $status)) }}</strong>.
+                                Please review your plan and billing before opening the system workspace.
+                            @endif
                         </div>
                     @elseif(empty($subscription))
                         <div class="alert alert-primary mb-3">
@@ -94,14 +98,14 @@
                                         <h6 class="mb-1">{{ $user->name ?? '-' }}</h6>
                                         <span class="text-gray-9 fs-13 mb-1">{{ $user->email ?? '-' }}</span>
                                         <span class="badge
-                                            @if($status === 'active') bg-success
-                                            @elseif($status === 'trialing') bg-info
-                                            @elseif($status === 'past_due') bg-warning
-                                            @elseif(in_array($status, ['suspended', 'expired', 'cancelled'])) bg-danger
+                                            @if($displayStatus === 'active') bg-success
+                                            @elseif($displayStatus === 'trialing') bg-info
+                                            @elseif($displayStatus === 'past_due') bg-warning
+                                            @elseif(in_array($displayStatus, ['suspended', 'expired', 'cancelled'])) bg-danger
                                             @else bg-secondary
                                             @endif
                                             ">
-                                            {{ $status ? strtoupper(str_replace('_', ' ', $status)) : 'NOT STARTED' }}
+                                            {{ $hasPendingPaidCheckout ? 'CHECKOUT NOT COMPLETED' : ($displayStatus ? strtoupper(str_replace('_', ' ', $displayStatus)) : 'NOT STARTED') }}
                                         </span>
                                         @if(!empty($profile?->coupon_code))
                                             <span class="badge bg-soft-success text-success mt-2">
@@ -177,7 +181,7 @@
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label">Current Status</label>
-                                            <input type="text" class="form-control" value="{{ $status ? strtoupper(str_replace('_', ' ', $status)) : 'NOT STARTED' }}" readonly>
+                                            <input type="text" class="form-control" value="{{ $hasPendingPaidCheckout ? 'CHECKOUT NOT COMPLETED' : ($displayStatus ? strtoupper(str_replace('_', ' ', $displayStatus)) : 'NOT STARTED') }}" readonly>
                                         </div>
                                     </div>
 
