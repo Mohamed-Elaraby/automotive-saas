@@ -214,6 +214,8 @@ protected function handleCheckoutSessionCompleted(array $payload): void
     $sessionSubscriptionId = (string) ($session['subscription'] ?? '');
     $sessionCustomerId = (string) ($session['customer'] ?? '');
     $subscriptionRowId = (int) Arr::get($session, 'metadata.subscription_row_id', 0);
+    $tenantIdFromMetadata = (string) Arr::get($session, 'metadata.tenant_id', '');
+    $planIdFromMetadata = (int) Arr::get($session, 'metadata.plan_id', 0);
 
     if ($sessionId === '') {
         return;
@@ -226,6 +228,28 @@ protected function handleCheckoutSessionCompleted(array $payload): void
 
     if (! $subscription && $subscriptionRowId > 0) {
         $subscription = Subscription::query()->find($subscriptionRowId);
+    }
+
+    if (! $subscription && $tenantIdFromMetadata !== '') {
+        $subscription = Subscription::query()->create([
+            'tenant_id' => $tenantIdFromMetadata,
+            'plan_id' => $planIdFromMetadata > 0 ? $planIdFromMetadata : null,
+            'status' => 'past_due',
+            'trial_ends_at' => null,
+            'grace_ends_at' => null,
+            'last_payment_failed_at' => null,
+            'past_due_started_at' => null,
+            'suspended_at' => null,
+            'cancelled_at' => null,
+            'payment_failures_count' => 0,
+            'ends_at' => null,
+            'external_id' => null,
+            'gateway' => 'stripe',
+            'gateway_customer_id' => $sessionCustomerId !== '' ? $sessionCustomerId : null,
+            'gateway_subscription_id' => $sessionSubscriptionId !== '' ? $sessionSubscriptionId : null,
+            'gateway_checkout_session_id' => $sessionId,
+            'gateway_price_id' => null,
+        ]);
     }
 
     if (! $subscription) {

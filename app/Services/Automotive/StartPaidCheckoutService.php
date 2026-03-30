@@ -86,14 +86,8 @@ class StartPaidCheckoutService
                 (int) $plan->id
             );
         } else {
-            $created = $this->createPendingSubscriptionWithoutProvisioning($reservedTenantId);
-
-            if (! ($created['ok'] ?? false)) {
-                return $created;
-            }
-
-            $tenantId = (string) $created['tenant_id'];
-            $subscription = $created['subscription'];
+            $tenantId = $reservedTenantId;
+            $subscription = null;
         }
 
         try {
@@ -101,7 +95,7 @@ class StartPaidCheckoutService
                 ->driver('stripe')
                 ->createRenewalSession([
                     'tenant_id' => $tenantId,
-                    'subscription_row_id' => $subscription->id,
+                    'subscription_row_id' => $subscription->id ?? null,
                     'plan_id' => $plan->id,
                     'stripe_price_id' => $plan->stripe_price_id,
                     'customer_email' => $user->email,
@@ -123,6 +117,7 @@ class StartPaidCheckoutService
         }
 
         if (! empty($session['success']) && ! empty($session['checkout_url']) && ! empty($session['session_id'])) {
+            if ($subscription) {
             $subscription->fill([
                 'gateway' => 'stripe',
                 'gateway_checkout_session_id' => (string) $session['session_id'],
@@ -130,13 +125,14 @@ class StartPaidCheckoutService
             ]);
 
             $subscription->save();
+            }
 
             return [
                 'ok' => true,
                 'status' => 201,
                 'checkout_url' => (string) $session['checkout_url'],
                 'tenant_id' => $tenantId,
-                'subscription_id' => (int) $subscription->id,
+                'subscription_id' => $subscription?->id ? (int) $subscription->id : null,
             ];
         }
 
@@ -220,63 +216,6 @@ class StartPaidCheckoutService
             'gateway_checkout_session_id' => null,
             'gateway_price_id' => null,
         ]);
-    }
-
-    protected function createPendingSubscriptionWithoutProvisioning(
-        string $tenantId
-    ): array {
-        $centralConnection = $this->centralConnectionName();
-
-        $subscriptionId = null;
-
-        try {
-            DB::connection($centralConnection)->transaction(function () use (
-                $tenantId,
-                $centralConnection,
-                &$subscriptionId
-            ) {
-                $subscriptionId = DB::connection($centralConnection)->table('subscriptions')->insertGetId([
-                    'tenant_id' => $tenantId,
-                    'plan_id' => null,
-                    'status' => null,
-                    'trial_ends_at' => null,
-                    'ends_at' => null,
-                    'external_id' => null,
-                    'gateway' => null,
-                    'gateway_customer_id' => null,
-                    'gateway_subscription_id' => null,
-                    'gateway_checkout_session_id' => null,
-                    'gateway_price_id' => null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            });
-        } catch (\Throwable $e) {
-            DB::connection($centralConnection)->transaction(function () use ($tenantId, $centralConnection) {
-                DB::connection($centralConnection)->table('subscriptions')
-                    ->where('tenant_id', $tenantId)
-                    ->delete();
-            });
-
-            report($e);
-
-            return [
-                'ok' => false,
-                'status' => 500,
-                'message' => 'Provisioning failed before checkout.',
-                'errors' => [
-                    'portal' => ['Provisioning failed before checkout.'],
-                ],
-            ];
-        }
-
-        $subscription = Subscription::query()->findOrFail($subscriptionId);
-
-        return [
-            'ok' => true,
-            'tenant_id' => $tenantId,
-            'subscription' => $subscription,
-        ];
     }
 
     protected function centralConnectionName(): string
