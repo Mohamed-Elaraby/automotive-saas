@@ -191,6 +191,11 @@
 
             <button type="submit">Create Account &amp; Continue</button>
         </form>
+
+        <div class="hint" style="margin-top:18px; text-align:center;">
+            Already have an account?
+            <a href="{{ route('automotive.login') }}" style="color:#1d4ed8; text-decoration:none;">Sign in to your portal</a>
+        </div>
     </div>
 </div>
 

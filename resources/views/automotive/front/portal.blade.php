@@ -13,6 +13,13 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <form method="POST" action="{{ route('automotive.logout') }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-white">
+                                    Sign Out
+                                </button>
+                            </form>
+
                             <a href="#paid-plans" class="btn btn-outline-white">
                                 View Plans &amp; Subscribe
                             </a>

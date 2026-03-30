@@ -150,7 +150,7 @@
         </div>
 
         <div class="foot-links">
-            <a href="{{ route('login') }}">Customer Portal Login</a>
+            <a href="{{ route('automotive.login') }}">Customer Portal Login</a>
         </div>
     </div>
 </div>
