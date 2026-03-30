@@ -494,3 +494,240 @@
   - `front paid checkout bridge`
   - `front automotive login/logout`
   - `shared header logout fix for automotive routes`
+
+## 16) Latest Session Continuation And Corrections
+
+### 16.1 Admin Sidebar Was Updated With Recent SaaS Pages
+تم تعديل:
+- `resources/views/admin/layouts/centralLayout/partials/sidebar.blade.php`
+
+بحيث يظهر داخل الـ admin sidebar الفعلي كل الصفحات التي تمت إضافتها مؤخرًا، وهي:
+- `Tenants`
+- `Coupons`
+- `Notifications`
+- `Activity Logs`
+- `General Settings`
+
+وتمت إضافتها في:
+- mini sidebar icons
+- main sidebar list
+- footer icons
+
+### 16.2 General Settings Page Was Restyled
+تم تعديل:
+- `resources/views/admin/settings/general.blade.php`
+
+بحيث أصبح التصميم مستوحى من:
+- `resources/views/customer-account-settings.blade.php`
+
+مع الإبقاء على behavior الحالي الخاص بـ:
+- `free_trial_enabled`
+
+وتم أيضًا تصحيح:
+- `$page = 'saas-settings-general'`
+
+حتى تعمل active state في الـ admin sidebar بشكل صحيح.
+
+### 16.3 Automotive Front Layouts Were Added
+تم إنشاء layouts خاصة بالـ front داخل:
+- `resources/views/automotive/front/layouts/public.blade.php`
+- `resources/views/automotive/front/layouts/auth.blade.php`
+- `resources/views/automotive/front/layouts/portal.blade.php`
+
+ثم تم تعديل:
+- `resources/views/automotive/front/entry.blade.php`
+- `resources/views/automotive/front/auth/login.blade.php`
+- `resources/views/automotive/front/auth/register.blade.php`
+- `resources/views/automotive/front/portal.blade.php`
+
+بحيث تعتمد على هذه layouts بدل الكتابة المباشرة أو الاعتماد المباشر على layout عام.
+
+### 16.4 Automotive Guest Redirect Was Fixed
+تم تعديل:
+- `app/Http/Middleware/RedirectIfAuthenticated.php`
+
+بحيث:
+- لو المستخدم authenticated على guard `web`
+- وفتح أي route داخل:
+  - `/automotive/*`
+
+فلا يتم تحويله إلى:
+- `/home`
+
+بل يتم تحويله إلى:
+- `automotive.portal`
+
+وهذا أصلح مشكلة:
+- `/automotive/register`
+- `/automotive/login`
+
+حين كانا يعيدان التوجيه إلى `/home` غير الموجودة.
+
+### 16.5 Portal Messaging Now Respects Free Trial Toggle
+تم تعديل:
+- `resources/views/automotive/front/portal.blade.php`
+
+بحيث:
+- إذا كانت `free trial` مفعلة:
+  - تظهر رسالة تسمح بـ `start a free trial or subscribe`
+- إذا كانت `free trial` معطلة:
+  - تظهر رسالة paid-only
+
+بدل رسالة ثابتة توحي دائمًا بأن trial متاح.
+
+### 16.6 Portal No Longer Lies About Current Paid Plan Before Successful Payment
+تم اكتشاف مشكلة مهمة:
+- مجرد دخول المستخدم إلى Stripe checkout كان يؤدي سابقًا إلى ظهور الخطة المدفوعة داخل portal كأنها `current plan`
+- رغم أن الدفع لم يكتمل بعد
+
+تم تعديل:
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `resources/views/automotive/front/portal.blade.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+
+بحيث:
+- لا يتم تغيير الخطة الحالية أو الحالة الحالية لمجرد بدء checkout
+- الحساب يظل على حالته السابقة حتى نجاح الدفع فعليًا
+- وإذا رجع المستخدم من Stripe بدون إتمام الدفع:
+  - تظل الحالة السابقة كما هي
+  - وتظهر فقط ملاحظة أن checkout لم يكتمل
+
+### 16.7 Subdomain Availability Is Now Validated Earlier
+تم تعديل:
+- `app/Http/Controllers/Automotive/Front/Auth/RegisterController.php`
+
+بحيث لم يعد التحقق يقتصر على:
+- `customer_onboarding_profiles`
+
+بل أصبح أيضًا يتحقق من:
+- `tenants.id`
+- `domains.domain`
+
+وهذا يمنع سيناريو:
+- نجاح التسجيل
+- ثم فشل trial أو paid لاحقًا برسالة:
+  - `This subdomain is not available.`
+
+كما تم تطبيق نفس التحقق في:
+- coupon preview أثناء التسجيل
+
+### 16.8 Important Architectural Correction In Paid Checkout Flow
+هذا هو أهم تصحيح في هذه الجلسة، وهو يصحح الوصف القديم الموجود في:
+- `9.4 Paid Checkout Flow`
+
+الوصف القديم لم يعد صحيحًا بالكامل.
+
+الحالة الحالية الصحيحة الآن:
+- عند بدء paid checkout من `portal`
+- إذا لم يكن للمستخدم tenant فعلي بعد
+- لا يتم إنشاء `Tenant` قبل الدفع
+- لا يتم إنشاء `Domain` قبل الدفع
+- لا يتم تشغيل `CreateDatabase` / `MigrateDatabase` قبل الدفع
+- لا يتم عمل tenant DB provisioning قبل الدفع
+
+السبب:
+- `Tenant::create()` كان يطلق event `TenantCreated`
+- وداخل:
+  - `app/Providers/TenancyServiceProvider.php`
+
+يوجد pipeline تلقائي يشغل:
+- `Jobs\CreateDatabase`
+- `Jobs\MigrateDatabase`
+
+وبالتالي كان أي إنشاء tenant قبل Stripe يؤدي إلى provisioning مبكر وقد يفشل قبل الوصول إلى صفحة الدفع.
+
+### 16.9 Final Paid Flow After Latest Fixes
+تم تعديل:
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Billing/StripeWebhookSyncService.php`
+- `app/Services/Automotive/ProvisionTenantWorkspaceService.php` (ملف جديد)
+
+وأصبح الـ paid flow كالتالي:
+
+#### قبل الدفع
+- المستخدم يختار خطة مدفوعة من `portal`
+- إذا كان لديه subscription/tenant فعلي موجود، يتم استخدام subscription الحالي حسب الحالة
+- إذا لم يكن لديه tenant فعلي:
+  - لا يتم إنشاء tenant
+  - لا يتم provisioning
+  - لا يتم إنشاء subscription row تمهيدي جديد للحالة الفارغة
+- يتم فقط بدء Stripe checkout session
+
+#### بعد نجاح الدفع عبر webhook
+داخل:
+- `checkout.session.completed`
+
+يتم:
+- إنشاء subscription local row إذا لم تكن موجودة
+- ربط `gateway_checkout_session_id`
+- ربط `gateway_subscription_id`
+- ثم تشغيل provisioning الحقيقي للـ workspace من خلال:
+  - `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
+
+وهذه الخدمة مسؤولة عن:
+- إنشاء `Tenant` الفعلي
+- إنشاء `Domain`
+- إنشاء `tenant_users`
+- تشغيل:
+  - `tenants:migrate`
+- ثم إنشاء user داخل tenant database
+
+### 16.10 Why The Old Paid Flow Description Is Now Outdated
+الوصف السابق في:
+- `8.4 Added Front Paid Checkout Service`
+- `9.4 Paid Checkout Flow`
+
+كان يقول إن:
+- tenant provisioning قد يحدث قبل checkout
+
+لكن بعد الإصلاحات الأخيرة هذا لم يعد صحيحًا.
+
+الوصف الأحدث المعتمد الآن هو:
+- paid checkout starts first
+- provisioning happens only after successful Stripe completion/webhook
+
+### 16.11 Latest Files Changed In This Continuation
+
+#### Added
+- `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
+- `resources/views/automotive/front/layouts/public.blade.php`
+- `resources/views/automotive/front/layouts/auth.blade.php`
+- `resources/views/automotive/front/layouts/portal.blade.php`
+
+#### Modified
+- `resources/views/admin/layouts/centralLayout/partials/sidebar.blade.php`
+- `resources/views/admin/settings/general.blade.php`
+- `resources/views/automotive/front/entry.blade.php`
+- `resources/views/automotive/front/auth/login.blade.php`
+- `resources/views/automotive/front/auth/register.blade.php`
+- `resources/views/automotive/front/portal.blade.php`
+- `app/Http/Middleware/RedirectIfAuthenticated.php`
+- `app/Http/Controllers/Automotive/Front/Auth/RegisterController.php`
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Billing/StripeWebhookSyncService.php`
+
+### 16.12 Latest Validations Run
+- `php -l app/Http/Middleware/RedirectIfAuthenticated.php`
+- `php -l app/Http/Controllers/Automotive/Front/Auth/RegisterController.php`
+- `php -l app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `php -l app/Services/Automotive/StartPaidCheckoutService.php`
+- `php -l app/Services/Automotive/ProvisionTenantWorkspaceService.php`
+- `php -l app/Services/Billing/StripeWebhookSyncService.php`
+- `php artisan view:cache`
+- وتم تشغيل `php artisan optimize:clear` في بعض مراحل التحقق
+
+### 16.13 Current Expected Behavior After Latest Fixes
+- `/automotive/login` و `/automotive/register`
+  - لو المستخدم authenticated يتم تحويله إلى `automotive.portal` وليس `/home`
+- إذا كانت `free trial` معطلة:
+  - portal لا يعرض رسالة misleading عن trial
+- عند اختيار paid plan لمستأجر جديد:
+  - يجب الوصول إلى Stripe مباشرة
+  - بدون `Provisioning failed before checkout`
+- إذا رجع المستخدم من Stripe بدون دفع:
+  - لا تتغير الخطة الحالية
+  - لا تتغير الحالة الحالية
+- إذا نجح الدفع:
+  - webhook ينشئ local subscription
+  - ثم يتم provisioning الحقيقي للـ tenant workspace
