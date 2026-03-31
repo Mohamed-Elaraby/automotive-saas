@@ -1,5 +1,5 @@
 <?php $page = 'users'; ?>
-@extends('automotive.layouts.adminLayout.mainlayout')
+@extends('automotive.admin.layouts.adminLayout.mainlayout')
 
 @section('content')
     <div class="page-wrapper">

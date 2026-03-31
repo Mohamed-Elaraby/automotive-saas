@@ -14,6 +14,6 @@
 	<meta name="keywords" content="admin, estimates, bootstrap, business, corporate, creative, management, minimal, modern, accounts, invoice, html5, responsive, CRM, Projects">
 	<meta name="author" content="Dreams Technologies">
 
-    @include('automotive.layouts.adminLayout.partials.head')
+    @include('admin.layouts.centralLayout.partials.head')
 
 </head>

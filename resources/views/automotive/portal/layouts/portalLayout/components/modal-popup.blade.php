@@ -550,7 +550,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Inventory</h6>
                     <p class="mb-3">Are you sure, you want to delete Inventory?</p>
@@ -587,7 +587,7 @@
                         </div>
                         <div class="bg-light p-4 rounded position-relative mb-3">
                             <div class="position-absolute top-0 end-0">
-                                <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="User Img">
+                                <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="User Img">
                             </div>
                             <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2">
                                 <div class="mb-3">
@@ -597,11 +597,11 @@
                                             <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                             <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                         </div>
-                                        <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
+                                        <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="User Img">
+                                    <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="User Img">
                                 </div>
                             </div>
                             <div class="row gy-3">
@@ -634,7 +634,7 @@
                                         <div class="bg-white rounded p-3">
                                             <div class="d-flex align-items-center mb-1">
                                                 <div class="me-2">
-                                                    <span><img src="{{ asset('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
+                                                    <span><img src="{{ url('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
                                                 </div>
                                                 <h6 class="fs-14 fw-semibold">Timesquare Tech</h6>
                                             </div>
@@ -714,7 +714,7 @@
                                     <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                         <div class="me-3">
                                             <p class="mb-2">Scan to the pay</p>
-                                            <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt="User Img"></span>
+                                            <span><img src="{{ url('theme/img/icons/qr.png')}}" alt="User Img"></span>
                                         </div>
                                         <div>
                                             <h6 class="mb-2">Bank Details</h6>
@@ -772,7 +772,7 @@
                             </div>
                             <div class="col-lg-5">
                                 <div class="text-lg-end mb-3">
-                                    <span><img src="{{ asset('theme/img/icons/sign.png')}}" alt="User Img"></span>
+                                    <span><img src="{{ url('theme/img/icons/sign.png')}}" alt="User Img"></span>
                                     <h6 class="fs-14 fw-semibold mb-1">Ted M. Davis</h6>
                                     <p>Manager</p>
                                 </div>
@@ -784,7 +784,7 @@
                                 <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                             </div>
                             <div>
-                                <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="User Img">
+                                <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="User Img">
                             </div>
                         </div>
                     </div>
@@ -860,7 +860,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Page</h6>
                     <p class="mb-3">Are you sure, you want to delete api key?</p>
@@ -908,7 +908,7 @@
         </div>
     </div>
     <!-- End Google Login Settings -->
-        
+
     <!-- Start Facebook Login Settings -->
     <div class="modal fade" id="facebook_login">
         <div class="modal-dialog modal-dialog-centered modal-md">
@@ -1014,7 +1014,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete</h6>
                     <p class="mb-3">Are you sure,  you want to delete?</p>
@@ -1126,7 +1126,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Bank Account</h6>
                     <p class="mb-3">Are you sure, you want to delete bank account?</p>
@@ -1217,7 +1217,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Bank Type</h6>
                     <p class="mb-3">Are you sure, you want to delete account type?</p>
@@ -1385,7 +1385,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Bank Account</h6>
                     <p class="mb-3">Are you sure, you want to delete bank account?</p>
@@ -1427,7 +1427,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Databse Backup</h6>
                     <p class="mb-3">Are you sure,  you want to database backup?</p>
@@ -1449,7 +1449,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Debit notes</h6>
                     <p class="mb-3">Are you sure,  you want to debit notes?</p>
@@ -1471,7 +1471,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Confirm Request</h6>
                     <p class="mb-3">Are you sure, you want to confirm request?</p>
@@ -1491,7 +1491,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/cancel.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/cancel.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Cancel Request</h6>
                     <p class="mb-3">Are you sure, you want to cancel request?</p>
@@ -1513,7 +1513,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Delivery Challan</h6>
                     <p class="mb-3">Are you sure, you want to delete Delivery Challan?</p>
@@ -1552,12 +1552,12 @@
                                             <div class="col-md-12">
                                                 <div class="d-flex align-items-center file-name-icon position-relative z-1">
                                                     <a href="javascript:void(0);" class="avatar avatar-md border avatar-rounded">
-                                                        <img src="{{ asset('theme/img/icons/company-01.svg')}}" class="img-fluid" alt="img">
+                                                        <img src="{{ url('theme/img/icons/company-01.svg')}}" class="img-fluid" alt="img">
                                                     </a>
                                                     <div class="ms-2">
                                                         <h6><a href="javascript:void(0);">Trend Hive</a></h6>
                                                     </div>
-                                                    <img src="{{ asset('theme/img/bg/domin-bg-1.png')}}" class="img-fluid position-absolute end-0 z-n1" alt="img">
+                                                    <img src="{{ url('theme/img/bg/domin-bg-1.png')}}" class="img-fluid position-absolute end-0 z-n1" alt="img">
                                                 </div>
                                             </div>
                                         </div>
@@ -1633,12 +1633,12 @@
                                             <div class="col-md-6">
                                                 <div class="d-flex align-items-center file-name-icon position-relative z-1">
                                                     <a href="javascript:void(0);" class="avatar avatar-md border avatar-rounded">
-                                                        <img src="{{ asset('theme/img/icons/company-01.svg')}}" class="img-fluid" alt="img">
+                                                        <img src="{{ url('theme/img/icons/company-01.svg')}}" class="img-fluid" alt="img">
                                                     </a>
                                                     <div class="ms-2">
                                                         <h6><a href="javascript:void(0);">Trend Hive</a></h6>
                                                     </div>
-                                                    <img src="{{ asset('theme/img/bg/domin-bg-1.png')}}" class="img-fluid position-absolute end-0 bottom-0 top-0 z-n1" alt="img">
+                                                    <img src="{{ url('theme/img/bg/domin-bg-1.png')}}" class="img-fluid position-absolute end-0 bottom-0 top-0 z-n1" alt="img">
                                                 </div>
                                             </div>
                                             <div class="col-md-6 text-end">
@@ -1720,12 +1720,12 @@
                                             <div class="col-md-12">
                                                 <div class="d-flex align-items-center file-name-icon position-relative z-1">
                                                     <a href="javascript:void(0);" class="avatar avatar-md border avatar-rounded">
-                                                        <img src="{{ asset('theme/img/icons/company-01.svg')}}" class="img-fluid" alt="img">
+                                                        <img src="{{ url('theme/img/icons/company-01.svg')}}" class="img-fluid" alt="img">
                                                     </a>
                                                     <div class="ms-2">
                                                         <h6><a href="javascript:void(0);">Trend Hive</a></h6>
                                                     </div>
-                                                    <img src="{{ asset('theme/img/bg/domin-bg-1.png')}}" class="img-fluid position-absolute end-0 z-n1" alt="img">
+                                                    <img src="{{ url('theme/img/bg/domin-bg-1.png')}}" class="img-fluid position-absolute end-0 z-n1" alt="img">
                                                 </div>
                                             </div>
                                         </div>
@@ -1782,7 +1782,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Domain</h6>
                     <p class="mb-3">Are you sure, you want to delete domain?</p>
@@ -1819,7 +1819,7 @@
                         </div>
                         <div class="bg-light p-4 rounded position-relative mb-3">
                             <div class="position-absolute top-0 end-0">
-                                <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="User Img">
+                                <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="User Img">
                             </div>
                             <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2">
                                 <div class="mb-3">
@@ -1829,12 +1829,12 @@
                                             <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                             <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                         </div>
-                                        <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
+                                        <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                    <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                    <img src="{{ url('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                    <img src="{{ url('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                 </div>
                             </div>
 
@@ -1869,7 +1869,7 @@
                                         <div class="bg-white rounded p-3">
                                             <div class="d-flex align-items-center mb-1">
                                                 <div class="me-2">
-                                                    <span><img src="{{ asset('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
+                                                    <span><img src="{{ url('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
                                                 </div>
                                                 <h6 class="fs-14 fw-semibold">Timesquare Tech</h6>
                                             </div>
@@ -1951,7 +1951,7 @@
                                     <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                         <div class="me-3">
                                             <p class="mb-2">Scan to the pay</p>
-                                            <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt="User Img"></span>
+                                            <span><img src="{{ url('theme/img/icons/qr.png')}}" alt="User Img"></span>
                                         </div>
                                         <div>
                                             <h6 class="mb-2">Bank Details</h6>
@@ -2011,7 +2011,7 @@
                             </div><!-- end col -->
                             <div class="col-lg-5">
                                 <div class="text-lg-end mb-3">
-                                    <span><img src="{{ asset('theme/img/icons/sign.png')}}" class="sign-dark" alt="img"></span>
+                                    <span><img src="{{ url('theme/img/icons/sign.png')}}" class="sign-dark" alt="img"></span>
                                     <h6 class="fs-14 fw-semibold mb-1">Ted M. Davis</h6>
                                     <p>Manager</p>
                                 </div>
@@ -2025,8 +2025,8 @@
                                 <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                             </div>
                             <div>
-                                <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                <img src="{{ url('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                <img src="{{ url('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                             </div>
                         </div>
                     </div>
@@ -2085,7 +2085,7 @@
                         <button type="submit" class="btn btn-primary d-inline-flex align-items-center ms-2">Send<i class="ti ti-arrow-right ms-2"></i></button>
                     </div>
                 </div>
-            </form> <!-- end form -->   
+            </form> <!-- end form -->
 
         </div>
     </div> <!-- end compose mail -->
@@ -2121,10 +2121,10 @@
                                     <input type="text" class="form-control">
                                 </div>
                             </div>
-                            
+
                         </div>
-                        
-                        
+
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -2171,10 +2171,10 @@
                                     <input type="text" class="form-control">
                                 </div>
                             </div>
-                            
+
                         </div>
-                        
-                        
+
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -2203,11 +2203,11 @@
                                     <input type="text" class="form-control">
                                 </div>
                             </div>
-                            
-                            
+
+
                         </div>
-                        
-                        
+
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -2218,14 +2218,14 @@
         </div>
     </div>
     <!-- Add Modal End -->
-    
+
     <!-- Delete Modal Start  -->
     <div class="modal fade" id="delete_modal">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete</h6>
                     <p class="mb-3">Are you sure,  you want to delete?</p>
@@ -2257,7 +2257,7 @@
                                 <label class="form-label">Template Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control">
                             </div>
-                            
+
                         </div>
                     </div>
                 </div>
@@ -2285,7 +2285,7 @@
                                 <p>
                                     Hi <span class="text-info">{Customer Name}</span>,<br>
                                     Welcome to <span class="text-info">{Company Name}</span>!
-                                    
+
                                 </p>
                                 <p>
                                     We’re thrilled to have you as part of our community and are excited to support you in finding the perfect car rental solution. Thank you for choosing us – we truly appreciate your trust and confidence.
@@ -2354,7 +2354,7 @@
                             <p>
                                 Hi <span class="text-info">{Customer Name}</span>,<br>
                                 Welcome to <span class="text-info">{Company Name}</span>!
-                                
+
                             </p>
                             <p>
                                 We’re thrilled to have you as part of our community and are excited to support you in finding the perfect car rental solution. Thank you for choosing us – we truly appreciate your trust and confidence.
@@ -2382,7 +2382,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Email Template</h6>
                     <p class="mb-3">Are you sure,  you want to delete email template?</p>
@@ -2445,7 +2445,7 @@
                         <button type="submit" class="btn btn-primary d-inline-flex align-items-center ms-2">Send<i class="ti ti-arrow-right ms-2"></i></button>
                     </div>
                 </div>
-            </form> <!-- end form -->   
+            </form> <!-- end form -->
 
         </div>
     </div> <!-- end compose mail -->
@@ -2469,10 +2469,10 @@
                         <div class="mb-3">
                             <label class="form-label">Signature Name <span class="text-danger">*</span></label>
                             <div class="input-block mb-3">
-                                <div class="form-control p-4 d-flex align-items-center justify-content-center">                                        
+                                <div class="form-control p-4 d-flex align-items-center justify-content-center">
                                     <span><i class="isax isax-image me-2 fs-14"></i>Upload Signature</span></input>
                                 </div>
-                            </div>                                
+                            </div>
                         </div>
                         <div>
                             <div class="d-flex align-items-center justify-content-between">
@@ -2510,16 +2510,16 @@
                         <div class="mb-3">
                             <label class="form-label">Signature Name <span class="text-danger">*</span></label>
                             <div class="input-block mb-3">
-                                <div class="form-control p-4 d-flex align-items-center justify-content-center">                                        
+                                <div class="form-control p-4 d-flex align-items-center justify-content-center">
                                     <span><i class="isax isax-image me-2 fs-14"></i>Upload Signature</span></input>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="avatar avatar-xxl border border-dashed bg-light flex-shrink-0">
                                 <div class="position-relative d-flex align-items-center">
-                                    <img src="{{ asset('theme/img/icons/sign-01.svg')}}" class="avatar avatar-xl " alt="">
+                                    <img src="{{ url('theme/img/icons/sign-01.svg')}}" class="avatar avatar-xl " alt="">
                                     <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                 </div>
-                            </div>                               
+                            </div>
                         </div>
                         <div class="mb-3">
                             <div class="d-flex align-items-center justify-content-between">
@@ -2554,7 +2554,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete eSignature</h6>
                     <p class="mb-3">Are you sure,  you want to delete eSignature?</p>
@@ -2621,7 +2621,7 @@
                                         <option>Bank Transfer</option>
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Payment Status <span class="text-danger">*</span></label>
@@ -2631,7 +2631,7 @@
                                         <option>Pending</option>
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Description</label>
@@ -2641,10 +2641,10 @@
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Attachment</label>
-                                    <div class="row-gap-3 bg-light w-100 rounded p-3">                                                
+                                    <div class="row-gap-3 bg-light w-100 rounded p-3">
                                         <div class="d-flex align-items-center justify-content-center me-2 flex-shrink-0">
                                             <i class="isax isax-folder-open fs-16  text-primary"></i>
-                                        </div>                                              
+                                        </div>
                                         <div class="profile-upload text-center">
                                             <div class="profile-uploader d-flex align-items-center justify-content-center">
                                                 <div class="drag-upload-btn me-2 text-dark bg-light border-0 fw-normal fs-14">
@@ -2657,7 +2657,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                         </div>
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -2721,7 +2721,7 @@
                                         <option>Bank Transfer</option>
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Payment Status <span class="text-danger">*</span></label>
@@ -2731,7 +2731,7 @@
                                         <option>Pending</option>
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Description</label>
@@ -2741,10 +2741,10 @@
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Attachment</label>
-                                    <div class="row-gap-3 bg-light w-100 rounded p-3">                                                
+                                    <div class="row-gap-3 bg-light w-100 rounded p-3">
                                         <div class="d-flex align-items-center justify-content-center me-2 flex-shrink-0">
                                             <i class="isax isax-folder-open fs-16  text-primary"></i>
-                                        </div>                                              
+                                        </div>
                                         <div class="profile-upload text-center">
                                             <div class="profile-uploader d-flex align-items-center justify-content-center">
                                                 <div class="drag-upload-btn me-2 text-dark bg-light border-0 fw-normal fs-14">
@@ -2760,7 +2760,7 @@
                             <div class="col-md-4">
                                 <div class="border d-flex justify-content-between align-items-center rounded p-3">
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/icons/file.png')}}" class="me-2" alt="">
+                                        <img src="{{ url('theme/img/icons/file.png')}}" class="me-2" alt="">
                                         <div>
                                             <p class="text-dark mb-1 text-gray-9 fw-medium">Attachment</p>
                                             <p class="fs-13">15.45 KB</p>
@@ -2825,7 +2825,7 @@
                         </div>
                         <div class="border d-flex justify-content-between align-items-center rounded p-3">
                             <div class="d-flex align-items-center">
-                                <img src="{{ asset('theme/img/icons/file.png')}}" class="me-2" alt="">
+                                <img src="{{ url('theme/img/icons/file.png')}}" class="me-2" alt="">
                                 <div>
                                     <p class="text-dark mb-1">Attachment</p>
                                     <p class="fs-13">15.45 KB</p>
@@ -2845,7 +2845,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Expense</h6>
                     <p class="mb-3">Are you sure,  you want to delete expense?</p>
@@ -2867,7 +2867,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete kanban</h6>
                     <p class="mb-3">Are you sure, you want to delete Kanban?</p>
@@ -3105,7 +3105,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Addon</h6>
                     <p class="mb-3">Are you sure, you want to delete addon?</p>
@@ -3438,7 +3438,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Bank Account</h6>
                     <p class="mb-3">Are you sure, you want to delete bank account?</p>
@@ -3626,7 +3626,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Notes</h6>
                     <p class="mb-3">Are you sure,  you want to delete Notes?</p>
@@ -3686,7 +3686,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Inventory</h6>
                     <p class="mb-3">Are you sure,  you want to delete Inventory?</p>
@@ -3736,19 +3736,19 @@
                         <div class="row">
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">First Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control"> 
+                                <input type="text" class="form-control">
                             </div>
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">Last Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control"> 
+                                <input type="text" class="form-control">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Email<span class="text-danger ms-1">*</span></label>
-                                <input type="email" class="form-control"> 
+                                <input type="email" class="form-control">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Phone<span class="text-danger ms-1">*</span></label>
-                                <input type="tel" class="form-control"> 
+                                <input type="tel" class="form-control">
                             </div>
                             <div class="col-lg-12">
                                 <div class="mb-3">
@@ -3756,7 +3756,7 @@
                                     <select class="select">
                                         <option>Select</option>
                                         <option>Admin</option>
-                                        <option>Salesman</option>									
+                                        <option>Salesman</option>
                                     </select>
                                 </div>
                             </div>
@@ -3767,7 +3767,7 @@
                                     <label for="user2" class="checktoggle">	</label>
                                 </div>
                             </div>
-                                                    
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -3798,7 +3798,7 @@
                             <div class="profile-pic-upload image-field">
                                 <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                     <div class="position-relative d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="avatar avatar-xl " alt="">
+                                        <img src="{{ url('theme/img/users/user-01.jpg')}}" class="avatar avatar-xl " alt="">
                                         <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                     </div>
                                 </div>
@@ -3816,19 +3816,19 @@
                         <div class="row">
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">First Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control" value="Carl"> 
+                                <input type="text" class="form-control" value="Carl">
                             </div>
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">Last Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control" value="Evans"> 
+                                <input type="text" class="form-control" value="Evans">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Email<span class="text-danger ms-1">*</span></label>
-                                <input type="email" class="form-control" value="carlevans@example.com"> 
+                                <input type="email" class="form-control" value="carlevans@example.com">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Phone<span class="text-danger ms-1">*</span></label>
-                                <input type="tel" class="form-control" value="+12163547758 "> 
+                                <input type="tel" class="form-control" value="+12163547758 ">
                             </div>
                             <div class="col-lg-12">
                                 <div class="mb-0">
@@ -3836,11 +3836,11 @@
                                     <select class="select">
                                         <option>Select</option>
                                         <option selected>Admin</option>
-                                        <option>Salesman</option>									
+                                        <option>Salesman</option>
                                     </select>
                                 </div>
                             </div>
-                                                    
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -3867,7 +3867,7 @@
                             <div class="modal-footer-btn mt-3 d-flex justify-content-center">
                                 <button type="button" class="btn me-2 btn-light fs-13 fw-medium p-2 px-3 shadow-none" data-bs-dismiss="modal">Cancel</button>
                                 <button type="submit" class="btn btn-primary fs-13 fw-medium p-2 px-3">Yes Delete</button>
-                            </div>						
+                            </div>
                     </div>
                     <!-- End Content -->
                 </div>
@@ -3970,7 +3970,7 @@
                                 <span class="isax toggle-password isax-eye-slash"></span>
                                 <input type="password" class="pass-input form-control border-start-0 ps-0" placeholder="****************">
                             </div>
-                        </div>								
+                        </div>
                     </div><!-- End modal body -->
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4012,7 +4012,7 @@
                                 <span class="isax toggle-password isax-eye-slash"></span>
                                 <input type="password" class="pass-input form-control border-start-0 ps-0" placeholder="****************">
                             </div>
-                        </div>								
+                        </div>
                     </div><!-- End modal body -->
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4040,7 +4040,7 @@
                             <label class="form-label">Phone Number<span class="text-danger ms-1">*</span></label>
                             <input type="text" class="form-control" id="phone3">
                         </div>
-                        <p class="fs-13 mb-0">By providing your phone number, you agree to receive text messages from Figma to enable two-factor authentication when you log in. </p>							
+                        <p class="fs-13 mb-0">By providing your phone number, you agree to receive text messages from Figma to enable two-factor authentication when you log in. </p>
                     </div><!-- End modal body -->
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4062,7 +4062,7 @@
                     <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-x"></i></button>
                 </div>
                 <!-- End modal header -->
-                <div class="modal-body">								
+                <div class="modal-body">
                     <!-- Table List -->
                     <div class="table-responsive border border-bottom-0">
                         <table class="table">
@@ -4082,7 +4082,7 @@
                                     <td>232.222.12.72</td>
                                     <td>Newyork / USA</td>
                                     <td>
-                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>	
+                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -4091,7 +4091,7 @@
                                     <td>224.111.12.75</td>
                                     <td>Newyork / USA</td>
                                     <td>
-                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>		
+                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -4100,7 +4100,7 @@
                                     <td>111.222.13.28</td>
                                     <td>Newyork / USA</td>
                                     <td>
-                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>		
+                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -4109,7 +4109,7 @@
                                     <td>333.555.10.54</td>
                                     <td>Newyork / USA</td>
                                     <td>
-                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>		
+                                        <a href="javascript:void(0);"><span class="badge badge-soft-light text-dark d-inline-flex align-items-center"><i class="isax isax-logout"></i></span></a>
                                     </td>
                                 </tr>
                             </tbody>
@@ -4181,11 +4181,11 @@
                                     Other (Please specify)
                                 </label>
                             </div>
-                        </div>	
+                        </div>
                         <div>
                             <label class="form-label">Reason<span class="text-danger ms-1">*</span></label>
                             <textarea class="form-control" rows="3"></textarea>
-                        </div>					
+                        </div>
                     </div><!-- End modal body -->
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4217,8 +4217,8 @@
                                     <label class="form-label">Sitemap URL <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control">
                                 </div>
-                            </div>                                
-                        </div>							
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4248,8 +4248,8 @@
                                     <label class="form-label">Sitemap URL <span class="text-danger">*</span></label>
                                     <input type="text" value="https://localhost/Kanakku" class="form-control">
                                 </div>
-                            </div>                                
-                        </div>							
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4267,7 +4267,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Sitemap</h6>
                     <p class="mb-3">Are you sure,  you want to delete Sitemap?</p>
@@ -4300,16 +4300,16 @@
                     <div class="mb-3">
                         <label class="form-label">API Key  <span class="text-danger">*</span></label>
                         <input type="text" class="form-control">
-                    </div>                     
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">API Secret Key <span class="text-danger">*</span></label>
                         <input type="text" class="form-control">
-                    </div>                     
+                    </div>
                     <div class="mb-0">
                         <label class="form-label">Sender ID <span class="text-danger">*</span></label>
                         <input type="text" class="form-control">
-                    </div>                     
-                    
+                    </div>
+
                 </div>
                 <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                     <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4320,7 +4320,7 @@
         </div><!-- End modal dialog-->
     </div>
     <!-- / End Add nexom -->
-    
+
 
     <!-- Start Delete Modal  -->
     <div class="modal fade" id="delete_modal">
@@ -4328,7 +4328,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete</h6>
                     <p class="mb-3">Are you sure,  you want to delete?</p>
@@ -4371,7 +4371,7 @@
                                     </select>
                                 </div>
                             </div>
-                                
+
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Country Name <span class="text-danger">*</span></label>
@@ -4388,7 +4388,7 @@
                                     </select>
                                 </div>
                             </div>
-                                
+
                             <div class="col-md-12">
                                 <div class="mb-0">
                                     <label class="form-label">State Name <span class="text-danger">*</span></label>
@@ -4404,8 +4404,8 @@
                                         <option>Maharashtra</option>
                                     </select>
                                 </div>
-                            </div>	
-                        </div>															
+                            </div>
+                        </div>
                     </div><!-- End modal body -->
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4416,7 +4416,7 @@
         </div>
     </div>
     <!-- /Add Modal -->
-        
+
     <!-- Start Edit Modal  -->
     <div id="edit_modal" class="modal fade">
         <div class="modal-dialog modal-dialog-centered">
@@ -4444,7 +4444,7 @@
                                     </select>
                                 </div>
                             </div>
-                                
+
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Country Name <span class="text-danger">*</span></label>
@@ -4460,7 +4460,7 @@
                                     </select>
                                 </div>
                             </div>
-                                
+
                             <div class="col-md-12">
                                 <div class="mb-0">
                                     <label class="form-label">State Name <span class="text-danger">*</span></label>
@@ -4475,8 +4475,8 @@
                                         <option>Maharashtra</option>
                                     </select>
                                 </div>
-                            </div>	
-                        </div>															
+                            </div>
+                        </div>
                     </div><!-- End modal body -->
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -4494,7 +4494,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete State</h6>
                     <p class="mb-3">Are you sure,  you want to delete State?</p>
@@ -4578,7 +4578,7 @@
                                         <div class="card-body">
                                             <div class="bg-light p-4 rounded position-relative mb-3">
                                                 <div class="position-absolute top-0 end-0">
-                                                    <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="">
+                                                    <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="">
                                                 </div>
                                                 <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2 position-relative z-1">
                                                     <div class="mb-3">
@@ -4588,11 +4588,11 @@
                                                                 <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                                                 <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                             </div>
-                                                            <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
+                                                            <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
                                                         </div>
                                                     </div>
                                                     <div class="mb-3">
-                                                        <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                                        <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                                                     </div>
                                                 </div>
                                                 <div class="row gy-3 position-relative z-1">
@@ -4627,7 +4627,7 @@
                                                                 <div class="d-flex align-items-center mb-1">
                                                                     <div>
                                                                         <span class="avatar avatar-lg flex-shrink-0 me-2">
-                                                                            <img src="{{ asset('theme/img/billing-icon.jpg')}}" alt="">
+                                                                            <img src="{{ url('theme/img/billing-icon.jpg')}}" alt="">
                                                                         </span>
                                                                     </div>
                                                                     <p class="fs-14 fw-semibold text-dark">Timesquare Tech</p>
@@ -4674,7 +4674,7 @@
                                                         <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                                             <div class="me-3">
                                                                 <p class="mb-2">Scan to the pay</p>
-                                                                <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
+                                                                <span><img src="{{ url('theme/img/icons/qr.png')}}" alt=""></span>
                                                             </div>
                                                             <div>
                                                                 <h6 class="mb-2">Bank Details</h6>
@@ -4723,7 +4723,7 @@
                                                     <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                 </div>
                                                 <div>
-                                                    <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                                    <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                                                 </div>
                                             </div>
                                         </div>
@@ -4745,7 +4745,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Subscriptions</h6>
                     <p class="mb-3">Are you sure, you want to delete subscriptions?</p>
@@ -4776,7 +4776,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                     <div class="position-relative d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/icons/shoes.jpg')}}" class="avatar avatar-xl " alt="">
+                                        <img src="{{ url('theme/img/icons/shoes.jpg')}}" class="avatar avatar-xl " alt="">
                                         <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                     </div>
                                 </div>
@@ -5046,7 +5046,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Company</h6>
                     <p class="mb-3">Are you sure, you want to delete company?</p>
@@ -5307,7 +5307,7 @@
                                     <div class="p-3 mb-3 border rounded-2">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div class="d-flex align-items-center">
-                                                <img src="{{ asset('theme/img/icons/document-icon.svg')}}" alt="document-icon">
+                                                <img src="{{ url('theme/img/icons/document-icon.svg')}}" alt="document-icon">
                                                 <div class="ms-2">
                                                     <p class="text-dark fw-medium mb-0">Attachment</p>
                                                     <p>15.45 KB</p>
@@ -5336,7 +5336,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Payment</h6>
                     <p class="mb-3">Are you sure, you want to delete Payment?</p>
@@ -5437,7 +5437,7 @@
                                     <div class="d-flex align-items-center">
                                         <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                             <div class="position-relative d-flex align-items-center">
-                                                <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" class="avatar avatar-xl" alt="">
+                                                <img src="{{ url('theme/img/profiles/avatar-05.jpg')}}" class="avatar avatar-xl" alt="">
                                                 <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i
                                                         class="isax isax-trash"></i></a>
                                             </div>
@@ -5498,7 +5498,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Supplier</h6>
                     <p class="mb-3">Are you sure, you want to delete supplier?</p>
@@ -5547,7 +5547,7 @@
                                     <div class="supplier-details d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar avatar-lg border border-dashed bg-light me-3 flex-shrink-0">
-                                                <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" alt="image" class="rounded-circle">
+                                                <img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" alt="image" class="rounded-circle">
                                             </div>
                                             <div class="d-inline-flex flex-column align-items-start">
                                                 <h6 class="fw-medium fs-14">Mitchel Johnson</h6>
@@ -6014,7 +6014,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Category</h6>
                     <p class="mb-3">Are you sure,  you want to delete category?</p>
@@ -6153,7 +6153,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Tax Rate</h6>
                     <p class="mb-3">Are you sure, you want to delete tax rate?</p>
@@ -6173,7 +6173,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Tax Group</h6>
                     <p class="mb-3">Are you sure, you want to delete tax group?</p>
@@ -6213,8 +6213,8 @@
                                     <span class="text-gray-9">JPG or PNG format, not exceeding 5MB.</span>
                                 </div>
                             </div>
-                        </div>                           
-                        
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -6248,7 +6248,7 @@
                                 <option>Select</option>
                                 <option>Active</option>
                                 <option>Inactive</option>
-                            </select>										
+                            </select>
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -6257,7 +6257,7 @@
                                     <input type="text" class="form-control">
                                 </div>
                             </div>
-                            
+
                         </div>
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -6285,7 +6285,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                     <div class="position-relative d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/products/product-05.jpg')}}" class="avatar avatar-xl" alt="">
+                                        <img src="{{ url('theme/img/products/product-05.jpg')}}" class="avatar avatar-xl" alt="">
                                         <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                     </div>
                                 </div>
@@ -6298,7 +6298,7 @@
                                 </div>
                             </div>
                         </div>
-                                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -6332,7 +6332,7 @@
                                 <option>Select</option>
                                 <option>Active</option>
                                 <option>Inactive</option>
-                            </select>										
+                            </select>
                                 </div>
                             </div>
                             <div class="col-md-12">
@@ -6341,7 +6341,7 @@
                                     <input type="text" class="form-control">
                                 </div>
                             </div>
-                            
+
                         </div>
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -6360,7 +6360,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Inventory</h6>
                     <p class="mb-3">Are you sure,  you want to delete Inventory?</p>
@@ -6382,7 +6382,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Inventory</h6>
                     <p class="mb-3">Are you sure, you want to delete Inventory?</p>
@@ -6619,7 +6619,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Tickets Kanban</h6>
                     <p class="mb-3">Are you sure, you want to delete Tickets Kanban?</p>
@@ -6856,7 +6856,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Ticket</h6>
                     <p class="mb-3">Are you sure, you want to delete Ticket?</p>
@@ -7097,13 +7097,13 @@
                         <h5 class="mb-2">Assignee</h5>
                         <div class="avatar-list-stacked avatar-group-sm">
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ url('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ url('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ url('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                             </span>
                         </div>
                     </div>
@@ -7119,7 +7119,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Todo</h6>
                     <p class="mb-3">Are you sure, you want to delete Todo?</p>
@@ -7360,13 +7360,13 @@
                         <h5 class="mb-2">Assignee</h5>
                         <div class="avatar-list-stacked avatar-group-sm">
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ url('theme/img/profiles/avatar-01.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ url('theme/img/profiles/avatar-02.jpg')}}" alt="img">
                             </span>
                             <span class="avatar avatar-rounded">
-                                <img class="border border-white" src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" alt="img">
+                                <img class="border border-white" src="{{ url('theme/img/profiles/avatar-03.jpg')}}" alt="img">
                             </span>
                         </div>
                     </div>
@@ -7382,7 +7382,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Todo</h6>
                     <p class="mb-3">Are you sure, you want to delete Todo?</p>
@@ -7462,7 +7462,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Unit</h6>
                     <p class="mb-3">Are you sure, you want to delete unit?</p>
@@ -7605,7 +7605,7 @@
                                     <div class="d-flex align-items-center">
                                         <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                             <div class="position-relative d-flex align-items-center">
-                                                <img src="{{ asset('theme/img/users/user-26.jpg')}}" class="avatar avatar-xl" alt="">
+                                                <img src="{{ url('theme/img/users/user-26.jpg')}}" class="avatar avatar-xl" alt="">
                                                 <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                             </div>
                                         </div>
@@ -7707,7 +7707,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete User</h6>
                     <p class="mb-3">Are you sure, you want to delete User?</p>
@@ -7786,7 +7786,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Blog Category</h6>
                     <p class="mb-3">Are you sure, you want to delete Blog Category?</p>
@@ -7808,7 +7808,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Blog Comment</h6>
                     <p class="mb-4">Are you sure, you want to delete blog comment?</p>
@@ -7888,7 +7888,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Blog Tag</h6>
                     <p class="mb-3">Are you sure, you want to delete Blog Tag?</p>
@@ -7910,7 +7910,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Blog</h6>
                     <p class="mb-3">Are you sure, you want to delete Blog?</p>
@@ -8043,7 +8043,7 @@
                             <div class="card-body">
                                 <div class="text-center">
                                     <div class="avatar avatar-xxxl mb-3">
-                                        <img src="{{ asset('theme/img/users/user-01.jpg')}}" alt="img" class="rounded-circle">
+                                        <img src="{{ url('theme/img/users/user-01.jpg')}}" alt="img" class="rounded-circle">
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center justify-content-center">
@@ -8056,7 +8056,7 @@
                         <!-- Start Row -->
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <div> 
+                                <div>
                                     <p class="mb-1 fs-13">Name</p>
                                     <h6 class="fw-medium fs-14">Anthony Lewis</h6>
                                 </div>
@@ -8106,7 +8106,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Call histroy</h6>
                     <p class="mb-4">Are you sure, you want to delete call history?</p>
@@ -8181,7 +8181,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                     <div class="position-relative d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/products/product-05.jpg')}}" class="avatar avatar-xl" alt="">
+                                        <img src="{{ url('theme/img/products/product-05.jpg')}}" class="avatar avatar-xl" alt="">
                                         <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                     </div>
                                 </div>
@@ -8219,7 +8219,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Category</h6>
                     <p class="mb-4">Are you sure, you want to delete category?</p>
@@ -8261,7 +8261,7 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">State Name<span class="text-danger ms-1">*</span></label>
@@ -8277,15 +8277,15 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-0">
                                     <label class="form-label">City Name<span class="text-danger ms-1">*</span></label>
                                     <input type="text" class="form-control" >
                                 </div>
                             </div>
-                            
-                        
+
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -8323,7 +8323,7 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label class="form-label">State Name<span class="text-danger ms-1">*</span></label>
@@ -8339,14 +8339,14 @@
                                 </select>
                             </div>
                         </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-0">
                                     <label class="form-label">City Name<span class="text-danger ms-1">*</span></label>
                                     <input type="text" class="form-control" value="Los Angels">
                                 </div>
-                            </div>                            
-                        
+                            </div>
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -8364,7 +8364,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete City</h6>
                     <p class="mb-4">Are you sure,  you want to delete City?</p>
@@ -8415,37 +8415,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-05.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Elite Mart
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-05.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Elite Mart
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-06.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Prime Mart
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-06.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Prime Mart
                                     </label>
                                 </li>
                             </ul>
@@ -8710,7 +8710,7 @@
                             <div class="d-flex align-items-center">
                                 <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                     <div class="position-relative d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/icons/shoes.jpg')}}" class="avatar avatar-xl " alt="">
+                                        <img src="{{ url('theme/img/icons/shoes.jpg')}}" class="avatar avatar-xl " alt="">
                                         <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                     </div>
                                 </div>
@@ -8996,7 +8996,7 @@
                                                     <div class="d-flex align-items-center file-name-icon justify-content-between">
                                                         <div class="d-flex align-items-center">
                                                             <a href="#" class="avatar avatar-xxl bg-white border rounded-2">
-                                                                <img src="{{ asset('theme/img/icons/company-01.svg')}}" class="img-fluid h-75" alt="img">
+                                                                <img src="{{ url('theme/img/icons/company-01.svg')}}" class="img-fluid h-75" alt="img">
                                                             </a>
                                                             <div class="ms-2">
                                                                 <h6 class="fw-bold fs-14 mb-2"><a href="#">Trend Hive</a></h6>
@@ -9109,7 +9109,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Company</h6>
                     <p class="mb-4">Are you sure, you want to delete company?</p>
@@ -9160,37 +9160,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-27.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-27.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
                                     </label>
                                 </li>
                             </ul>
@@ -9295,7 +9295,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Messages</h6>
                     <p class="mb-4">Are you sure, you want to delete contact message?</p>
@@ -9343,19 +9343,19 @@
                         <div class="row">
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">First Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control"> 
+                                <input type="text" class="form-control">
                             </div>
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">Last Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control"> 
+                                <input type="text" class="form-control">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Email<span class="text-danger ms-1">*</span></label>
-                                <input type="email" class="form-control"> 
+                                <input type="email" class="form-control">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Phone<span class="text-danger ms-1">*</span></label>
-                                <input type="tel" class="form-control"> 
+                                <input type="tel" class="form-control">
                             </div>
                             <div class="col-lg-12">
                                 <div class="mb-0">
@@ -9363,10 +9363,10 @@
                                     <select class="select">
                                         <option>Select</option>
                                         <option>Admin</option>
-                                        <option>Salesman</option>									
+                                        <option>Salesman</option>
                                     </select>
                                 </div>
-                            </div>														
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -9395,7 +9395,7 @@
                             <div class="profile-pic-upload image-field">
                                 <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                     <div class="position-relative d-flex align-items-center">
-                                        <img src="{{ asset('theme/img/users/user-01.jpg')}}" class="avatar avatar-xl " alt="">
+                                        <img src="{{ url('theme/img/users/user-01.jpg')}}" class="avatar avatar-xl " alt="">
                                         <a href="javascript:void(0);" class="rounded-trash trash-top d-flex align-items-center justify-content-center"><i class="isax isax-trash"></i></a>
                                     </div>
                                 </div>
@@ -9413,19 +9413,19 @@
                         <div class="row">
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">First Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control" value="Carl"> 
+                                <input type="text" class="form-control" value="Carl">
                             </div>
                             <div class="col-lg-6 mb-3">
                                 <label class="form-label">Last Name<span class="text-danger ms-1">*</span></label>
-                                <input type="text" class="form-control" value="Evans"> 
+                                <input type="text" class="form-control" value="Evans">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Email<span class="text-danger ms-1">*</span></label>
-                                <input type="email" class="form-control" value="carlevans@example.com"> 
+                                <input type="email" class="form-control" value="carlevans@example.com">
                             </div>
                             <div class="col-lg-12 mb-3">
                                 <label class="form-label">Phone<span class="text-danger ms-1">*</span></label>
-                                <input type="tel" class="form-control" value="+12163547758 "> 
+                                <input type="tel" class="form-control" value="+12163547758 ">
                             </div>
                             <div class="col-lg-12">
                                 <div class="mb-0">
@@ -9433,11 +9433,11 @@
                                     <select class="select">
                                         <option>Select</option>
                                         <option selected>Admin</option>
-                                        <option>Salesman</option>									
+                                        <option>Salesman</option>
                                     </select>
                                 </div>
                             </div>
-                                                    
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -9456,7 +9456,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Contact</h6>
                     <p class="mb-4">Are you sure, you want to delete contact?</p>
@@ -9489,21 +9489,21 @@
                                     <input type="text" class="form-control" >
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Country Id <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" >
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-0">
                                     <label class="form-label">Country Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" >
                                 </div>
-                            </div>								
-                        
+                            </div>
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -9532,21 +9532,21 @@
                                     <input type="text" class="form-control" placeholder="AU">
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-3">
                                     <label class="form-label">Country Id <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" placeholder="036">
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-12">
                                 <div class="mb-0">
                                     <label class="form-label">Country Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" placeholder="Australia">
                                 </div>
-                            </div>									
-                        
+                            </div>
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -9564,7 +9564,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Country</h6>
                     <p class="mb-4">Are you sure,  you want to delete Country?</p>
@@ -9581,14 +9581,14 @@
 
 @if (Route::is(['credit-notes']))
     <!-- Start Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Customers</label>
@@ -9596,7 +9596,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -9616,25 +9616,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                             </ul>
@@ -9655,7 +9655,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="filter-range">
                                 <input type="text" id="range_03">
                                 <p>Range : <span class="text-gray-9">$200 - $5695</span></p>
@@ -9669,7 +9669,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-0">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -9713,14 +9713,14 @@
                             <i class="isax isax-calendar-2"></i>
                         </span>
                     </div>
-                </div>	
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Status</label>
                     <div class="dropdown">
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-0">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -9739,12 +9739,12 @@
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <i class="fa-solid fa-circle fs-6 text-danger me-1"></i>Cancelled
                                     </label>
-                                </li>							
+                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
-                            
+
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -9763,7 +9763,7 @@
     <!-- Start view notes -->
     <div class="modal fade" id="view_notes">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">			
+            <div class="modal-content">
                 <div class="modal-body">
                     <div class="d-flex mb-4 pb-3 align-items-center justify-content-between border-bottom">
                         <h5 class="mb-0">Preview</h5>
@@ -9776,12 +9776,12 @@
                             <div class="d-flex align-items-center flex-wrap row-gap-3">
                                 <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-document-like me-1"></i>Download PDF</a>
                                 <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-message-notif me-1"></i>Send Email</a>
-                                <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-printer me-1"></i>Print</a>								
+                                <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-printer me-1"></i>Print</a>
                             </div>
                         </div>
                         <div class="bg-light p-4 rounded position-relative mb-4">
                             <div class="position-absolute top-0 end-0">
-                                <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="">
+                                <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="">
                             </div>
                             <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-4 pb-2 position-relative z-1">
                                 <div class="mb-3">
@@ -9791,11 +9791,11 @@
                                             <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                             <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                         </div>
-                                        <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
+                                        <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                    <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                                 </div>
                             </div>
                             <div class="row gy-3 position-relative z-1">
@@ -9824,11 +9824,11 @@
                                 </div>
                                 <div class="col-lg-4">
                                     <div>
-                                        <h6 class="mb-2 fs-16 fw-semibold">Billing To</h6>                             
+                                        <h6 class="mb-2 fs-16 fw-semibold">Billing To</h6>
                                         <div class="bg-white rounded p-3">
                                             <div class="d-flex align-items-center mb-1">
                                                 <div class="me-2">
-                                                    <span><img src="{{ asset('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
+                                                    <span><img src="{{ url('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
                                                 </div>
                                                 <h6 class="fs-14 fw-semibold">Timesquare Tech</h6>
                                             </div>
@@ -9908,7 +9908,7 @@
                                     <div class="d-flex align-items-center flex-wrap row-gap-3 mb-4">
                                         <div class="me-3">
                                             <p class="mb-2">Scan to the pay</p>
-                                            <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
+                                            <span><img src="{{ url('theme/img/icons/qr.png')}}" alt=""></span>
                                         </div>
                                         <div>
                                             <h6 class="mb-2">Bank Details</h6>
@@ -9966,7 +9966,7 @@
                             </div>
                             <div class="col-lg-5">
                                 <div class="text-lg-end mb-4">
-                                    <span><img src="{{ asset('theme/img/icons/sign.png')}}" alt=""></span>
+                                    <span><img src="{{ url('theme/img/icons/sign.png')}}" alt=""></span>
                                     <h6 class="fs-14 fw-semibold mb-1">Ted M. Davis</h6>
                                     <p>Manager</p>
                                 </div>
@@ -9978,7 +9978,7 @@
                                 <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                             </div>
                             <div>
-                                <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                             </div>
                         </div>
                     </div>
@@ -9994,7 +9994,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Credit Note</h6>
                     <p class="mb-4">Are you sure,  you want to delete credit notes?</p>
@@ -10054,8 +10054,8 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        
+
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -10114,8 +10114,8 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        
+
+
                     </div>
                     <div class="modal-footer d-flex align-items-center justify-content-between gap-1">
                         <button type="button" class="btn btn-outline-white" data-bs-dismiss="modal">Cancel</button>
@@ -10133,7 +10133,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Currency</h6>
                     <p class="mb-4">Are you sure,  you want to delete Currency?</p>
@@ -10156,7 +10156,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Customer</h6>
                     <p class="mb-3">Are you sure, you want to delete Customer?</p>
@@ -10188,14 +10188,14 @@
                                 <option>Select</option>
                                 <option>Customers</option>
                                 <option>Supplier</option>
-                            </select>                             
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Input Type <span class="text-danger">*</span></label>
                             <select class="select">
                                 <option>Select</option>
                                 <option>Select</option>
-                            </select>                             
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Label <span class="text-danger">*</span></label>
@@ -10240,14 +10240,14 @@
                                 <option>Select</option>
                                 <option selected>Customers</option>
                                 <option>Supplier</option>
-                            </select>                             
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Input Type <span class="text-danger">*</span></label>
                             <select class="select">
                                 <option selected>Select</option>
                                 <option>Select</option>
-                            </select>                             
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Label <span class="text-danger">*</span></label>
@@ -10290,7 +10290,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Custom Field</h6>
                     <p class="mb-4">Are you sure,  you want to delete custom field?</p>
@@ -10342,7 +10342,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2">
-                                            <img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
+                                            <img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
                                         </span>Emily Clark
                                     </label>
                                 </li>
@@ -10350,7 +10350,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2">
-                                            <img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
+                                            <img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
                                         </span>Sophia White
                                     </label>
                                 </li>
@@ -10358,7 +10358,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2">
-                                            <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
+                                            <img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
                                         </span>Michael Johnson
                                     </label>
                                 </li>
@@ -10366,7 +10366,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2">
-                                            <img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
+                                            <img src="{{ url('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
                                         </span>Olivia Harris
                                     </label>
                                 </li>
@@ -10374,7 +10374,7 @@
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <span class="avatar avatar-sm rounded-circle me-2">
-                                            <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
+                                            <img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img">
                                         </span>David Anderson
                                     </label>
                                 </li>
@@ -10543,14 +10543,14 @@
     <!-- End Success -->
 
     <!-- Start Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas3">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas3">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Details</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Status</label>
@@ -10558,7 +10558,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -10618,7 +10618,7 @@
                             </div>
                         </div>
                     </div>
-                </div>		
+                </div>
                 <div>
                     <h6 class="fs-16 mb-2">Invoice History</h6>
                     <ul class="activity-feed bg-light rounded">
@@ -10644,14 +10644,14 @@
 
 @if (Route::is(['customer-invoices']))
 	<!-- Filter Start -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label for="dateRangePicker" class="form-label">Date Range</label>
@@ -10661,14 +10661,14 @@
                             <i class="isax isax-calendar-2"></i>
                         </span>
                     </div>
-                </div>	
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Amount</label>
                     <div class="dropdown">
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -10712,7 +10712,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -10790,7 +10790,7 @@
                         </div>
                     </div>
                 </div>
-                            
+
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -10812,7 +10812,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Invoice</h6>
                     <p class="mb-4">Are you sure,  you want to delete Invoice?</p>
@@ -10827,14 +10827,14 @@
     <!-- Delete Modal  -->
 
     <!-- Filter Start -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas2">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas2">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Pay Invoice</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="activity-feed bg-light rounded d-flex align-items-center justify-content-between mb-3">
                     <div>
@@ -10932,7 +10932,7 @@
         </div>
     </div>
     <!-- Filter End -->
-    
+
     <!-- Add New Card -->
     <div class="modal fade" id="add_card">
         <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -10981,7 +10981,7 @@
         </div>
     </div>
      <!-- /Add New Card -->
-    
+
     <!-- Success -->
     <div class="modal fade custom-modal" id="success_modal">
         <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -11003,14 +11003,14 @@
     <!-- Success -->
 
     <!-- Filter Start -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas3">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas3">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Details</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Status</label>
@@ -11018,7 +11018,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -11078,7 +11078,7 @@
                             </div>
                         </div>
                     </div>
-                </div>		
+                </div>
                 <div>
                     <h6 class="fs-16 mb-2">Invoice History</h6>
                     <ul class="activity-feed bg-light rounded">
@@ -11535,7 +11535,7 @@
                                             <div class="card-body">
                                                 <div class="bg-light p-4 rounded position-relative mb-3">
                                                     <div class="position-absolute top-0 end-0">
-                                                        <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="User Img">
+                                                        <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="User Img">
                                                     </div>
                                                     <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2">
                                                         <div class="mb-3">
@@ -11545,12 +11545,12 @@
                                                                     <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                                                     <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                                 </div>
-                                                                <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
+                                                                <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
                                                             </div>
                                                         </div>
                                                         <div class="mb-3">
-                                                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-									                        <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                                            <img src="{{ url('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+									                        <img src="{{ url('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                                         </div>
                                                     </div>
                                                     <div class="row gy-3">
@@ -11585,7 +11585,7 @@
                                                                     <div class="d-flex align-items-center mb-1">
                                                                         <div>
                                                                             <span class="avatar avatar-lg flex-shrink-0 me-2">
-                                                                                <img src="{{ asset('theme/img/billing-icon.jpg')}}" alt="User Img">
+                                                                                <img src="{{ url('theme/img/billing-icon.jpg')}}" alt="User Img">
                                                                             </span>
                                                                         </div>
                                                                         <p class="fs-14 fw-semibold text-dark">Timesquare Tech</p>
@@ -11632,7 +11632,7 @@
                                                             <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                                                 <div class="me-3">
                                                                     <p class="mb-2">Scan to the pay</p>
-                                                                    <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt="User Img"></span>
+                                                                    <span><img src="{{ url('theme/img/icons/qr.png')}}" alt="User Img"></span>
                                                                 </div>
                                                                 <div>
                                                                     <h6 class="mb-2">Bank Details</h6>
@@ -11681,8 +11681,8 @@
                                                         <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                     </div>
                                                     <div>
-                                                        <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-									                    <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                                        <img src="{{ url('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+									                    <img src="{{ url('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                                     </div>
                                                 </div>
                                             </div>
@@ -11703,7 +11703,7 @@
 				<div class="modal-content">
 					<div class="modal-body text-center">
 						<div class="mb-3">
-							<img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+							<img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
 						</div>
 						<h6 class="mb-1">Delete Plan</h6>
 						<p class="mb-3">Are you sure,  you want to delete Plan?</p>
@@ -11723,7 +11723,7 @@
 				<div class="modal-content">
 					<div class="modal-body text-center">
 						<div class="mb-3">
-							<img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+							<img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
 						</div>
 						<h6 class="mb-1">Delete Cards</h6>
 						<p class="mb-3">Are you sure,  you want to delete Card?</p>
@@ -11745,7 +11745,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Quotation</h6>
                     <p class="mb-3">Are you sure, you want to delete Quotation?</p>
@@ -11767,7 +11767,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Recurring Invoices</h6>
                     <p class="mb-3">Are you sure, you want to delete recurring invoices?</p>
@@ -12149,7 +12149,7 @@
                     <div class="bg-light d-flex align-items-center justify-content-between flex-wrap row-gap-3 p-3 rounded mb-3">
                         <div class="d-flex align-items-center">
                             <a href="javascript:void(0);" class="avatar avatar-md rounded-circle me-2 flex-shrink-0">
-                                <img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
+                                <img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="rounded-circle" alt="img">
                             </a>
                             <div>
                                 <h6 class="fs-14 fw-medium mb-0"><a href="{{url('customer-details')}}">Mitchel Johnson</a></h6>
@@ -12528,7 +12528,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Ledger</h6>
                     <p class="mb-3">Are you sure, you want to delete Ledger?</p>
@@ -12548,7 +12548,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Customer</h6>
                     <p class="mb-3">Are you sure, you want to delete Customer?</p>
@@ -12579,7 +12579,7 @@
         <div class="offcanvas-body p-0">
             <div class="bg-light document-wrap text-center">
                 <div class="mb-2">
-                    <img src="{{ asset('theme/img/icons/pdf-icon.svg')}}" alt="icon">
+                    <img src="{{ url('theme/img/icons/pdf-icon.svg')}}" alt="icon">
                 </div>
                 <h4 class="mb-1">Document Final Proof Read<span class="badge badge-soft-secondary fw-normal fs-12 ms-2">2.4 GB</span></h4>
                 <p>Last Accessed on 15 Mar 2025, 08:15:23 PM</p>
@@ -12611,7 +12611,7 @@
                         <ul class="recent-activity mb-3">
                             <li class="d-flex">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-01.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2 flex-grow-1">
                                     <p class="mb-0"><span class="text-dark">Mercy</span> Added New File in <span class="text-dark">Drive</span></p>
@@ -12627,7 +12627,7 @@
                             </li>
                             <li class="d-flex">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-15.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-15.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2 flex-grow-1">
                                     <p class="mb-0"><span class="text-dark">Druman</span> Added New File in <span class="text-dark">ROOT FOLDER</span></p>
@@ -12660,7 +12660,7 @@
                         <ul class="recent-activity mb-3">
                             <li class="d-flex">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-05.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-05.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2 flex-grow-1">
                                     <p class="mb-0"><span class="text-dark">Mercy</span> Added New File in <span class="text-dark">Personal Assets</span></p>
@@ -12676,7 +12676,7 @@
                             </li>
                             <li class="d-flex">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2 flex-grow-1">
                                     <p class="mb-0"><span class="text-dark">Jackson</span> Added New File in <span class="text-dark">Drive</span></p>
@@ -12702,7 +12702,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-07.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2">
                                     <h6 class="fw-medium">Anthony Lewis</h6>
@@ -12716,7 +12716,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2">
                                     <h6 class="fw-medium">Harvey Smith</h6>
@@ -12730,7 +12730,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-02.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2">
                                     <h6 class="fw-medium">Stephan Peralt</h6>
@@ -12744,7 +12744,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-08.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-08.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2">
                                     <h6 class="fw-medium">Doglas Martini</h6>
@@ -12758,7 +12758,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="avatar avatar-md">
-                                    <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" class="rounded-circle" alt="img">
+                                    <img src="{{ url('theme/img/profiles/avatar-01.jpg')}}" class="rounded-circle" alt="img">
                                 </span>
                                 <div class="ms-2">
                                     <h6 class="fw-medium">Linda Ray</h6>
@@ -12824,7 +12824,7 @@
                         <label class="form-check-label member-check-list activate d-flex align-items-center justify-content-between p-2 rounded mb-1">
                             <span class="d-flex align-items-center text-dark">
                                 <span class="avatar avatar-md avatar-rounded">
-                                    <img src="{{ asset('theme/img/profiles/avatar-01.jpg')}}" class="me-2" alt="Img">
+                                    <img src="{{ url('theme/img/profiles/avatar-01.jpg')}}" class="me-2" alt="Img">
                                 </span> Sophie
                             </span>
                             <input type="checkbox" class="form-check-input" checked>
@@ -12832,7 +12832,7 @@
                         <label class="form-check-label member-check-list d-flex align-items-center justify-content-between p-2 rounded mb-1">
                             <span class="d-flex align-items-center text-dark">
                                 <span class="avatar avatar-md avatar-rounded">
-                                    <img src="{{ asset('theme/img/profiles/avatar-02.jpg')}}" class="me-2" alt="Img">
+                                    <img src="{{ url('theme/img/profiles/avatar-02.jpg')}}" class="me-2" alt="Img">
                                 </span> Cameron
                             </span>
                             <input type="checkbox" class="form-check-input">
@@ -12840,7 +12840,7 @@
                         <label class="form-check-label member-check-list d-flex align-items-center justify-content-between p-2 rounded mb-1">
                             <span class="d-flex align-items-center text-dark">
                                 <span class="avatar avatar-md avatar-rounded">
-                                    <img src="{{ asset('theme/img/profiles/avatar-03.jpg')}}" class="me-2" alt="Img">
+                                    <img src="{{ url('theme/img/profiles/avatar-03.jpg')}}" class="me-2" alt="Img">
                                 </span> Doris
                             </span>
                             <input type="checkbox" class="form-check-input">
@@ -12848,7 +12848,7 @@
                         <label class="form-check-label member-check-list d-flex align-items-center justify-content-between p-2 rounded mb-1">
                             <span class="d-flex align-items-center text-dark">
                                 <span class="avatar avatar-md avatar-rounded">
-                                    <img src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" class="me-2" alt="Img">
+                                    <img src="{{ url('theme/img/profiles/avatar-04.jpg')}}" class="me-2" alt="Img">
                                 </span> Rufana
                             </span>
                             <input type="checkbox" class="form-check-input">
@@ -12856,7 +12856,7 @@
                         <label class="form-check-label member-check-list d-flex align-items-center justify-content-between p-2 rounded mb-1">
                             <span class="d-flex align-items-center text-dark">
                                 <span class="avatar avatar-md avatar-rounded">
-                                    <img src="{{ asset('theme/img/profiles/avatar-04.jpg')}}" class="me-2" alt="Img">
+                                    <img src="{{ url('theme/img/profiles/avatar-04.jpg')}}" class="me-2" alt="Img">
                                 </span> Michael
                             </span>
                             <input type="checkbox" class="form-check-input">
@@ -12964,7 +12964,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete FAQ</h6>
                     <p class="mb-3">Are you sure, you want to delete faq?</p>
@@ -13030,7 +13030,7 @@
                                         <option>Bank Transfer</option>
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="col-md-12">
                                 <div>
                                     <label class="form-label">Description</label>
@@ -13099,7 +13099,7 @@
                                         <option>Bank Transfer</option>
                                     </select>
                                 </div>
-                            </div> 
+                            </div>
                             <div class="col-md-12">
                                 <div>
                                     <label class="form-label">Description</label>
@@ -13171,7 +13171,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Income</h6>
                     <p class="mb-3">Are you sure,  you want to delete income?</p>
@@ -13193,7 +13193,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete</h6>
                     <p class="mb-3">Are you sure,  you want to delete?</p>
@@ -13210,14 +13210,14 @@
 
 @if(Route::is(['inventory-report']))
     <!-- Start Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Product</label>
@@ -13225,7 +13225,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -13245,37 +13245,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
                                     </label>
                                 </li>
                             </ul>
@@ -13296,7 +13296,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -13388,14 +13388,14 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="filter-range">
                                 <input type="text" id="range_03">
                                 <p>Range : <span class="text-gray-9">Range : $200 - $5695</span></p>
                             </div>
                         </div>
                     </div>
-                </div>				
+                </div>
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -13414,14 +13414,14 @@
 
 @if(Route::is(['invoice-details']))
     <!-- Start Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Details</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Status</label>
@@ -13429,7 +13429,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -13489,7 +13489,7 @@
                             </div>
                         </div>
                     </div>
-                </div>		
+                </div>
                 <div>
                     <h6 class="fs-16 mb-2">Invoice History</h6>
                     <ul class="activity-feed bg-light rounded">
@@ -13530,7 +13530,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Inventory</h6>
                     <p class="mb-3">Are you sure,  you want to delete Inventory?</p>
@@ -13557,7 +13557,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-61.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-61.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13575,7 +13575,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-62.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-62.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13593,7 +13593,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-63.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-63.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13611,7 +13611,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-64.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-64.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13629,7 +13629,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="bg-dark"><img src="{{ asset('theme/img/invoice/general-invoice-65.svg')}}" class="img-fluid" alt=""></div>
+                    <div class="bg-dark"><img src="{{ url('theme/img/invoice/general-invoice-65.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13647,7 +13647,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-66.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-66.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13665,7 +13665,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-67.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-67.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13682,7 +13682,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-68.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-68.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13700,7 +13700,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-69.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-69.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13718,7 +13718,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-70.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-70.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13736,7 +13736,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-71.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-71.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13754,7 +13754,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-72.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-72.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13772,7 +13772,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-73.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-73.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13789,7 +13789,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-74.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-74.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13807,7 +13807,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-75.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-75.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13825,7 +13825,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-76.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-76.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13843,7 +13843,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-77.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-77.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13860,7 +13860,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-78.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-78.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13878,7 +13878,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-79.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-79.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13896,7 +13896,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-80.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-80.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13914,7 +13914,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-81.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-81.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13932,7 +13932,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-82.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-82.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13950,7 +13950,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-83.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-83.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13968,7 +13968,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-84.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-84.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -13986,7 +13986,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div><img src="{{ asset('theme/img/invoice/general-invoice-85.svg')}}" class="img-fluid" alt=""></div>
+                    <div><img src="{{ url('theme/img/invoice/general-invoice-85.svg')}}" class="img-fluid" alt=""></div>
                 </div>
             </div>
         </div>
@@ -14005,7 +14005,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="d-flex align-items-center justify-content-center">
-                        <img src="{{ asset('theme/img/invoice/general-invoice-86.svg')}}" class="img-fluid" alt="">
+                        <img src="{{ url('theme/img/invoice/general-invoice-86.svg')}}" class="img-fluid" alt="">
                     </div>
                 </div>
             </div>
@@ -14025,7 +14025,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="d-flex align-items-center justify-content-center">
-                        <img src="{{ asset('theme/img/invoice/general-invoice-87.svg')}}" class="img-fluid" alt="">
+                        <img src="{{ url('theme/img/invoice/general-invoice-87.svg')}}" class="img-fluid" alt="">
                     </div>
                 </div>
             </div>
@@ -14045,7 +14045,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="d-flex align-items-center justify-content-center">
-                        <img src="{{ asset('theme/img/invoice/general-invoice-88.svg')}}" class="img-fluid" alt="">
+                        <img src="{{ url('theme/img/invoice/general-invoice-88.svg')}}" class="img-fluid" alt="">
                     </div>
                 </div>
             </div>
@@ -14065,7 +14065,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="d-flex align-items-center justify-content-center">
-                        <img src="{{ asset('theme/img/invoice/general-invoice-89.svg')}}" class="img-fluid" alt="">
+                        <img src="{{ url('theme/img/invoice/general-invoice-89.svg')}}" class="img-fluid" alt="">
                     </div>
                 </div>
             </div>
@@ -14081,7 +14081,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Invoice</h6>
                     <p class="mb-3">Are you sure, you want to delete Invoice?</p>
@@ -14103,7 +14103,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Invoice</h6>
                     <p class="mb-3">Are you sure, you want to delete Invoice?</p>
@@ -14154,25 +14154,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
                                     </label>
                                 </li>
                             </ul>
@@ -14871,7 +14871,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Purchase Package</h6>
                     <p class="mb-3">Are you sure, you want to delete purchase Package?</p>
@@ -14922,25 +14922,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
                                     </label>
                                 </li>
                             </ul>
@@ -15635,7 +15635,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Purchase Package</h6>
                     <p class="mb-3">Are you sure, you want to delete purchase Package?</p>
@@ -15686,37 +15686,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
                                     </label>
                                 </li>
                             </ul>
@@ -15847,7 +15847,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Page</h6>
                     <p class="mb-3">Are you sure, you want to delete Page?</p>
@@ -15879,11 +15879,11 @@
 							</div>
 							<div class="mb-3">
 								<label class="form-label">API Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 							<div class="mb-0">
 								<label class="form-label">Secret Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 						</div>
 						<div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -15912,11 +15912,11 @@
 							</div>
 							<div class="mb-3">
 								<label class="form-label">API Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 							<div class="mb-0">
 								<label class="form-label">Secret Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 						</div>
 						<div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -15945,11 +15945,11 @@
 							</div>
 							<div class="mb-3">
 								<label class="form-label">API Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 							<div class="mb-0">
 								<label class="form-label">Secret Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 						</div>
 						<div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -15978,11 +15978,11 @@
 							</div>
 							<div class="mb-3">
 								<label class="form-label">API Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 							<div class="mb-0">
 								<label class="form-label">Secret Key <span class="text-danger">*</span></label>
-								<input type="text" class="form-control">                           
+								<input type="text" class="form-control">
 							</div>
 						</div>
 						<div class="modal-footer d-flex align-items-center justify-content-between gap-1">
@@ -16001,7 +16001,7 @@
                 <div class="modal-content">
                     <div class="modal-body text-center">
                         <div class="mb-3">
-                            <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                            <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                         </div>
                         <h6 class="mb-1">Delete Payment Method</h6>
                         <p class="mb-3">Are you sure, you want to delete payment method?</p>
@@ -16053,37 +16053,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-18.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
                                     </label>
                                 </li>
                             </ul>
@@ -16198,14 +16198,14 @@
 
 @if(Route::is(['payments']))
     <!-- Start Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Customers</label>
@@ -16213,7 +16213,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -16233,25 +16233,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                             </ul>
@@ -16272,7 +16272,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="filter-range">
                                 <input type="text" id="range_03">
                                 <p>Range : <span class="text-gray-9">$200 - $5695</span></p>
@@ -16286,7 +16286,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -16345,8 +16345,8 @@
                             <i class="isax isax-calendar-2"></i>
                         </span>
                     </div>
-                </div>	
-                            
+                </div>
+
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -16457,7 +16457,7 @@
                                         <label class="form-label">Due Amount <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" value="$10000" readonly>
                                     </div>
-                                </div>                                    
+                                </div>
                                 <div class="col-lg-12">
                                     <div class="mb-3">
                                         <label class="form-label">Notes</label>
@@ -16584,7 +16584,7 @@
                                         <label class="form-label">Due Amount <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" value="$10000" readonly>
                                     </div>
-                                </div>                                    
+                                </div>
                                 <div class="col-lg-12">
                                     <div class="mb-3">
                                         <label class="form-label">Notes</label>
@@ -16607,7 +16607,7 @@
                                     <div class="p-3 mb-3 border rounded-2">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div class="d-flex align-items-center">
-                                                <img src="{{ asset('theme/img/icons/document-icon.svg')}}" alt="document-icon">
+                                                <img src="{{ url('theme/img/icons/document-icon.svg')}}" alt="document-icon">
                                                 <div class="ms-2">
                                                     <p class="text-dark fw-medium mb-0">Attachment</p>
                                                     <p>15.45 KB</p>
@@ -16636,7 +16636,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Payment</h6>
                     <p class="mb-3">Are you sure,  you want to delete Payment?</p>
@@ -16708,7 +16708,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Role</h6>
                     <p class="mb-3">Are you sure, you want to delete Role?</p>
@@ -16727,12 +16727,12 @@
     <!-- Start Upgrade -->
     <div class="modal fade" id="upgrade">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">	
+            <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Upgrade Plan</h4>
                     <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="fa-solid fa-x"></i></button>
-                </div>				
-                <div class="modal-body pb-0">				
+                </div>
+                <div class="modal-body pb-0">
                     <!-- Start Pricing -->
                     <div>
                         <div class="text-center">
@@ -16765,7 +16765,7 @@
                                             <div class="price-hdr">
                                                 <h6 class="fs-10 fw-semibold text-gray-9 me-2 ms-2 mb-0">FEATURES</h6>
                                             </div>
-                                        </div>									
+                                        </div>
                                         <div class="mt-3">
                                             <div>
                                                 <span class="text-dark d-flex align-items-center mb-2">
@@ -16797,7 +16797,7 @@
                                                     Convert documents
                                                 </span>
                                             </div>
-                                        </div>							
+                                        </div>
                                     </div><!-- end card body -->
                                 </div><!-- end card -->
                             </div><!-- end col -->
@@ -16820,7 +16820,7 @@
                                             <div class="price-hdr">
                                                 <h6 class="fs-10 fw-semibold text-gray-9 me-2 ms-2 mb-0">FEATURES</h6>
                                             </div>
-                                        </div>									
+                                        </div>
                                         <div class="mt-3">
                                             <div>
                                                 <span class="text-dark d-flex align-items-center mb-2">
@@ -16852,7 +16852,7 @@
                                                     Online Store
                                                 </span>
                                             </div>
-                                        </div>								
+                                        </div>
                                     </div><!-- end card body -->
                                 </div><!-- end card -->
                             </div><!-- end col -->
@@ -16873,7 +16873,7 @@
                                             <div class="price-hdr">
                                                 <h6 class="fs-10 fw-semibold text-gray-9 me-2 ms-2 mb-0">FEATURES</h6>
                                             </div>
-                                        </div>									
+                                        </div>
                                         <div class="mt-3">
                                             <div>
                                                 <span class="text-dark d-flex align-items-center mb-2">
@@ -16905,7 +16905,7 @@
                                                     Bank Reconciliation
                                                 </span>
                                             </div>
-                                        </div>								
+                                        </div>
                                     </div><!-- end card body -->
                                 </div><!-- end card -->
                             </div><!-- end col -->
@@ -16926,7 +16926,7 @@
                                             <div class="price-hdr">
                                                 <h6 class="fs-10 fw-semibold text-gray-9 me-2 ms-2 mb-0">FEATURES</h6>
                                             </div>
-                                        </div>									
+                                        </div>
                                         <div class="mt-3">
                                             <div>
                                                 <span class="text-dark d-flex align-items-center mb-2">
@@ -16958,7 +16958,7 @@
                                                     Multiple Warehouses
                                                 </span>
                                             </div>
-                                        </div>								
+                                        </div>
                                     </div><!-- end card body -->
                                 </div><!-- end card -->
                             </div><!-- end col -->
@@ -17085,7 +17085,7 @@
                             </div><!-- end col -->
                             <div class="col-lg-6 d-flex">
                                 <div class="d-flex flex-column justify-content-between flex-fill bg-light p-3 rounded-3">
-                                    <div class="card shadow-none border">									
+                                    <div class="card shadow-none border">
                                         <div class="card-body">
                                             <div class="mb-3">
                                                 <h6 class="fw-bold fs-16 mb-0">Subscription Details</h6>
@@ -17123,7 +17123,7 @@
                         </div>
                         <!-- end row -->
 
-                    </div>			
+                    </div>
                 </div>
             </div>
         </div>
@@ -17173,7 +17173,7 @@
                                     </div>
                                     <div class="bg-light p-4 rounded position-relative mb-3">
                                         <div class="position-absolute top-0 end-0">
-                                            <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="User Img">
+                                            <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="User Img">
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2">
                                             <div class="mb-3">
@@ -17183,12 +17183,12 @@
                                                         <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                                         <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                     </div>
-                                                    <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
+                                                    <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="User Img" width="48" height="48"></span>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
-                                                <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                                <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                                <img src="{{ url('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                                <img src="{{ url('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                             </div>
                                         </div>
                                         <div class="row gy-3">
@@ -17207,7 +17207,7 @@
                                             <div class="col-lg-4">
                                                 <div>
                                                     <h6 class="mb-2 fs-16 fw-semibold">Billing From</h6>
-                                                    <div>                                                                   
+                                                    <div>
                                                         <h6 class="fs-14 fw-semibold mb-1">Kanakku Invoice Management</h6>
                                                         <p class="mb-1">15 Hodges Mews, HP12 3JL, United Kingdom</p>
                                                         <p class="mb-1">Phone : +1 54664 75945</p>
@@ -17221,10 +17221,10 @@
                                                     <h6 class="mb-2 fs-16 fw-semibold">Billing To</h6>
                                                     <div class="bg-white rounded p-3">
                                                         <div class="d-flex align-items-center mb-1">
-                                                            <div>                                    
+                                                            <div>
                                                                 <span class="avatar avatar-lg flex-shrink-0 me-2">
-                                                                    <img src="{{ asset('theme/img/billing-icon.jpg')}}" alt="User Img">
-                                                                </span>                                                                            
+                                                                    <img src="{{ url('theme/img/billing-icon.jpg')}}" alt="User Img">
+                                                                </span>
                                                             </div>
                                                             <p class="fs-14 fw-semibold text-dark">Timesquare Tech</p>
                                                         </div>
@@ -17270,7 +17270,7 @@
                                                 <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                                     <div class="me-3">
                                                         <p class="mb-2">Scan to the pay</p>
-                                                        <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt="User Img"></span>
+                                                        <span><img src="{{ url('theme/img/icons/qr.png')}}" alt="User Img"></span>
                                                     </div>
                                                     <div>
                                                         <h6 class="mb-2">Bank Details</h6>
@@ -17319,8 +17319,8 @@
                                             <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                         </div>
                                         <div>
-                                            <img src="{{ asset('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
-                                            <img src="{{ asset('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
+                                            <img src="{{ url('theme/img/invoice-logo.svg')}}" class="invoice-logo-dark" alt="img">
+                                            <img src="{{ url('theme/img/invoice-logo-white-2.svg')}}" class="invoice-logo-white" alt="img">
                                         </div>
                                     </div>
                                 </div>
@@ -17339,7 +17339,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Plane</h6>
                     <p class="mb-3">Are you sure,  you want to delete Plane?</p>
@@ -17359,7 +17359,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Cards</h6>
                     <p class="mb-3">Are you sure,  you want to delete Cards?</p>
@@ -17406,7 +17406,7 @@
 				<div class="modal-content">
 					<div class="modal-body text-center">
 						<div class="mb-3">
-							<img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+							<img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
 						</div>
 						<h6 class="mb-1">Delete</h6>
 						<p class="mb-3">Are you sure,  you want to delete?</p>
@@ -17424,14 +17424,14 @@
 
 @if(Route::is(['products']))
     <!-- Start Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Products/Services</label>
@@ -17439,7 +17439,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -17459,37 +17459,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Apple iPhone 15
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Dell XPS 13 9310
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Bose QuietComfort 45
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Nike Dri-FIT T-shirt
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-05.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Adidas Ultraboost 22 Running Shoe
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/products/product-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Samsung French Door Refrigerator
                                     </label>
                                 </li>
                             </ul>
@@ -17510,7 +17510,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -17607,7 +17607,7 @@
                         <option class="text-success">Active</option>
                         <option class="text-danger">Inactive</option>
                     </select>
-                </div>					
+                </div>
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -17629,7 +17629,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Product</h6>
                     <p class="mb-3">Are you sure,  you want to delete product?</p>
@@ -17680,25 +17680,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
                                     </label>
                                 </li>
                             </ul>
@@ -17855,37 +17855,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
                                     </label>
                                 </li>
                             </ul>
@@ -18049,7 +18049,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Purchase Order</h6>
                     <p class="mb-3">Are you sure, you want to delete purchase order?</p>
@@ -18066,14 +18066,14 @@
 
 @if(Route::is(['purchase-return-report']))
     <!-- Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Vendor</label>
@@ -18081,7 +18081,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -18101,25 +18101,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
                                     </label>
                                 </li>
                             </ul>
@@ -18140,14 +18140,14 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="filter-range">
                                 <input type="text" id="range_03">
                                 <p>Range : <span class="text-gray-9"> $200 - $5695</span></p>
                             </div>
                         </div>
                     </div>
-                </div>                    
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Payment Mode</label>
                     <div class="dropdown">
@@ -18205,7 +18205,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -18281,25 +18281,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-01.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Trend Hive
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-02.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Quick Cart
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-03.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Tech Bazaar
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/icons/company-04.svg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Harvest Basket
                                     </label>
                                 </li>
                             </ul>
@@ -18395,7 +18395,7 @@
                                         <div class="card-body">
                                             <div class="bg-light p-4 rounded position-relative mb-3">
                                                 <div class="position-absolute top-0 end-0">
-                                                    <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="">
+                                                    <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="">
                                                 </div>
                                                 <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2 position-relative z-1">
                                                     <div class="mb-3">
@@ -18405,11 +18405,11 @@
                                                                 <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                                                 <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                             </div>
-                                                            <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
+                                                            <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
                                                         </div>
                                                     </div>
                                                     <div class="mb-3">
-                                                        <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                                        <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                                                     </div>
                                                 </div>
                                                 <div class="row gy-3 position-relative z-1">
@@ -18444,7 +18444,7 @@
                                                                 <div class="d-flex align-items-center mb-1">
                                                                     <div>
                                                                         <span class="avatar avatar-lg flex-shrink-0 me-2">
-                                                                            <img src="{{ asset('theme/img/billing-icon.jpg')}}" alt="">
+                                                                            <img src="{{ url('theme/img/billing-icon.jpg')}}" alt="">
                                                                         </span>
                                                                     </div>
                                                                     <p class="fs-14 fw-semibold text-dark">Timesquare Tech</p>
@@ -18492,7 +18492,7 @@
                                                         <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                                             <div class="me-3">
                                                                 <p class="mb-2">Scan to the pay</p>
-                                                                <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
+                                                                <span><img src="{{ url('theme/img/icons/qr.png')}}" alt=""></span>
                                                             </div>
                                                             <div>
                                                                 <h6 class="mb-2">Bank Details</h6>
@@ -18542,7 +18542,7 @@
                                                     <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                                 </div>
                                                 <div>
-                                                    <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                                    <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                                                 </div>
                                             </div>
                                         </div><!-- end card body -->
@@ -18564,7 +18564,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Purchase Transaction</h6>
                     <p class="mb-3">Are you sure, you want to delete purchase transaction?</p>
@@ -18581,14 +18581,14 @@
 
 @if(Route::is(['purchases-report']))
     <!-- Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Vendor</label>
@@ -18596,7 +18596,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -18616,25 +18616,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-01.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emma Rose
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-02.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Ethan James
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-03.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Grace
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/reports/avatar-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/reports/avatar-04.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Liam Michael
                                     </label>
                                 </li>
                             </ul>
@@ -18655,14 +18655,14 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="filter-range">
                                 <input type="text" id="range_03">
                                 <p>Range : <span class="text-gray-9"> $200 - $5695</span></p>
                             </div>
                         </div>
                     </div>
-                </div>                    
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Payment Mode</label>
                     <div class="dropdown">
@@ -18720,7 +18720,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -18796,37 +18796,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
                                     </label>
                                 </li>
                             </ul>
@@ -18990,7 +18990,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Purchase</h6>
                     <p class="mb-3">Are you sure, you want to delete purchase?</p>
@@ -19007,14 +19007,14 @@
 
 @if(Route::is(['quotation-report']))
     <!-- Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Customer</label>
@@ -19022,7 +19022,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -19042,37 +19042,37 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-18.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-18.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Michael Johnson
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-30.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Olivia Harris
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-16.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>David Anderson
                                     </label>
                                 </li>
                             </ul>
@@ -19095,14 +19095,14 @@
                             <i class="isax isax-calendar-2"></i>
                         </span>
                     </div>
-                </div>	
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Status</label>
                     <div class="dropdown">
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -19143,8 +19143,8 @@
                                         Expired
                                     </label>
                                 </li>
-                            
-                                
+
+
                             </ul>
                             <div class="row g-2">
                                 <div class="col-6">
@@ -19156,7 +19156,7 @@
                             </div>
                         </div>
                     </div>
-                </div>		
+                </div>
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -19175,14 +19175,14 @@
 
 @if(Route::is(['quotations']))
     <!-- Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Customers</label>
@@ -19190,7 +19190,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -19210,25 +19210,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                             </ul>
@@ -19251,14 +19251,14 @@
                             <i class="isax isax-calendar-2"></i>
                         </span>
                     </div>
-                </div>	
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Quotation Id</label>
                     <div class="dropdown">
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -19302,7 +19302,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-3">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -19332,7 +19332,7 @@
                         </div>
                     </div>
                 </div>
-                            
+
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -19369,14 +19369,14 @@
 
 @if(Route::is(['recurring-invoices']))
     <!-- Filter -->
-    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">                                      
+    <div class="offcanvas offcanvas-offset offcanvas-end" tabindex="-1" id="customcanvas">
         <div class="offcanvas-header d-block pb-0">
             <div class="border-bottom d-flex align-items-center justify-content-between pb-3">
                 <h6 class="offcanvas-title">Filter</h6>
                 <button type="button" class="btn-close btn-close-modal custom-btn-close" data-bs-dismiss="offcanvas" aria-label="Close"><i class="fa-solid fa-x"></i></button>
             </div>
-        </div>			
-        <div class="offcanvas-body pt-3">  
+        </div>
+        <div class="offcanvas-body pt-3">
             <form action="#">
                 <div class="mb-3">
                     <label class="form-label">Customers</label>
@@ -19384,7 +19384,7 @@
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="mb-3">
                                 <div class="input-icon-start position-relative">
                                     <span class="input-icon-addon fs-12">
@@ -19404,25 +19404,25 @@
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-28.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Emily Clark
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-29.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>John Carter
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-12.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
-                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ asset('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
+                                        <span class="avatar avatar-sm rounded-circle me-2"><img src="{{ url('theme/img/profiles/avatar-06.jpg')}}" class="flex-shrink-0 rounded-circle" alt="img"></span>Sophia White
                                     </label>
                                 </li>
                             </ul>
@@ -19445,28 +19445,28 @@
                             <i class="isax isax-calendar-2"></i>
                         </span>
                     </div>
-                </div>	
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Amount</label>
                     <div class="dropdown">
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">							
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <div class="filter-range">
                                 <input type="text" id="range_03">
                                 <p>Range : <span class="text-gray-9">$200 - $5695</span></p>
                             </div>
                         </div>
                     </div>
-                </div>				
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Status</label>
                     <div class="dropdown">
                         <a href="javascript:void(0);" class="dropdown-toggle btn btn-lg bg-light  d-flex align-items-center justify-content-start fs-13 fw-normal border" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="true">
                             Select
                         </a>
-                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">	
+                        <div class="dropdown-menu shadow-lg w-100 dropdown-info">
                             <ul class="mb-0">
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
@@ -19485,7 +19485,7 @@
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <i class="fa-solid fa-circle fs-6 text-danger me-1"></i>Cancelled
                                     </label>
-                                </li>	
+                                </li>
                                 <li>
                                     <label class="dropdown-item px-2 d-flex align-items-center text-dark">
                                         <input class="form-check-input m-0 me-2" type="checkbox">
@@ -19497,12 +19497,12 @@
                                         <input class="form-check-input m-0 me-2" type="checkbox">
                                         <i class="fa-solid fa-circle fs-6 text-orange me-1"></i>Uncollectable
                                     </label>
-                                </li>						
+                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
-                            
+
                 <div class="offcanvas-footer">
                     <div class="row g-2">
                         <div class="col-6">
@@ -19521,7 +19521,7 @@
     <!-- Start view notes -->
     <div class="modal fade" id="view_invoice">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">			
+            <div class="modal-content">
                 <div class="modal-body">
                     <div class="d-flex mb-3 pb-3 align-items-center justify-content-between border-bottom">
                         <h5 class="mb-0">Preview</h5>
@@ -19534,12 +19534,12 @@
                             <div class="d-flex align-items-center flex-wrap row-gap-3">
                                 <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-document-like me-1"></i>Download PDF</a>
                                 <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-message-notif me-1"></i>Send Email</a>
-                                <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-printer me-1"></i>Print</a>								
+                                <a href="#" class="btn btn-outline-white d-inline-flex align-items-center me-3"><i class="isax isax-printer me-1"></i>Print</a>
                             </div>
                         </div>
                         <div class="bg-light p-4 rounded position-relative mb-3">
                             <div class="position-absolute top-0 end-0">
-                                <img src="{{ asset('theme/img/bg/card-bg.png')}}" alt="">
+                                <img src="{{ url('theme/img/bg/card-bg.png')}}" alt="">
                             </div>
                             <div class="d-flex align-items-center justify-content-between border-bottom flex-wrap mb-3 pb-2 position-relative z-1">
                                 <div class="mb-3">
@@ -19549,11 +19549,11 @@
                                             <h6 class="fs-14 fw-semibold mb-1">Dreams Technologies Pvt Ltd.,</h6>
                                             <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                                         </div>
-                                        <span><img src="{{ asset('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
+                                        <span><img src="{{ url('theme/img/icons/not-paid.png')}}" alt="" width="48" height="48"></span>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                    <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                                 </div>
                             </div>
                             <!-- start row -->
@@ -19584,11 +19584,11 @@
                                 </div><!-- end col -->
                                 <div class="col-lg-4">
                                     <div>
-                                        <h6 class="mb-2 fs-16 fw-semibold">Billing To</h6>                             
+                                        <h6 class="mb-2 fs-16 fw-semibold">Billing To</h6>
                                         <div class="bg-white rounded p-3">
                                             <div class="d-flex align-items-center mb-1">
                                                 <div class="me-2">
-                                                    <span><img src="{{ asset('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
+                                                    <span><img src="{{ url('theme/img/icons/timesquare-icon.svg')}}" alt="image" class="img-fluid rounded"></span>
                                                 </div>
                                                 <h6 class="fs-14 fw-semibold">Timesquare Tech</h6>
                                             </div>
@@ -19670,7 +19670,7 @@
                                     <div class="d-flex align-items-center flex-wrap row-gap-3 mb-3">
                                         <div class="me-3">
                                             <p class="mb-2">Scan to the pay</p>
-                                            <span><img src="{{ asset('theme/img/icons/qr.png')}}" alt=""></span>
+                                            <span><img src="{{ url('theme/img/icons/qr.png')}}" alt=""></span>
                                         </div>
                                         <div>
                                             <h6 class="mb-2">Bank Details</h6>
@@ -19730,7 +19730,7 @@
                             </div><!-- end col -->
                             <div class="col-lg-5">
                                 <div class="text-lg-end mb-3">
-                                    <span><img src="{{ asset('theme/img/icons/sign.png')}}" alt=""></span>
+                                    <span><img src="{{ url('theme/img/icons/sign.png')}}" alt=""></span>
                                     <h6 class="fs-14 fw-semibold mb-1">Ted M. Davis</h6>
                                     <p>Manager</p>
                                 </div>
@@ -19743,7 +19743,7 @@
                                 <p>15 Hodges Mews, High Wycombe HP12 3JL, United Kingdom</p>
                             </div>
                             <div>
-                                <img src="{{ asset('theme/img/invoice-logo.svg')}}" alt="">
+                                <img src="{{ url('theme/img/invoice-logo.svg')}}" alt="">
                             </div>
                         </div>
                     </div>
@@ -19759,7 +19759,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Invoice</h6>
                     <p class="mb-3">Are you sure,  you want to delete invoice?</p>
@@ -19837,7 +19837,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <div class="mb-3">
-                        <img src="{{ asset('theme/img/icons/delete.svg')}}" alt="img">
+                        <img src="{{ url('theme/img/icons/delete.svg')}}" alt="img">
                     </div>
                     <h6 class="mb-1">Delete Role</h6>
                     <p class="mb-3">Are you sure, you want to delete role?</p>

@@ -1,5 +1,5 @@
 <?php $page = 'billing'; ?>
-@extends('automotive.layouts.adminLayout.mainlayout')
+@extends('automotive.admin.layouts.adminLayout.mainlayout')
 
 @section('content')
     @php

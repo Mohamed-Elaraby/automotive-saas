@@ -1,5 +1,5 @@
 <?php $page = 'automotive/admin/login'; ?>
-@extends('automotive.layouts.adminLayout.mainlayout')
+@extends('automotive.admin.layouts.adminLayout.mainlayout')
 @section('content')
 
     <!-- ========================
