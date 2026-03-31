@@ -1,5 +1,5 @@
 <?php $page = 'profile'; ?>
-@extends('automotive.layouts.portalLayout.mainlayout')
+@extends('automotive.portal.layouts.portalLayout.mainlayout')
 
 @section('content')
     <div class="page-wrapper">
@@ -381,7 +381,7 @@
                 </div>
             </div>
 
-            @component('automotive.layouts.portalLayout.components.footer')
+            @component('automotive.portal.layouts.portalLayout.components.footer')
             @endcomponent
         </div>
     </div>

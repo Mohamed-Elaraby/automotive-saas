@@ -1,5 +1,5 @@
 <?php $page = 'automotive/portal/register'; ?>
-@extends('automotive.layouts.portalLayout.mainlayout')
+@extends('automotive.portal.layouts.portalLayout.mainlayout')
 
 @section('content')
     <div class="container-fuild">
