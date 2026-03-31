@@ -107,8 +107,7 @@
 
                                     <div class="text-center">
                                         <h6 class="fw-normal fs-14 text-dark mb-0">
-                                            Don’t have an account yet?
-                                            <a href="{{ route('admin.register') }}" class="hover-a"> Register</a>
+                                            Central admin accounts are created internally only.
                                         </h6>
                                     </div>
                                 </div>

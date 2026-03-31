@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\Auth\ForgotPasswordController as AdminForgotPasswordController;
 use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
-use App\Http\Controllers\Admin\Auth\RegisterController as AdminRegisterController;
 use App\Http\Controllers\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
 use App\Http\Controllers\Admin\BillingReportController;
 use App\Http\Controllers\Admin\CityController;
@@ -51,9 +50,6 @@ Route::prefix('admin')
         Route::middleware('guest:web')->group(function () {
             Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');
             Route::post('/login', [AdminLoginController::class, 'login'])->name('login.submit');
-
-            Route::get('/register', [AdminRegisterController::class, 'showRegistrationForm'])->name('register');
-            Route::post('/register', [AdminRegisterController::class, 'register'])->name('register.submit');
 
             Route::get('/password/reset', [AdminForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
             Route::post('/password/email', [AdminForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
