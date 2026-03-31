@@ -15,7 +15,7 @@ class AdminActivityLogger
         ?string $tenantId = null,
         array $contextPayload = []
     ): AdminActivityLog {
-        $admin = Auth::guard('web')->user();
+        $admin = Auth::guard('admin')->user();
 
         return AdminActivityLog::query()->create([
             'admin_user_id' => $this->adminUserId($admin),
@@ -28,23 +28,23 @@ class AdminActivityLogger
         ]);
     }
 
-protected function adminUserId(mixed $admin): ?int
-{
-    if ($admin instanceof Authenticatable && method_exists($admin, 'getAuthIdentifier')) {
-        $id = $admin->getAuthIdentifier();
+    protected function adminUserId(mixed $admin): ?int
+    {
+        if ($admin instanceof Authenticatable && method_exists($admin, 'getAuthIdentifier')) {
+            $id = $admin->getAuthIdentifier();
 
-        return is_numeric($id) ? (int) $id : null;
+            return is_numeric($id) ? (int) $id : null;
+        }
+
+        return null;
     }
 
-    return null;
-}
+    protected function adminEmail(mixed $admin): ?string
+    {
+        if (is_object($admin) && isset($admin->email) && filled($admin->email)) {
+            return (string) $admin->email;
+        }
 
-protected function adminEmail(mixed $admin): ?string
-{
-    if (is_object($admin) && isset($admin->email) && filled($admin->email)) {
-        return (string) $admin->email;
+        return null;
     }
-
-    return null;
-}
 }

@@ -25,7 +25,7 @@ class LoginController extends Controller
 
         $remember = $request->boolean('remember');
 
-        if (! Auth::guard('web')->attempt($credentials, $remember)) {
+        if (! Auth::guard('admin')->attempt($credentials, $remember)) {
             throw ValidationException::withMessages([
                 'email' => 'The provided credentials do not match our records.',
             ]);
@@ -38,7 +38,7 @@ class LoginController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
-        Auth::guard('web')->logout();
+        Auth::guard('admin')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

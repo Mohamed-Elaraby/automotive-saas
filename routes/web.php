@@ -47,7 +47,7 @@ require base_path('routes/admin/coupons.php');
 Route::prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::middleware('guest:web')->group(function () {
+        Route::middleware('guest:admin')->group(function () {
             Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');
             Route::post('/login', [AdminLoginController::class, 'login'])->name('login.submit');
 
@@ -59,7 +59,7 @@ Route::prefix('admin')
         });
 
         Route::post('/logout', [AdminLoginController::class, 'logout'])
-            ->middleware('auth:web')
+            ->middleware('auth:admin')
             ->name('logout');
     });
 
@@ -69,7 +69,7 @@ Route::prefix('admin')
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')
-    ->middleware(['auth:web'])
+    ->middleware(['auth:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', function () {

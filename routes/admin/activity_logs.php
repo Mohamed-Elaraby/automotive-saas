@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\AdminActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
-    ->middleware(['auth:web'])
+    ->middleware(['auth:admin'])
     ->name('admin.')
     ->group(function () {
         Route::prefix('activity-logs')

@@ -21,7 +21,7 @@ class ForgotPasswordController extends Controller
             'email' => ['required', 'email:rfc'],
         ]);
 
-        $status = Password::broker('users')->sendResetLink([
+        $status = Password::broker('admins')->sendResetLink([
             'email' => $validated['email'],
         ]);
 

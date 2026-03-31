@@ -15,24 +15,29 @@ class RedirectIfAuthenticated
         $guards = empty($guards) ? [null] : $guards;
 
         foreach ($guards as $guard) {
-            if (Auth::guard($guard)->check()) {
-                if ($guard === 'automotive_admin') {
-                    // لو هو أصلاً على dashboard أو expired page سيبه يكمل
-                    if ($request->is('automotive/admin/dashboard') || $request->is('automotive/admin/subscription-expired')) {
-                        return $next($request);
-                    }
-
-                    return redirect('/automotive/admin/dashboard');
-                }
-
-                if ($guard === 'web' || $guard === null) {
-                    if ($request->is('automotive') || $request->is('automotive/*')) {
-                        return redirect()->route('automotive.portal');
-                    }
-                }
-
-                return redirect(RouteServiceProvider::HOME);
+            if (! Auth::guard($guard)->check()) {
+                continue;
             }
+
+            if ($guard === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($guard === 'automotive_admin') {
+                if ($request->is('automotive/admin/dashboard') || $request->is('automotive/admin/subscription-expired')) {
+                    return $next($request);
+                }
+
+                return redirect('/automotive/admin/dashboard');
+            }
+
+            if ($guard === 'web' || $guard === null) {
+                if ($request->is('automotive') || $request->is('automotive/*')) {
+                    return redirect()->route('automotive.portal');
+                }
+            }
+
+            return redirect(RouteServiceProvider::HOME);
         }
 
         return $next($request);

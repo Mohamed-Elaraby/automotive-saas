@@ -31,7 +31,7 @@ class ResetPasswordController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
-        $status = Password::broker('users')->reset(
+        $status = Password::broker('admins')->reset(
             $validated,
             function (User $user, string $password): void {
                 $user->forceFill([
