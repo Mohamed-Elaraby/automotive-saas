@@ -2,10 +2,10 @@
 
 namespace App\Services\Admin;
 
+use App\Models\Admin;
 use App\Models\AdminActivityLog;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 
 class AdminActivityLogger
 {
@@ -33,21 +33,13 @@ class AdminActivityLogger
     {
         $admin = Auth::guard('admin')->user();
 
-        if ($admin instanceof Authenticatable) {
+        if ($admin instanceof Admin) {
             return $admin;
         }
 
         $requestAdmin = request()?->user('admin');
-        if ($requestAdmin instanceof Authenticatable) {
+        if ($requestAdmin instanceof Admin) {
             return $requestAdmin;
-        }
-
-        if (request()?->routeIs('admin.*') || Route::is('admin.*')) {
-            $legacyAdmin = Auth::guard('web')->user();
-
-            if ($legacyAdmin instanceof Authenticatable) {
-                return $legacyAdmin;
-            }
         }
 
         return null;
