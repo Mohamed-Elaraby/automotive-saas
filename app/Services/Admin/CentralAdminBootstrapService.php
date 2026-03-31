@@ -38,6 +38,20 @@ class CentralAdminBootstrapService
             'password' => (string) env('CENTRAL_ADMIN_PASSWORD'),
         ];
 
+        $hasAnyBootstrapValue = filled($payload['name'])
+            || filled($payload['email'])
+            || filled($payload['password']);
+
+        if (! $hasAnyBootstrapValue) {
+            return [
+                'ok' => true,
+                'created' => false,
+                'message' => 'Central admin bootstrap skipped because CENTRAL_ADMIN_* values are not configured.',
+                'admin' => null,
+                'errors' => [],
+            ];
+        }
+
         $validator = Validator::make($payload, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email:rfc', 'max:255', 'unique:admins,email'],
