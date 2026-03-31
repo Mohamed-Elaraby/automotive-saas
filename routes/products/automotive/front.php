@@ -3,15 +3,12 @@
 use App\Http\Controllers\Automotive\Front\Auth\LoginController;
 use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalController;
-use App\Http\Controllers\Automotive\Front\EntryController;
 use App\Http\Controllers\Automotive\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('automotive')
     ->name('automotive.')
     ->group(function () {
-        Route::get('/get-started', [EntryController::class, 'index'])->name('get-started');
-
         Route::middleware('guest:web')->group(function () {
             Route::get('/login', [LoginController::class, 'show'])->name('login');
             Route::post('/login', [LoginController::class, 'submit'])->name('login.submit');

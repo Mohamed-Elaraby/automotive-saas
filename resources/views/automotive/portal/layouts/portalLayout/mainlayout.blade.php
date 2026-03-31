@@ -2,7 +2,6 @@
 
 @php
     $isPortalGuestRoute = Route::is([
-        'automotive.get-started',
         'automotive.login',
         'automotive.register',
     ]);
@@ -36,7 +35,7 @@
     <html lang="en" data-layout="without-header">
 @endif
 
-@component('automotive.layouts.portalLayout.components.title-meta')
+@component('automotive.portal.layouts.portalLayout.components.title-meta')
 @endcomponent
 
 @if (!Route::is([
@@ -149,7 +148,7 @@
     'flight-booking-invoice',
     'restaurants-invoice'
 ]) && ! $isPortalGuestRoute)
-    @include('automotive.layouts.portalLayout.partials.header')
+    @include('automotive.portal.layouts.portalLayout.partials.header')
 @endif
 
 @if(!Route::is([
@@ -198,16 +197,16 @@
     'flight-booking-invoice',
     'restaurants-invoice'
 ]) && ! $isPortalGuestRoute)
-    @include('automotive.layouts.portalLayout.partials.sidebar')
+    @include('automotive.portal.layouts.portalLayout.partials.sidebar')
 @endif
 
 @php($page = $page ?? '')
 @yield('content')
 
-@component('automotive.layouts.portalLayout.components.modal-popup')
+@component('automotive.portal.layouts.portalLayout.components.modal-popup')
 @endcomponent
 </div>
 
-@include('automotive.layouts.portalLayout.partials.footer-scripts')
+@include('automotive.portal.layouts.portalLayout.partials.footer-scripts')
 </body>
 </html>
