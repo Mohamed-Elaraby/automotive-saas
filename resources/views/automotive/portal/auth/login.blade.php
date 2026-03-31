@@ -1,75 +1,99 @@
-@extends('automotive.portal.layouts.auth')
-
-@section('title', 'Customer Portal Login - Automotive SaaS')
-
-@section('auth-styles')
-    .card {
-        max-width: 460px;
-    }
-    .remember {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 18px;
-        color: #374151;
-        font-size: 14px;
-    }
-    .footer-link {
-        margin-top: 18px;
-        text-align: center;
-        color: #6b7280;
-        font-size: 14px;
-    }
-    .footer-link a {
-        color: #1d4ed8;
-    }
-@endsection
+<?php $page = 'automotive/portal/login'; ?>
+@extends('automotive.layouts.portalLayout.mainlayout')
 
 @section('content')
-    <div class="wrapper">
-        <div class="card">
-            <h1>Customer Portal Login</h1>
-            <p>Sign in to continue to your Automotive customer portal.</p>
+    <div class="container-fuild">
+        <div class="w-100 overflow-hidden position-relative flex-wrap d-block vh-100">
+            <div class="row justify-content-center align-items-center vh-100 overflow-auto flex-wrap ">
+                <div class="col-lg-4 mx-auto">
+                    <form method="POST" action="{{ route('automotive.login.submit') }}" class="d-flex justify-content-center align-items-center">
+                        @csrf
 
-            @if (session('success'))
-                <div class="success">
-                    {{ session('success') }}
+                        <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
+                            <div class="mx-auto mb-5 text-center">
+                                Automotive Customer Portal
+                            </div>
+
+                            <div class="card border-0 p-lg-3 shadow-lg">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <h5 class="mb-2">Sign In</h5>
+                                        <p class="mb-0">Sign in to continue to your Automotive customer portal</p>
+                                    </div>
+
+                                    @if(session('success'))
+                                        <div class="alert alert-success mb-3">{{ session('success') }}</div>
+                                    @endif
+
+                                    @if($errors->any())
+                                        <div class="alert alert-danger mb-3">
+                                            <ul class="mb-0 ps-3">
+                                                @foreach($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Business Email</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-sms-notification"></i>
+                                            </span>
+                                            <input
+                                                id="email"
+                                                type="email"
+                                                name="email"
+                                                value="{{ old('email') }}"
+                                                class="form-control border-start-0 ps-0"
+                                                placeholder="Enter Email Address"
+                                                required
+                                                autofocus
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Password</label>
+                                        <div class="pass-group input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-lock"></i>
+                                            </span>
+                                            <span class="isax toggle-password isax-eye-slash"></span>
+                                            <input
+                                                id="password"
+                                                type="password"
+                                                name="password"
+                                                class="pass-inputs form-control border-start-0 ps-0"
+                                                placeholder="****************"
+                                                required
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="form-check form-check-md mb-0">
+                                            <input class="form-check-input" id="remember" name="remember" type="checkbox" value="1" {{ old('remember') ? 'checked' : '' }}>
+                                            <label for="remember" class="form-check-label mt-0">Remember Me</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-1">
+                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">Sign In To Portal</button>
+                                    </div>
+
+                                    <div class="text-center mt-3">
+                                        <h6 class="fw-normal fs-14 text-dark mb-0">
+                                            Need an account?
+                                            <a href="{{ route('automotive.register') }}" class="hover-a"> Create one here</a>
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            @endif
-
-            @if ($errors->any())
-                <div class="error">
-                    <strong>Unable to sign in.</strong>
-                    <div style="margin-top:8px;">{{ $errors->first() }}</div>
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('automotive.login.submit') }}">
-                @csrf
-
-                <div class="form-group">
-                    <label for="email">Business Email</label>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus>
-                    @error('email') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input id="password" type="password" name="password" required>
-                    @error('password') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <label class="remember" for="remember">
-                    <input id="remember" type="checkbox" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
-                    <span>Remember me</span>
-                </label>
-
-                <button type="submit">Sign In To Portal</button>
-            </form>
-
-            <div class="footer-link">
-                Need an account?
-                <a href="{{ route('automotive.register') }}">Create one here</a>
             </div>
         </div>
     </div>

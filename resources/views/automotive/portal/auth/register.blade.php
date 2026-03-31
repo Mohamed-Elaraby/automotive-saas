@@ -1,133 +1,124 @@
-@extends('automotive.portal.layouts.auth')
-
-@section('title', 'Create Account - Automotive SaaS')
-
-@section('auth-styles')
-    .card {
-        max-width: 520px;
-    }
-    .secondary-button {
-        width: auto;
-        padding: 12px 16px;
-        font-size: 14px;
-        background: #0f766e;
-    }
-    .hint {
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 6px;
-    }
-    .inline-row {
-        display: flex;
-        gap: 10px;
-        align-items: stretch;
-    }
-    .inline-row input {
-        flex: 1;
-    }
-    .coupon-preview {
-        margin-top: 12px;
-        border-radius: 10px;
-        padding: 12px 14px;
-        font-size: 14px;
-        display: none;
-    }
-    .coupon-preview.success {
-        display: block;
-        background: #ecfdf5;
-        color: #065f46;
-        border: 1px solid #a7f3d0;
-    }
-    .coupon-preview.error {
-        display: block;
-        background: #fef2f2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-    }
-    .coupon-preview .meta {
-        margin-top: 8px;
-        font-size: 13px;
-        color: inherit;
-        line-height: 1.6;
-    }
-    .coupon-preview ul {
-        margin: 8px 0 0;
-        padding-left: 18px;
-    }
-@endsection
+<?php $page = 'automotive/portal/register'; ?>
+@extends('automotive.layouts.portalLayout.mainlayout')
 
 @section('content')
-    <div class="wrapper">
-        <div class="card">
-            <h1>Create Your Customer Portal Account</h1>
-            <p>Register first, reserve your preferred subdomain, then continue from the customer portal to start a free trial or choose a paid plan.</p>
+    <div class="container-fuild">
+        <div class="w-100 overflow-hidden position-relative flex-wrap d-block vh-100">
+            <div class="row justify-content-center align-items-center vh-100 overflow-auto flex-wrap">
+                <div class="col-lg-5 mx-auto">
+                    <form method="POST" action="{{ route('automotive.register.submit') }}" class="d-flex justify-content-center align-items-center">
+                        @csrf
 
-            @if ($errors->any())
-                <div class="error">
-                    <strong>Please review the form.</strong>
-                    @if ($errors->has('register'))
-                        <div style="margin-top:8px;">{{ $errors->first('register') }}</div>
-                    @endif
+                        <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pt-lg-4 pb-0 flex-fill">
+                            <div class="mx-auto mb-5 text-center">
+                                Automotive Customer Portal
+                            </div>
+
+                            <div class="card border-0 p-lg-3 shadow-lg rounded-2">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <h5 class="mb-2">Create Account</h5>
+                                        <p class="mb-0">Register first, reserve your preferred subdomain, then continue from the portal</p>
+                                    </div>
+
+                                    @if($errors->any())
+                                        <div class="alert alert-danger mb-3">
+                                            <ul class="mb-0 ps-3">
+                                                @foreach($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Full Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-user"></i>
+                                            </span>
+                                            <input id="name" type="text" name="name" value="{{ old('name') }}" class="form-control border-start-0 ps-0" placeholder="Enter Full Name" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Business Email</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-sms-notification"></i>
+                                            </span>
+                                            <input id="email" type="email" name="email" value="{{ old('email') }}" class="form-control border-start-0 ps-0" placeholder="Enter Email Address" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Company Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-buildings"></i>
+                                            </span>
+                                            <input id="company_name" type="text" name="company_name" value="{{ old('company_name') }}" class="form-control border-start-0 ps-0" placeholder="Enter Company Name" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Subdomain</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-global"></i>
+                                            </span>
+                                            <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" class="form-control border-start-0 ps-0" placeholder="Enter Preferred Subdomain" required>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">Example: mido -> mido.automotive.seven-scapital.com</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Coupon Code</label>
+                                        <div class="d-flex gap-2">
+                                            <input id="coupon_code" type="text" name="coupon_code" value="{{ old('coupon_code') }}" class="form-control" placeholder="Optional coupon code">
+                                            <button type="button" id="checkCouponButton" class="btn btn-outline-primary flex-shrink-0 w-auto">Check Coupon</button>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">Optional. If valid for trial reservation, it will be stored on your account and reused later from the portal.</small>
+                                        <div id="couponPreviewBox" class="mt-3"></div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Password</label>
+                                        <div class="pass-group input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-lock"></i>
+                                            </span>
+                                            <span class="isax toggle-password isax-eye-slash"></span>
+                                            <input id="password" type="password" name="password" class="pass-input form-control border-start-0 ps-0" placeholder="****************" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Confirm Password</label>
+                                        <div class="pass-group input-group">
+                                            <span class="input-group-text border-end-0">
+                                                <i class="isax isax-lock"></i>
+                                            </span>
+                                            <span class="isax toggle-passwords isax-eye-slash"></span>
+                                            <input id="password_confirmation" type="password" name="password_confirmation" class="pass-input form-control border-start-0 ps-0" placeholder="****************" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-1">
+                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">Create Account &amp; Continue</button>
+                                    </div>
+
+                                    <div class="text-center mt-3">
+                                        <h6 class="fw-normal fs-14 text-dark mb-0">
+                                            Already have an account?
+                                            <a href="{{ route('automotive.login') }}" class="hover-a"> Sign in to your portal</a>
+                                        </h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            @endif
-
-            <form method="POST" action="{{ route('automotive.register.submit') }}">
-                @csrf
-
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input id="name" type="text" name="name" value="{{ old('name') }}" required>
-                    @error('name') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Business Email</label>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required>
-                    @error('email') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="company_name">Company Name</label>
-                    <input id="company_name" type="text" name="company_name" value="{{ old('company_name') }}" required>
-                    @error('company_name') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="subdomain">Subdomain</label>
-                    <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" required>
-                    <div class="hint">Example: mido -> mido.automotive.seven-scapital.com</div>
-                    @error('subdomain') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="coupon_code">Coupon Code</label>
-                    <div class="inline-row">
-                        <input id="coupon_code" type="text" name="coupon_code" value="{{ old('coupon_code') }}" placeholder="Optional coupon code">
-                        <button type="button" id="checkCouponButton" class="secondary-button">Check Coupon</button>
-                    </div>
-                    <div class="hint">Optional. If valid for trial reservation, it will be stored on your account and reused later from the portal.</div>
-                    @error('coupon_code') <div class="field-error">{{ $message }}</div> @enderror
-
-                    <div id="couponPreviewBox" class="coupon-preview"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input id="password" type="password" name="password" required>
-                    @error('password') <div class="field-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="password_confirmation">Confirm Password</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" required>
-                </div>
-
-                <button type="submit">Create Account &amp; Continue</button>
-            </form>
-
-            <div class="hint" style="margin-top:18px; text-align:center;">
-                Already have an account?
-                <a href="{{ route('automotive.login') }}" style="color:#1d4ed8;">Sign in to your portal</a>
             </div>
         </div>
     </div>
@@ -141,7 +132,9 @@
             const csrfToken = document.querySelector('input[name="_token"]')?.value ?? '';
 
             function showPreview(type, html) {
-                previewBox.className = 'coupon-preview ' + type;
+                previewBox.className = type === 'success'
+                    ? 'alert alert-success mb-0'
+                    : 'alert alert-danger mb-0';
                 previewBox.innerHTML = html;
             }
 
@@ -150,7 +143,7 @@
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
-                    .replace(/\"/g, '&quot;')
+                    .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#039;');
             }
 
@@ -191,7 +184,7 @@
 
                         const html = `
                             <strong>${escapeHtml(data.message || 'Coupon is valid.')}</strong>
-                            <div class="meta">
+                            <div class="mt-2">
                                 <div><strong>Coupon:</strong> ${escapeHtml(coupon.code || '')}</div>
                                 <div><strong>Name:</strong> ${escapeHtml(coupon.name || '')}</div>
                                 <div><strong>Discount:</strong> ${escapeHtml(discountLabel)}</div>
@@ -210,7 +203,7 @@
                         let html = `<strong>${escapeHtml(genericMessage)}</strong>`;
 
                         if (couponErrors.length > 0) {
-                            html += '<ul>' + couponErrors.map(error => `<li>${escapeHtml(error)}</li>`).join('') + '</ul>';
+                            html += '<ul class="mb-0 mt-2 ps-3">' + couponErrors.map(error => `<li>${escapeHtml(error)}</li>`).join('') + '</ul>';
                         }
 
                         showPreview('error', html);
