@@ -1,5 +1,5 @@
 <?php $page = 'login'; ?>
-@extends('layout.mainlayout')
+@extends('admin.layouts.centralLayout.mainlayout')
 
 @section('content')
     <div class="container-fuild">
