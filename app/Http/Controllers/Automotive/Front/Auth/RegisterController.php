@@ -27,7 +27,7 @@ class RegisterController extends Controller
 
 public function show()
 {
-    return view('automotive.front.auth.register');
+    return view('automotive.portal.auth.register');
 }
 
 public function previewCoupon(

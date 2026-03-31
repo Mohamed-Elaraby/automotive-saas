@@ -15,7 +15,7 @@ class EntryController extends Controller
 
 public function index(): View
 {
-    return view('automotive.front.entry', [
+    return view('automotive.portal.entry', [
         'freeTrialEnabled' => $this->settingsService->freeTrialEnabled(),
     ]);
 }

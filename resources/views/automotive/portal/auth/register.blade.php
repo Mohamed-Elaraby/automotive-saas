@@ -1,4 +1,4 @@
-@extends('automotive.front.layouts.auth')
+@extends('automotive.portal.layouts.auth')
 
 @section('title', 'Create Account - Automotive SaaS')
 
@@ -150,7 +150,7 @@
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
+                    .replace(/\"/g, '&quot;')
                     .replace(/'/g, '&#039;');
             }
 

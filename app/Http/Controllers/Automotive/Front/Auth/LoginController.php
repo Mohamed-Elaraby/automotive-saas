@@ -16,7 +16,7 @@ class LoginController extends Controller
             return redirect()->route('automotive.portal');
         }
 
-        return view('automotive.front.auth.login');
+        return view('automotive.portal.auth.login');
     }
 
     public function submit(Request $request): RedirectResponse

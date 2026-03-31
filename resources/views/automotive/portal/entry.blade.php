@@ -1,4 +1,4 @@
-@extends('automotive.front.layouts.public')
+@extends('automotive.portal.layouts.base')
 
 @section('title', 'Get Started - Automotive SaaS')
 

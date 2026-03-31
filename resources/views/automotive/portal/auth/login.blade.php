@@ -1,4 +1,4 @@
-@extends('automotive.front.layouts.auth')
+@extends('automotive.portal.layouts.auth')
 
 @section('title', 'Customer Portal Login - Automotive SaaS')
 

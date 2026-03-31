@@ -67,7 +67,7 @@ class CustomerPortalController extends Controller
         $canStartPaidCheckout = ! $hasLiveStripeSubscription
             && (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE;
 
-        return view('automotive.front.portal', [
+        return view('automotive.portal.index', [
             'user' => $user,
             'profile' => $profile,
             'subscription' => $subscription,
