@@ -2,12 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Admin;
+use App\Services\Admin\CentralAdminBootstrapService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class BootstrapCentralAdminCommand extends Command
 {
@@ -15,53 +11,27 @@ class BootstrapCentralAdminCommand extends Command
 
     protected $description = 'Create the first central admin from environment variables if no admins exist';
 
-    public function handle(): int
+    public function handle(CentralAdminBootstrapService $bootstrapService): int
     {
-        $connection = (new Admin())->getConnectionName() ?? config('database.default');
+        $result = $bootstrapService->bootstrapFromEnv();
 
-        if (! Schema::connection($connection)->hasTable('admins')) {
-            $this->error('The admins table does not exist yet. Run migrations first.');
+        if (! ($result['ok'] ?? false)) {
+            $this->error((string) ($result['message'] ?? 'Central admin bootstrap failed.'));
 
-            return self::FAILURE;
-        }
-
-        if (Admin::query()->exists()) {
-            $this->info('Central admin bootstrap skipped because admins already exist.');
-
-            return self::SUCCESS;
-        }
-
-        $payload = [
-            'name' => trim((string) env('CENTRAL_ADMIN_NAME')),
-            'email' => strtolower(trim((string) env('CENTRAL_ADMIN_EMAIL'))),
-            'password' => (string) env('CENTRAL_ADMIN_PASSWORD'),
-        ];
-
-        $validator = Validator::make($payload, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email:rfc', 'max:255', 'unique:admins,email'],
-            'password' => ['required', 'string', Password::min(8)],
-        ]);
-
-        if ($validator->fails()) {
-            $this->error('Central admin bootstrap failed because the env configuration is incomplete or invalid.');
-
-            foreach ($validator->errors()->all() as $error) {
+            foreach (($result['errors'] ?? []) as $error) {
                 $this->line('- ' . $error);
             }
 
             return self::FAILURE;
         }
 
-        $admin = Admin::query()->create([
-            'name' => $payload['name'],
-            'email' => $payload['email'],
-            'password' => Hash::make($payload['password']),
-        ]);
+        $this->info((string) ($result['message'] ?? 'Central admin bootstrap completed successfully.'));
 
-        $this->info('Central admin bootstrap completed successfully.');
-        $this->line('Admin ID: ' . $admin->id);
-        $this->line('Email: ' . $admin->email);
+        if (! empty($result['created']) && ! empty($result['admin'])) {
+            $admin = $result['admin'];
+            $this->line('Admin ID: ' . $admin->id);
+            $this->line('Email: ' . $admin->email);
+        }
 
         return self::SUCCESS;
     }
