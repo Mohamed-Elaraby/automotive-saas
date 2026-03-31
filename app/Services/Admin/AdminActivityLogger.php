@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\AdminActivityLog;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 class AdminActivityLogger
 {
@@ -15,7 +16,7 @@ class AdminActivityLogger
         ?string $tenantId = null,
         array $contextPayload = []
     ): AdminActivityLog {
-        $admin = Auth::guard('admin')->user();
+        $admin = $this->resolveAdminUser();
 
         return AdminActivityLog::query()->create([
             'admin_user_id' => $this->adminUserId($admin),
@@ -26,6 +27,30 @@ class AdminActivityLogger
             'tenant_id' => $tenantId,
             'context_payload' => $contextPayload,
         ]);
+    }
+
+    protected function resolveAdminUser(): mixed
+    {
+        $admin = Auth::guard('admin')->user();
+
+        if ($admin instanceof Authenticatable) {
+            return $admin;
+        }
+
+        $requestAdmin = request()?->user('admin');
+        if ($requestAdmin instanceof Authenticatable) {
+            return $requestAdmin;
+        }
+
+        if (request()?->routeIs('admin.*') || Route::is('admin.*')) {
+            $legacyAdmin = Auth::guard('web')->user();
+
+            if ($legacyAdmin instanceof Authenticatable) {
+                return $legacyAdmin;
+            }
+        }
+
+        return null;
     }
 
     protected function adminUserId(mixed $admin): ?int
