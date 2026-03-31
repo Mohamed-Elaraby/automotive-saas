@@ -161,8 +161,8 @@
                                     <img src="{{ url('theme/img/profiles/avatar-01.jpg') }}" alt="img" class="rounded-circle">
                                 </span>
                                 <div>
-                                    <h6 class="fs-14 fw-medium mb-1">{{ auth()->user()?->name ?? 'Admin User' }}</h6>
-                                    <p class="fs-13">{{ auth()->user()?->email ?? 'Administrator' }}</p>
+                                    <h6 class="fs-14 fw-medium mb-1">{{ auth('admin')->user()?->name ?? 'Admin User' }}</h6>
+                                    <p class="fs-13">{{ auth('admin')->user()?->email ?? 'Administrator' }}</p>
                                 </div>
                             </div>
 
@@ -181,17 +181,17 @@
 
                             <hr class="dropdown-divider my-2">
 
-                            @if(auth()->check())
-                                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('logout') }}"
+                            @if(auth('admin')->check())
+                                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.logout') }}"
                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="isax isax-logout me-2"></i>Sign Out
                                 </a>
 
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" class="d-none">
                                     @csrf
                                 </form>
                             @else
-                                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('login') }}">
+                                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.login') }}">
                                     <i class="isax isax-logout me-2"></i>Sign In
                                 </a>
                             @endif
@@ -218,17 +218,17 @@
                 <i class="isax isax-document-text me-2"></i>Plans
             </a>
 
-            @if(auth()->check())
-                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('logout') }}"
+            @if(auth('admin')->check())
+                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.logout') }}"
                    onclick="event.preventDefault(); document.getElementById('mobile-logout-form').submit();">
                     <i class="isax isax-logout me-2"></i>Sign Out
                 </a>
 
-                <form id="mobile-logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                <form id="mobile-logout-form" action="{{ route('admin.logout') }}" method="POST" class="d-none">
                     @csrf
                 </form>
             @else
-                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('login') }}">
+                <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.login') }}">
                     <i class="isax isax-logout me-2"></i>Sign In
                 </a>
             @endif
