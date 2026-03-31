@@ -36,7 +36,7 @@
     <html lang="en" data-layout="without-header">
 @endif
 
-@component('automotive.layouts.components.title-meta')
+@component('automotive.layouts.portalLayout.components.title-meta')
 @endcomponent
 
 @if (!Route::is([
@@ -149,7 +149,7 @@
     'flight-booking-invoice',
     'restaurants-invoice'
 ]) && ! $isPortalGuestRoute)
-    @include('layout.partials.header')
+    @include('automotive.layouts.portalLayout.partials.header')
 @endif
 
 @if(!Route::is([
@@ -198,16 +198,16 @@
     'flight-booking-invoice',
     'restaurants-invoice'
 ]) && ! $isPortalGuestRoute)
-    @include('layout.partials.sidebar')
+    @include('automotive.layouts.portalLayout.partials.sidebar')
 @endif
 
 @php($page = $page ?? '')
 @yield('content')
 
-@component('components.modal-popup')
+@component('automotive.layouts.portalLayout.components.modal-popup')
 @endcomponent
 </div>
 
-@include('layout.partials.footer-scripts')
+@include('automotive.layouts.portalLayout.partials.footer-scripts')
 </body>
 </html>

@@ -381,7 +381,7 @@
                 </div>
             </div>
 
-            @component('components.footer')
+            @component('automotive.layouts.portalLayout.components.footer')
             @endcomponent
         </div>
     </div>
