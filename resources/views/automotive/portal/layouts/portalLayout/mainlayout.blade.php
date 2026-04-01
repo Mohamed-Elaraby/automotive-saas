@@ -3,6 +3,8 @@
 @php
     $isPortalGuestRoute = Route::is([
         'automotive.login',
+        'automotive.password.request',
+        'automotive.password.reset',
         'automotive.register',
     ]);
 @endphp

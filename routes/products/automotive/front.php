@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Automotive\Front\Auth\LoginController;
+use App\Http\Controllers\Automotive\Front\Auth\ForgotPasswordController;
 use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
+use App\Http\Controllers\Automotive\Front\Auth\ResetPasswordController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalController;
 use App\Http\Controllers\Automotive\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +14,11 @@ Route::prefix('automotive')
         Route::middleware('guest:web')->group(function () {
             Route::get('/login', [LoginController::class, 'show'])->name('login');
             Route::post('/login', [LoginController::class, 'submit'])->name('login.submit');
+
+            Route::get('/password/reset', [ForgotPasswordController::class, 'show'])->name('password.request');
+            Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+            Route::get('/password/reset/{token}', [ResetPasswordController::class, 'show'])->name('password.reset');
+            Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
 
             Route::get('/register', [RegisterController::class, 'show'])->name('register');
             Route::post('/register', [RegisterController::class, 'submit'])->name('register.submit');

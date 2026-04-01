@@ -1,5 +1,5 @@
 <?php $page = 'automotive/portal/login'; ?>
-@extends('automotive.layouts.portalLayout.mainlayout')
+@extends('automotive.portal.layouts.portalLayout.mainlayout')
 
 @section('content')
     <div class="container-fuild">
@@ -76,6 +76,10 @@
                                         <div class="form-check form-check-md mb-0">
                                             <input class="form-check-input" id="remember" name="remember" type="checkbox" value="1" {{ old('remember') ? 'checked' : '' }}>
                                             <label for="remember" class="form-check-label mt-0">Remember Me</label>
+                                        </div>
+
+                                        <div class="text-end">
+                                            <a href="{{ route('automotive.password.request') }}">Forgot Password?</a>
                                         </div>
                                     </div>
 
