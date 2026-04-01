@@ -46,7 +46,7 @@
         </a>
 
         <div class="header-user">
-            <div class="nav user-menu nav-list">
+            <div class="nav user-menu nav-list flex-wrap">
                 <div class="me-auto d-flex align-items-center" id="header-search">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb breadcrumb-divide mb-0">
@@ -59,6 +59,26 @@
                         </ol>
                     </nav>
                 </div>
+
+                @if($isTenantAdminImpersonating)
+                    <div class="alert alert-warning border-0 py-2 px-3 mb-0 me-3 d-flex align-items-center flex-wrap gap-2">
+                        <div class="fw-medium">
+                            Impersonation Mode:
+                            <span class="fw-normal">
+                                {{ $tenantAdminImpersonation['central_admin_email'] ?? 'unknown' }}
+                                as
+                                {{ $tenantAdminImpersonation['tenant_user_email'] ?? ($tenantAdminUser?->email ?? 'tenant user') }}
+                            </span>
+                        </div>
+
+                        <form method="POST" action="{{ route('automotive.admin.stop-impersonation') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-dark">
+                                Stop
+                            </button>
+                        </form>
+                    </div>
+                @endif
 
                 <div class="d-flex align-items-center">
                     <div class="me-2 theme-item">
@@ -144,24 +164,3 @@
     </div>
 </div>
 <!-- Topbar End -->
-
-@if($isTenantAdminImpersonating)
-    <div class="alert alert-warning rounded-0 border-0 mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-            <strong>Impersonation Mode</strong>
-            <span class="ms-2">
-                Central admin
-                <strong>{{ $tenantAdminImpersonation['central_admin_email'] ?? 'unknown' }}</strong>
-                is impersonating
-                <strong>{{ $tenantAdminImpersonation['tenant_user_email'] ?? ($tenantAdminUser?->email ?? 'tenant user') }}</strong>.
-            </span>
-        </div>
-
-        <form method="POST" action="{{ route('automotive.admin.stop-impersonation') }}">
-            @csrf
-            <button type="submit" class="btn btn-sm btn-dark">
-                Stop Impersonation
-            </button>
-        </form>
-    </div>
-@endif
