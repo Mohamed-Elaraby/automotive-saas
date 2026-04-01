@@ -30,7 +30,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect('/automotive/admin/dashboard');
+        return redirect()->route('automotive.admin.dashboard');
     }
 
     public function logout(Request $request)
@@ -40,6 +40,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/automotive/admin/login');
+        return redirect()->route('automotive.admin.login');
     }
 }
