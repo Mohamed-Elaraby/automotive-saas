@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
+use App\Services\Admin\TenantImpersonationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -183,7 +184,11 @@ class AdminTenantDeletionTest extends TestCase
                     && ($contextPayload['tenant_id'] ?? null) === $tenant->id;
             });
 
-        $controller = new TenantController($lifecycleService, $activityLogger);
+        $controller = new TenantController(
+            $lifecycleService,
+            $activityLogger,
+            Mockery::mock(TenantImpersonationService::class)
+        );
 
         $response = $controller->destroy($tenant->id);
 

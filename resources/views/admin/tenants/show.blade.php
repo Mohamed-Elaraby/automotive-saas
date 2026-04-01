@@ -33,6 +33,15 @@
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Back</a>
 
+                    @if(!empty($row['admin_login_url']))
+                        <form method="POST" action="{{ route('admin.tenants.impersonate', $row['tenant_id'] ?? $tenant->getKey()) }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-warning">
+                                Impersonate Tenant Admin
+                            </button>
+                        </form>
+                    @endif
+
                     @if(!empty($row['subscription_show_url']))
                         <a href="{{ $row['subscription_show_url'] }}" class="btn btn-primary">Open Subscription</a>
                     @endif

@@ -1,5 +1,7 @@
 @php
     $tenantAdminUser = auth('automotive_admin')->user();
+    $tenantAdminImpersonation = session('tenant_admin_impersonation', []);
+    $isTenantAdminImpersonating = is_array($tenantAdminImpersonation) && ($tenantAdminImpersonation['active'] ?? false);
 
     $tenantAdminRouteLabels = [
         'automotive.admin.dashboard' => 'Dashboard',
@@ -142,3 +144,24 @@
     </div>
 </div>
 <!-- Topbar End -->
+
+@if($isTenantAdminImpersonating)
+    <div class="alert alert-warning rounded-0 border-0 mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <strong>Impersonation Mode</strong>
+            <span class="ms-2">
+                Central admin
+                <strong>{{ $tenantAdminImpersonation['central_admin_email'] ?? 'unknown' }}</strong>
+                is impersonating
+                <strong>{{ $tenantAdminImpersonation['tenant_user_email'] ?? ($tenantAdminUser?->email ?? 'tenant user') }}</strong>.
+            </span>
+        </div>
+
+        <form method="POST" action="{{ route('automotive.admin.stop-impersonation') }}">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-dark">
+                Stop Impersonation
+            </button>
+        </form>
+    </div>
+@endif

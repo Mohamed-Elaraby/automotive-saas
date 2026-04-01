@@ -13,6 +13,7 @@ Route::prefix('admin')
                 Route::get('/', [TenantController::class, 'index'])->name('index');
                 Route::get('/{tenantId}', [TenantController::class, 'show'])->name('show');
 
+                Route::post('/{tenantId}/impersonate', [TenantController::class, 'impersonate'])->name('impersonate');
                 Route::post('/{tenantId}/suspend', [TenantController::class, 'suspend'])->name('suspend');
                 Route::post('/{tenantId}/activate', [TenantController::class, 'activate'])->name('activate');
                 Route::post('/{tenantId}/extend-trial', [TenantController::class, 'extendTrial'])->name('extend-trial');

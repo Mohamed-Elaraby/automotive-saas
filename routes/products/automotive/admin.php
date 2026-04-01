@@ -19,6 +19,8 @@ Route::prefix('automotive/admin')
             return response()->view('automotive.admin.auth.subscription-expired');
         })->name('subscription.expired');
 
+        Route::get('/impersonate/{token}', [AuthController::class, 'impersonate'])->name('impersonate');
+
         Route::middleware('guest:automotive_admin')->group(function () {
             Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
             Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
@@ -27,6 +29,10 @@ Route::prefix('automotive/admin')
         Route::post('/logout', [AuthController::class, 'logout'])
             ->middleware('auth:automotive_admin')
             ->name('logout');
+
+        Route::post('/stop-impersonation', [AuthController::class, 'stopImpersonation'])
+            ->middleware('auth:automotive_admin')
+            ->name('stop-impersonation');
 
         Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

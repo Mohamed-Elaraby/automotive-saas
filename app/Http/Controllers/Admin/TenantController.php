@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
+use App\Services\Admin\TenantImpersonationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,8 @@ class TenantController extends Controller
 {
     public function __construct(
         protected AdminTenantLifecycleService $lifecycleService,
-        protected AdminActivityLogger $activityLogger
+        protected AdminActivityLogger $activityLogger,
+        protected TenantImpersonationService $tenantImpersonationService
     ) {
     }
 
@@ -290,6 +292,31 @@ public function destroy(string $tenantId): RedirectResponse
         return redirect()
             ->route('admin.tenants.index')
             ->with('success', 'The tenant and its linked central records were deleted successfully.');
+    } catch (RuntimeException $exception) {
+        return redirect()
+            ->route('admin.tenants.show', $tenantId)
+            ->with('error', $exception->getMessage());
+    }
+}
+
+public function impersonate(string $tenantId): RedirectResponse
+{
+    $this->findTenantOrFail($tenantId);
+
+    try {
+        $redirectUrl = $this->tenantImpersonationService->start($tenantId);
+
+        $this->activityLogger->log(
+            action: 'tenant.impersonation.started',
+            subjectType: 'tenant',
+            subjectId: $tenantId,
+            tenantId: $tenantId,
+            contextPayload: [
+                'redirect_url' => $redirectUrl,
+            ]
+        );
+
+        return redirect()->away($redirectUrl);
     } catch (RuntimeException $exception) {
         return redirect()
             ->route('admin.tenants.show', $tenantId)
