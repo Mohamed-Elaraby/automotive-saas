@@ -17,6 +17,10 @@ class Authenticate extends Middleware
             return url('/automotive/admin/login');
         }
 
+        if ($request->routeIs('automotive.*')) {
+            return url('/automotive/login');
+        }
+
         if ($request->routeIs('admin.*')) {
             return url('/admin/login');
         }
