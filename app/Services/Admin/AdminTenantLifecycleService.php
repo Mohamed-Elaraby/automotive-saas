@@ -128,6 +128,7 @@ class AdminTenantLifecycleService
             'billing_period',
             'price',
             in_array('currency_code', $columns, true) ? 'currency_code' : null,
+            in_array('currency', $columns, true) ? 'currency' : null,
             'is_active',
         ]));
 

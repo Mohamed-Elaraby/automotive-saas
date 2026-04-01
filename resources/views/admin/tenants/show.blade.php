@@ -196,7 +196,7 @@
                                                     $periodLabel = $plan->billing_period ? strtoupper($plan->billing_period) : 'N/A';
                                                     $activeLabel = (int) ($plan->is_active ?? 0) === 1 ? 'Active' : 'Inactive';
                                                     $priceLabel = isset($plan->price) ? $plan->price : null;
-                                                    $currencyLabel = $plan->currency_code ?: '';
+                                                    $currencyLabel = $plan->currency_code ?? $plan->currency ?? '';
                                                 @endphp
                                                 <option value="{{ $plan->id }}" @selected((int) ($subscription['plan_id'] ?? 0) === (int) $plan->id)>
                                                 {{ $planLabel }} | {{ $periodLabel }} | {{ $priceLabel !== null ? $priceLabel : '-' }} {{ $currencyLabel }} | {{ $activeLabel }}
