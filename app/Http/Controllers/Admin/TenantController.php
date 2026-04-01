@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -40,17 +41,28 @@ public function index(Request $request): View
     $filters = [
         'q' => trim((string) $request->input('q', '')),
         'status' => trim((string) $request->input('status', '')),
+        'plan_id' => trim((string) $request->input('plan_id', '')),
+        'gateway' => trim((string) $request->input('gateway', '')),
+        'has_domain' => trim((string) $request->input('has_domain', '')),
+        'created_from' => trim((string) $request->input('created_from', '')),
+        'created_to' => trim((string) $request->input('created_to', '')),
     ];
 
     $matchingIdsFromDomain = [];
+    $matchingIdsFromOwnerOrCompany = [];
     if ($filters['q'] !== '') {
         $matchingIdsFromDomain = $this->matchingTenantIdsByDomain($filters['q']);
+        $matchingIdsFromOwnerOrCompany = $this->matchingTenantIdsByTenantData($filters['q']);
 
-        $query->where(function ($builder) use ($filters, $matchingIdsFromDomain) {
+        $query->where(function ($builder) use ($filters, $matchingIdsFromDomain, $matchingIdsFromOwnerOrCompany) {
             $builder->where('id', 'like', '%' . $filters['q'] . '%');
 
             if (! empty($matchingIdsFromDomain)) {
                 $builder->orWhereIn('id', $matchingIdsFromDomain);
+            }
+
+            if (! empty($matchingIdsFromOwnerOrCompany)) {
+                $builder->orWhereIn('id', $matchingIdsFromOwnerOrCompany);
             }
         });
     }
@@ -63,6 +75,46 @@ public function index(Request $request): View
         } else {
             $query->whereIn('id', $matchingIdsFromStatus);
         }
+    }
+
+    if ($filters['plan_id'] !== '') {
+        $matchingIdsFromPlan = $this->matchingTenantIdsByPlanId((int) $filters['plan_id']);
+
+        if (empty($matchingIdsFromPlan)) {
+            $query->whereRaw('1 = 0');
+        } else {
+            $query->whereIn('id', $matchingIdsFromPlan);
+        }
+    }
+
+    if ($filters['gateway'] !== '') {
+        $matchingIdsFromGateway = $this->matchingTenantIdsByGateway($filters['gateway']);
+
+        if (empty($matchingIdsFromGateway)) {
+            $query->whereRaw('1 = 0');
+        } else {
+            $query->whereIn('id', $matchingIdsFromGateway);
+        }
+    }
+
+    if ($filters['has_domain'] !== '') {
+        $matchingIdsFromHasDomain = $this->matchingTenantIdsByHasDomain($filters['has_domain'] === 'yes');
+
+        if ($filters['has_domain'] === 'yes' && empty($matchingIdsFromHasDomain)) {
+            $query->whereRaw('1 = 0');
+        } elseif ($filters['has_domain'] === 'yes') {
+            $query->whereIn('id', $matchingIdsFromHasDomain);
+        } elseif ($filters['has_domain'] === 'no' && ! empty($matchingIdsFromHasDomain)) {
+            $query->whereNotIn('id', $matchingIdsFromHasDomain);
+        }
+    }
+
+    if ($filters['created_from'] !== '' && $this->tenantTableHasColumn('created_at')) {
+        $query->where('created_at', '>=', Carbon::parse($filters['created_from'])->startOfDay());
+    }
+
+    if ($filters['created_to'] !== '' && $this->tenantTableHasColumn('created_at')) {
+        $query->where('created_at', '<=', Carbon::parse($filters['created_to'])->endOfDay());
     }
 
     if ($this->tenantTableHasColumn('created_at')) {
@@ -81,6 +133,10 @@ public function index(Request $request): View
         'tenantRows' => $tenantRows,
         'filters' => $filters,
         'stats' => $this->indexStats(),
+        'filterOptions' => [
+            'plans' => $this->filterPlans(),
+            'gateway_options' => $this->gatewayOptions(),
+        ],
     ]);
 }
 
@@ -409,6 +465,85 @@ protected function matchingTenantIdsBySubscriptionStatus(string $status): array
         ->all();
 }
 
+protected function matchingTenantIdsByPlanId(int $planId): array
+{
+    if (! $this->subscriptionsTableExists()) {
+        return [];
+    }
+
+    return DB::connection($this->centralConnectionName())
+        ->table('subscriptions')
+        ->where('plan_id', $planId)
+        ->pluck('tenant_id')
+        ->filter()
+        ->unique()
+        ->map(fn ($id) => (string) $id)
+        ->values()
+        ->all();
+}
+
+protected function matchingTenantIdsByGateway(string $gateway): array
+{
+    if (! $this->subscriptionsTableExists()) {
+        return [];
+    }
+
+    return DB::connection($this->centralConnectionName())
+        ->table('subscriptions')
+        ->where('gateway', $gateway)
+        ->pluck('tenant_id')
+        ->filter()
+        ->unique()
+        ->map(fn ($id) => (string) $id)
+        ->values()
+        ->all();
+}
+
+protected function matchingTenantIdsByHasDomain(bool $hasDomain): array
+{
+    if (! $this->domainsTableExists()) {
+        return [];
+    }
+
+    $ids = DB::connection($this->centralConnectionName())
+        ->table('domains')
+        ->pluck('tenant_id')
+        ->filter()
+        ->unique()
+        ->map(fn ($id) => (string) $id)
+        ->values()
+        ->all();
+
+    return $hasDomain ? $ids : [];
+}
+
+protected function matchingTenantIdsByTenantData(string $search): array
+{
+    $tenantModelClass = $this->tenantModelClass();
+
+    return $tenantModelClass::query()
+        ->get()
+        ->filter(function (Model $tenant) use ($search): bool {
+            $tenantData = $this->normalizedTenantData($tenant);
+            $haystacks = [
+                $this->firstFilledValue($tenantData, ['company_name', 'business_name', 'company', 'name']),
+                $this->firstFilledValue($tenantData, ['owner_email', 'admin_email', 'email']),
+                $this->firstFilledValue($tenantData, ['owner_name', 'admin_name', 'contact_name', 'name']),
+            ];
+
+            foreach ($haystacks as $value) {
+                if ($value !== null && stripos($value, $search) !== false) {
+                    return true;
+                }
+            }
+
+            return false;
+        })
+        ->map(fn (Model $tenant) => (string) $tenant->getKey())
+        ->values()
+        ->all();
+}
+
 /**
  * @param  Collection<int, Model>  $tenants
  * @return array<string, array<string, mixed>>
@@ -456,7 +591,10 @@ protected function buildTenantSummaries(Collection $tenants): array
             'subscription' => $subscription,
             'subscription_status' => $subscription['status'] ?? null,
             'plan_name' => $subscription['plan_name'] ?? null,
+            'plan_id' => $subscription['plan_id'] ?? null,
             'billing_period' => $subscription['billing_period'] ?? null,
+            'gateway' => $subscription['gateway'] ?? null,
+            'is_stripe_linked' => ! empty($subscription['gateway_subscription_id']) || ($subscription['gateway'] ?? null) === 'stripe',
             'subscription_show_url' => ! empty($subscription['id'])
                 ? route('admin.subscriptions.show', $subscription['id'])
                 : null,
@@ -728,5 +866,34 @@ protected function indexStats(): array
         'past_due_subscriptions' => $latestSubscriptions->filter(fn ($row) => ($row->status ?? null) === 'past_due')->count(),
         'suspended_subscriptions' => $latestSubscriptions->filter(fn ($row) => ($row->status ?? null) === 'suspended')->count(),
     ];
+}
+
+protected function filterPlans(): Collection
+{
+    return $this->lifecycleService->availablePlans()
+        ->map(function ($plan): array {
+            return [
+                'id' => (int) $plan->id,
+                'label' => (string) ($plan->name ?: $plan->slug ?: ('Plan #' . $plan->id)),
+            ];
+        });
+}
+
+protected function gatewayOptions(): array
+{
+    if (! $this->subscriptionsTableExists()) {
+        return [];
+    }
+
+    return DB::connection($this->centralConnectionName())
+        ->table('subscriptions')
+        ->whereNotNull('gateway')
+        ->where('gateway', '!=', '')
+        ->distinct()
+        ->orderBy('gateway')
+        ->pluck('gateway')
+        ->map(fn ($gateway) => (string) $gateway)
+        ->values()
+        ->all();
 }
 }

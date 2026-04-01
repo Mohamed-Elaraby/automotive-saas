@@ -24,6 +24,14 @@
                 default => 'bg-light text-dark',
             };
         };
+
+        $gatewayBadgeClass = function (?string $gateway): string {
+            return match ($gateway) {
+                'stripe' => 'bg-primary',
+                null, '' => 'bg-light text-dark',
+                default => 'bg-dark',
+            };
+        };
     @endphp
 
     <div class="page-wrapper">
@@ -95,18 +103,18 @@
                 <div class="card-body">
                     <form method="GET" action="{{ route('admin.tenants.index') }}">
                         <div class="row g-3">
-                            <div class="col-lg-7">
+                            <div class="col-xl-4 col-lg-6">
                                 <label class="form-label">Search</label>
                                 <input
                                     type="text"
                                     name="q"
                                     value="{{ $filters['q'] ?? '' }}"
                                     class="form-control"
-                                    placeholder="Search by tenant ID or domain"
+                                    placeholder="Tenant ID, domain, company, owner email"
                                 >
                             </div>
 
-                            <div class="col-lg-3">
+                            <div class="col-xl-2 col-lg-3">
                                 <label class="form-label">Subscription Status</label>
                                 <select name="status" class="form-select">
                                     @foreach($statusOptions as $value => $label)
@@ -115,9 +123,54 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-2 d-flex align-items-end">
+                            <div class="col-xl-2 col-lg-3">
+                                <label class="form-label">Plan</label>
+                                <select name="plan_id" class="form-select">
+                                    <option value="">All Plans</option>
+                                    @foreach(($filterOptions['plans'] ?? []) as $plan)
+                                        <option value="{{ $plan['id'] }}" @selected(($filters['plan_id'] ?? '') === (string) $plan['id'])>{{ $plan['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-xl-2 col-lg-3">
+                                <label class="form-label">Gateway</label>
+                                <select name="gateway" class="form-select">
+                                    <option value="">All Gateways</option>
+                                    @foreach(($filterOptions['gateway_options'] ?? []) as $gateway)
+                                        <option value="{{ $gateway }}" @selected(($filters['gateway'] ?? '') === $gateway)>{{ strtoupper($gateway) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-xl-2 col-lg-3">
+                                <label class="form-label">Has Domain</label>
+                                <select name="has_domain" class="form-select">
+                                    <option value="">All</option>
+                                    <option value="yes" @selected(($filters['has_domain'] ?? '') === 'yes')>Yes</option>
+                                    <option value="no" @selected(($filters['has_domain'] ?? '') === 'no')>No</option>
+                                </select>
+                            </div>
+
+                            <div class="col-xl-2 col-lg-3">
+                                <label class="form-label">Created From</label>
+                                <input type="date" name="created_from" value="{{ $filters['created_from'] ?? '' }}" class="form-control">
+                            </div>
+
+                            <div class="col-xl-2 col-lg-3">
+                                <label class="form-label">Created To</label>
+                                <input type="date" name="created_to" value="{{ $filters['created_to'] ?? '' }}" class="form-control">
+                            </div>
+
+                            <div class="col-xl-2 col-lg-3 d-flex align-items-end">
                                 <div class="d-grid w-100">
                                     <button type="submit" class="btn btn-primary">Apply Filters</button>
+                                </div>
+                            </div>
+
+                            <div class="col-xl-2 col-lg-3 d-flex align-items-end">
+                                <div class="d-grid w-100">
+                                    <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Reset</a>
                                 </div>
                             </div>
                         </div>
@@ -140,6 +193,7 @@
                                     <th>Owner/Admin</th>
                                     <th>Plan</th>
                                     <th>Status</th>
+                                    <th>Gateway</th>
                                     <th>Billing Period</th>
                                     <th>Created At</th>
                                     <th class="text-end">Actions</th>
@@ -185,6 +239,17 @@
                                             </span>
                                         </td>
 
+                                        <td>
+                                            <div class="d-flex flex-column gap-1">
+                                                <span class="badge {{ $gatewayBadgeClass($row['gateway'] ?? null) }}">
+                                                    {{ !empty($row['gateway']) ? strtoupper($row['gateway']) : 'LOCAL' }}
+                                                </span>
+                                                @if(!empty($row['is_stripe_linked']))
+                                                    <small class="text-muted">Stripe-linked</small>
+                                                @endif
+                                            </div>
+                                        </td>
+
                                         <td>{{ $row['billing_period'] ? strtoupper($row['billing_period']) : '-' }}</td>
 
                                         <td>
@@ -196,11 +261,34 @@
                                         </td>
 
                                         <td class="text-end">
-                                            <div class="d-inline-flex gap-2">
+                                            <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
                                                 <a href="{{ $row['show_url'] }}" class="btn btn-sm btn-primary">View</a>
 
                                                 @if(!empty($row['subscription_show_url']))
                                                     <a href="{{ $row['subscription_show_url'] }}" class="btn btn-sm btn-light">Subscription</a>
+                                                @endif
+
+                                                @if(!empty($row['admin_login_url']))
+                                                    <form method="POST" action="{{ route('admin.tenants.impersonate', $row['tenant_id']) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-warning">Impersonate</button>
+                                                    </form>
+                                                @endif
+
+                                                @if(($row['subscription_status'] ?? null) === 'suspended')
+                                                    <form method="POST" action="{{ route('admin.tenants.activate', $row['tenant_id']) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-success">Activate</button>
+                                                    </form>
+                                                @elseif(!empty($row['subscription_status']) && !in_array($row['subscription_status'], ['cancelled', 'expired'], true))
+                                                    <form method="POST" action="{{ route('admin.tenants.suspend', $row['tenant_id']) }}" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Suspend</button>
+                                                    </form>
+                                                @endif
+
+                                                @if(!empty($row['open_url']))
+                                                    <a href="{{ $row['open_url'] }}" target="_blank" class="btn btn-sm btn-outline-secondary">Open</a>
                                                 @endif
                                             </div>
                                         </td>
