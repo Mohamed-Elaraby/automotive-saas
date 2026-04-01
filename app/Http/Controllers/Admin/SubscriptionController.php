@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Admin\AdminActivityLogger;
+use App\Services\Admin\AdminSubscriptionControlService;
 use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
@@ -21,6 +23,8 @@ use Throwable;
 class SubscriptionController extends Controller
 {
     public function __construct(
+        protected AdminSubscriptionControlService $adminSubscriptionControlService,
+        protected AdminActivityLogger $activityLogger,
         protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
         protected StripeInvoiceLedgerBackfillService $stripeInvoiceLedgerBackfillService,
@@ -111,7 +115,7 @@ public function index(Request $request): View
     ]);
 }
 
-public function show(int $subscriptionId): View
+    public function show(int $subscriptionId): View
 {
     $subscription = $this->loadSubscriptionRecord($subscriptionId);
 
@@ -126,6 +130,17 @@ public function show(int $subscriptionId): View
         'invoiceHistory' => $invoiceHistory,
         'resolvedState' => $resolvedState,
         'normalizationPreview' => $normalizationPreview,
+        'statusOptions' => [
+            SubscriptionStatuses::TRIALING,
+            SubscriptionStatuses::ACTIVE,
+            SubscriptionStatuses::PAST_DUE,
+            SubscriptionStatuses::SUSPENDED,
+            SubscriptionStatuses::CANCELLED,
+            SubscriptionStatuses::EXPIRED,
+        ],
+        'isStripeLinked' => (($subscription->gateway ?? null) === 'stripe')
+            || ! empty($subscription->gateway_subscription_id)
+            || ! empty($subscription->gateway_customer_id),
     ]);
 }
 
@@ -276,6 +291,114 @@ public function normalizeLifecycle(int $subscriptionId): RedirectResponse
         ->with('success', $result['message'] ?? 'Lifecycle fields were normalized successfully.');
 }
 
+public function manualAction(Request $request, int $subscriptionId): RedirectResponse
+{
+    $validated = $request->validate([
+        'action' => ['required', 'string', 'in:force_lifecycle,cancel,resume,renew'],
+        'target_status' => ['required_if:action,force_lifecycle', 'nullable', 'string', 'in:' . implode(',', [
+            SubscriptionStatuses::TRIALING,
+            SubscriptionStatuses::ACTIVE,
+            SubscriptionStatuses::PAST_DUE,
+            SubscriptionStatuses::SUSPENDED,
+            SubscriptionStatuses::CANCELLED,
+            SubscriptionStatuses::EXPIRED,
+        ])],
+    ]);
+
+    try {
+        $result = $validated['action'] === 'force_lifecycle'
+            ? $this->adminSubscriptionControlService->forceLifecycle(
+                $subscriptionId,
+                (string) $validated['target_status']
+            )
+            : $this->adminSubscriptionControlService->applyQuickAction(
+                $subscriptionId,
+                (string) $validated['action']
+            );
+
+        /** @var Subscription|null $after */
+        $after = $result['after'] ?? null;
+
+        if ($after) {
+            $this->billingNotificationService->manualLifecycleChange($after, [
+                'source' => 'admin.manual_subscription_action',
+                'action' => $result['action'] ?? $validated['action'],
+                'target_status' => $result['target_status'] ?? $after->status,
+                'before' => $this->snapshot($result['before'] ?? null),
+                'after' => $this->snapshot($after),
+            ]);
+
+            $this->activityLogger->log(
+                action: 'subscription.manual_action',
+                subjectType: 'subscription',
+                subjectId: $after->id,
+                tenantId: (string) $after->tenant_id,
+                contextPayload: [
+                    'action' => $result['action'] ?? $validated['action'],
+                    'target_status' => $result['target_status'] ?? $after->status,
+                    'before' => $this->snapshot($result['before'] ?? null),
+                    'after' => $this->snapshot($after),
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('success', $result['message'] ?? 'Subscription action completed successfully.');
+    } catch (Throwable $e) {
+        report($e);
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', $e->getMessage() ?: 'Unable to apply the subscription action right now.');
+    }
+}
+
+public function updateTimestamps(Request $request, int $subscriptionId): RedirectResponse
+{
+    $validated = $request->validate([
+        'trial_ends_at' => ['nullable', 'date'],
+        'grace_ends_at' => ['nullable', 'date'],
+        'ends_at' => ['nullable', 'date'],
+    ]);
+
+    try {
+        $result = $this->adminSubscriptionControlService->updateTimestamps($subscriptionId, $validated);
+
+        /** @var Subscription|null $after */
+        $after = $result['after'] ?? null;
+
+        if ($after) {
+            $this->billingNotificationService->manualTimestampUpdate($after, [
+                'source' => 'admin.update_subscription_timestamps',
+                'before' => $this->snapshot($result['before'] ?? null),
+                'after' => $this->snapshot($after),
+            ]);
+
+            $this->activityLogger->log(
+                action: 'subscription.timestamps.updated',
+                subjectType: 'subscription',
+                subjectId: $after->id,
+                tenantId: (string) $after->tenant_id,
+                contextPayload: [
+                    'before' => $this->snapshot($result['before'] ?? null),
+                    'after' => $this->snapshot($after),
+                ]
+            );
+        }
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('success', $result['message'] ?? 'Subscription timestamps were updated successfully.');
+    } catch (Throwable $e) {
+        report($e);
+
+        return redirect()
+            ->route('admin.subscriptions.show', $subscriptionId)
+            ->with('error', $e->getMessage() ?: 'Unable to update subscription timestamps right now.');
+    }
+}
+
 protected function loadSubscriptionRecord(int $subscriptionId): ?object
 {
     return DB::connection($this->centralConnection())
@@ -382,5 +505,27 @@ protected function buildStatusCounts(string $connection): array
 protected function centralConnection(): string
 {
     return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+}
+
+protected function snapshot(?Subscription $subscription): array
+{
+    if (! $subscription) {
+        return [];
+    }
+
+    return [
+        'id' => $subscription->id,
+        'tenant_id' => $subscription->tenant_id,
+        'status' => $subscription->status,
+        'trial_ends_at' => optional($subscription->trial_ends_at)->format('Y-m-d H:i:s'),
+        'grace_ends_at' => optional($subscription->grace_ends_at)->format('Y-m-d H:i:s'),
+        'past_due_started_at' => optional($subscription->past_due_started_at)->format('Y-m-d H:i:s'),
+        'last_payment_failed_at' => optional($subscription->last_payment_failed_at)->format('Y-m-d H:i:s'),
+        'suspended_at' => optional($subscription->suspended_at)->format('Y-m-d H:i:s'),
+        'cancelled_at' => optional($subscription->cancelled_at)->format('Y-m-d H:i:s'),
+        'ends_at' => optional($subscription->ends_at)->format('Y-m-d H:i:s'),
+        'payment_failures_count' => (int) ($subscription->payment_failures_count ?? 0),
+        'gateway' => $subscription->gateway,
+    ];
 }
 }

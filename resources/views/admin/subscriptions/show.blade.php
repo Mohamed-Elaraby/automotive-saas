@@ -353,6 +353,105 @@
 
                     <div class="card mt-4">
                         <div class="card-body">
+                            <h6 class="mb-3">Advanced Control</h6>
+
+                            @if($isStripeLinked)
+                                <div class="alert alert-warning">
+                                    This subscription is Stripe-linked. Manual lifecycle forcing and local timestamp overrides are blocked to avoid drift from Stripe.
+                                </div>
+                            @endif
+
+                            <form method="POST" action="{{ route('admin.subscriptions.manual-action', $subscription->id) }}" class="mb-4">
+                                @csrf
+                                <input type="hidden" name="action" value="force_lifecycle">
+
+                                <div class="mb-2">
+                                    <label class="form-label">Force Lifecycle State</label>
+                                    <select name="target_status" class="form-select" @disabled($isStripeLinked)>
+                                        @foreach($statusOptions as $statusOption)
+                                            <option value="{{ $statusOption }}" @selected(($subscription->status ?? null) === $statusOption)>
+                                                {{ ucfirst(str_replace('_', ' ', $statusOption)) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-outline-primary w-100" @disabled($isStripeLinked)>
+                                    Apply Lifecycle State
+                                </button>
+                            </form>
+
+                            <div class="d-grid gap-2 mb-4">
+                                <form method="POST" action="{{ route('admin.subscriptions.manual-action', $subscription->id) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="cancel">
+                                    <button type="submit" class="btn btn-outline-danger w-100" @disabled($isStripeLinked)>
+                                        Cancel Locally
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('admin.subscriptions.manual-action', $subscription->id) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="resume">
+                                    <button type="submit" class="btn btn-outline-success w-100" @disabled($isStripeLinked)>
+                                        Resume Locally
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('admin.subscriptions.manual-action', $subscription->id) }}">
+                                    @csrf
+                                    <input type="hidden" name="action" value="renew">
+                                    <button type="submit" class="btn btn-outline-dark w-100" @disabled($isStripeLinked)>
+                                        Renew Locally
+                                    </button>
+                                </form>
+                            </div>
+
+                            <form method="POST" action="{{ route('admin.subscriptions.timestamps', $subscription->id) }}">
+                                @csrf
+
+                                <div class="mb-2">
+                                    <label class="form-label">Trial Ends At</label>
+                                    <input
+                                        type="datetime-local"
+                                        name="trial_ends_at"
+                                        class="form-control"
+                                        value="{{ !empty($subscription->trial_ends_at) ? \Carbon\Carbon::parse($subscription->trial_ends_at)->format('Y-m-d\TH:i') : '' }}"
+                                        @disabled($isStripeLinked)
+                                    >
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label">Grace Ends At</label>
+                                    <input
+                                        type="datetime-local"
+                                        name="grace_ends_at"
+                                        class="form-control"
+                                        value="{{ !empty($subscription->grace_ends_at) ? \Carbon\Carbon::parse($subscription->grace_ends_at)->format('Y-m-d\TH:i') : '' }}"
+                                        @disabled($isStripeLinked)
+                                    >
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Ends At</label>
+                                    <input
+                                        type="datetime-local"
+                                        name="ends_at"
+                                        class="form-control"
+                                        value="{{ !empty($subscription->ends_at) ? \Carbon\Carbon::parse($subscription->ends_at)->format('Y-m-d\TH:i') : '' }}"
+                                        @disabled($isStripeLinked)
+                                    >
+                                </div>
+
+                                <button type="submit" class="btn btn-outline-secondary w-100" @disabled($isStripeLinked)>
+                                    Update Lifecycle Dates
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-body">
                             <h6 class="mb-3">Admin Actions</h6>
 
                             <div class="d-grid gap-2">

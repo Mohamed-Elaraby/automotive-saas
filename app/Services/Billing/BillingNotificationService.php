@@ -51,6 +51,32 @@ public function manualNormalizeLifecycle(Subscription $subscription, bool $appli
         );
     }
 
+public function manualLifecycleChange(Subscription $subscription, array $context = []): void
+{
+    $targetStatus = (string) ($context['target_status'] ?? $subscription->status ?? 'unknown');
+
+    $this->create(
+        event: 'manual_lifecycle_change',
+            title: 'Subscription Lifecycle Changed',
+            severity: 'warning',
+            subscription: $subscription,
+            message: "Subscription #{$subscription->id} lifecycle was changed manually to {$targetStatus}.",
+            contextPayload: $context
+        );
+    }
+
+public function manualTimestampUpdate(Subscription $subscription, array $context = []): void
+{
+    $this->create(
+        event: 'manual_timestamp_update',
+            title: 'Subscription Dates Updated',
+            severity: 'info',
+            subscription: $subscription,
+            message: "Subscription #{$subscription->id} lifecycle timestamps were updated manually.",
+            contextPayload: $context
+        );
+    }
+
 public function trialEnding(Subscription $subscription, array $context = []): void
 {
     $this->create(

@@ -104,6 +104,8 @@ Route::prefix('admin')
                 Route::post('/{subscription}/backfill-invoices', [SubscriptionController::class, 'backfillInvoices'])->name('backfill-invoices');
                 Route::post('/{subscription}/refresh-state', [SubscriptionController::class, 'refreshState'])->name('refresh-state');
                 Route::post('/{subscription}/normalize-lifecycle', [SubscriptionController::class, 'normalizeLifecycle'])->name('normalize-lifecycle');
+                Route::post('/{subscription}/manual-action', [SubscriptionController::class, 'manualAction'])->name('manual-action');
+                Route::post('/{subscription}/timestamps', [SubscriptionController::class, 'updateTimestamps'])->name('timestamps');
             });
 
         Route::prefix('reports')
