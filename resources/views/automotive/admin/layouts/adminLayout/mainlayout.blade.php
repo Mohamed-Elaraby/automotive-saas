@@ -32,7 +32,7 @@
 @component('automotive.admin.layouts.components.title-meta')
 @endcomponent
 
-@if (!Route::is(['coming-soon', 'error-404', 'error-500', 'under-construction', 'coming-soon', 'under-maintenance', 'layout-mini', 'layout-rtl', 'lock-screen', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'general-invoice-5', 'two-step-verification', 'free-trial' ,'reset-password','register']))
+@if (!Route::is(['coming-soon', 'error-404', 'error-500', 'under-construction', 'coming-soon', 'under-maintenance', 'layout-mini', 'layout-rtl', 'lock-screen', 'login', 'automotive.admin.login', 'general-invoice-5', 'two-step-verification', 'free-trial' ,'reset-password','register']))
 <body>
 @endif
 
@@ -40,7 +40,7 @@
 <body class="bg-white coming-soon">
 @endif
 
-@if(Route::is(['login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'lock-screen', 'success', 'two-step-verification', 'free-trial', 'reset-password','register']))
+@if(Route::is(['login', 'automotive.admin.login', 'lock-screen', 'success', 'two-step-verification', 'free-trial', 'reset-password','register']))
 <body class="bg-white">
 @endif
 
@@ -56,20 +56,20 @@
 <body class="bg-dark">
 @endif
 <!-- Start Main Wrapper -->
-@if(!Route::is(['error-404', 'error-500', 'lock-screen', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'success', 'two-step-verification', 'under-construction', 'under-maintenance', 'coming-soon', 'email-verification', 'forgot-password','free-trial','reset-password','register']))
+@if(!Route::is(['error-404', 'error-500', 'lock-screen', 'login', 'automotive.admin.login', 'success', 'two-step-verification', 'under-construction', 'under-maintenance', 'coming-soon', 'email-verification', 'forgot-password','free-trial','reset-password','register']))
 <div class="main-wrapper">
 @endif
 
-@if(Route::is(['error-404', 'coming-soon', 'error-500', 'lock-screen', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'success', 'two-step-verification', 'under-construction', 'under-maintenance', 'email-verification', 'forgot-password','free-trial','reset-password','register']))
+@if(Route::is(['error-404', 'coming-soon', 'error-500', 'lock-screen', 'login', 'automotive.admin.login', 'success', 'two-step-verification', 'under-construction', 'under-maintenance', 'email-verification', 'forgot-password','free-trial','reset-password','register']))
 <div class="main-wrapper auth-bg">
 @endif
 
     @if (!Route::is(['signin', 'signup','coming-soon', 'error-404', 'error-500', 'under-construction','change-password','forgot-password','lock-screen','general-invoice-1','general-invoice-1a','general-invoice-2',
-    'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))
+    'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'automotive.admin.login', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))
         @include('automotive.admin.layouts.adminLayout.partials.header')
     @endif
     @if(!Route::is(['signin', 'signup','coming-soon', 'error-404', 'error-500', 'under-construction','change-password','forgot-password','lock-screen','general-invoice-1','general-invoice-1a','general-invoice-2',
-    'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'automotive.admin.login', 'automotive.admin.register', 'automotive.admin.forgot-password', 'automotive.admin.reset-password', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))
+    'general-invoice-2a','general-invoice-3','general-invoice-4','general-invoice-5','general-invoice-6','general-invoice-7','general-invoice-8','general-invoice-9','general-invoice-10','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice','invoice-medical','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4','hotel-booking-invoice', 'domain-hosting-invoice', 'ecommerce-invoice','internet-billing-invoice', 'email-verification', 'login', 'automotive.admin.login', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-maintenance', 'bus-booking-invoice', 'car-booking-invoice', 'coffee-shop-invoice', 'fitness-center-invoice', 'flight-booking-invoice', 'free-trial','restaurants-invoice','reset-password','register']))
         @include('automotive.admin.layouts.adminLayout.partials.sidebar')
     @endif
     @php($page = $page ?? '')
