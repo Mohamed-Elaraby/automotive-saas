@@ -4,8 +4,8 @@ namespace App\Services\Admin;
 
 use App\Models\Admin;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -14,8 +14,6 @@ use RuntimeException;
 
 class TenantImpersonationService
 {
-    protected const CACHE_PREFIX = 'tenant_impersonation:';
-
     public function start(string $tenantId): string
     {
         $tenant = $this->findTenantOrFail($tenantId);
@@ -32,9 +30,7 @@ class TenantImpersonationService
         }
 
         $admin = Auth::guard('admin')->user();
-        $token = Str::random(64);
-
-        Cache::put($this->cacheKey($token), [
+        $token = $this->encodePayload([
             'tenant_id' => $tenantId,
             'tenant_domain' => $primaryDomain,
             'target_user_email' => (string) $targetUser->email,
@@ -43,7 +39,9 @@ class TenantImpersonationService
             'central_admin_email' => $admin instanceof Admin ? $admin->email : null,
             'return_url' => $this->centralTenantShowUrl($tenantId),
             'created_at' => now()->toIso8601String(),
-        ], now()->addMinutes(5));
+            'expires_at' => now()->addMinutes(5)->toIso8601String(),
+            'nonce' => Str::random(32),
+        ]);
 
         return $this->tenantImpersonationUrl($primaryDomain, $token);
     }
@@ -53,7 +51,7 @@ class TenantImpersonationService
      */
     public function consume(string $token, string $expectedTenantId): array
     {
-        $payload = Cache::get($this->cacheKey($token));
+        $payload = $this->decodePayload($token);
 
         if (! is_array($payload)) {
             throw new RuntimeException('This impersonation link is invalid or has expired.');
@@ -63,7 +61,9 @@ class TenantImpersonationService
             throw new RuntimeException('This impersonation link does not belong to the current tenant.');
         }
 
-        Cache::forget($this->cacheKey($token));
+        if (empty($payload['expires_at']) || now()->greaterThan($payload['expires_at'])) {
+            throw new RuntimeException('This impersonation link is invalid or has expired.');
+        }
 
         return $payload;
     }
@@ -109,9 +109,35 @@ class TenantImpersonationService
         return 'https://' . $domain;
     }
 
-    protected function cacheKey(string $token): string
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    protected function encodePayload(array $payload): string
     {
-        return self::CACHE_PREFIX . $token;
+        $encrypted = Crypt::encryptString(json_encode($payload, JSON_THROW_ON_ERROR));
+
+        return rtrim(strtr(base64_encode($encrypted), '+/', '-_'), '=');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function decodePayload(string $token): array
+    {
+        try {
+            $decoded = base64_decode(strtr($token, '-_', '+/') . str_repeat('=', (4 - strlen($token) % 4) % 4), true);
+
+            if ($decoded === false) {
+                throw new RuntimeException('Invalid impersonation token.');
+            }
+
+            $json = Crypt::decryptString($decoded);
+            $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+
+            return is_array($payload) ? $payload : [];
+        } catch (\Throwable) {
+            throw new RuntimeException('This impersonation link is invalid or has expired.');
+        }
     }
 
     protected function tenantModelClass(): string

@@ -31,16 +31,18 @@ class AdminTenantDeletionTest extends TestCase
 
     public function test_delete_tenant_removes_linked_central_records_for_non_stripe_tenant(): void
     {
+        $tenantId = 'tenant-delete-local-' . uniqid();
+
         $tenant = Tenant::query()->create([
-            'id' => 'tenant-delete-local',
+            'id' => $tenantId,
             'data' => [
                 'company_name' => 'Delete Local Tenant',
-                'db_name' => 'tenant_tenant-delete-local',
+                'db_name' => 'tenant_' . $tenantId,
             ],
         ]);
 
         DB::table('domains')->insert([
-            'domain' => 'tenant-delete-local.example.test',
+            'domain' => $tenantId . '.example.test',
             'tenant_id' => $tenant->id,
             'created_at' => now(),
             'updated_at' => now(),
@@ -115,11 +117,13 @@ class AdminTenantDeletionTest extends TestCase
 
     public function test_delete_tenant_rejects_live_stripe_linked_subscription(): void
     {
+        $tenantId = 'tenant-delete-stripe-' . uniqid();
+
         $tenant = Tenant::query()->create([
-            'id' => 'tenant-delete-stripe',
+            'id' => $tenantId,
             'data' => [
                 'company_name' => 'Delete Stripe Tenant',
-                'db_name' => 'tenant_tenant-delete-stripe',
+                'db_name' => 'tenant_' . $tenantId,
             ],
         ]);
 
@@ -151,8 +155,10 @@ class AdminTenantDeletionTest extends TestCase
 
     public function test_destroy_redirects_to_index_and_logs_activity_after_successful_deletion(): void
     {
+        $tenantId = 'tenant-controller-destroy-' . uniqid();
+
         $tenant = Tenant::query()->create([
-            'id' => 'tenant-controller-destroy',
+            'id' => $tenantId,
             'data' => [
                 'company_name' => 'Controller Delete Tenant',
             ],

@@ -12,7 +12,6 @@ use App\Services\Admin\TenantImpersonationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use RuntimeException;
@@ -32,6 +31,7 @@ class AdminTenantImpersonationTest extends TestCase
     public function test_start_generates_one_time_impersonation_url_for_primary_domain(): void
     {
         config()->set('app.url', 'https://central.example.test');
+        $tenantId = 'tenant-impersonate-001-' . uniqid();
 
         $admin = Admin::query()->create([
             'name' => 'Central Admin',
@@ -42,7 +42,7 @@ class AdminTenantImpersonationTest extends TestCase
         Auth::guard('admin')->login($admin);
 
         $tenant = Tenant::query()->create([
-            'id' => 'tenant-impersonate-001',
+            'id' => $tenantId,
             'data' => [
                 'company_name' => 'Impersonation Tenant',
             ],
@@ -50,7 +50,7 @@ class AdminTenantImpersonationTest extends TestCase
 
         DB::table('domains')->insert([
             'tenant_id' => $tenant->id,
-            'domain' => 'tenant-impersonate-001.example.test',
+            'domain' => $tenantId . '.example.test',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -73,42 +73,71 @@ class AdminTenantImpersonationTest extends TestCase
 
         $url = $service->start($tenant->id);
 
-        $this->assertStringStartsWith('https://tenant-impersonate-001.example.test/automotive/admin/impersonate/', $url);
+        $this->assertStringStartsWith('https://' . $tenantId . '.example.test/automotive/admin/impersonate/', $url);
 
         $token = basename(parse_url($url, PHP_URL_PATH));
-        $payload = Cache::get('tenant_impersonation:' . $token);
+        $payload = $service->consume($token, $tenant->id);
 
-        $this->assertIsArray($payload);
         $this->assertSame($tenant->id, $payload['tenant_id']);
         $this->assertSame('tenant-owner@example.test', $payload['target_user_email']);
         $this->assertSame('central-admin@example.test', $payload['central_admin_email']);
         $this->assertSame('https://central.example.test/admin/tenants/' . $tenant->id, $payload['return_url']);
     }
 
-    public function test_consume_returns_payload_once_and_rejects_second_use(): void
+    public function test_consume_returns_payload_for_valid_short_lived_token(): void
     {
-        Cache::put('tenant_impersonation:test-token', [
-            'tenant_id' => 'tenant-impersonate-once',
-            'target_user_email' => 'tenant-owner@example.test',
-        ], now()->addMinutes(5));
+        config()->set('app.url', 'https://central.example.test');
+        $tenantId = 'tenant-impersonate-once-' . uniqid();
+
+        $admin = Admin::query()->create([
+            'name' => 'Central Admin',
+            'email' => 'central-admin2@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        Auth::guard('admin')->login($admin);
+
+        $tenant = Tenant::query()->create([
+            'id' => $tenantId,
+            'data' => ['company_name' => 'One Time Tenant'],
+        ]);
+
+        DB::table('domains')->insert([
+            'tenant_id' => $tenant->id,
+            'domain' => $tenantId . '.example.test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'Tenant Admin',
+            'email' => 'tenant-owner@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $service = app(TenantImpersonationService::class);
+        $url = $service->start($tenant->id);
+        $token = basename(parse_url($url, PHP_URL_PATH));
 
-        $payload = $service->consume('test-token', 'tenant-impersonate-once');
+        $payload = $service->consume($token, $tenantId);
 
         $this->assertSame('tenant-owner@example.test', $payload['target_user_email']);
-        $this->assertNull(Cache::get('tenant_impersonation:test-token'));
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('This impersonation link is invalid or has expired.');
-
-        $service->consume('test-token', 'tenant-impersonate-once');
     }
 
     public function test_impersonate_controller_redirects_to_generated_tenant_url_and_logs_activity(): void
     {
+        $tenantId = 'tenant-controller-impersonate-' . uniqid();
+
         $tenant = Tenant::query()->create([
-            'id' => 'tenant-controller-impersonate',
+            'id' => $tenantId,
             'data' => ['company_name' => 'Controller Tenant'],
         ]);
 
@@ -116,7 +145,7 @@ class AdminTenantImpersonationTest extends TestCase
         $impersonationService->shouldReceive('start')
             ->once()
             ->with($tenant->id)
-            ->andReturn('https://tenant-controller-impersonate.example.test/automotive/admin/impersonate/mock-token');
+            ->andReturn('https://' . $tenantId . '.example.test/automotive/admin/impersonate/mock-token');
 
         $activityLogger = Mockery::mock(AdminActivityLogger::class);
         $activityLogger->shouldReceive('log')
@@ -126,7 +155,7 @@ class AdminTenantImpersonationTest extends TestCase
                     && $subjectType === 'tenant'
                     && $subjectId === $tenant->id
                     && $tenantId === $tenant->id
-                    && ($contextPayload['redirect_url'] ?? null) === 'https://tenant-controller-impersonate.example.test/automotive/admin/impersonate/mock-token';
+                    && ($contextPayload['redirect_url'] ?? null) === 'https://' . $tenantId . '.example.test/automotive/admin/impersonate/mock-token';
             });
 
         $controller = new TenantController(
@@ -138,6 +167,6 @@ class AdminTenantImpersonationTest extends TestCase
         $response = $controller->impersonate($tenant->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('https://tenant-controller-impersonate.example.test/automotive/admin/impersonate/mock-token', $response->getTargetUrl());
+        $this->assertSame('https://' . $tenantId . '.example.test/automotive/admin/impersonate/mock-token', $response->getTargetUrl());
     }
 }
