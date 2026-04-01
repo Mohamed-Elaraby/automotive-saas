@@ -272,6 +272,31 @@ public function changePlan(Request $request, string $tenantId): RedirectResponse
     }
 }
 
+public function destroy(string $tenantId): RedirectResponse
+{
+    $this->findTenantOrFail($tenantId);
+
+    try {
+        $result = $this->lifecycleService->deleteTenant($tenantId);
+
+        $this->activityLogger->log(
+            action: 'tenant.deleted',
+            subjectType: 'tenant',
+            subjectId: $tenantId,
+            tenantId: $tenantId,
+            contextPayload: $result
+        );
+
+        return redirect()
+            ->route('admin.tenants.index')
+            ->with('success', 'The tenant and its linked central records were deleted successfully.');
+    } catch (RuntimeException $exception) {
+        return redirect()
+            ->route('admin.tenants.show', $tenantId)
+            ->with('error', $exception->getMessage());
+    }
+}
+
 protected function tenantModelClass(): string
 {
     return (string) (Config::get('tenancy.tenant_model') ?: \App\Models\Tenant::class);

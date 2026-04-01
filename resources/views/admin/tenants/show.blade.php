@@ -525,6 +525,29 @@
                             @endif
                         </div>
                     </div>
+
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0 text-danger">Danger Zone</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                This permanently deletes the tenant record, linked domains, tenant-user links, subscriptions, and coupon redemptions.
+                                Stripe-linked tenants must be cancelled or expired first.
+                            </p>
+
+                            <form method="POST" action="{{ route('admin.tenants.destroy', $row['tenant_id'] ?? $tenant->getKey()) }}" onsubmit="return confirm('Delete this tenant permanently? This action cannot be undone.');">
+                                @csrf
+                                @method('DELETE')
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-danger">
+                                        Delete Tenant Permanently
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
