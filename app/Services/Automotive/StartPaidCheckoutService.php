@@ -52,6 +52,7 @@ class StartPaidCheckoutService
             $existingSubscription
             && (string) ($existingSubscription->status ?? '') === SubscriptionStatuses::ACTIVE
             && (string) ($existingSubscription->gateway ?? '') !== ''
+            && ! $this->isRestartableTerminalStripeSubscription($existingSubscription)
         ) {
             return [
                 'ok' => false,
@@ -65,8 +66,7 @@ class StartPaidCheckoutService
 
         if (
             $existingSubscription
-            && (string) ($existingSubscription->gateway ?? '') === 'stripe'
-            && filled($existingSubscription->gateway_subscription_id)
+            && $this->hasLiveStripeSubscription($existingSubscription)
         ) {
             return [
                 'ok' => false,
@@ -118,13 +118,22 @@ class StartPaidCheckoutService
 
         if (! empty($session['success']) && ! empty($session['checkout_url']) && ! empty($session['session_id'])) {
             if ($subscription) {
-            $subscription->fill([
-                'gateway' => 'stripe',
-                'gateway_checkout_session_id' => (string) $session['session_id'],
-                'gateway_price_id' => (string) $plan->stripe_price_id,
-            ]);
+                $subscription->fill([
+                    'gateway' => 'stripe',
+                    'gateway_checkout_session_id' => (string) $session['session_id'],
+                    'gateway_price_id' => (string) $plan->stripe_price_id,
+                ]);
 
-            $subscription->save();
+                if ($this->isRestartableTerminalStripeSubscription($subscription)) {
+                    $subscription->fill([
+                        'status' => null,
+                        'gateway_subscription_id' => null,
+                        'cancelled_at' => null,
+                        'ends_at' => null,
+                    ]);
+                }
+
+                $subscription->save();
             }
 
             return [
@@ -221,5 +230,55 @@ class StartPaidCheckoutService
     protected function centralConnectionName(): string
     {
         return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+    }
+
+    protected function hasLiveStripeSubscription(?object $subscription): bool
+    {
+        if (! $subscription || ! filled($subscription->gateway_subscription_id ?? null)) {
+            return false;
+        }
+
+        $status = (string) ($subscription->status ?? '');
+
+        if ($status === SubscriptionStatuses::ACTIVE) {
+            return true;
+        }
+
+        if ($status !== SubscriptionStatuses::CANCELLED) {
+            return false;
+        }
+
+        if (blank($subscription->ends_at ?? null)) {
+            return false;
+        }
+
+        return now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
+    }
+
+    protected function isRestartableTerminalStripeSubscription(?object $subscription): bool
+    {
+        if (! $subscription) {
+            return false;
+        }
+
+        if ((string) ($subscription->gateway ?? '') !== 'stripe') {
+            return false;
+        }
+
+        $status = (string) ($subscription->status ?? '');
+
+        if ($status === SubscriptionStatuses::EXPIRED) {
+            return true;
+        }
+
+        if ($status !== SubscriptionStatuses::CANCELLED) {
+            return false;
+        }
+
+        if (blank($subscription->ends_at ?? null)) {
+            return true;
+        }
+
+        return ! now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
     }
 }

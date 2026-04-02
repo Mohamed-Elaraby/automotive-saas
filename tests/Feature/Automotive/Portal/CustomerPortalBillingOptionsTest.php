@@ -66,6 +66,61 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee('Billing Managed In System', false);
     }
 
+    public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal User',
+            'email' => 'portal-user-terminal-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Co',
+            'subdomain' => 'portal-terminal-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $oldPlan = $this->createPlan('Growth', 'growth-plan-' . uniqid(), 'monthly', 399);
+        $newPlan = $this->createPlan('Scale', 'scale-plan-' . uniqid(), 'monthly', 599);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-portal-terminal-' . uniqid(),
+            'data' => [
+                'company_name' => 'Portal Co',
+                'owner_email' => $user->email,
+            ],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Subscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $oldPlan->id,
+            'status' => 'canceled',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_terminal_only',
+            'gateway_subscription_id' => 'sub_terminal_only',
+            'gateway_checkout_session_id' => 'cs_terminal_only',
+            'gateway_price_id' => $oldPlan->stripe_price_id,
+            'cancelled_at' => now()->subDay(),
+            'ends_at' => now()->subMinute(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertDontSee('This account already has a live Stripe subscription.', false);
+        $response->assertDontSee('Billing Managed In System', false);
+        $response->assertSee('Select &amp; Continue', false);
+        $response->assertSee((string) $newPlan->name, false);
+    }
+
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan
     {
         return Plan::query()->create([

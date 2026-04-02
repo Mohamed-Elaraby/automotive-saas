@@ -59,9 +59,7 @@ class CustomerPortalController extends Controller
         }
 
         $allowSystemAccess = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true) && filled($systemUrl);
-        $hasLiveStripeSubscription = $subscription
-            && (string) ($subscription->gateway ?? '') === 'stripe'
-            && filled($subscription->gateway_subscription_id);
+        $hasLiveStripeSubscription = $this->hasLiveStripeSubscription($subscription);
         $hasPendingPaidCheckout = $subscription
             && filled($subscription->gateway_checkout_session_id)
             && ! filled($subscription->gateway_subscription_id);
@@ -343,5 +341,28 @@ class CustomerPortalController extends Controller
 
         return (string) ($plan->billing_period ?? '') === 'trial'
             || (float) ($plan->price ?? 0) <= 0;
+    }
+
+    protected function hasLiveStripeSubscription(?object $subscription): bool
+    {
+        if (! $subscription || ! filled($subscription->gateway_subscription_id ?? null)) {
+            return false;
+        }
+
+        $status = (string) ($subscription->status ?? '');
+
+        if ($status === SubscriptionStatuses::ACTIVE) {
+            return true;
+        }
+
+        if ($status !== SubscriptionStatuses::CANCELLED) {
+            return false;
+        }
+
+        if (blank($subscription->ends_at ?? null)) {
+            return false;
+        }
+
+        return Carbon::parse((string) $subscription->ends_at)->isFuture();
     }
 }
