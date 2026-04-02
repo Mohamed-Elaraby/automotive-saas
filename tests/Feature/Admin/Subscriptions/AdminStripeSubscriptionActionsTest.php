@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -77,6 +78,72 @@ class AdminStripeSubscriptionActionsTest extends TestCase
         $response
             ->assertRedirect(route('admin.subscriptions.show', $subscription->id))
             ->assertSessionHas('success', 'Subscription cancellation was removed and the subscription remains active.');
+    }
+
+    public function test_admin_can_cancel_stripe_subscription_immediately_from_subscription_show(): void
+    {
+        $admin = $this->createAdmin();
+        $subscription = $this->createStripeSubscription();
+
+        $service = Mockery::mock(StripeSubscriptionManagementService::class);
+        $service->shouldReceive('cancelImmediately')
+            ->once()
+            ->with(Mockery::on(fn ($sub) => (int) $sub->id === (int) $subscription->id))
+            ->andReturn([
+                'success' => true,
+                'message' => 'Subscription was cancelled immediately on Stripe.',
+            ]);
+
+        $this->app->instance(StripeSubscriptionManagementService::class, $service);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->post(route('admin.subscriptions.cancel-immediately-on-stripe', $subscription->id));
+
+        $response
+            ->assertRedirect(route('admin.subscriptions.show', $subscription->id))
+            ->assertSessionHas('success', 'Subscription was cancelled immediately on Stripe.');
+    }
+
+    public function test_admin_can_change_plan_on_stripe_from_subscription_show(): void
+    {
+        $admin = $this->createAdmin();
+        $subscription = $this->createStripeSubscription();
+        $targetPlan = Plan::query()->create([
+            'name' => 'Scale',
+            'slug' => 'scale-' . uniqid(),
+            'description' => 'Scale plan',
+            'price' => 599,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $service = Mockery::mock(StripeSubscriptionPlanChangeService::class);
+        $service->shouldReceive('changePlan')
+            ->once()
+            ->with(
+                Mockery::on(fn ($sub) => (int) $sub->id === (int) $subscription->id),
+                Mockery::on(fn ($plan) => (int) $plan->id === (int) $targetPlan->id)
+            )
+            ->andReturn([
+                'ok' => true,
+                'message' => 'Subscription plan changed successfully.',
+            ]);
+
+        $this->app->instance(StripeSubscriptionPlanChangeService::class, $service);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->post(route('admin.subscriptions.change-plan-on-stripe', $subscription->id), [
+                'target_plan_id' => $targetPlan->id,
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.subscriptions.show', $subscription->id))
+            ->assertSessionHas('success', 'Subscription plan changed successfully.');
     }
 
     protected function createAdmin(): Admin

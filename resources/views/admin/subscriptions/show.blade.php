@@ -491,10 +491,36 @@
 
                             <div class="d-grid gap-2">
                                 @if($isStripeLinked)
+                                    @if(($stripePlanOptions ?? collect())->count() > 0)
+                                        <form method="POST" action="{{ route('admin.subscriptions.change-plan-on-stripe', $subscription->id) }}">
+                                            @csrf
+                                            <div class="mb-2">
+                                                <label class="form-label">Change Plan on Stripe</label>
+                                                <select name="target_plan_id" class="form-select">
+                                                    @foreach($stripePlanOptions as $stripePlanOption)
+                                                        <option value="{{ $stripePlanOption->id }}" @selected((int) ($subscription->plan_id ?? 0) === (int) $stripePlanOption->id)>
+                                                            {{ $stripePlanOption->name }} - {{ ucfirst((string) ($stripePlanOption->billing_period ?? '')) }} - {{ number_format((float) ($stripePlanOption->price ?? 0), 2) }} {{ strtoupper((string) ($stripePlanOption->currency ?? 'USD')) }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-outline-primary w-100">
+                                                Change Plan on Stripe
+                                            </button>
+                                        </form>
+                                    @endif
+
                                     <form method="POST" action="{{ route('admin.subscriptions.cancel-on-stripe', $subscription->id) }}">
                                         @csrf
                                         <button type="submit" class="btn btn-outline-danger w-100">
-                                            Cancel on Stripe
+                                            Cancel at Period End on Stripe
+                                        </button>
+                                    </form>
+
+                                    <form method="POST" action="{{ route('admin.subscriptions.cancel-immediately-on-stripe', $subscription->id) }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger w-100">
+                                            Cancel Immediately on Stripe
                                         </button>
                                     </form>
 

@@ -107,4 +107,45 @@ public function resume(?object $subscription): array
         ];
     }
 }
+
+public function cancelImmediately(?object $subscription): array
+{
+    if (! $subscription || empty($subscription->gateway_subscription_id)) {
+        return [
+            'success' => false,
+            'message' => 'No live Stripe subscription is linked to this tenant.',
+        ];
+    }
+
+    try {
+        $cancelled = $this->stripe->subscriptions->cancel(
+            (string) $subscription->gateway_subscription_id,
+            []
+        );
+
+        $event = (object) [
+            'type' => 'customer.subscription.deleted',
+            'data' => (object) [
+                'object' => $cancelled,
+            ],
+        ];
+
+        $this->stripeWebhookSyncService->handleEvent($event);
+
+        return [
+            'success' => true,
+            'message' => 'Subscription was cancelled immediately on Stripe.',
+        ];
+    } catch (ApiErrorException $e) {
+        return [
+            'success' => false,
+            'message' => 'Stripe API error while cancelling subscription immediately: ' . $e->getMessage(),
+        ];
+    } catch (Throwable $e) {
+        return [
+            'success' => false,
+            'message' => 'Unable to cancel the subscription immediately right now. Please try again later.',
+        ];
+    }
+}
 }

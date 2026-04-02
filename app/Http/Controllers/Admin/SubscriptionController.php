@@ -11,6 +11,7 @@ use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
 use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\StripeSubscriptionSyncService;
 use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
@@ -29,6 +30,7 @@ class SubscriptionController extends Controller
         protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
         protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
+        protected StripeSubscriptionPlanChangeService $stripeSubscriptionPlanChangeService,
         protected StripeInvoiceLedgerBackfillService $stripeInvoiceLedgerBackfillService,
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
         protected SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService,
@@ -140,6 +142,7 @@ public function index(Request $request): View
             SubscriptionStatuses::CANCELLED,
             SubscriptionStatuses::EXPIRED,
         ],
+        'stripePlanOptions' => $this->stripePlanOptions($subscription),
         'isStripeLinked' => $this->isStripeLinkedRecord($subscription),
         'stripeLinkDiagnostics' => $this->stripeLinkDiagnostics($subscription),
     ]);
@@ -454,6 +457,80 @@ public function resumeOnStripe(Request $request, int $subscriptionId): RedirectR
         ->with(($result['success'] ?? false) ? 'success' : 'error', $result['message'] ?? 'Unable to resume Stripe subscription.');
 }
 
+public function cancelImmediatelyOnStripe(Request $request, int $subscriptionId): RedirectResponse
+{
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return $this->redirectAfterAction($request, $subscriptionId)
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    $result = $this->stripeSubscriptionManagementService->cancelImmediately($subscription);
+    $fresh = $subscription->fresh();
+
+    if (($result['success'] ?? false) && $fresh) {
+        $this->activityLogger->log(
+            action: 'subscription.stripe_cancelled_immediately',
+            subjectType: 'subscription',
+            subjectId: $fresh->id,
+            tenantId: (string) $fresh->tenant_id,
+            contextPayload: [
+                'source' => 'admin.cancel_immediately_on_stripe',
+                'result' => $result,
+                'after' => $this->snapshot($fresh),
+            ]
+        );
+    }
+
+    return redirect()
+        ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
+        ->with(($result['success'] ?? false) ? 'success' : 'error', $result['message'] ?? 'Unable to cancel Stripe subscription immediately.');
+}
+
+public function changePlanOnStripe(Request $request, int $subscriptionId): RedirectResponse
+{
+    $validated = $request->validate([
+        'target_plan_id' => ['required', 'integer'],
+    ]);
+
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return $this->redirectAfterAction($request, $subscriptionId)
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    $targetPlan = Plan::query()->find((int) $validated['target_plan_id']);
+
+    if (! $targetPlan) {
+        return $this->redirectAfterAction($request, $subscriptionId)
+            ->with('error', 'The selected plan record was not found.');
+    }
+
+    $result = $this->stripeSubscriptionPlanChangeService->changePlan($subscription, $targetPlan);
+    $fresh = $subscription->fresh();
+
+    if (($result['ok'] ?? false) && $fresh) {
+        $this->activityLogger->log(
+            action: 'subscription.stripe_plan_changed',
+            subjectType: 'subscription',
+            subjectId: $fresh->id,
+            tenantId: (string) $fresh->tenant_id,
+            contextPayload: [
+                'source' => 'admin.change_plan_on_stripe',
+                'target_plan_id' => $targetPlan->id,
+                'result' => $result,
+                'after' => $this->snapshot($fresh),
+            ]
+        );
+    }
+
+    return redirect()
+        ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
+        ->with(($result['ok'] ?? false) ? 'success' : 'error', $result['message'] ?? 'Unable to change plan on Stripe.');
+}
+
 protected function loadSubscriptionRecord(int $subscriptionId): ?object
 {
     return DB::connection($this->centralConnection())
@@ -608,6 +685,21 @@ protected function stripeLinkDiagnostics(object $subscription): array
             'has_gateway_checkout_session_id' => $hasCheckoutSessionId,
         ],
     ];
+}
+
+protected function stripePlanOptions(object $subscription): \Illuminate\Support\Collection
+{
+    if (! $this->isStripeLinkedRecord($subscription)) {
+        return collect();
+    }
+
+    return Plan::query()
+        ->where('is_active', true)
+        ->where('billing_period', '!=', 'trial')
+        ->whereNotNull('stripe_price_id')
+        ->orderBy('sort_order')
+        ->orderBy('name')
+        ->get(['id', 'name', 'slug', 'billing_period', 'price', 'currency', 'stripe_price_id']);
 }
 
 protected function redirectAfterAction(Request $request, int $subscriptionId): RedirectResponse

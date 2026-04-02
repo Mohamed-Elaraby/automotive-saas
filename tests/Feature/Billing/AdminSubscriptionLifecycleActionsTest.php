@@ -5,14 +5,19 @@ namespace Tests\Feature\Billing;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Admin\AdminActivityLogger;
+use App\Services\Admin\AdminSubscriptionControlService;
 use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
+use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\StripeSubscriptionSyncService;
 use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Mockery;
 use Tests\TestCase;
@@ -45,10 +50,10 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: Mockery::mock(BillingNotificationService::class),
         );
 
-        $response = $controller->syncFromStripe(999999);
+        $response = $controller->syncFromStripe(Request::create('/test-admin/subscriptions/999999/sync-stripe', 'POST'), 999999);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame(route('admin.subscriptions.index'), $response->getTargetUrl());
+        $this->assertSame(route('admin.subscriptions.show', 999999), $response->getTargetUrl());
         $this->assertSame('The subscription record was not found.', session('error'));
     }
 
@@ -69,7 +74,7 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: Mockery::mock(BillingNotificationService::class),
         );
 
-        $response = $controller->syncFromStripe($subscription->id);
+        $response = $controller->syncFromStripe(Request::create('/test-admin/subscriptions/' . $subscription->id . '/sync-stripe', 'POST'), $subscription->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(route('admin.subscriptions.show', $subscription->id), $response->getTargetUrl());
@@ -93,7 +98,7 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: Mockery::mock(BillingNotificationService::class),
         );
 
-        $response = $controller->syncFromStripe($subscription->id);
+        $response = $controller->syncFromStripe(Request::create('/test-admin/subscriptions/' . $subscription->id . '/sync-stripe', 'POST'), $subscription->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(route('admin.subscriptions.show', $subscription->id), $response->getTargetUrl());
@@ -129,7 +134,7 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: $billingNotificationService,
         );
 
-        $response = $controller->syncFromStripe($subscription->id);
+        $response = $controller->syncFromStripe(Request::create('/test-admin/subscriptions/' . $subscription->id . '/sync-stripe', 'POST'), $subscription->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(route('admin.subscriptions.show', $subscription->id), $response->getTargetUrl());
@@ -167,7 +172,7 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: $billingNotificationService,
         );
 
-        $response = $controller->refreshState($subscription->id);
+        $response = $controller->refreshState(Request::create('/test-admin/subscriptions/' . $subscription->id . '/refresh-state', 'POST'), $subscription->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(route('admin.subscriptions.show', $subscription->id), $response->getTargetUrl());
@@ -183,10 +188,10 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: Mockery::mock(BillingNotificationService::class),
         );
 
-        $response = $controller->normalizeLifecycle(999999);
+        $response = $controller->normalizeLifecycle(Request::create('/test-admin/subscriptions/999999/normalize-lifecycle', 'POST'), 999999);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame(route('admin.subscriptions.index'), $response->getTargetUrl());
+        $this->assertSame(route('admin.subscriptions.show', 999999), $response->getTargetUrl());
         $this->assertSame('The subscription record was not found.', session('error'));
     }
 
@@ -213,7 +218,7 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: $billingNotificationService,
         );
 
-        $response = $controller->normalizeLifecycle($subscription->id);
+        $response = $controller->normalizeLifecycle(Request::create('/test-admin/subscriptions/' . $subscription->id . '/normalize-lifecycle', 'POST'), $subscription->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(route('admin.subscriptions.show', $subscription->id), $response->getTargetUrl());
@@ -251,7 +256,7 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
             billingNotificationService: $billingNotificationService,
         );
 
-        $response = $controller->normalizeLifecycle($subscription->id);
+        $response = $controller->normalizeLifecycle(Request::create('/test-admin/subscriptions/' . $subscription->id . '/normalize-lifecycle', 'POST'), $subscription->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertSame(route('admin.subscriptions.show', $subscription->id), $response->getTargetUrl());
@@ -265,8 +270,12 @@ class AdminSubscriptionLifecycleActionsTest extends TestCase
         BillingNotificationService $billingNotificationService
     ): SubscriptionController {
         return new SubscriptionController(
+            Mockery::mock(AdminSubscriptionControlService::class),
+            Mockery::mock(AdminActivityLogger::class),
             Mockery::mock(StripeInvoiceHistoryService::class),
             $stripeSubscriptionSyncService,
+            Mockery::mock(StripeSubscriptionManagementService::class),
+            Mockery::mock(StripeSubscriptionPlanChangeService::class),
             Mockery::mock(StripeInvoiceLedgerBackfillService::class),
             $tenantBillingLifecycleService,
             $subscriptionLifecycleNormalizationService,

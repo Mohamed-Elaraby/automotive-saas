@@ -5,9 +5,13 @@ namespace Tests\Feature\Billing;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Admin\AdminActivityLogger;
+use App\Services\Admin\AdminSubscriptionControlService;
 use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
+use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\StripeSubscriptionSyncService;
 use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
@@ -210,8 +214,12 @@ class AdminSubscriptionsScreenStateTest extends TestCase
         SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService
     ): SubscriptionController {
         return new SubscriptionController(
+            Mockery::mock(AdminSubscriptionControlService::class),
+            Mockery::mock(AdminActivityLogger::class),
             $stripeInvoiceHistoryService,
             Mockery::mock(StripeSubscriptionSyncService::class),
+            Mockery::mock(StripeSubscriptionManagementService::class),
+            Mockery::mock(StripeSubscriptionPlanChangeService::class),
             Mockery::mock(StripeInvoiceLedgerBackfillService::class),
             $tenantBillingLifecycleService,
             $subscriptionLifecycleNormalizationService,
