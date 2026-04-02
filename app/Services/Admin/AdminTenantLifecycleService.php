@@ -61,8 +61,7 @@ class AdminTenantLifecycleService
         $trialEndsAt = $this->nullableCarbon($subscription->trial_ends_at ?? null);
 
         $hasPaidGatewaySignals =
-            filled($subscription->gateway ?? null) ||
-            filled($subscription->gateway_customer_id ?? null) ||
+            (string) ($subscription->gateway ?? '') === 'stripe' ||
             filled($subscription->gateway_subscription_id ?? null);
 
         if ($hasPaidGatewaySignals) {
@@ -256,7 +255,6 @@ class AdminTenantLifecycleService
     protected function isStripeLinkedSubscription(object $subscription): bool
     {
         return (string) ($subscription->gateway ?? '') === 'stripe'
-            || filled($subscription->gateway_customer_id ?? null)
             || filled($subscription->gateway_subscription_id ?? null);
     }
 

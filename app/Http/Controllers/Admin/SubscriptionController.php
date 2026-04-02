@@ -138,9 +138,7 @@ public function index(Request $request): View
             SubscriptionStatuses::CANCELLED,
             SubscriptionStatuses::EXPIRED,
         ],
-        'isStripeLinked' => (($subscription->gateway ?? null) === 'stripe')
-            || ! empty($subscription->gateway_subscription_id)
-            || ! empty($subscription->gateway_customer_id),
+        'isStripeLinked' => $this->isStripeLinkedRecord($subscription),
     ]);
 }
 
@@ -519,6 +517,12 @@ protected function snapshot(?Subscription $subscription): array
         'payment_failures_count' => (int) ($subscription->payment_failures_count ?? 0),
         'gateway' => $subscription->gateway,
     ];
+}
+
+protected function isStripeLinkedRecord(object $subscription): bool
+{
+    return (($subscription->gateway ?? null) === 'stripe')
+        || ! empty($subscription->gateway_subscription_id);
 }
 
 protected function redirectAfterAction(Request $request, int $subscriptionId): RedirectResponse
