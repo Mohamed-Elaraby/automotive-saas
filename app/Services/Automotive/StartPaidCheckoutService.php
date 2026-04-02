@@ -101,7 +101,7 @@ class StartPaidCheckoutService
                     'customer_email' => $user->email,
                     'success_url' => route('automotive.portal.checkout.success'),
                     'cancel_url' => route('automotive.portal.checkout.cancel'),
-                    'plan_for_audit' => (array) $plan,
+                    'plan_for_audit' => $this->planAuditPayload($plan),
                 ]);
         } catch (\Throwable $e) {
             report($e);
@@ -119,6 +119,7 @@ class StartPaidCheckoutService
         if (! empty($session['success']) && ! empty($session['checkout_url']) && ! empty($session['session_id'])) {
             if ($subscription) {
                 $subscription->fill([
+                    'plan_id' => (int) $plan->id,
                     'gateway' => 'stripe',
                     'gateway_checkout_session_id' => (string) $session['session_id'],
                     'gateway_price_id' => (string) $plan->stripe_price_id,
@@ -126,7 +127,7 @@ class StartPaidCheckoutService
 
                 if ($this->isRestartableTerminalStripeSubscription($subscription)) {
                     $subscription->fill([
-                        'status' => null,
+                        'status' => SubscriptionStatuses::PAST_DUE,
                         'gateway_subscription_id' => null,
                         'cancelled_at' => null,
                         'ends_at' => null,
@@ -214,8 +215,8 @@ class StartPaidCheckoutService
 
         return Subscription::query()->create([
             'tenant_id' => $tenantId,
-            'plan_id' => null,
-            'status' => null,
+            'plan_id' => $planId,
+            'status' => SubscriptionStatuses::PAST_DUE,
             'trial_ends_at' => null,
             'ends_at' => null,
             'external_id' => null,
@@ -280,5 +281,18 @@ class StartPaidCheckoutService
         }
 
         return ! now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
+    }
+
+    protected function planAuditPayload(object $plan): array
+    {
+        return [
+            'id' => $plan->id ?? null,
+            'name' => $plan->name ?? null,
+            'slug' => $plan->slug ?? null,
+            'price' => isset($plan->price) ? (float) $plan->price : null,
+            'currency' => strtoupper((string) ($plan->currency ?? 'USD')),
+            'billing_period' => (string) ($plan->billing_period ?? 'monthly'),
+            'stripe_price_id' => $plan->stripe_price_id ?? null,
+        ];
     }
 }

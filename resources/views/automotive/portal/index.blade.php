@@ -61,9 +61,15 @@
                         </div>
                     @elseif($status === 'past_due' || $status === 'suspended' || $status === 'expired')
                         <div class="alert alert-warning mb-3">
-                            Your current subscription status is
-                            <strong>{{ strtoupper(str_replace('_', ' ', $status)) }}</strong>.
-                            Please review your plan and billing before opening the system workspace.
+                            @if($status === 'expired' && $canStartPaidCheckout)
+                                Your previous subscription is
+                                <strong>EXPIRED</strong>.
+                                You can choose a paid plan below to start a new Stripe checkout.
+                            @else
+                                Your current subscription status is
+                                <strong>{{ strtoupper(str_replace('_', ' ', $status)) }}</strong>.
+                                Please review your plan and billing before opening the system workspace.
+                            @endif
                         </div>
                     @elseif(empty($subscription))
                         <div class="alert alert-primary mb-3">
