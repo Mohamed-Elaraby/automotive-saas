@@ -5,6 +5,7 @@ namespace App\Services\Billing;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Throwable;
+use App\Support\Billing\SubscriptionStatuses;
 
 class StripeSubscriptionManagementService
 {
@@ -74,6 +75,13 @@ public function resume(?object $subscription): array
         ];
     }
 
+    if (! $this->canResume($subscription)) {
+        return [
+            'success' => false,
+            'message' => 'This Stripe subscription can no longer be resumed. Only subscriptions still active for the current period can be resumed.',
+        ];
+    }
+
     try {
         $updated = $this->stripe->subscriptions->update(
             (string) $subscription->gateway_subscription_id,
@@ -96,9 +104,15 @@ public function resume(?object $subscription): array
             'message' => 'Subscription cancellation was removed and the subscription remains active.',
         ];
     } catch (ApiErrorException $e) {
+        $message = $e->getMessage();
+
+        if (str_contains(strtolower($message), 'a canceled subscription can only update its cancellation_details and metadata')) {
+            $message = 'This Stripe subscription has already been cancelled permanently and can no longer be resumed.';
+        }
+
         return [
             'success' => false,
-            'message' => 'Stripe API error while resuming subscription: ' . $e->getMessage(),
+            'message' => 'Stripe API error while resuming subscription: ' . $message,
         ];
     } catch (Throwable $e) {
         return [
@@ -147,5 +161,24 @@ public function cancelImmediately(?object $subscription): array
             'message' => 'Unable to cancel the subscription immediately right now. Please try again later.',
         ];
     }
+}
+
+protected function canResume(object $subscription): bool
+{
+    $status = (string) ($subscription->status ?? '');
+
+    if ($status === SubscriptionStatuses::ACTIVE) {
+        return true;
+    }
+
+    if ($status !== SubscriptionStatuses::CANCELLED) {
+        return false;
+    }
+
+    if (empty($subscription->ends_at)) {
+        return false;
+    }
+
+    return now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
 }
 }

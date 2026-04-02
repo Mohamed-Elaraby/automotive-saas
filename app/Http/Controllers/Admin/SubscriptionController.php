@@ -144,6 +144,7 @@ public function index(Request $request): View
         ],
         'stripePlanOptions' => $this->stripePlanOptions($subscription),
         'isStripeLinked' => $this->isStripeLinkedRecord($subscription),
+        'canResumeOnStripe' => $this->canResumeOnStripeRecord($subscription),
         'stripeLinkDiagnostics' => $this->stripeLinkDiagnostics($subscription),
     ]);
 }
@@ -700,6 +701,29 @@ protected function stripePlanOptions(object $subscription): \Illuminate\Support\
         ->orderBy('sort_order')
         ->orderBy('name')
         ->get(['id', 'name', 'slug', 'billing_period', 'price', 'currency', 'stripe_price_id']);
+}
+
+protected function canResumeOnStripeRecord(object $subscription): bool
+{
+    if (! $this->isStripeLinkedRecord($subscription)) {
+        return false;
+    }
+
+    $status = (string) ($subscription->status ?? '');
+
+    if ($status === SubscriptionStatuses::ACTIVE) {
+        return true;
+    }
+
+    if ($status !== SubscriptionStatuses::CANCELLED) {
+        return false;
+    }
+
+    if (empty($subscription->ends_at)) {
+        return false;
+    }
+
+    return now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
 }
 
 protected function redirectAfterAction(Request $request, int $subscriptionId): RedirectResponse

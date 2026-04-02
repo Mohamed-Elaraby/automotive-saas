@@ -524,12 +524,18 @@
                                         </button>
                                     </form>
 
-                                    <form method="POST" action="{{ route('admin.subscriptions.resume-on-stripe', $subscription->id) }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-success w-100">
-                                            Resume on Stripe
+                                    @if($canResumeOnStripe ?? false)
+                                        <form method="POST" action="{{ route('admin.subscriptions.resume-on-stripe', $subscription->id) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-success w-100">
+                                                Resume on Stripe
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                                            Resume on Stripe Unavailable
                                         </button>
-                                    </form>
+                                    @endif
                                 @endif
 
                                 <form method="POST" action="{{ route('admin.subscriptions.sync-stripe', $subscription->id) }}">

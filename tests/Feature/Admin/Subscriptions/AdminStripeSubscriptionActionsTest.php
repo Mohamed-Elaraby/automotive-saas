@@ -146,6 +146,24 @@ class AdminStripeSubscriptionActionsTest extends TestCase
             ->assertSessionHas('success', 'Subscription plan changed successfully.');
     }
 
+    public function test_show_disables_resume_on_stripe_for_terminal_cancelled_subscription(): void
+    {
+        $admin = $this->createAdmin();
+        $subscription = $this->createStripeSubscription();
+
+        $subscription->update([
+            'status' => 'canceled',
+            'ends_at' => now()->subMinute(),
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.subscriptions.show', $subscription->id));
+
+        $response->assertOk();
+        $response->assertSee('Resume on Stripe Unavailable', false);
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([
