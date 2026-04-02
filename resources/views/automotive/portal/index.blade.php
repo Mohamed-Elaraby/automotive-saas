@@ -350,6 +350,9 @@
                                                             default => '/month',
                                                         };
                                                         $featureList = collect($paidPlan->features_array ?? [])->take(6);
+                                                        $limitLines = collect($paidPlan->limits_array ?? [])->map(function ($limit) {
+                                                            return $limit['label'] . ' ' . $limit['value'];
+                                                        });
                                                     @endphp
                                                     <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
                                                         <div class="card pricing-starter flex-fill w-100">
@@ -381,36 +384,23 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="mt-3 mb-3">
-                                                                    <div class="mb-3">
-                                                                        <h6 class="fs-16 mb-2">Plan Limits</h6>
-                                                                        <div class="row g-2">
-                                                                            @forelse(($paidPlan->limits_array ?? []) as $limit)
-                                                                                <div class="col-6">
-                                                                                    <div class="rounded border bg-light px-3 py-2 h-100">
-                                                                                        <span class="d-block fs-12 text-muted">{{ $limit['label'] }}</span>
-                                                                                        <strong class="text-dark">{{ $limit['value'] }}</strong>
-                                                                                    </div>
-                                                                                </div>
-                                                                            @empty
-                                                                                <div class="col-12">
-                                                                                    <div class="rounded border bg-light px-3 py-2">
-                                                                                        <span class="text-muted">No hard limits are configured for this plan yet.</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            @endforelse
-                                                                        </div>
-                                                                    </div>
-
                                                                     <div class="mb-1">
                                                                         <h6 class="fs-16 mb-2">What you get:</h6>
                                                                     </div>
                                                                     <div>
+                                                                        @foreach($limitLines as $limitLine)
+                                                                            <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                                                <i class="isax isax-tick-circle me-2"></i>{{ $limitLine }}
+                                                                            </p>
+                                                                        @endforeach
                                                                         @forelse($featureList as $feature)
                                                                             <p class="text-dark d-flex align-items-center mb-2 text-truncate">
                                                                                 <i class="isax isax-tick-circle me-2"></i>{{ $feature }}
                                                                             </p>
                                                                         @empty
-                                                                            <p class="text-muted mb-0">No extra features are configured for this plan yet.</p>
+                                                                            @if($limitLines->isEmpty())
+                                                                                <p class="text-muted mb-0">No extra features are configured for this plan yet.</p>
+                                                                            @endif
                                                                         @endforelse
                                                                     </div>
                                                                 </div>

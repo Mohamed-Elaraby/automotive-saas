@@ -104,7 +104,8 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
 
         $response->assertOk();
-        $response->assertSee('Plan Limits', false);
+        $response->assertSee('What you get:', false);
+        $response->assertDontSee('Plan Limits', false);
         $response->assertSee('Users', false);
         $response->assertSee('12', false);
         $response->assertSee('Branches', false);
