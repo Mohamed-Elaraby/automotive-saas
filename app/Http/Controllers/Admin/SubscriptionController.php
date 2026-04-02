@@ -144,25 +144,22 @@ public function index(Request $request): View
     ]);
 }
 
-public function syncFromStripe(int $subscriptionId): RedirectResponse
+public function syncFromStripe(Request $request, int $subscriptionId): RedirectResponse
 {
     $subscription = Subscription::query()->find($subscriptionId);
 
     if (! $subscription) {
-        return redirect()
-            ->route('admin.subscriptions.index')
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'The subscription record was not found.');
     }
 
     if (($subscription->gateway ?? null) !== 'stripe') {
-        return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'This subscription is not linked to the Stripe gateway.');
     }
 
     if (! $subscription->gateway_subscription_id) {
-        return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'No Stripe subscription ID is linked to this subscription.');
     }
 
@@ -173,7 +170,7 @@ public function syncFromStripe(int $subscriptionId): RedirectResponse
 
         if (! $synced) {
             return redirect()
-                ->route('admin.subscriptions.show', $subscriptionId)
+                ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
                 ->with('error', 'No local subscription could be matched for the Stripe subscription ID.');
         }
 
@@ -185,36 +182,33 @@ public function syncFromStripe(int $subscriptionId): RedirectResponse
         ]);
 
         return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+            ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
             ->with('success', 'Subscription data was synced successfully from Stripe.');
     } catch (Throwable $e) {
         report($e);
 
         return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+            ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
             ->with('error', 'Unable to sync the subscription from Stripe right now.');
     }
 }
 
-public function backfillInvoices(int $subscriptionId): RedirectResponse
+public function backfillInvoices(Request $request, int $subscriptionId): RedirectResponse
 {
     $subscription = Subscription::query()->find($subscriptionId);
 
     if (! $subscription) {
-        return redirect()
-            ->route('admin.subscriptions.index')
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'The subscription record was not found.');
     }
 
     if (($subscription->gateway ?? null) !== 'stripe') {
-        return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'This subscription is not linked to the Stripe gateway.');
     }
 
     if (! $subscription->gateway_customer_id) {
-        return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'No Stripe customer ID is linked to this subscription.');
     }
 
@@ -222,24 +216,23 @@ public function backfillInvoices(int $subscriptionId): RedirectResponse
         $result = $this->stripeInvoiceLedgerBackfillService->backfillForSubscription($subscription, 100);
 
         return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+            ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
             ->with($result['ok'] ? 'success' : 'error', $result['message']);
     } catch (Throwable $e) {
         report($e);
 
         return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+            ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
             ->with('error', 'Unable to backfill Stripe invoices for this subscription right now.');
     }
 }
 
-public function refreshState(int $subscriptionId): RedirectResponse
+public function refreshState(Request $request, int $subscriptionId): RedirectResponse
 {
     $subscription = Subscription::query()->find($subscriptionId);
 
     if (! $subscription) {
-        return redirect()
-            ->route('admin.subscriptions.index')
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'The subscription record was not found.');
     }
 
@@ -251,7 +244,7 @@ public function refreshState(int $subscriptionId): RedirectResponse
     ]);
 
     return redirect()
-        ->route('admin.subscriptions.show', $subscriptionId)
+        ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
         ->with(
             'success',
             'Local billing state was refreshed. Current resolved status: ' .
@@ -259,21 +252,19 @@ public function refreshState(int $subscriptionId): RedirectResponse
         );
 }
 
-public function normalizeLifecycle(int $subscriptionId): RedirectResponse
+public function normalizeLifecycle(Request $request, int $subscriptionId): RedirectResponse
 {
     $subscription = Subscription::query()->find($subscriptionId);
 
     if (! $subscription) {
-        return redirect()
-            ->route('admin.subscriptions.index')
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', 'The subscription record was not found.');
     }
 
     $result = $this->subscriptionLifecycleNormalizationService->normalizeOne($subscriptionId, true);
 
     if (! ($result['ok'] ?? false)) {
-        return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+        return $this->redirectAfterAction($request, $subscriptionId)
             ->with('error', $result['message'] ?? 'Unable to normalize lifecycle fields.');
     }
 
@@ -287,7 +278,7 @@ public function normalizeLifecycle(int $subscriptionId): RedirectResponse
     );
 
     return redirect()
-        ->route('admin.subscriptions.show', $subscriptionId)
+        ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
         ->with('success', $result['message'] ?? 'Lifecycle fields were normalized successfully.');
 }
 
@@ -303,6 +294,7 @@ public function manualAction(Request $request, int $subscriptionId): RedirectRes
             SubscriptionStatuses::CANCELLED,
             SubscriptionStatuses::EXPIRED,
         ])],
+        'redirect_to' => ['nullable', 'string', 'in:index,show'],
     ]);
 
     try {
@@ -343,13 +335,13 @@ public function manualAction(Request $request, int $subscriptionId): RedirectRes
         }
 
         return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+            ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
             ->with('success', $result['message'] ?? 'Subscription action completed successfully.');
     } catch (Throwable $e) {
         report($e);
 
         return redirect()
-            ->route('admin.subscriptions.show', $subscriptionId)
+            ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
             ->with('error', $e->getMessage() ?: 'Unable to apply the subscription action right now.');
     }
 }
@@ -528,4 +520,14 @@ protected function snapshot(?Subscription $subscription): array
         'gateway' => $subscription->gateway,
     ];
 }
+
+protected function redirectAfterAction(Request $request, int $subscriptionId): RedirectResponse
+{
+    if ($request->input('redirect_to') === 'index') {
+        return redirect()->route('admin.subscriptions.index');
+    }
+
+    return redirect()->route('admin.subscriptions.show', $subscriptionId);
+}
+
 }
