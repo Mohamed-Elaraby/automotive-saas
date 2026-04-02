@@ -66,6 +66,55 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee('Billing Managed In System', false);
     }
 
+    public function test_portal_paid_plan_cards_show_real_plan_limits(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Limits User',
+            'email' => 'portal-limits-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Limits Co',
+            'subdomain' => 'portal-limits-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $plan = Plan::query()->create([
+            'name' => 'Growth',
+            'slug' => 'growth-' . uniqid(),
+            'description' => 'Real plan description',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+            'max_users' => 12,
+            'max_branches' => 4,
+            'max_products' => 250,
+            'max_storage_mb' => 2048,
+            'features' => ['Barcode support', 'Inventory reports'],
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('Plan Limits', false);
+        $response->assertSee('Users', false);
+        $response->assertSee('12', false);
+        $response->assertSee('Branches', false);
+        $response->assertSee('4', false);
+        $response->assertSee('Products', false);
+        $response->assertSee('250', false);
+        $response->assertSee('Storage', false);
+        $response->assertSee('2048 MB', false);
+        $response->assertSee('Barcode support', false);
+        $response->assertSee('Inventory reports', false);
+        $response->assertSee((string) $plan->slug, false);
+    }
+
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void
     {
         $user = User::query()->create([

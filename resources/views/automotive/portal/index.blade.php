@@ -320,14 +320,19 @@
                                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                                     <div>
                                                         <h6 class="mb-1">{{ $paidPlan->name }}</h6>
-                                                        <div class="text-muted fs-13">{{ $paidPlan->billing_period_label }}</div>
+                                                        <div class="text-muted fs-13 d-flex flex-wrap gap-2 align-items-center">
+                                                            <span>{{ $paidPlan->billing_period_label }}</span>
+                                                            @if(!empty($paidPlan->slug))
+                                                                <span class="badge bg-light text-dark">{{ $paidPlan->slug }}</span>
+                                                            @endif
+                                                        </div>
                                                     </div>
                                                     @if($isCurrentPaidPlan && $status === 'active')
                                                         <span class="badge bg-success">Current</span>
                                                     @endif
                                                 </div>
 
-                                                <div class="mb-2">
+                                                <div class="mb-3">
                                                     <span class="fs-24 fw-bold text-dark">{{ $paidPlan->display_price }}</span>
                                                 </div>
 
@@ -335,14 +340,35 @@
                                                     <p class="text-muted mb-3">{{ $paidPlan->description }}</p>
                                                 @endif
 
+                                                @if(!empty($paidPlan->limits_array))
+                                                    <div class="mb-3">
+                                                        <div class="small fw-semibold text-dark mb-2">Plan Limits</div>
+                                                        <div class="row g-2">
+                                                            @foreach($paidPlan->limits_array as $limit)
+                                                                <div class="col-6">
+                                                                    <div class="border rounded px-2 py-2 h-100">
+                                                                        <div class="small text-muted">{{ $limit['label'] }}</div>
+                                                                        <div class="fw-semibold">{{ $limit['value'] }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 @if(!empty($paidPlan->features_array))
                                                     <div class="mb-3">
+                                                        <div class="small fw-semibold text-dark mb-2">Included Features</div>
                                                         @foreach($paidPlan->features_array as $feature)
                                                             <div class="d-flex align-items-start mb-2">
                                                                 <span class="badge bg-soft-primary text-primary me-2">+</span>
                                                                 <span class="text-muted">{{ $feature }}</span>
                                                             </div>
                                                         @endforeach
+                                                    </div>
+                                                @elseif(empty($paidPlan->description) && empty($paidPlan->limits_array))
+                                                    <div class="alert alert-light border mb-3">
+                                                        No extra plan details were configured for this plan yet.
                                                     </div>
                                                 @endif
 

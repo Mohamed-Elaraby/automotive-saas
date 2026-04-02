@@ -37,9 +37,10 @@ return $this->hydratePlan($plan);
 protected function hydratePlan(object $plan): object
 {
     $plan->features_array = $this->decodeFeatures($plan->features ?? null);
+    $plan->limits_array = $this->buildLimits($plan);
     $plan->price_decimal = isset($plan->price) ? (float) $plan->price : 0.0;
     $plan->currency_code = strtoupper((string) ($plan->currency ?? 'USD'));
-    $plan->billing_period_label = ucfirst((string) ($plan->billing_period ?? 'monthly'));
+    $plan->billing_period_label = $this->billingPeriodLabel((string) ($plan->billing_period ?? 'monthly'));
     $plan->display_price = number_format((float) ($plan->price ?? 0), 2) . ' ' . $plan->currency_code;
 
     return $plan;
@@ -69,5 +70,43 @@ protected function decodeFeatures(mixed $features): array
     }
 
     return [];
+}
+
+protected function buildLimits(object $plan): array
+{
+    $limits = [];
+
+    foreach ([
+        'max_users' => 'Users',
+        'max_branches' => 'Branches',
+        'max_products' => 'Products',
+        'max_storage_mb' => 'Storage',
+    ] as $field => $label) {
+        $value = $plan->{$field} ?? null;
+
+        if ($value === null || $value === '') {
+            continue;
+        }
+
+        $limits[] = [
+            'label' => $label,
+            'value' => $field === 'max_storage_mb'
+                ? ((int) $value . ' MB')
+                : (string) (int) $value,
+        ];
+    }
+
+    return $limits;
+}
+
+protected function billingPeriodLabel(string $period): string
+{
+    return match ($period) {
+        'trial' => 'Trial',
+        'monthly' => 'Monthly',
+        'yearly' => 'Yearly',
+        'one_time' => 'One Time',
+        default => ucfirst($period),
+    };
 }
 }
