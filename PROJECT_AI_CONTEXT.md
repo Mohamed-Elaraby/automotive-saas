@@ -291,6 +291,43 @@ Manual subscription actions now generate:
 ### 10.5 Subscription Tests Present
 - `tests/Feature/Admin/Subscriptions/AdminSubscriptionAdvancedControlTest.php`
 
+### 10.6 Latest Subscription/Admin Billing Work
+Confirmed implemented after the above:
+- subscriptions index improved with:
+  - lifecycle timeline summary
+  - quick actions directly from list
+  - redirect back to index after actions
+- local admin subscription control fixed to always reload Eloquent model safely
+  - previous `stdClass::fresh()` failure fixed
+- Stripe-link blocking logic tightened
+  - local controls are blocked only for real Stripe-linked subscriptions
+  - `gateway_customer_id` alone no longer blocks local actions
+- subscription show page now includes diagnostics for:
+  - gateway value
+  - has customer id
+  - has subscription id
+  - has checkout session id
+  - local controls blocked yes/no
+- admin Stripe actions added on subscription show:
+  - cancel at period end on Stripe
+  - cancel immediately on Stripe
+  - resume on Stripe
+  - change plan on Stripe
+- invalid Stripe actions are now guarded:
+  - cannot resume a terminal cancelled Stripe subscription
+  - cannot cancel immediately twice on a terminal cancelled Stripe subscription
+  - admin UI shows unavailable state instead of misleading enabled buttons
+
+Important files:
+- `app/Http/Controllers/Admin/SubscriptionController.php`
+- `app/Services/Admin/AdminSubscriptionControlService.php`
+- `app/Services/Billing/StripeSubscriptionManagementService.php`
+- `app/Services/Billing/StripeSubscriptionPlanChangeService.php`
+- `resources/views/admin/subscriptions/index.blade.php`
+- `resources/views/admin/subscriptions/show.blade.php`
+- `tests/Feature/Admin/Subscriptions/AdminSubscriptionsIndexTest.php`
+- `tests/Feature/Admin/Subscriptions/AdminStripeSubscriptionActionsTest.php`
+
 ## 11) Portal / Front State
 Current confirmed state from code:
 - automotive auth routes are active:
@@ -309,6 +346,37 @@ Important current note:
 - `resources/views/automotive/front/*` still exists for front auth/controllers
 - `resources/views/automotive/portal/*` also exists as isolated portal namespace
 - any future work must read current actual view wiring first before changing assumptions
+
+### 11.1 Latest Portal/Billing Flow Fixes
+Confirmed implemented:
+- after terminal Stripe cancellation, customer portal can start a new paid checkout again
+- portal no longer treats terminal/expired Stripe subscriptions as live subscriptions
+- restart paid checkout after terminal cancellation now:
+  - reuses subscription row safely
+  - clears terminal Stripe linkage where needed
+  - updates selected `plan_id`
+  - updates `gateway_price_id`
+  - uses `past_due` as pending checkout state instead of invalid `null`
+- `StartPaidCheckoutService` now sends a flat plan audit payload to Stripe billing audit
+  - this fixed false mismatch errors like:
+    - `The selected plan pricing does not match the linked Stripe price...`
+- portal status messaging improved:
+  - expired subscription now invites customer to start a new Stripe checkout
+  - instead of only warning that workspace access is blocked
+- paid plans UI in portal was redesigned to match project theme more closely
+- paid plans cards now show:
+  - real price
+  - real limits
+  - real selected features
+  - limits merged into `What you get`
+  - no separate ugly boxed limits block
+
+Important files:
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Billing/BillingPlanCatalogService.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
 
 ## 12) Tenant Admin State
 Current confirmed state from code:
@@ -351,6 +419,22 @@ Real UI issue:
 Fix applied:
 - banner moved inline into tenant admin header partial
 
+### 13.4 Tenant Identification Noise On Server IP
+Real production/runtime behavior identified:
+- requests hitting server IP directly like `216.128.148.123` can trigger tenancy identification failure
+- tenant routes use `InitializeTenancyByDomain`
+- if host is not a known tenant domain and not in `tenancy.central_domains`, tenancy throws
+- exception handler then stores:
+  - `system_error_logs`
+  - `admin_notifications`
+- this is why repeated `SYSTEM ERROR: Tenant could not be identified on domain ...` notifications can appear
+
+Important note:
+- this is usually external traffic/bots or health checks on raw IP
+- not necessarily a billing bug
+- if central app must be served on raw IP, add the IP to `config/tenancy.php`
+- otherwise better ignore/filter this exception from notifications in future hardening work
+
 ## 14) Known Operating Constraints
 - Production mail delivery for some admin auth/reset flows may still need real SMTP/Mailgun verification.
 - Roles & permissions with Laratrust are not yet confirmed as implemented in the current codebase.
@@ -368,10 +452,18 @@ Fix applied:
 - central tenants management major controls
 - tenant impersonation
 - subscriptions advanced control
+- subscriptions index quick actions
+- admin Stripe subscription controls
+- restart checkout flow after terminal Stripe cancellation
+- portal paid plans redesign
+- plan features refactor to shared catalog
+- live plan preview in admin plan form
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
-- improve subscriptions index timeline and quick actions
+- harden tenancy exception filtering for raw IP / invalid host traffic
+- improve admin billing-features catalog with search/filter and maybe usage drilldown
+- add preview or inline guidance for limits semantics if admins still confuse them
 - implement roles & permissions for central admin
 - implement real-time notifications via SSE
 - implement automation jobs for lifecycle suspend/delete policies
@@ -404,6 +496,21 @@ $env:DB_DATABASE=':memory:'
 php artisan test tests\Feature\Admin\Tenants
 php artisan test tests\Feature\Admin\Subscriptions\AdminSubscriptionAdvancedControlTest.php
 php artisan test tests\Feature\Admin\Notifications
+php artisan test tests\Feature\Admin\Plans
+php artisan test tests\Feature\Automotive\Portal\CustomerPortalBillingOptionsTest.php
+```
+
+Important migration note after latest plan features refactor:
+- running latest code now requires central migrations for:
+  - `billing_features`
+  - `billing_feature_plan`
+  - dropping old `plan_features`
+- deploy flow must include:
+```powershell
+git pull origin main
+php artisan migrate --force
+php artisan view:clear
+php artisan view:cache
 ```
 
 ## 17) Most Important Files Right Now
@@ -411,18 +518,27 @@ php artisan test tests\Feature\Admin\Notifications
 ### Central Admin
 - `app/Http/Controllers/Admin/TenantController.php`
 - `app/Http/Controllers/Admin/SubscriptionController.php`
+- `app/Http/Controllers/Admin/PlanController.php`
+- `app/Http/Controllers/Admin/BillingFeatureController.php`
 - `app/Services/Admin/AdminTenantLifecycleService.php`
 - `app/Services/Admin/TenantImpersonationService.php`
 - `app/Services/Admin/AdminSubscriptionControlService.php`
+- `app/Services/Billing/StripeSubscriptionManagementService.php`
+- `app/Services/Billing/StripeSubscriptionPlanChangeService.php`
 - `resources/views/admin/tenants/index.blade.php`
 - `resources/views/admin/tenants/show.blade.php`
 - `resources/views/admin/subscriptions/index.blade.php`
 - `resources/views/admin/subscriptions/show.blade.php`
+- `resources/views/admin/plans/index.blade.php`
+- `resources/views/admin/plans/_form.blade.php`
+- `resources/views/admin/billing-features/*`
 - `resources/views/admin/layouts/centralLayout/partials/sidebar.blade.php`
 
 ### Automotive Front / Portal
 - `routes/products/automotive/front.php`
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Billing/BillingPlanCatalogService.php`
 - `resources/views/automotive/front/*`
 - `resources/views/automotive/portal/*`
 
@@ -436,8 +552,15 @@ If a new session starts from this file only, the safest current summary is:
 
 - Central admin is broadly functional and now includes strong tenant/subscription operations.
 - Tenants management is substantially advanced, including deletion and impersonation.
-- Subscriptions management now includes advanced local controls for non-Stripe subscriptions.
+- Subscriptions management now includes:
+  - advanced local controls for non-Stripe subscriptions
+  - Stripe-native admin actions for real Stripe subscriptions
+  - better diagnostics and safer action gating
 - Notifications are present and tested.
+- Customer portal can restart paid checkout correctly after terminal Stripe cancellation.
+- Paid plans now read real shared feature catalog data and real limits.
+- Plan features are no longer ad hoc text; they are managed via a shared billing features catalog with admin CRUD.
+- Admin plan form now includes a live customer-portal preview for price, limits, and selected features.
 - The codebase has multiple isolated UI namespaces; keep them separated.
 - Do not use `route:cache`.
 - Always verify current files before assuming older flow descriptions are still correct.
