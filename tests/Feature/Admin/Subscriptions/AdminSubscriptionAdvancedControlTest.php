@@ -116,6 +116,34 @@ class AdminSubscriptionAdvancedControlTest extends TestCase
         $this->assertSame('canceled', $subscription->fresh()->status);
     }
 
+    public function test_manual_action_allows_gateway_flag_without_stripe_subscription_id(): void
+    {
+        $admin = $this->createAdmin();
+        $plan = $this->createPlan('Stripe Pending Monthly', 'stripe-pending-monthly', 'monthly');
+
+        $subscription = Subscription::query()->create([
+            'tenant_id' => 'tenant-subscription-gateway-only-' . uniqid(),
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_pending_only',
+            'gateway_checkout_session_id' => 'cs_pending_only',
+            'gateway_subscription_id' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->post(route('admin.subscriptions.manual-action', $subscription->id), [
+                'action' => 'cancel',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.subscriptions.show', $subscription->id))
+            ->assertSessionHas('success');
+
+        $this->assertSame('canceled', $subscription->fresh()->status);
+    }
+
     public function test_manual_renew_sets_future_ends_at_for_local_subscription(): void
     {
         $admin = $this->createAdmin();

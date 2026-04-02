@@ -194,8 +194,7 @@
                                 @php
                                     $status = strtolower((string) ($subscription->status ?? 'unknown'));
                                     $badgeClass = $statusBadgeClass($status);
-                                    $isStripeLinked = (($subscription->gateway ?? null) === 'stripe')
-                                        || !empty($subscription->gateway_subscription_id);
+                                    $isStripeLinked = !empty($subscription->gateway_subscription_id);
                                     $timeline = [
                                         'Trial ends' => $subscription->trial_ends_at ?? null,
                                         'Past due' => $subscription->past_due_started_at ?? null,

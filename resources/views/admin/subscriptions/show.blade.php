@@ -355,11 +355,46 @@
                         <div class="card-body">
                             <h6 class="mb-3">Advanced Control</h6>
 
+                            @php
+                                $stripeLinkDiagnostics = is_array($stripeLinkDiagnostics ?? null) ? $stripeLinkDiagnostics : ['signals' => []];
+                            @endphp
+
                             @if($isStripeLinked)
                                 <div class="alert alert-warning">
-                                    This subscription is Stripe-linked. Manual lifecycle forcing and local timestamp overrides are blocked to avoid drift from Stripe.
+                                    {{ $stripeLinkDiagnostics['reason'] ?? 'This subscription is Stripe-linked. Manual lifecycle forcing and local timestamp overrides are blocked to avoid drift from Stripe.' }}
+                                </div>
+                            @else
+                                <div class="alert alert-info">
+                                    {{ $stripeLinkDiagnostics['reason'] ?? 'Manual local controls are currently allowed.' }}
                                 </div>
                             @endif
+
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <tbody>
+                                    <tr>
+                                        <th style="width: 220px;">Gateway Value</th>
+                                        <td>{{ $stripeLinkDiagnostics['signals']['gateway'] ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Has Customer ID</th>
+                                        <td>{{ !empty($stripeLinkDiagnostics['signals']['has_gateway_customer_id']) ? 'Yes' : 'No' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Has Subscription ID</th>
+                                        <td>{{ !empty($stripeLinkDiagnostics['signals']['has_gateway_subscription_id']) ? 'Yes' : 'No' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Has Checkout Session ID</th>
+                                        <td>{{ !empty($stripeLinkDiagnostics['signals']['has_gateway_checkout_session_id']) ? 'Yes' : 'No' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Local Controls Blocked</th>
+                                        <td>{{ !empty($stripeLinkDiagnostics['is_blocked']) ? 'Yes' : 'No' }}</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
                             <form method="POST" action="{{ route('admin.subscriptions.manual-action', $subscription->id) }}" class="mb-4">
                                 @csrf

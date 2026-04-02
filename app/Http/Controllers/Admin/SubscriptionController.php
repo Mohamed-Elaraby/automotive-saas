@@ -139,6 +139,7 @@ public function index(Request $request): View
             SubscriptionStatuses::EXPIRED,
         ],
         'isStripeLinked' => $this->isStripeLinkedRecord($subscription),
+        'stripeLinkDiagnostics' => $this->stripeLinkDiagnostics($subscription),
     ]);
 }
 
@@ -521,8 +522,28 @@ protected function snapshot(?Subscription $subscription): array
 
 protected function isStripeLinkedRecord(object $subscription): bool
 {
-    return (($subscription->gateway ?? null) === 'stripe')
-        || ! empty($subscription->gateway_subscription_id);
+    return ! empty($subscription->gateway_subscription_id);
+}
+
+protected function stripeLinkDiagnostics(object $subscription): array
+{
+    $hasGateway = ! empty($subscription->gateway);
+    $hasCustomerId = ! empty($subscription->gateway_customer_id);
+    $hasSubscriptionId = ! empty($subscription->gateway_subscription_id);
+    $hasCheckoutSessionId = ! empty($subscription->gateway_checkout_session_id);
+
+    return [
+        'is_blocked' => $hasSubscriptionId,
+        'reason' => $hasSubscriptionId
+            ? 'Manual local controls are blocked because a live Stripe subscription ID is linked to this record.'
+            : 'Manual local controls are allowed because no Stripe subscription ID is linked to this record.',
+        'signals' => [
+            'gateway' => $hasGateway ? (string) $subscription->gateway : null,
+            'has_gateway_customer_id' => $hasCustomerId,
+            'has_gateway_subscription_id' => $hasSubscriptionId,
+            'has_gateway_checkout_session_id' => $hasCheckoutSessionId,
+        ],
+    ];
 }
 
 protected function redirectAfterAction(Request $request, int $subscriptionId): RedirectResponse

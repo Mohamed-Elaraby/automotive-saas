@@ -139,8 +139,7 @@ class AdminSubscriptionControlService
 
     protected function isStripeLinked(Subscription $subscription): bool
     {
-        return ($subscription->gateway ?? null) === 'stripe'
-            || filled($subscription->gateway_subscription_id);
+        return filled($subscription->gateway_subscription_id);
     }
 
     protected function markAsTrialing(Subscription $subscription): Subscription
