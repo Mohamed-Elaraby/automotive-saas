@@ -5,6 +5,9 @@
             ? $plan->billingFeatures->pluck('id')->all()
             : $plan->billingFeatures()->pluck('billing_features.id')->all()
     ))->map(fn ($id) => (int) $id)->all();
+    $previewPrice = old('price', $plan->price);
+    $previewCurrency = old('currency', $plan->currency ?: 'USD');
+    $previewBillingPeriod = old('billing_period', $plan->billing_period ?: 'monthly');
 @endphp
 
 <div class="card">
@@ -12,7 +15,7 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" name="name" value="{{ old('name', $plan->name) }}" required>
+                <input type="text" class="form-control" name="name" value="{{ old('name', $plan->name) }}" required data-plan-preview="name">
             </div>
 
             <div class="col-md-6 mb-3">
@@ -22,17 +25,17 @@
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Price <span class="text-danger">*</span></label>
-                <input type="number" step="0.01" min="0" class="form-control" name="price" value="{{ old('price', $plan->price) }}" required>
+                <input type="number" step="0.01" min="0" class="form-control" name="price" value="{{ $previewPrice }}" required data-plan-preview="price">
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Currency <span class="text-danger">*</span></label>
-                <input type="text" class="form-control text-uppercase" maxlength="3" name="currency" value="{{ old('currency', $plan->currency ?: 'USD') }}" required>
+                <input type="text" class="form-control text-uppercase" maxlength="3" name="currency" value="{{ $previewCurrency }}" required data-plan-preview="currency">
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Billing Period <span class="text-danger">*</span></label>
-                <select name="billing_period" class="form-select" required>
+                <select name="billing_period" class="form-select" required data-plan-preview="billing_period">
                     @foreach (['trial', 'monthly', 'yearly', 'one_time'] as $period)
                         <option value="{{ $period }}" @selected(old('billing_period', $plan->billing_period) === $period)>
                             {{ ucfirst(str_replace('_', ' ', $period)) }}
@@ -61,22 +64,22 @@
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Users</label>
-                <input type="number" min="1" class="form-control" name="max_users" value="{{ old('max_users', $plan->max_users) }}">
+                <input type="number" min="1" class="form-control" name="max_users" value="{{ old('max_users', $plan->max_users) }}" data-plan-preview="max_users">
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Branches</label>
-                <input type="number" min="1" class="form-control" name="max_branches" value="{{ old('max_branches', $plan->max_branches) }}">
+                <input type="number" min="1" class="form-control" name="max_branches" value="{{ old('max_branches', $plan->max_branches) }}" data-plan-preview="max_branches">
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Products</label>
-                <input type="number" min="1" class="form-control" name="max_products" value="{{ old('max_products', $plan->max_products) }}">
+                <input type="number" min="1" class="form-control" name="max_products" value="{{ old('max_products', $plan->max_products) }}" data-plan-preview="max_products">
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Storage (MB)</label>
-                <input type="number" min="1" class="form-control" name="max_storage_mb" value="{{ old('max_storage_mb', $plan->max_storage_mb) }}">
+                <input type="number" min="1" class="form-control" name="max_storage_mb" value="{{ old('max_storage_mb', $plan->max_storage_mb) }}" data-plan-preview="max_storage_mb">
             </div>
 
             <div class="col-12 mb-3">
@@ -111,6 +114,8 @@
                                             name="feature_ids[]"
                                             value="{{ $feature->id }}"
                                             id="feature_{{ $feature->id }}"
+                                            data-plan-preview="feature"
+                                            data-feature-name="{{ $feature->name }}"
                                             @checked(in_array((int) $feature->id, $selectedFeatureIds, true))
                                         >
                                         <label class="form-check-label" for="feature_{{ $feature->id }}">
@@ -127,6 +132,194 @@
                 </div>
                 <small class="text-muted">Use the catalog so the same feature names stay consistent across all plans.</small>
             </div>
+
+            <div class="col-12 mt-4">
+                <div class="card border">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <h6 class="mb-1">Portal Preview</h6>
+                            <p class="text-muted mb-0">This mirrors the customer portal card before you save the plan.</p>
+                        </div>
+                        <span class="badge badge-soft-info" id="plan-preview-billing-label">
+                            {{ ucfirst(str_replace('_', ' ', (string) $previewBillingPeriod)) }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-5">
+                                <div class="card pricing-starter h-100 mb-0">
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="border-bottom">
+                                            <div class="mb-3">
+                                                <div class="d-flex align-items-center justify-content-between gap-2">
+                                                    <div>
+                                                        <h5 class="mb-1" id="plan-preview-name">{{ old('name', $plan->name ?: 'New Plan') }}</h5>
+                                                        <p class="mb-0" id="plan-preview-description">{{ old('description', $plan->description ?: 'Plan description will appear here.') }}</p>
+                                                    </div>
+                                                    <span class="badge bg-soft-info text-info">Preview</span>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <h3 class="d-flex align-items-center mb-1">
+                                                    <span id="plan-preview-price">{{ number_format((float) ($previewPrice ?: 0), 2) }}</span>
+                                                    <span class="fs-14 fw-normal text-gray-9 ms-1" id="plan-preview-price-suffix">
+                                                        @if($previewBillingPeriod === 'yearly')
+                                                            /year
+                                                        @elseif($previewBillingPeriod === 'one_time')
+                                                            one-time
+                                                        @elseif($previewBillingPeriod === 'trial')
+                                                            /trial
+                                                        @else
+                                                            /month
+                                                        @endif
+                                                    </span>
+                                                </h3>
+                                                <p class="mb-0" id="plan-preview-currency">{{ strtoupper((string) $previewCurrency) }} billing</p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="mb-1">
+                                                <h6 class="fs-16 mb-2">What you get:</h6>
+                                            </div>
+                                            <div id="plan-preview-list">
+                                                <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                    <i class="isax isax-tick-circle me-2"></i><span>No plan details yet.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-7">
+                                <div class="rounded border bg-light p-3 h-100">
+                                    <h6 class="mb-3">Preview Notes</h6>
+                                    <p class="text-muted mb-3">
+                                        Limits and selected features are merged into one customer-facing list, just like the paid plan cards in the portal.
+                                    </p>
+                                    <ul class="mb-0 text-muted ps-3">
+                                        <li>Empty numeric limits are hidden from customers.</li>
+                                        <li>Checked features appear after the limits.</li>
+                                        <li>Trial plans force price to `0.00` when saved.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
+
+        if (!form) {
+            return;
+        }
+
+        const getField = (name) => form.querySelector('[name="' + name + '"]');
+        const previewName = document.getElementById('plan-preview-name');
+        const previewDescription = document.getElementById('plan-preview-description');
+        const previewPrice = document.getElementById('plan-preview-price');
+        const previewCurrency = document.getElementById('plan-preview-currency');
+        const previewPriceSuffix = document.getElementById('plan-preview-price-suffix');
+        const previewBillingLabel = document.getElementById('plan-preview-billing-label');
+        const previewList = document.getElementById('plan-preview-list');
+
+        const billingLabel = {
+            trial: 'Trial',
+            monthly: 'Monthly',
+            yearly: 'Yearly',
+            one_time: 'One Time'
+        };
+
+        const billingSuffix = {
+            trial: '/trial',
+            monthly: '/month',
+            yearly: '/year',
+            one_time: 'one-time'
+        };
+
+        const formatPrice = (value) => {
+            const numeric = parseFloat(value || '0');
+
+            if (Number.isNaN(numeric)) {
+                return '0.00';
+            }
+
+            return numeric.toFixed(2);
+        };
+
+        const collectLimitLines = () => {
+            const limits = [
+                ['max_users', 'Users'],
+                ['max_branches', 'Branches'],
+                ['max_products', 'Products'],
+                ['max_storage_mb', 'Storage']
+            ];
+
+            return limits.map(([fieldName, label]) => {
+                const field = getField(fieldName);
+
+                if (!field || !field.value) {
+                    return null;
+                }
+
+                return label + ' ' + field.value + (label === 'Storage' ? ' MB' : '');
+            }).filter(Boolean);
+        };
+
+        const collectFeatureLines = () => {
+            return Array.from(form.querySelectorAll('input[name="feature_ids[]"]:checked'))
+                .map((checkbox) => checkbox.dataset.featureName || '')
+                .filter(Boolean);
+        };
+
+        const renderPreviewList = () => {
+            const items = collectLimitLines().concat(collectFeatureLines());
+
+            if (items.length === 0) {
+                previewList.innerHTML = '<p class="text-dark d-flex align-items-center mb-2 text-truncate"><i class="isax isax-tick-circle me-2"></i><span>No plan details yet.</span></p>';
+                return;
+            }
+
+            previewList.innerHTML = items.map((item) => {
+                return '<p class="text-dark d-flex align-items-center mb-2 text-truncate"><i class="isax isax-tick-circle me-2"></i><span>' + item + '</span></p>';
+            }).join('');
+        };
+
+        const renderPreviewMeta = () => {
+            const nameField = getField('name');
+            const descriptionField = getField('description');
+            const priceField = getField('price');
+            const currencyField = getField('currency');
+            const billingField = getField('billing_period');
+            const billingValue = billingField ? billingField.value : 'monthly';
+
+            previewName.textContent = (nameField && nameField.value.trim()) ? nameField.value.trim() : 'New Plan';
+            previewDescription.textContent = (descriptionField && descriptionField.value.trim()) ? descriptionField.value.trim() : 'Plan description will appear here.';
+            previewPrice.textContent = billingValue === 'trial' ? '0.00' : formatPrice(priceField ? priceField.value : '0');
+            previewCurrency.textContent = ((currencyField ? currencyField.value : 'USD') || 'USD').toUpperCase() + ' billing';
+            previewPriceSuffix.textContent = billingSuffix[billingValue] || '/month';
+            previewBillingLabel.textContent = billingLabel[billingValue] || 'Monthly';
+        };
+
+        const renderAll = () => {
+            renderPreviewMeta();
+            renderPreviewList();
+        };
+
+        form.querySelectorAll('[data-plan-preview]').forEach((field) => {
+            const eventName = field.type === 'checkbox' ? 'change' : 'input';
+            field.addEventListener(eventName, renderAll);
+            if (field.tagName === 'SELECT') {
+                field.addEventListener('change', renderAll);
+            }
+        });
+
+        renderAll();
+    });
+</script>
