@@ -29,7 +29,7 @@ class AdminSubscriptionControlService
 
         $before = $subscription->fresh();
 
-        $fresh = match ($targetStatus) {
+        $result = match ($targetStatus) {
             SubscriptionStatuses::TRIALING => $this->markAsTrialing($subscription),
             SubscriptionStatuses::ACTIVE => $this->markAsActive($subscription),
             SubscriptionStatuses::PAST_DUE => $this->tenantBillingLifecycleService->markAsPastDue($subscription),
@@ -42,6 +42,8 @@ class AdminSubscriptionControlService
             SubscriptionStatuses::EXPIRED => $this->tenantBillingLifecycleService->markAsExpired($subscription),
             default => throw new RuntimeException('Unsupported lifecycle state requested.'),
         };
+
+        $fresh = $this->reloadSubscriptionModel($result, $subscription->id);
 
         return [
             'before' => $before?->fresh(),
@@ -64,7 +66,7 @@ class AdminSubscriptionControlService
 
         $before = $subscription->fresh();
 
-        $fresh = match ($action) {
+        $result = match ($action) {
             'cancel' => $this->tenantBillingLifecycleService->markAsCancelled(
                 $subscription,
                 now(),
@@ -74,6 +76,8 @@ class AdminSubscriptionControlService
             'renew' => $this->renewLocally($subscription),
             default => throw new RuntimeException('Unsupported manual subscription action requested.'),
         };
+
+        $fresh = $this->reloadSubscriptionModel($result, $subscription->id);
 
         return [
             'before' => $before?->fresh(),
@@ -224,5 +228,16 @@ class AdminSubscriptionControlService
         }
 
         return $value instanceof Carbon ? $value : Carbon::parse((string) $value);
+    }
+
+    protected function reloadSubscriptionModel(mixed $result, int $fallbackSubscriptionId): ?Subscription
+    {
+        if ($result instanceof Subscription) {
+            return $result->fresh();
+        }
+
+        $subscriptionId = (int) ($result->id ?? $fallbackSubscriptionId);
+
+        return Subscription::query()->find($subscriptionId);
     }
 }
