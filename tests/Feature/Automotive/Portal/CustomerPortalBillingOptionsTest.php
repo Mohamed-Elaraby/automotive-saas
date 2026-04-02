@@ -95,7 +95,10 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'max_branches' => 4,
             'max_products' => 250,
             'max_storage_mb' => 2048,
-            'features' => ['Barcode support', 'Inventory reports'],
+        ]);
+        $plan->planFeatures()->createMany([
+            ['title' => 'Barcode support', 'sort_order' => 0],
+            ['title' => 'Inventory reports', 'sort_order' => 1],
         ]);
 
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
@@ -112,7 +115,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('2048 MB', false);
         $response->assertSee('Barcode support', false);
         $response->assertSee('Inventory reports', false);
-        $response->assertSee((string) $plan->slug, false);
+        $response->assertSee(strtoupper((string) $plan->slug), false);
     }
 
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void

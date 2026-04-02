@@ -286,17 +286,29 @@
 
                     <div class="card mt-4" id="paid-plans">
                         <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                                <div>
-                                    <h6 class="mb-1">Paid Plan Selection</h6>
-                                    <p class="text-muted mb-0">Choose a paid plan from your customer portal, then continue to checkout.</p>
-                                </div>
+                            @php
+                                $plansByPeriod = collect($paidPlans ?? [])->groupBy(fn ($plan) => (string) ($plan->billing_period ?? 'monthly'));
+                                $periodTabs = collect([
+                                    'monthly' => 'Monthly',
+                                    'yearly' => 'Yearly',
+                                    'one_time' => 'One Time',
+                                ])->filter(fn ($label, $period) => $plansByPeriod->has($period));
+                                $activePeriod = (string) ($periodTabs->keys()->first() ?? 'monthly');
+                            @endphp
 
-                                @if(!empty($profile?->coupon_code))
-                                    <span class="badge bg-soft-success text-success">
-                                        Reserved Coupon: {{ $profile->coupon_code }}
-                                    </span>
-                                @endif
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div>
+                                        <h6 class="mb-1">Streamline your teamwork. Start free.</h6>
+                                        <p class="text-muted mb-0">Choose the perfect paid plan for your workspace, compare the real limits, then continue to Stripe checkout.</p>
+                                    </div>
+
+                                    @if(!empty($profile?->coupon_code))
+                                        <span class="badge bg-soft-success text-success">
+                                            Reserved Coupon: {{ $profile->coupon_code }}
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
 
                             @if($hasLiveStripeSubscription)
@@ -308,95 +320,130 @@
                                     No active paid plans are available right now.
                                 </div>
                             @else
-                                <div class="row">
-                                    @foreach($paidPlans as $paidPlan)
-                                        @php
-                                            $isCurrentPaidPlan = !empty($plan)
-                                                && (int) ($plan->id ?? 0) === (int) $paidPlan->id
-                                                && !in_array((string) $status, ['trialing', ''], true);
-                                        @endphp
-                                        <div class="col-xl-4 col-md-6 d-flex">
-                                            <div class="border rounded p-3 mb-3 w-100 d-flex flex-column">
-                                                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                                    <div>
-                                                        <h6 class="mb-1">{{ $paidPlan->name }}</h6>
-                                                        <div class="text-muted fs-13 d-flex flex-wrap gap-2 align-items-center">
-                                                            <span>{{ $paidPlan->billing_period_label }}</span>
-                                                            @if(!empty($paidPlan->slug))
-                                                                <span class="badge bg-light text-dark">{{ $paidPlan->slug }}</span>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                    @if($isCurrentPaidPlan && $status === 'active')
-                                                        <span class="badge bg-success">Current</span>
-                                                    @endif
-                                                </div>
+                                @if($periodTabs->count() > 1)
+                                    <div class="d-flex align-items-center justify-content-center mb-4">
+                                        <ul class="nav nav-tabs nav-solid-success nav-tabs-rounded p-1 rounded-pill bg-light" role="tablist">
+                                            @foreach($periodTabs as $period => $label)
+                                                <li class="nav-item">
+                                                    <a class="nav-link @if($activePeriod === $period) active @endif" href="#portal-plan-tab-{{ $period }}" data-bs-toggle="tab">
+                                                        {{ $label }}
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
 
-                                                <div class="mb-3">
-                                                    <span class="fs-24 fw-bold text-dark">{{ $paidPlan->display_price }}</span>
-                                                </div>
+                                <div class="tab-content">
+                                    @foreach($periodTabs as $period => $label)
+                                        <div class="tab-pane @if($activePeriod === $period) show active @endif" id="portal-plan-tab-{{ $period }}">
+                                            <div class="row">
+                                                @foreach(($plansByPeriod[$period] ?? collect()) as $paidPlan)
+                                                    @php
+                                                        $isCurrentPaidPlan = !empty($plan)
+                                                            && (int) ($plan->id ?? 0) === (int) $paidPlan->id
+                                                            && !in_array((string) $status, ['trialing', ''], true);
 
-                                                @if(!empty($paidPlan->description))
-                                                    <p class="text-muted mb-3">{{ $paidPlan->description }}</p>
-                                                @endif
-
-                                                @if(!empty($paidPlan->limits_array))
-                                                    <div class="mb-3">
-                                                        <div class="small fw-semibold text-dark mb-2">Plan Limits</div>
-                                                        <div class="row g-2">
-                                                            @foreach($paidPlan->limits_array as $limit)
-                                                                <div class="col-6">
-                                                                    <div class="border rounded px-2 py-2 h-100">
-                                                                        <div class="small text-muted">{{ $limit['label'] }}</div>
-                                                                        <div class="fw-semibold">{{ $limit['value'] }}</div>
+                                                        $priceSuffix = match ((string) $paidPlan->billing_period) {
+                                                            'yearly' => '/year',
+                                                            'one_time' => ' one-time',
+                                                            default => '/month',
+                                                        };
+                                                        $featureList = collect($paidPlan->features_array ?? [])->take(6);
+                                                    @endphp
+                                                    <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+                                                        <div class="card pricing-starter flex-fill w-100">
+                                                            <div class="card-body d-flex flex-column">
+                                                                <div class="border-bottom">
+                                                                    <div class="mb-3">
+                                                                        <div class="d-flex align-items-center justify-content-between position-relative gap-2">
+                                                                            <div>
+                                                                                <h5 class="mb-1">{{ $paidPlan->name }}</h5>
+                                                                                <p class="mb-0">{{ $paidPlan->description ?: 'Configured paid plan for production billing.' }}</p>
+                                                                            </div>
+                                                                            @if($isCurrentPaidPlan && $status === 'active')
+                                                                                <span class="badge bg-success position-absolute top-0 end-0">Current</span>
+                                                                            @elseif($loop->first)
+                                                                                <span class="badge bg-soft-info text-info position-absolute top-0 end-0">Popular</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="mb-3">
+                                                                        <h3 class="d-flex align-items-center mb-1">
+                                                                            {{ str_replace(' ' . $paidPlan->currency_code, '', $paidPlan->display_price) }}
+                                                                            <span class="fs-14 fw-normal text-gray-9 ms-1">
+                                                                                {{ $priceSuffix }}
+                                                                            </span>
+                                                                        </h3>
+                                                                        <p class="mb-0">
+                                                                            {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} billing
+                                                                        </p>
                                                                     </div>
                                                                 </div>
-                                                            @endforeach
+                                                                <div class="mt-3 mb-3">
+                                                                    <div class="mb-3">
+                                                                        <h6 class="fs-16 mb-2">Plan Limits</h6>
+                                                                        <div class="row g-2">
+                                                                            @forelse(($paidPlan->limits_array ?? []) as $limit)
+                                                                                <div class="col-6">
+                                                                                    <div class="rounded border bg-light px-3 py-2 h-100">
+                                                                                        <span class="d-block fs-12 text-muted">{{ $limit['label'] }}</span>
+                                                                                        <strong class="text-dark">{{ $limit['value'] }}</strong>
+                                                                                    </div>
+                                                                                </div>
+                                                                            @empty
+                                                                                <div class="col-12">
+                                                                                    <div class="rounded border bg-light px-3 py-2">
+                                                                                        <span class="text-muted">No hard limits are configured for this plan yet.</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            @endforelse
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="mb-1">
+                                                                        <h6 class="fs-16 mb-2">What you get:</h6>
+                                                                    </div>
+                                                                    <div>
+                                                                        @forelse($featureList as $feature)
+                                                                            <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                                                <i class="isax isax-tick-circle me-2"></i>{{ $feature }}
+                                                                            </p>
+                                                                        @empty
+                                                                            <p class="text-muted mb-0">No extra features are configured for this plan yet.</p>
+                                                                        @endforelse
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-auto">
+                                                                    @if($isCurrentPaidPlan && $status === 'active')
+                                                                        <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
+                                                                            <i class="isax isax-bill me-1"></i> Current Plan
+                                                                        </button>
+                                                                    @elseif($canStartPaidCheckout)
+                                                                        <form method="POST" action="{{ route('automotive.portal.subscribe') }}">
+                                                                            @csrf
+                                                                            <input type="hidden" name="plan_id" value="{{ $paidPlan->id }}">
+                                                                            <button type="submit" class="d-flex align-items-center justify-content-center btn border w-100">
+                                                                                <i class="isax isax-shopping-cart me-1"></i>
+                                                                                @if($status === 'trialing')
+                                                                                    Upgrade to {{ $paidPlan->name }}
+                                                                                @elseif($status === 'past_due')
+                                                                                    Continue Checkout
+                                                                                @else
+                                                                                    Select &amp; Continue
+                                                                                @endif
+                                                                            </button>
+                                                                        </form>
+                                                                    @else
+                                                                        <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
+                                                                            <i class="isax isax-bill me-1"></i> Billing Managed In System
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                @endif
-
-                                                @if(!empty($paidPlan->features_array))
-                                                    <div class="mb-3">
-                                                        <div class="small fw-semibold text-dark mb-2">Included Features</div>
-                                                        @foreach($paidPlan->features_array as $feature)
-                                                            <div class="d-flex align-items-start mb-2">
-                                                                <span class="badge bg-soft-primary text-primary me-2">+</span>
-                                                                <span class="text-muted">{{ $feature }}</span>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                @elseif(empty($paidPlan->description) && empty($paidPlan->limits_array))
-                                                    <div class="alert alert-light border mb-3">
-                                                        No extra plan details were configured for this plan yet.
-                                                    </div>
-                                                @endif
-
-                                                <div class="mt-auto">
-                                                    @if($isCurrentPaidPlan && $status === 'active')
-                                                        <button type="button" class="btn btn-outline-white w-100" disabled>
-                                                            Current Active Plan
-                                                        </button>
-                                                    @elseif($canStartPaidCheckout)
-                                                        <form method="POST" action="{{ route('automotive.portal.subscribe') }}">
-                                                            @csrf
-                                                            <input type="hidden" name="plan_id" value="{{ $paidPlan->id }}">
-                                                            <button type="submit" class="btn btn-primary w-100">
-                                                                @if($status === 'trialing')
-                                                                    Upgrade to {{ $paidPlan->name }}
-                                                                @elseif($status === 'past_due')
-                                                                    Continue Checkout
-                                                                @else
-                                                                    Select &amp; Continue
-                                                                @endif
-                                                            </button>
-                                                        </form>
-                                                    @else
-                                                        <button type="button" class="btn btn-outline-white w-100" disabled>
-                                                            Billing Managed In System
-                                                        </button>
-                                                    @endif
-                                                </div>
+                                                @endforeach
                                             </div>
                                         </div>
                                     @endforeach

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\PlanFeature;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,9 +49,11 @@ class PlanController extends Controller
     public function store(Request $request, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $data = $this->validatedData($request);
+        $featuresText = (string) $request->input('features_text', '');
         $data = $this->preparePlanData($data, $request);
 
         $plan = Plan::create($data);
+        $this->syncPlanFeatures($plan, $featuresText);
 
         $sync = $stripePlanCatalogSyncService->syncPlan($plan);
 
@@ -71,15 +74,19 @@ class PlanController extends Controller
 
     public function edit(Plan $plan)
     {
+        $plan->load('planFeatures');
+
         return view('admin.plans.edit', compact('plan'));
     }
 
     public function update(Request $request, Plan $plan, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $data = $this->validatedData($request, $plan->id);
+        $featuresText = (string) $request->input('features_text', '');
         $data = $this->preparePlanData($data, $request);
 
         $plan->update($data);
+        $this->syncPlanFeatures($plan, $featuresText);
 
         $sync = $stripePlanCatalogSyncService->syncPlan($plan->fresh());
 
@@ -171,6 +178,7 @@ class PlanController extends Controller
                 'max_products' => ['nullable', 'integer', 'min:1'],
                 'max_storage_mb' => ['nullable', 'integer', 'min:1'],
                 'description' => ['nullable', 'string'],
+                'features_text' => ['nullable', 'string'],
             ]) + [
                 'is_active' => $request->boolean('is_active'),
             ];
@@ -181,7 +189,7 @@ class PlanController extends Controller
         $data['slug'] = Str::slug((string) $data['slug']);
         $data['currency'] = strtoupper((string) $data['currency']);
         $data['stripe_price_id'] = trim((string) ($data['stripe_price_id'] ?? '')) ?: null;
-        $data['features'] = $this->normalizeFeatures($request->input('features_json'));
+        unset($data['features_text']);
 
         if ($data['billing_period'] === 'trial') {
             $data['price'] = 0;
@@ -191,19 +199,31 @@ class PlanController extends Controller
         return $data;
     }
 
-    protected function normalizeFeatures(?string $featuresJson): ?array
+    protected function syncPlanFeatures(Plan $plan, ?string $featuresText): void
     {
-        if (blank($featuresJson)) {
-            return null;
+        $titles = collect(preg_split('/\r\n|\r|\n/', (string) $featuresText))
+            ->map(fn ($line) => trim((string) $line))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $plan->planFeatures()->delete();
+
+        if ($titles->isEmpty()) {
+            return;
         }
 
-        $decoded = json_decode($featuresJson, true);
+        $rows = $titles->values()->map(function (string $title, int $index) use ($plan): array {
+            return [
+                'plan_id' => $plan->id,
+                'title' => $title,
+                'sort_order' => $index,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        })->all();
 
-        if (! is_array($decoded)) {
-            return null;
-        }
-
-        return $decoded;
+        PlanFeature::query()->insert($rows);
     }
 
     protected function billingPeriodLabel(?string $period): string

@@ -20,13 +20,11 @@ class Plan extends Model
         'max_branches',
         'max_products',
         'max_storage_mb',
-        'features',
         'description',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'features' => 'array',
         'price' => 'decimal:2',
     ];
 
@@ -42,5 +40,10 @@ class Plan extends Model
     public function subscriptions()
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    public function planFeatures()
+    {
+        return $this->hasMany(PlanFeature::class)->orderBy('sort_order')->orderBy('id');
     }
 }

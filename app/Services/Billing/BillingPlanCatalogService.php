@@ -2,14 +2,15 @@
 
 namespace App\Services\Billing;
 
+use App\Models\Plan;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class BillingPlanCatalogService
 {
     public function getPaidPlans(): Collection
     {
-        return $this->plansTable()
+        return Plan::query()
+            ->with('planFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->orderBy('sort_order')
@@ -21,7 +22,8 @@ class BillingPlanCatalogService
 
     public function findPaidPlanById(int|string $planId): ?object
     {
-        $plan = $this->plansTable()
+        $plan = Plan::query()
+            ->with('planFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->where('id', $planId)
@@ -31,82 +33,71 @@ class BillingPlanCatalogService
             return null;
         }
 
-return $this->hydratePlan($plan);
-}
-
-protected function hydratePlan(object $plan): object
-{
-    $plan->features_array = $this->decodeFeatures($plan->features ?? null);
-    $plan->limits_array = $this->buildLimits($plan);
-    $plan->price_decimal = isset($plan->price) ? (float) $plan->price : 0.0;
-    $plan->currency_code = strtoupper((string) ($plan->currency ?? 'USD'));
-    $plan->billing_period_label = $this->billingPeriodLabel((string) ($plan->billing_period ?? 'monthly'));
-    $plan->display_price = number_format((float) ($plan->price ?? 0), 2) . ' ' . $plan->currency_code;
-
-    return $plan;
-}
-
-protected function plansTable()
-{
-    return DB::connection($this->centralConnection())
-        ->table('plans');
-}
-
-protected function centralConnection(): string
-{
-    return (string) config('tenancy.database.central_connection', 'central');
-}
-
-protected function decodeFeatures(mixed $features): array
-{
-    if (is_array($features)) {
-        return $features;
+        return $this->hydratePlan($plan);
     }
 
-    if (is_string($features) && $features !== '') {
-        $decoded = json_decode($features, true);
+    protected function hydratePlan(object $plan): object
+    {
+        $plan->features_array = $this->normalizeFeatureTitles($plan);
+        $plan->limits_array = $this->buildLimits($plan);
+        $plan->price_decimal = isset($plan->price) ? (float) $plan->price : 0.0;
+        $plan->currency_code = strtoupper((string) ($plan->currency ?? 'USD'));
+        $plan->billing_period_label = $this->billingPeriodLabel((string) ($plan->billing_period ?? 'monthly'));
+        $plan->display_price = number_format((float) ($plan->price ?? 0), 2) . ' ' . $plan->currency_code;
 
-        return is_array($decoded) ? $decoded : [];
+        return $plan;
     }
 
-    return [];
-}
+    protected function buildLimits(object $plan): array
+    {
+        $limits = [];
 
-protected function buildLimits(object $plan): array
-{
-    $limits = [];
+        foreach ([
+            'max_users' => 'Users',
+            'max_branches' => 'Branches',
+            'max_products' => 'Products',
+            'max_storage_mb' => 'Storage',
+        ] as $field => $label) {
+            $value = $plan->{$field} ?? null;
 
-    foreach ([
-        'max_users' => 'Users',
-        'max_branches' => 'Branches',
-        'max_products' => 'Products',
-        'max_storage_mb' => 'Storage',
-    ] as $field => $label) {
-        $value = $plan->{$field} ?? null;
+            if ($value === null || $value === '') {
+                continue;
+            }
 
-        if ($value === null || $value === '') {
-            continue;
+            $limits[] = [
+                'label' => $label,
+                'value' => $field === 'max_storage_mb'
+                    ? ((int) $value . ' MB')
+                    : (string) (int) $value,
+            ];
         }
 
-        $limits[] = [
-            'label' => $label,
-            'value' => $field === 'max_storage_mb'
-                ? ((int) $value . ' MB')
-                : (string) (int) $value,
-        ];
+        return $limits;
     }
 
-    return $limits;
-}
+    protected function billingPeriodLabel(string $period): string
+    {
+        return match ($period) {
+            'trial' => 'Trial',
+            'monthly' => 'Monthly',
+            'yearly' => 'Yearly',
+            'one_time' => 'One Time',
+            default => ucfirst($period),
+        };
+    }
 
-protected function billingPeriodLabel(string $period): string
-{
-    return match ($period) {
-        'trial' => 'Trial',
-        'monthly' => 'Monthly',
-        'yearly' => 'Yearly',
-        'one_time' => 'One Time',
-        default => ucfirst($period),
-    };
-}
+    protected function normalizeFeatureTitles(object $plan): array
+    {
+        if (! method_exists($plan, 'relationLoaded') || ! $plan->relationLoaded('planFeatures')) {
+            return [];
+        }
+
+        return $plan->planFeatures
+            ->pluck('title')
+            ->map(fn ($title) => trim((string) $title))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
 }

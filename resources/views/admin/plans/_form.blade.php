@@ -1,7 +1,10 @@
 @php
-    $featuresJson = old(
-        'features_json',
-        $plan->features ? json_encode($plan->features, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : ''
+    $planFeatureLines = old(
+        'features_text',
+        collect($plan->relationLoaded('planFeatures') ? $plan->planFeatures : ($plan->planFeatures()->get() ?? collect()))
+            ->pluck('title')
+            ->filter()
+            ->implode(PHP_EOL)
     );
 @endphp
 
@@ -83,9 +86,9 @@
             </div>
 
             <div class="col-12 mb-0">
-                <label class="form-label fw-semibold">Features JSON</label>
-                <textarea name="features_json" rows="10" class="form-control font-monospace" placeholder='{"invoicing": true, "inventory": true}'>{{ $featuresJson }}</textarea>
-                <small class="text-muted">Must be valid JSON object or leave empty.</small>
+                <label class="form-label fw-semibold">Plan Features</label>
+                <textarea name="features_text" rows="8" class="form-control" placeholder="Inventory management&#10;Barcode support&#10;Advanced reports">{{ $planFeatureLines }}</textarea>
+                <small class="text-muted">Add one feature per line. These lines will be stored as separate feature records for the plan.</small>
             </div>
         </div>
     </div>
