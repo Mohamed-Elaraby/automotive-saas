@@ -144,6 +144,7 @@ public function index(Request $request): View
         ],
         'stripePlanOptions' => $this->stripePlanOptions($subscription),
         'isStripeLinked' => $this->isStripeLinkedRecord($subscription),
+        'canCancelImmediatelyOnStripe' => $this->canCancelImmediatelyOnStripeRecord($subscription),
         'canResumeOnStripe' => $this->canResumeOnStripeRecord($subscription),
         'stripeLinkDiagnostics' => $this->stripeLinkDiagnostics($subscription),
     ]);
@@ -724,6 +725,18 @@ protected function canResumeOnStripeRecord(object $subscription): bool
     }
 
     return now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
+}
+
+protected function canCancelImmediatelyOnStripeRecord(object $subscription): bool
+{
+    if (! $this->isStripeLinkedRecord($subscription)) {
+        return false;
+    }
+
+    return ! in_array((string) ($subscription->status ?? ''), [
+        SubscriptionStatuses::EXPIRED,
+        SubscriptionStatuses::CANCELLED,
+    ], true);
 }
 
 protected function redirectAfterAction(Request $request, int $subscriptionId): RedirectResponse

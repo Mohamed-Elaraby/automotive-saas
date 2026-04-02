@@ -164,6 +164,24 @@ class AdminStripeSubscriptionActionsTest extends TestCase
         $response->assertSee('Resume on Stripe Unavailable', false);
     }
 
+    public function test_show_disables_cancel_immediately_on_stripe_for_terminal_cancelled_subscription(): void
+    {
+        $admin = $this->createAdmin();
+        $subscription = $this->createStripeSubscription();
+
+        $subscription->update([
+            'status' => 'canceled',
+            'ends_at' => now()->subMinute(),
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.subscriptions.show', $subscription->id));
+
+        $response->assertOk();
+        $response->assertSee('Cancel Immediately on Stripe Unavailable', false);
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([

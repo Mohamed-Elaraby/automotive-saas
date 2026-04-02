@@ -131,6 +131,13 @@ public function cancelImmediately(?object $subscription): array
         ];
     }
 
+    if (! $this->canCancelImmediately($subscription)) {
+        return [
+            'success' => false,
+            'message' => 'This Stripe subscription is already in a terminal cancelled state and cannot be cancelled again.',
+        ];
+    }
+
     try {
         $cancelled = $this->stripe->subscriptions->cancel(
             (string) $subscription->gateway_subscription_id,
@@ -151,9 +158,15 @@ public function cancelImmediately(?object $subscription): array
             'message' => 'Subscription was cancelled immediately on Stripe.',
         ];
     } catch (ApiErrorException $e) {
+        $message = $e->getMessage();
+
+        if (str_contains(strtolower($message), 'no such subscription')) {
+            $message = 'This Stripe subscription no longer exists on Stripe. It may have already been cancelled permanently.';
+        }
+
         return [
             'success' => false,
-            'message' => 'Stripe API error while cancelling subscription immediately: ' . $e->getMessage(),
+            'message' => 'Stripe API error while cancelling subscription immediately: ' . $message,
         ];
     } catch (Throwable $e) {
         return [
@@ -180,5 +193,13 @@ protected function canResume(object $subscription): bool
     }
 
     return now()->lt(\Carbon\Carbon::parse((string) $subscription->ends_at));
+}
+
+protected function canCancelImmediately(object $subscription): bool
+{
+    return ! in_array((string) ($subscription->status ?? ''), [
+        SubscriptionStatuses::EXPIRED,
+        SubscriptionStatuses::CANCELLED,
+    ], true);
 }
 }

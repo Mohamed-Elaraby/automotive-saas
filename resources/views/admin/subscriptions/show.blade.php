@@ -517,12 +517,18 @@
                                         </button>
                                     </form>
 
-                                    <form method="POST" action="{{ route('admin.subscriptions.cancel-immediately-on-stripe', $subscription->id) }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-danger w-100">
-                                            Cancel Immediately on Stripe
+                                    @if($canCancelImmediatelyOnStripe ?? false)
+                                        <form method="POST" action="{{ route('admin.subscriptions.cancel-immediately-on-stripe', $subscription->id) }}">
+                                            @csrf
+                                            <button type="submit" class="btn btn-danger w-100">
+                                                Cancel Immediately on Stripe
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                                            Cancel Immediately on Stripe Unavailable
                                         </button>
-                                    </form>
+                                    @endif
 
                                     @if($canResumeOnStripe ?? false)
                                         <form method="POST" action="{{ route('admin.subscriptions.resume-on-stripe', $subscription->id) }}">
