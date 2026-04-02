@@ -4,10 +4,10 @@ namespace Tests\Feature\Admin\Plans;
 
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Admin;
+use App\Models\BillingFeature;
 use App\Models\Plan;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
 use Mockery;
 use Tests\TestCase;
 
@@ -29,9 +29,24 @@ class AdminPlanFeatureStorageTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_admin_store_writes_plan_features_to_separate_table(): void
+    public function test_admin_store_assigns_selected_catalog_features_to_plan(): void
     {
         $admin = $this->createAdmin();
+        $inventory = BillingFeature::query()->create([
+            'name' => 'Inventory',
+            'slug' => 'inventory',
+            'description' => 'Inventory management',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $reports = BillingFeature::query()->create([
+            'name' => 'Reports',
+            'slug' => 'reports',
+            'description' => 'Analytics and reports',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
         $service = Mockery::mock(StripePlanCatalogSyncService::class);
         $service->shouldReceive('syncPlan')
             ->once()
@@ -57,7 +72,7 @@ class AdminPlanFeatureStorageTest extends TestCase
                 'max_products' => 50000,
                 'max_storage_mb' => 20480,
                 'description' => 'Growth plan',
-                'features_text' => "Inventory management\r\nAdvanced reports\r\nInventory management\r\nBarcode support",
+                'feature_ids' => [$inventory->id, $reports->id, $inventory->id],
             ]);
 
         $plan = Plan::query()->where('slug', 'growth')->firstOrFail();
@@ -66,10 +81,9 @@ class AdminPlanFeatureStorageTest extends TestCase
             ->assertRedirect(route('admin.plans.index'))
             ->assertSessionHas('success', 'Plan created successfully. Stripe sync was skipped because Stripe is not configured.');
 
-        $this->assertFalse(Schema::hasColumn('plans', 'features'));
         $this->assertSame(
-            ['Inventory management', 'Advanced reports', 'Barcode support'],
-            $plan->planFeatures()->orderBy('sort_order')->pluck('title')->all()
+            ['Inventory', 'Reports'],
+            $plan->billingFeatures()->orderBy('billing_feature_plan.sort_order')->pluck('billing_features.name')->all()
         );
     }
 

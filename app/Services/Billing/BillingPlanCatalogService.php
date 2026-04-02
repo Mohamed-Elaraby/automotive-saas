@@ -10,7 +10,7 @@ class BillingPlanCatalogService
     public function getPaidPlans(): Collection
     {
         return Plan::query()
-            ->with('planFeatures')
+            ->with('billingFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->orderBy('sort_order')
@@ -23,7 +23,7 @@ class BillingPlanCatalogService
     public function findPaidPlanById(int|string $planId): ?object
     {
         $plan = Plan::query()
-            ->with('planFeatures')
+            ->with('billingFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->where('id', $planId)
@@ -88,13 +88,13 @@ class BillingPlanCatalogService
 
     protected function normalizeFeatureTitles(object $plan): array
     {
-        if (! method_exists($plan, 'relationLoaded') || ! $plan->relationLoaded('planFeatures')) {
+        if (! method_exists($plan, 'relationLoaded') || ! $plan->relationLoaded('billingFeatures')) {
             return [];
         }
 
-        return $plan->planFeatures
-            ->pluck('title')
-            ->map(fn ($title) => trim((string) $title))
+        return $plan->billingFeatures
+            ->pluck('name')
+            ->map(fn ($name) => trim((string) $name))
             ->filter()
             ->unique()
             ->values()

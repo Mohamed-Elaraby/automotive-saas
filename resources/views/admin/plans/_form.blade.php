@@ -1,11 +1,10 @@
 @php
-    $planFeatureLines = old(
-        'features_text',
-        collect($plan->relationLoaded('planFeatures') ? $plan->planFeatures : ($plan->planFeatures()->get() ?? collect()))
-            ->pluck('title')
-            ->filter()
-            ->implode(PHP_EOL)
-    );
+    $selectedFeatureIds = collect(old(
+        'feature_ids',
+        $plan->relationLoaded('billingFeatures')
+            ? $plan->billingFeatures->pluck('id')->all()
+            : $plan->billingFeatures()->pluck('billing_features.id')->all()
+    ))->map(fn ($id) => (int) $id)->all();
 @endphp
 
 <div class="card">
@@ -36,7 +35,7 @@
                 <select name="billing_period" class="form-select" required>
                     @foreach (['trial', 'monthly', 'yearly', 'one_time'] as $period)
                         <option value="{{ $period }}" @selected(old('billing_period', $plan->billing_period) === $period)>
-                        {{ ucfirst(str_replace('_', ' ', $period)) }}
+                            {{ ucfirst(str_replace('_', ' ', $period)) }}
                         </option>
                     @endforeach
                 </select>
@@ -86,9 +85,47 @@
             </div>
 
             <div class="col-12 mb-0">
-                <label class="form-label fw-semibold">Plan Features</label>
-                <textarea name="features_text" rows="8" class="form-control" placeholder="Inventory management&#10;Barcode support&#10;Advanced reports">{{ $planFeatureLines }}</textarea>
-                <small class="text-muted">Add one feature per line. These lines will be stored as separate feature records for the plan.</small>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <label class="form-label fw-semibold mb-1">Plan Features</label>
+                        <p class="text-muted mb-0">Choose from the shared billing feature catalog used across all plans.</p>
+                    </div>
+                    <a href="{{ route('admin.billing-features.index') }}" class="btn btn-outline-white btn-sm">
+                        Manage Features Catalog
+                    </a>
+                </div>
+
+                <div class="border rounded p-3 bg-light">
+                    @if($availableFeatures->isEmpty())
+                        <div class="text-muted">
+                            No billing features are available yet. Create them first from the features catalog.
+                        </div>
+                    @else
+                        <div class="row">
+                            @foreach($availableFeatures as $feature)
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="form-check form-checkbox-success mb-3">
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input"
+                                            name="feature_ids[]"
+                                            value="{{ $feature->id }}"
+                                            id="feature_{{ $feature->id }}"
+                                            @checked(in_array((int) $feature->id, $selectedFeatureIds, true))
+                                        >
+                                        <label class="form-check-label" for="feature_{{ $feature->id }}">
+                                            <span class="d-block fw-semibold text-dark">{{ $feature->name }}</span>
+                                            <span class="d-block text-muted small">
+                                                {{ $feature->description ?: ('Slug: ' . $feature->slug) }}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+                <small class="text-muted">Use the catalog so the same feature names stay consistent across all plans.</small>
             </div>
         </div>
     </div>

@@ -4,12 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PlanFeature extends Model
+class BillingFeature extends Model
 {
     protected $fillable = [
-        'plan_id',
-        'title',
+        'name',
+        'slug',
+        'description',
+        'is_active',
         'sort_order',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     public function __construct(array $attributes = [])
@@ -21,8 +27,10 @@ class PlanFeature extends Model
         );
     }
 
-    public function plan()
+    public function plans()
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsToMany(Plan::class, 'billing_feature_plan')
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
 }

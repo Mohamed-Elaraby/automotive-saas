@@ -10,7 +10,10 @@
                     <h6>Plans</h6>
                     <p class="mb-0">Manage your central billing catalog.</p>
                 </div>
-                <div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.billing-features.index') }}" class="btn btn-outline-white d-flex align-items-center">
+                        <i class="isax isax-element-3 me-1"></i>Manage Features
+                    </a>
                     <a href="{{ route('admin.plans.create') }}" class="btn btn-primary d-flex align-items-center">
                         <i class="isax isax-add-circle5 me-1"></i>New Plan
                     </a>
@@ -35,6 +38,7 @@
                         <th>Price</th>
                         <th>Stripe Price</th>
                         <th>Limits</th>
+                        <th>Features</th>
                         <th>Status</th>
                         <th>Subscriptions</th>
                         <th>Order</th>
@@ -65,14 +69,24 @@
                                 @if($plan->stripe_price_id)
                                     <small class="text-dark">{{ $plan->stripe_price_id }}</small>
                                 @else
-                                    <span class="text-muted">—</span>
+                                    <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td>
-                                <small class="d-block">Users: {{ $plan->max_users ?? '—' }}</small>
-                                <small class="d-block">Branches: {{ $plan->max_branches ?? '—' }}</small>
-                                <small class="d-block">Products: {{ $plan->max_products ?? '—' }}</small>
-                                <small class="d-block">Storage: {{ $plan->max_storage_mb ?? '—' }} MB</small>
+                                <small class="d-block">Users: {{ $plan->max_users ?? '-' }}</small>
+                                <small class="d-block">Branches: {{ $plan->max_branches ?? '-' }}</small>
+                                <small class="d-block">Products: {{ $plan->max_products ?? '-' }}</small>
+                                <small class="d-block">Storage: {{ $plan->max_storage_mb ?? '-' }} MB</small>
+                            </td>
+                            <td>
+                                @forelse($plan->billingFeatures->take(3) as $feature)
+                                    <span class="badge badge-soft-info mb-1">{{ $feature->name }}</span>
+                                @empty
+                                    <span class="text-muted">-</span>
+                                @endforelse
+                                @if($plan->billingFeatures->count() > 3)
+                                    <small class="d-block text-muted">+{{ $plan->billingFeatures->count() - 3 }} more</small>
+                                @endif
                             </td>
                             <td>
                                 @if ($plan->is_active)
@@ -120,7 +134,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10">
+                            <td colspan="11">
                                 <div class="text-center py-4">
                                     <p class="mb-0">No plans found.</p>
                                 </div>

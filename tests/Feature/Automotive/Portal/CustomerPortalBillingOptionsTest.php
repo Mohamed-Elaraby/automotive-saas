@@ -3,6 +3,7 @@
 namespace Tests\Feature\Automotive\Portal;
 
 use App\Contracts\Billing\PaymentGatewayInterface;
+use App\Models\BillingFeature;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -107,9 +108,21 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'max_products' => 250,
             'max_storage_mb' => 2048,
         ]);
-        $plan->planFeatures()->createMany([
-            ['title' => 'Barcode support', 'sort_order' => 0],
-            ['title' => 'Inventory reports', 'sort_order' => 1],
+        $barcode = BillingFeature::query()->create([
+            'name' => 'Barcode support',
+            'slug' => 'barcode-support-' . uniqid(),
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $reports = BillingFeature::query()->create([
+            'name' => 'Inventory reports',
+            'slug' => 'inventory-reports-' . uniqid(),
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+        $plan->billingFeatures()->sync([
+            $barcode->id => ['sort_order' => 0],
+            $reports->id => ['sort_order' => 1],
         ]);
 
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));

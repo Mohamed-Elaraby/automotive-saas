@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\Auth\ForgotPasswordController as AdminForgotPasswordController;
 use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Auth\ResetPasswordController as AdminResetPasswordController;
+use App\Http\Controllers\Admin\BillingFeatureController;
 use App\Http\Controllers\Admin\BillingReportController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
@@ -93,6 +94,18 @@ Route::prefix('admin')
                 Route::put('/{plan}', [PlanController::class, 'update'])->name('update');
                 Route::patch('/{plan}/toggle-active', [PlanController::class, 'toggleActive'])->name('toggle-active');
                 Route::delete('/{plan}', [PlanController::class, 'destroy'])->name('destroy');
+            });
+
+        Route::prefix('billing-features')
+            ->name('billing-features.')
+            ->group(function () {
+                Route::get('/', [BillingFeatureController::class, 'index'])->name('index');
+                Route::get('/create', [BillingFeatureController::class, 'create'])->name('create');
+                Route::post('/', [BillingFeatureController::class, 'store'])->name('store');
+                Route::get('/{billingFeature}/edit', [BillingFeatureController::class, 'edit'])->name('edit');
+                Route::put('/{billingFeature}', [BillingFeatureController::class, 'update'])->name('update');
+                Route::patch('/{billingFeature}/toggle-active', [BillingFeatureController::class, 'toggleActive'])->name('toggle-active');
+                Route::delete('/{billingFeature}', [BillingFeatureController::class, 'destroy'])->name('destroy');
             });
 
         Route::prefix('subscriptions')

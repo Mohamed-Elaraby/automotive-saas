@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BillingFeature;
 use App\Models\Plan;
-use App\Models\PlanFeature;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Throwable;
 
 class PlanController extends Controller
 {
     public function index()
     {
         $plans = Plan::query()
+            ->with('billingFeatures')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
@@ -43,17 +43,18 @@ class PlanController extends Controller
                 'is_active' => true,
                 'sort_order' => 0,
             ]),
+            'availableFeatures' => $this->availableFeatures(),
         ]);
     }
 
     public function store(Request $request, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $data = $this->validatedData($request);
-        $featuresText = (string) $request->input('features_text', '');
+        $featureIds = $this->normalizeFeatureIds($request);
         $data = $this->preparePlanData($data, $request);
 
         $plan = Plan::create($data);
-        $this->syncPlanFeatures($plan, $featuresText);
+        $this->syncPlanFeatures($plan, $featureIds);
 
         $sync = $stripePlanCatalogSyncService->syncPlan($plan);
 
@@ -74,19 +75,22 @@ class PlanController extends Controller
 
     public function edit(Plan $plan)
     {
-        $plan->load('planFeatures');
+        $plan->load('billingFeatures');
 
-        return view('admin.plans.edit', compact('plan'));
+        return view('admin.plans.edit', [
+            'plan' => $plan,
+            'availableFeatures' => $this->availableFeatures(),
+        ]);
     }
 
     public function update(Request $request, Plan $plan, StripePlanCatalogSyncService $stripePlanCatalogSyncService)
     {
         $data = $this->validatedData($request, $plan->id);
-        $featuresText = (string) $request->input('features_text', '');
+        $featureIds = $this->normalizeFeatureIds($request);
         $data = $this->preparePlanData($data, $request);
 
         $plan->update($data);
-        $this->syncPlanFeatures($plan, $featuresText);
+        $this->syncPlanFeatures($plan, $featureIds);
 
         $sync = $stripePlanCatalogSyncService->syncPlan($plan->fresh());
 
@@ -178,7 +182,8 @@ class PlanController extends Controller
                 'max_products' => ['nullable', 'integer', 'min:1'],
                 'max_storage_mb' => ['nullable', 'integer', 'min:1'],
                 'description' => ['nullable', 'string'],
-                'features_text' => ['nullable', 'string'],
+                'feature_ids' => ['nullable', 'array'],
+                'feature_ids.*' => ['integer', Rule::exists('billing_features', 'id')],
             ]) + [
                 'is_active' => $request->boolean('is_active'),
             ];
@@ -189,7 +194,7 @@ class PlanController extends Controller
         $data['slug'] = Str::slug((string) $data['slug']);
         $data['currency'] = strtoupper((string) $data['currency']);
         $data['stripe_price_id'] = trim((string) ($data['stripe_price_id'] ?? '')) ?: null;
-        unset($data['features_text']);
+        unset($data['feature_ids']);
 
         if ($data['billing_period'] === 'trial') {
             $data['price'] = 0;
@@ -199,31 +204,38 @@ class PlanController extends Controller
         return $data;
     }
 
-    protected function syncPlanFeatures(Plan $plan, ?string $featuresText): void
+    protected function syncPlanFeatures(Plan $plan, array $featureIds): void
     {
-        $titles = collect(preg_split('/\r\n|\r|\n/', (string) $featuresText))
-            ->map(fn ($line) => trim((string) $line))
-            ->filter()
+        $syncPayload = collect($featureIds)
+            ->values()
+            ->mapWithKeys(fn (int $featureId, int $index) => [
+                $featureId => [
+                    'sort_order' => $index,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ])
+            ->all();
+
+        $plan->billingFeatures()->sync($syncPayload);
+    }
+
+    protected function normalizeFeatureIds(Request $request): array
+    {
+        return collect($request->input('feature_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
             ->unique()
-            ->values();
+            ->values()
+            ->all();
+    }
 
-        $plan->planFeatures()->delete();
-
-        if ($titles->isEmpty()) {
-            return;
-        }
-
-        $rows = $titles->values()->map(function (string $title, int $index) use ($plan): array {
-            return [
-                'plan_id' => $plan->id,
-                'title' => $title,
-                'sort_order' => $index,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        })->all();
-
-        PlanFeature::query()->insert($rows);
+    protected function availableFeatures()
+    {
+        return BillingFeature::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 
     protected function billingPeriodLabel(?string $period): string

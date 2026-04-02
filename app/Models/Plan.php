@@ -42,8 +42,12 @@ class Plan extends Model
         return $this->hasMany(Subscription::class);
     }
 
-    public function planFeatures()
+    public function billingFeatures()
     {
-        return $this->hasMany(PlanFeature::class)->orderBy('sort_order')->orderBy('id');
+        return $this->belongsToMany(BillingFeature::class, 'billing_feature_plan')
+            ->withPivot('sort_order')
+            ->withTimestamps()
+            ->orderByPivot('sort_order')
+            ->orderBy('billing_features.id');
     }
 }
