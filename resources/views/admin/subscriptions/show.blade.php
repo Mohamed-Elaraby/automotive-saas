@@ -490,6 +490,22 @@
                             <h6 class="mb-3">Admin Actions</h6>
 
                             <div class="d-grid gap-2">
+                                @if($isStripeLinked)
+                                    <form method="POST" action="{{ route('admin.subscriptions.cancel-on-stripe', $subscription->id) }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger w-100">
+                                            Cancel on Stripe
+                                        </button>
+                                    </form>
+
+                                    <form method="POST" action="{{ route('admin.subscriptions.resume-on-stripe', $subscription->id) }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-success w-100">
+                                            Resume on Stripe
+                                        </button>
+                                    </form>
+                                @endif
+
                                 <form method="POST" action="{{ route('admin.subscriptions.sync-stripe', $subscription->id) }}">
                                     @csrf
                                     <button type="submit" class="btn btn-primary w-100">

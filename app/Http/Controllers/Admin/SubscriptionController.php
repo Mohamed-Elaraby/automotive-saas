@@ -10,6 +10,7 @@ use App\Services\Admin\AdminSubscriptionControlService;
 use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
+use App\Services\Billing\StripeSubscriptionManagementService;
 use App\Services\Billing\StripeSubscriptionSyncService;
 use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
@@ -27,6 +28,7 @@ class SubscriptionController extends Controller
         protected AdminActivityLogger $activityLogger,
         protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
+        protected StripeSubscriptionManagementService $stripeSubscriptionManagementService,
         protected StripeInvoiceLedgerBackfillService $stripeInvoiceLedgerBackfillService,
         protected TenantBillingLifecycleService $tenantBillingLifecycleService,
         protected SubscriptionLifecycleNormalizationService $subscriptionLifecycleNormalizationService,
@@ -388,6 +390,68 @@ public function updateTimestamps(Request $request, int $subscriptionId): Redirec
             ->route('admin.subscriptions.show', $subscriptionId)
             ->with('error', $e->getMessage() ?: 'Unable to update subscription timestamps right now.');
     }
+}
+
+public function cancelOnStripe(Request $request, int $subscriptionId): RedirectResponse
+{
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return $this->redirectAfterAction($request, $subscriptionId)
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    $result = $this->stripeSubscriptionManagementService->cancelAtPeriodEnd($subscription);
+    $fresh = $subscription->fresh();
+
+    if (($result['success'] ?? false) && $fresh) {
+        $this->activityLogger->log(
+            action: 'subscription.stripe_cancel_scheduled',
+            subjectType: 'subscription',
+            subjectId: $fresh->id,
+            tenantId: (string) $fresh->tenant_id,
+            contextPayload: [
+                'source' => 'admin.cancel_on_stripe',
+                'result' => $result,
+                'after' => $this->snapshot($fresh),
+            ]
+        );
+    }
+
+    return redirect()
+        ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
+        ->with(($result['success'] ?? false) ? 'success' : 'error', $result['message'] ?? 'Unable to update Stripe subscription.');
+}
+
+public function resumeOnStripe(Request $request, int $subscriptionId): RedirectResponse
+{
+    $subscription = Subscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return $this->redirectAfterAction($request, $subscriptionId)
+            ->with('error', 'The subscription record was not found.');
+    }
+
+    $result = $this->stripeSubscriptionManagementService->resume($subscription);
+    $fresh = $subscription->fresh();
+
+    if (($result['success'] ?? false) && $fresh) {
+        $this->activityLogger->log(
+            action: 'subscription.stripe_resumed',
+            subjectType: 'subscription',
+            subjectId: $fresh->id,
+            tenantId: (string) $fresh->tenant_id,
+            contextPayload: [
+                'source' => 'admin.resume_on_stripe',
+                'result' => $result,
+                'after' => $this->snapshot($fresh),
+            ]
+        );
+    }
+
+    return redirect()
+        ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
+        ->with(($result['success'] ?? false) ? 'success' : 'error', $result['message'] ?? 'Unable to resume Stripe subscription.');
 }
 
 protected function loadSubscriptionRecord(int $subscriptionId): ?object

@@ -104,6 +104,8 @@ Route::prefix('admin')
                 Route::post('/{subscription}/backfill-invoices', [SubscriptionController::class, 'backfillInvoices'])->name('backfill-invoices');
                 Route::post('/{subscription}/refresh-state', [SubscriptionController::class, 'refreshState'])->name('refresh-state');
                 Route::post('/{subscription}/normalize-lifecycle', [SubscriptionController::class, 'normalizeLifecycle'])->name('normalize-lifecycle');
+                Route::post('/{subscription}/cancel-on-stripe', [SubscriptionController::class, 'cancelOnStripe'])->name('cancel-on-stripe');
+                Route::post('/{subscription}/resume-on-stripe', [SubscriptionController::class, 'resumeOnStripe'])->name('resume-on-stripe');
                 Route::post('/{subscription}/manual-action', [SubscriptionController::class, 'manualAction'])->name('manual-action');
                 Route::post('/{subscription}/timestamps', [SubscriptionController::class, 'updateTimestamps'])->name('timestamps');
             });
