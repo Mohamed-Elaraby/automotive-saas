@@ -176,6 +176,38 @@ class AdminSubscriptionAdvancedControlTest extends TestCase
         $this->assertTrue(Carbon::parse($fresh->ends_at)->greaterThan(now()->addDays(27)));
     }
 
+    public function test_resume_restores_trial_subscription_to_trialing_instead_of_active(): void
+    {
+        $admin = $this->createAdmin();
+        $plan = $this->createPlan('Trial Workspace', 'trial-workspace-' . uniqid(), 'trial');
+
+        $subscription = Subscription::query()->create([
+            'tenant_id' => 'tenant-subscription-trial-resume-' . uniqid(),
+            'plan_id' => $plan->id,
+            'status' => 'suspended',
+            'suspended_at' => now()->subDay(),
+            'trial_ends_at' => now()->addDays(5),
+            'gateway' => 'stripe',
+            'gateway_checkout_session_id' => 'cs_resume_trial_only',
+            'gateway_subscription_id' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->post(route('admin.subscriptions.manual-action', $subscription->id), [
+                'action' => 'resume',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.subscriptions.show', $subscription->id))
+            ->assertSessionHas('success');
+
+        $fresh = $subscription->fresh();
+
+        $this->assertSame('trialing', $fresh->status);
+        $this->assertNull($fresh->suspended_at);
+    }
+
     public function test_timestamp_update_changes_local_lifecycle_dates(): void
     {
         $admin = $this->createAdmin();

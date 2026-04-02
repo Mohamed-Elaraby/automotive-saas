@@ -1,0 +1,83 @@
+<?php
+
+namespace Tests\Feature\Automotive\Portal;
+
+use App\Models\CustomerOnboardingProfile;
+use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+
+class CustomerPortalBillingOptionsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_trial_workspace_without_live_stripe_subscription_can_still_start_paid_checkout(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal User',
+            'email' => 'portal-user-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Co',
+            'subdomain' => 'portal-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $trialPlan = $this->createPlan('Trial Plan', 'trial-plan-' . uniqid(), 'trial', 0);
+        $paidPlan = $this->createPlan('Pro Plan', 'pro-plan-' . uniqid(), 'monthly', 149);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-portal-' . uniqid(),
+            'data' => [
+                'company_name' => 'Portal Co',
+                'owner_email' => $user->email,
+            ],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Subscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $trialPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_checkout_session_id' => 'cs_portal_pending_only',
+            'gateway_subscription_id' => null,
+            'gateway_price_id' => $paidPlan->stripe_price_id,
+            'ends_at' => now()->addDays(5),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('Select &amp; Continue', false);
+        $response->assertDontSee('Billing Managed In System', false);
+    }
+
+    protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan
+    {
+        return Plan::query()->create([
+            'name' => $name,
+            'slug' => $slug,
+            'description' => $name . ' description',
+            'price' => $price,
+            'currency' => 'USD',
+            'billing_period' => $billingPeriod,
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+    }
+}

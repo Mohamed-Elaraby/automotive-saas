@@ -51,6 +51,7 @@ class CustomerPortalController extends Controller
 
         $status = (string) ($subscription->status ?? '');
         $trialEndsAt = $this->nullableCarbon($subscription->trial_ends_at ?? null);
+        $isTrialWorkspace = $this->subscriptionRepresentsTrialWorkspace($subscription, $plan);
 
         $trialDaysRemaining = null;
         if ($trialEndsAt && $trialEndsAt->isFuture()) {
@@ -65,7 +66,10 @@ class CustomerPortalController extends Controller
             && filled($subscription->gateway_checkout_session_id)
             && ! filled($subscription->gateway_subscription_id);
         $canStartPaidCheckout = ! $hasLiveStripeSubscription
-            && (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE;
+            && (
+                (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE
+                || $isTrialWorkspace
+            );
 
         return view('automotive.portal.index', [
             'user' => $user,
@@ -84,6 +88,7 @@ class CustomerPortalController extends Controller
             'canStartPaidCheckout' => $canStartPaidCheckout,
             'hasLiveStripeSubscription' => $hasLiveStripeSubscription,
             'hasPendingPaidCheckout' => $hasPendingPaidCheckout,
+            'isTrialWorkspace' => $isTrialWorkspace,
         ]);
     }
 
@@ -312,5 +317,31 @@ class CustomerPortalController extends Controller
         }
 
         return Carbon::parse($value);
+    }
+
+    protected function subscriptionRepresentsTrialWorkspace(?object $subscription, ?object $plan): bool
+    {
+        if (! $subscription) {
+            return false;
+        }
+
+        if (filled($subscription->gateway_subscription_id ?? null)) {
+            return false;
+        }
+
+        if ((string) ($subscription->status ?? '') === SubscriptionStatuses::TRIALING) {
+            return true;
+        }
+
+        if (filled($subscription->trial_ends_at ?? null)) {
+            return true;
+        }
+
+        if (! $plan) {
+            return false;
+        }
+
+        return (string) ($plan->billing_period ?? '') === 'trial'
+            || (float) ($plan->price ?? 0) <= 0;
     }
 }

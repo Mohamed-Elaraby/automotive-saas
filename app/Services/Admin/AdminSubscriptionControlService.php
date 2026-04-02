@@ -169,11 +169,15 @@ class AdminSubscriptionControlService
 
     protected function markAsActive(Subscription $subscription): Subscription
     {
+        $restoredStatus = $this->shouldRestoreToTrialing($subscription)
+            ? SubscriptionStatuses::TRIALING
+            : SubscriptionStatuses::ACTIVE;
+
         DB::connection($subscription->getConnectionName())
             ->table($subscription->getTable())
             ->where('id', $subscription->id)
             ->update([
-                'status' => SubscriptionStatuses::ACTIVE,
+                'status' => $restoredStatus,
                 'grace_ends_at' => null,
                 'last_payment_failed_at' => null,
                 'past_due_started_at' => null,
@@ -237,5 +241,25 @@ class AdminSubscriptionControlService
         $subscriptionId = (int) ($result->id ?? $fallbackSubscriptionId);
 
         return Subscription::query()->find($subscriptionId);
+    }
+
+    protected function shouldRestoreToTrialing(Subscription $subscription): bool
+    {
+        if (filled($subscription->gateway_subscription_id)) {
+            return false;
+        }
+
+        if (filled($subscription->trial_ends_at)) {
+            return true;
+        }
+
+        $plan = $subscription->plan_id ? Plan::query()->find($subscription->plan_id) : null;
+
+        if (! $plan) {
+            return false;
+        }
+
+        return (string) ($plan->billing_period ?? '') === 'trial'
+            || (float) ($plan->price ?? 0) <= 0;
     }
 }
