@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
+use App\Services\Billing\TenantCleanupEligibilityService;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -17,7 +18,7 @@ class TenantsCleanup extends Command
 
     protected $description = 'Expire ended trials and delete tenants after grace period';
 
-    public function handle(): int
+    public function handle(TenantCleanupEligibilityService $tenantCleanupEligibilityService): int
     {
         $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
         $graceDays = (int) $this->option('grace-days');
@@ -66,7 +67,9 @@ class TenantsCleanup extends Command
         foreach ($subscriptionsToDelete as $subscription) {
             $tenantId = $subscription->tenant_id;
 
-            if (! $this->eligibleForAutomaticCleanup($centralConnection, (string) $tenantId)) {
+            $eligibility = $tenantCleanupEligibilityService->evaluateAutomaticCleanup((string) $tenantId, $centralConnection);
+
+            if (! ($eligibility['eligible'] ?? false)) {
                 $this->warn("Skipping tenant [{$tenantId}] because automatic cleanup is limited to expired trial tenants without active billing linkage.");
 
                 continue;
@@ -206,35 +209,6 @@ class TenantsCleanup extends Command
             DB::connection($centralConnection)->table('tenants')
                 ->where('id', $tenantId)
                 ->delete();
-        });
-    }
-
-    protected function eligibleForAutomaticCleanup(string $centralConnection, string $tenantId): bool
-    {
-        $subscriptions = DB::connection($centralConnection)
-            ->table('subscriptions')
-            ->where('tenant_id', $tenantId)
-            ->get();
-
-        if ($subscriptions->isEmpty()) {
-            return true;
-        }
-
-        $hasStripeLinkage = $subscriptions->contains(function ($subscription) {
-            return (string) ($subscription->gateway ?? '') === 'stripe'
-                || filled($subscription->gateway_customer_id ?? null)
-                || filled($subscription->gateway_subscription_id ?? null)
-                || filled($subscription->gateway_checkout_session_id ?? null)
-                || filled($subscription->gateway_price_id ?? null);
-        });
-
-        if ($hasStripeLinkage) {
-            return false;
-        }
-
-        return $subscriptions->every(function ($subscription) {
-            return ($subscription->status ?? null) === SubscriptionStatuses::EXPIRED
-                && ! empty($subscription->trial_ends_at);
         });
     }
 }
