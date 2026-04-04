@@ -3,12 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\Tenant;
+use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Models\Domain;
-use App\Support\Billing\SubscriptionStatuses;
-
 
 class TenantsCleanup extends Command
 {
@@ -66,6 +65,12 @@ class TenantsCleanup extends Command
 
         foreach ($subscriptionsToDelete as $subscription) {
             $tenantId = $subscription->tenant_id;
+
+            if (! $this->eligibleForAutomaticCleanup($centralConnection, (string) $tenantId)) {
+                $this->warn("Skipping tenant [{$tenantId}] because automatic cleanup is limited to expired trial tenants without active billing linkage.");
+
+                continue;
+            }
 
             /** @var \App\Models\Tenant|null $tenant */
             $tenant = Tenant::query()->find($tenantId);
@@ -157,6 +162,12 @@ class TenantsCleanup extends Command
                 ->where('tenant_id', $tenant->id)
                 ->delete();
 
+            if (DB::connection($centralConnection)->getSchemaBuilder()->hasTable('coupon_redemptions')) {
+                DB::connection($centralConnection)->table('coupon_redemptions')
+                    ->where('tenant_id', $tenant->id)
+                    ->delete();
+            }
+
             DB::connection($centralConnection)->table('tenants')
                 ->where('id', $tenant->id)
                 ->delete();
@@ -186,9 +197,44 @@ class TenantsCleanup extends Command
                 ->where('tenant_id', $tenantId)
                 ->delete();
 
+            if (DB::connection($centralConnection)->getSchemaBuilder()->hasTable('coupon_redemptions')) {
+                DB::connection($centralConnection)->table('coupon_redemptions')
+                    ->where('tenant_id', $tenantId)
+                    ->delete();
+            }
+
             DB::connection($centralConnection)->table('tenants')
                 ->where('id', $tenantId)
                 ->delete();
+        });
+    }
+
+    protected function eligibleForAutomaticCleanup(string $centralConnection, string $tenantId): bool
+    {
+        $subscriptions = DB::connection($centralConnection)
+            ->table('subscriptions')
+            ->where('tenant_id', $tenantId)
+            ->get();
+
+        if ($subscriptions->isEmpty()) {
+            return true;
+        }
+
+        $hasStripeLinkage = $subscriptions->contains(function ($subscription) {
+            return (string) ($subscription->gateway ?? '') === 'stripe'
+                || filled($subscription->gateway_customer_id ?? null)
+                || filled($subscription->gateway_subscription_id ?? null)
+                || filled($subscription->gateway_checkout_session_id ?? null)
+                || filled($subscription->gateway_price_id ?? null);
+        });
+
+        if ($hasStripeLinkage) {
+            return false;
+        }
+
+        return $subscriptions->every(function ($subscription) {
+            return ($subscription->status ?? null) === SubscriptionStatuses::EXPIRED
+                && ! empty($subscription->trial_ends_at);
         });
     }
 }

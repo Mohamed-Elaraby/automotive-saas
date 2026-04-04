@@ -141,6 +141,68 @@ class BillingLifecycleCommandsTest extends TestCase
         $this->assertSame(SubscriptionStatuses::TRIALING, $subscription->fresh()->status);
     }
 
+    public function test_tenants_cleanup_does_not_delete_expired_paid_tenants(): void
+    {
+        Carbon::setTestNow('2026-04-04 02:00:00');
+
+        $tenantId = 'tenant-cleanup-paid-expired';
+
+        DB::table('tenants')->insert([
+            'id' => $tenantId,
+            'data' => json_encode(['db_name' => 'tenant_cleanup_paid_expired'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $subscription = $this->createSubscription([
+            'tenant_id' => $tenantId,
+            'status' => SubscriptionStatuses::EXPIRED,
+            'trial_ends_at' => null,
+            'ends_at' => now()->subDays(10),
+            'gateway' => null,
+            'gateway_customer_id' => null,
+            'gateway_subscription_id' => null,
+        ]);
+
+        $this->artisan('tenants:cleanup --grace-days=7')
+            ->expectsOutput('Expired tenants past grace period: 0')
+            ->assertExitCode(SymfonyCommand::SUCCESS);
+
+        $this->assertDatabaseHas('tenants', ['id' => $tenantId]);
+        $this->assertSame(SubscriptionStatuses::EXPIRED, $subscription->fresh()->status);
+    }
+
+    public function test_tenants_cleanup_skips_expired_trials_with_stripe_linkage(): void
+    {
+        Carbon::setTestNow('2026-04-04 02:00:00');
+
+        $tenantId = 'tenant-cleanup-trial-stripe';
+
+        DB::table('tenants')->insert([
+            'id' => $tenantId,
+            'data' => json_encode(['db_name' => 'tenant_cleanup_trial_stripe'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $subscription = $this->createSubscription([
+            'tenant_id' => $tenantId,
+            'status' => SubscriptionStatuses::EXPIRED,
+            'trial_ends_at' => now()->subDays(10),
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_cleanup_block',
+            'gateway_subscription_id' => 'sub_cleanup_block',
+        ]);
+
+        $this->artisan('tenants:cleanup --grace-days=7')
+            ->expectsOutput('Expired tenants past grace period: 1')
+            ->expectsOutput("Skipping tenant [{$tenantId}] because automatic cleanup is limited to expired trial tenants without active billing linkage.")
+            ->assertExitCode(SymfonyCommand::SUCCESS);
+
+        $this->assertDatabaseHas('tenants', ['id' => $tenantId]);
+        $this->assertSame(SubscriptionStatuses::EXPIRED, $subscription->fresh()->status);
+    }
+
     protected function createSubscription(array $overrides = []): Subscription
     {
         return Subscription::query()->create(array_merge([
