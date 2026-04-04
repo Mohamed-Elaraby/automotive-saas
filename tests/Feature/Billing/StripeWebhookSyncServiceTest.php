@@ -4,6 +4,7 @@ namespace Tests\Feature\Billing;
 
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Services\Billing\StripeWebhookSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -46,7 +47,10 @@ class StripeWebhookSyncServiceTest extends TestCase
         $notificationService->shouldReceive('paymentFailed')->once();
         $notificationService->shouldReceive('renewalFailed')->once();
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService);
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldNotReceive('ensureProvisioned');
+
+        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
 
         $event = (object) [
             'type' => 'invoice.payment_failed',
@@ -95,7 +99,10 @@ class StripeWebhookSyncServiceTest extends TestCase
         $notificationService->shouldReceive('invoicePaid')->once();
         $notificationService->shouldReceive('renewalSucceeded')->once();
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService);
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldNotReceive('ensureProvisioned');
+
+        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
 
         $event = (object) [
             'type' => 'invoice.paid',
@@ -146,7 +153,12 @@ class StripeWebhookSyncServiceTest extends TestCase
         $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
         $notificationService->shouldReceive('checkoutCompleted')->once();
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService);
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldReceive('ensureProvisioned')
+            ->once()
+            ->with((string) $subscription->tenant_id);
+
+        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
 
         $event = (object) [
             'type' => 'checkout.session.completed',
