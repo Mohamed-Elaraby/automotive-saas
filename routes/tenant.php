@@ -27,7 +27,7 @@ Route::middleware([
     if (! app()->bound('routes.automotive.admin.loaded')) {
         app()->instance('routes.automotive.admin.loaded', true);
 
-        require_once base_path('routes/products/automotive/admin.php');
+        require base_path('routes/products/automotive/admin.php');
     }
 
 });
