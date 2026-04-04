@@ -87,6 +87,21 @@ class AdminPlanFeatureStorageTest extends TestCase
         );
     }
 
+    public function test_plan_form_shows_limits_semantics_guidance(): void
+    {
+        $admin = $this->createAdmin();
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.plans.create'));
+
+        $response->assertOk();
+        $response->assertSee('Limits Semantics');
+        $response->assertSee('Only filled limits appear in the portal preview and paid plan cards.');
+        $response->assertSee('Empty does not mean zero.');
+        $response->assertSee('Use empty fields when a cap is not part of the sales message');
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([

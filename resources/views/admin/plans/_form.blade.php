@@ -65,21 +65,36 @@
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Users</label>
                 <input type="number" min="1" class="form-control" name="max_users" value="{{ old('max_users', $plan->max_users) }}" data-plan-preview="max_users">
+                <small class="text-muted d-block mt-1">Leave empty to hide a user cap from the portal card. If filled, this is the total active users allowed in the tenant workspace.</small>
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Branches</label>
                 <input type="number" min="1" class="form-control" name="max_branches" value="{{ old('max_branches', $plan->max_branches) }}" data-plan-preview="max_branches">
+                <small class="text-muted d-block mt-1">Leave empty when branch count should not be advertised as a packaged limit. If filled, it is the maximum branch records the tenant can operate.</small>
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Products</label>
                 <input type="number" min="1" class="form-control" name="max_products" value="{{ old('max_products', $plan->max_products) }}" data-plan-preview="max_products">
+                <small class="text-muted d-block mt-1">Use this for the catalog ceiling customers are buying. Empty means the limit line stays out of the preview instead of showing a misleading placeholder.</small>
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Max Storage (MB)</label>
                 <input type="number" min="1" class="form-control" name="max_storage_mb" value="{{ old('max_storage_mb', $plan->max_storage_mb) }}" data-plan-preview="max_storage_mb">
+                <small class="text-muted d-block mt-1">Storage is shown in MB in admin but appears as a customer-facing storage line in the portal preview. Leave empty if storage should not be marketed as a plan limit.</small>
+            </div>
+
+            <div class="col-12 mb-3">
+                <div class="rounded border bg-light p-3">
+                    <h6 class="mb-2">Limits Semantics</h6>
+                    <ul class="mb-0 text-muted ps-3">
+                        <li>Only filled limits appear in the portal preview and paid plan cards.</li>
+                        <li>Empty does not mean zero. It means "do not advertise or enforce from this plan field".</li>
+                        <li>Use plan features for capabilities, and numeric limits only for measurable caps.</li>
+                    </ul>
+                </div>
             </div>
 
             <div class="col-12 mb-3">
@@ -199,6 +214,7 @@
                                     </p>
                                     <ul class="mb-0 text-muted ps-3">
                                         <li>Empty numeric limits are hidden from customers.</li>
+                                        <li>Use empty fields when a cap is not part of the sales message, not when the value is zero.</li>
                                         <li>Checked features appear after the limits.</li>
                                         <li>Trial plans force price to `0.00` when saved.</li>
                                     </ul>
