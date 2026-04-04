@@ -73,10 +73,22 @@
                                 @endif
                             </td>
                             <td>
-                                <small class="d-block">Users: {{ $plan->max_users ?? '-' }}</small>
-                                <small class="d-block">Branches: {{ $plan->max_branches ?? '-' }}</small>
-                                <small class="d-block">Products: {{ $plan->max_products ?? '-' }}</small>
-                                <small class="d-block">Storage: {{ $plan->max_storage_mb ?? '-' }} MB</small>
+                                @php
+                                    $limitLines = collect([
+                                        $plan->max_users ? $plan->max_users . ' users' : null,
+                                        $plan->max_branches ? $plan->max_branches . ' branches' : null,
+                                        $plan->max_products ? $plan->max_products . ' products' : null,
+                                        $plan->max_storage_mb ? $plan->max_storage_mb . ' MB storage' : null,
+                                    ])->filter()->values();
+                                @endphp
+
+                                @if($limitLines->isEmpty())
+                                    <span class="text-muted">No advertised limits</span>
+                                @else
+                                    @foreach($limitLines as $line)
+                                        <small class="d-block">{{ $line }}</small>
+                                    @endforeach
+                                @endif
                             </td>
                             <td>
                                 @forelse($plan->billingFeatures->take(3) as $feature)

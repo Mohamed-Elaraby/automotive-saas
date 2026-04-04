@@ -102,6 +102,48 @@ class AdminPlanFeatureStorageTest extends TestCase
         $response->assertSee('Use empty fields when a cap is not part of the sales message');
     }
 
+    public function test_plans_index_shows_clean_limits_summary(): void
+    {
+        $admin = $this->createAdmin();
+
+        Plan::query()->create([
+            'name' => 'Growth',
+            'slug' => 'growth',
+            'price' => 399,
+            'currency' => 'AED',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+            'max_users' => 50,
+            'max_branches' => 10,
+            'max_products' => 50000,
+            'max_storage_mb' => 20480,
+        ]);
+
+        Plan::query()->create([
+            'name' => 'Starter',
+            'slug' => 'starter',
+            'price' => 99,
+            'currency' => 'AED',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.plans.index'));
+
+        $response->assertOk();
+        $response->assertSee('50 users');
+        $response->assertSee('10 branches');
+        $response->assertSee('50000 products');
+        $response->assertSee('20480 MB storage');
+        $response->assertSee('No advertised limits');
+        $response->assertDontSee('Users: -');
+        $response->assertDontSee('Storage: - MB');
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([
