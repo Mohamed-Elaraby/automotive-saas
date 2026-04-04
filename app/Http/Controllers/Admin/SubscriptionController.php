@@ -164,20 +164,13 @@ public function syncFromStripe(Request $request, int $subscriptionId): RedirectR
             ->with('error', 'This subscription is not linked to the Stripe gateway.');
     }
 
-    if (! $subscription->gateway_subscription_id) {
-        return $this->redirectAfterAction($request, $subscriptionId)
-            ->with('error', 'No Stripe subscription ID is linked to this subscription.');
-    }
-
     try {
-        $synced = $this->stripeSubscriptionSyncService->syncByGatewaySubscriptionId(
-            (string) $subscription->gateway_subscription_id
-        );
+        $synced = $this->stripeSubscriptionSyncService->syncLocalStripeSubscription($subscription);
 
         if (! $synced) {
             return redirect()
                 ->to($this->redirectAfterAction($request, $subscriptionId)->getTargetUrl())
-                ->with('error', 'No local subscription could be matched for the Stripe subscription ID.');
+                ->with('error', 'Unable to resolve a live Stripe subscription ID for this record from the stored checkout/customer data.');
         }
 
         $subscription->refresh();
