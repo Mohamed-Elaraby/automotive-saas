@@ -54,7 +54,7 @@ public function status(Request $request): View
 
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
     $billingActions = BillingActionResolver::resolve($billingState);
-    $availablePlans = $this->billingPlanCatalogService->getPaidPlans();
+    $availablePlans = $this->billingPlanCatalogService->getPaidPlans('automotive_service');
 
     $selectedPlanId = old('target_plan_id')
         ?: $request->input('target_plan_id')
@@ -62,7 +62,7 @@ public function status(Request $request): View
                 ?: optional($availablePlans->first())->id;
 
     $selectedPlan = $selectedPlanId
-        ? $this->billingPlanCatalogService->findPaidPlanById($selectedPlanId)
+        ? $this->billingPlanCatalogService->findPaidPlanById($selectedPlanId, 'automotive_service')
         : null;
 
     $selectedPlanAudit = $selectedPlan
@@ -159,7 +159,7 @@ public function renew(Request $request): RedirectResponse
         'target_plan_id' => ['required', 'integer'],
     ]);
 
-    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
+    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id'], 'automotive_service');
 
     if (! $targetPlan) {
         return redirect()
@@ -268,7 +268,7 @@ public function changePlan(Request $request): RedirectResponse
         'preview_proration_date' => ['nullable', 'integer'],
     ]);
 
-    $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id']);
+    $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id'], 'automotive_service');
 
     if (! $targetPlanCatalogRow) {
         return redirect()

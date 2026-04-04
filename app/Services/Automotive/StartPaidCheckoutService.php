@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class StartPaidCheckoutService
 {
+    protected const PRODUCT_CODE = 'automotive_service';
+
     public function __construct(
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected PaymentGatewayManager $paymentGatewayManager
@@ -20,7 +22,7 @@ class StartPaidCheckoutService
 
     public function start(User $user, CustomerOnboardingProfile $profile, int $planId): array
     {
-        $plan = $this->billingPlanCatalogService->findPaidPlanById($planId);
+        $plan = $this->billingPlanCatalogService->findPaidPlanById($planId, self::PRODUCT_CODE);
         $reservedTenantId = strtolower(trim((string) $profile->subdomain));
 
         if (! $plan) {

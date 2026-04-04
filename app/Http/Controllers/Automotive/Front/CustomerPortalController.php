@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Schema;
 
 class CustomerPortalController extends Controller
 {
+    protected const PRODUCT_CODE = 'automotive_service';
+
     public function __construct(
         protected AppSettingsService $settingsService,
         protected BillingPlanCatalogService $billingPlanCatalogService
@@ -43,7 +45,7 @@ class CustomerPortalController extends Controller
         $domains = $subscription && ! empty($subscription->tenant_id)
             ? $this->domainsForTenant((string) $subscription->tenant_id)
             : collect();
-        $paidPlans = $this->billingPlanCatalogService->getPaidPlans();
+        $paidPlans = $this->billingPlanCatalogService->getPaidPlans(self::PRODUCT_CODE);
 
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;

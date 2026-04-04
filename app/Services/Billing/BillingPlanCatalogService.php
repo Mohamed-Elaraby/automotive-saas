@@ -7,27 +7,42 @@ use Illuminate\Support\Collection;
 
 class BillingPlanCatalogService
 {
-    public function getPaidPlans(): Collection
+    public function getPaidPlans(?string $productCode = null): Collection
     {
-        return Plan::query()
+        $query = Plan::query()
             ->with('billingFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
-            ->orderBy('sort_order')
+            ->orderBy('sort_order');
+
+        if (filled($productCode)) {
+            $query->whereHas('product', function ($productQuery) use ($productCode) {
+                $productQuery->where('code', $productCode);
+            });
+        }
+
+        return $query
             ->get()
             ->map(function ($plan) {
                 return $this->hydratePlan($plan);
             });
     }
 
-    public function findPaidPlanById(int|string $planId): ?object
+    public function findPaidPlanById(int|string $planId, ?string $productCode = null): ?object
     {
-        $plan = Plan::query()
+        $query = Plan::query()
             ->with('billingFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
-            ->where('id', $planId)
-            ->first();
+            ->where('id', $planId);
+
+        if (filled($productCode)) {
+            $query->whereHas('product', function ($productQuery) use ($productCode) {
+                $productQuery->where('code', $productCode);
+            });
+        }
+
+        $plan = $query->first();
 
         if (! $plan) {
             return null;

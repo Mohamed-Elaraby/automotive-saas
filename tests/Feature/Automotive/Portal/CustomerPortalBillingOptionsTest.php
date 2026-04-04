@@ -6,6 +6,7 @@ use App\Contracts\Billing\PaymentGatewayInterface;
 use App\Models\BillingFeature;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
@@ -93,7 +94,10 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'base_host' => 'example.test',
         ]);
 
+        $automotiveProductId = Product::query()->where('code', 'automotive_service')->value('id');
+
         $plan = Plan::query()->create([
+            'product_id' => $automotiveProductId,
             'name' => 'Growth',
             'slug' => 'growth-' . uniqid(),
             'description' => 'Real plan description',
@@ -141,6 +145,48 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Barcode support', false);
         $response->assertSee('Inventory reports', false);
         $response->assertSee(strtoupper((string) $plan->slug), false);
+    }
+
+    public function test_portal_only_shows_plans_for_the_automotive_product(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Product Filter User',
+            'email' => 'portal-product-filter-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Product Filter Co',
+            'subdomain' => 'portal-product-filter-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $automotivePlan = $this->createPlan('Automotive Growth', 'automotive-growth-' . uniqid(), 'monthly', 399);
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_' . uniqid(),
+            'name' => 'Accounting System',
+            'slug' => 'accounting-' . uniqid(),
+            'is_active' => true,
+        ]);
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'description' => 'Accounting only plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee($automotivePlan->name, false);
+        $response->assertDontSee($accountingPlan->name, false);
     }
 
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void
@@ -391,9 +437,54 @@ class CustomerPortalBillingOptionsTest extends TestCase
         ]);
     }
 
+    public function test_paid_checkout_rejects_plan_from_a_different_product(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Wrong Product Portal User',
+            'email' => 'portal-wrong-product-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $profile = CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Wrong Product Portal Co',
+            'subdomain' => 'wrong-product-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $otherProduct = Product::query()->create([
+            'code' => 'accounting_' . uniqid(),
+            'name' => 'Accounting System',
+            'slug' => 'accounting-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $otherProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'description' => 'Accounting only plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $result = app(StartPaidCheckoutService::class)->start($user, $profile, $plan->id);
+
+        $this->assertFalse($result['ok']);
+        $this->assertSame(422, $result['status']);
+        $this->assertSame('The selected paid plan was not found or is not active.', $result['message']);
+    }
+
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan
     {
+        $productId = Product::query()->where('code', 'automotive_service')->value('id');
+
         return Plan::query()->create([
+            'product_id' => $productId,
             'name' => $name,
             'slug' => $slug,
             'description' => $name . ' description',
