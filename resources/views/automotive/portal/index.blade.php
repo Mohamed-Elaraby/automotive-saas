@@ -24,6 +24,10 @@
                                 View Plans &amp; Subscribe
                             </a>
 
+                            <a href="#products-catalog" class="btn btn-outline-white">
+                                View Products
+                            </a>
+
                             @if($allowSystemAccess && !empty($systemUrl))
                                 <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
                                     Open My Trial System
@@ -286,6 +290,77 @@
                                 <button type="button" class="btn btn-outline-white" disabled>
                                     Profile Overview Only
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4" id="products-catalog">
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div>
+                                        <h6 class="mb-1">Products Catalog</h6>
+                                        <p class="text-muted mb-0">Start with one product today, then attach more modules to the same workspace later.</p>
+                                    </div>
+                                    <span class="badge bg-soft-info text-info">
+                                        One workspace, many products
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                @foreach($productCatalog as $productRow)
+                                    @php
+                                        $statusBadgeClass = match ((string) ($productRow['subscription_status'] ?? '')) {
+                                            'active' => 'bg-success',
+                                            'trialing' => 'bg-info',
+                                            'past_due', 'suspended', 'expired', 'canceled' => 'bg-warning',
+                                            default => ((bool) ($productRow['is_active'] ?? false) ? 'bg-dark' : 'bg-secondary'),
+                                        };
+                                    @endphp
+                                    <div class="col-lg-4 col-md-6 d-flex">
+                                        <div class="card border flex-fill w-100">
+                                            <div class="card-body d-flex flex-column">
+                                                <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                                                    <div>
+                                                        <h5 class="mb-1">{{ $productRow['name'] }}</h5>
+                                                        <p class="text-muted mb-0">{{ $productRow['description'] ?: 'Product catalog item.' }}</p>
+                                                    </div>
+                                                    <span class="badge {{ $statusBadgeClass }}">
+                                                        {{ $productRow['status_label'] }}
+                                                    </span>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <div class="text-muted fs-13 mb-1">Product Code</div>
+                                                    <div class="fw-semibold">{{ strtoupper((string) $productRow['code']) }}</div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    @if($productRow['is_subscribed'])
+                                                        <p class="mb-1 text-success">This product is already attached to your workspace.</p>
+                                                    @elseif($productRow['is_automotive'])
+                                                        <p class="mb-1 text-muted">This is the current live onboarding product in the portal.</p>
+                                                    @else
+                                                        <p class="mb-1 text-muted">This product will connect to the same tenant workspace when enabled.</p>
+                                                    @endif
+                                                </div>
+
+                                                <div class="mt-auto d-flex flex-wrap gap-2">
+                                                    <a href="{{ $productRow['action_anchor'] }}" class="btn btn-outline-white">
+                                                        {{ $productRow['action_label'] }}
+                                                    </a>
+
+                                                    @if($productRow['is_subscribed'] && $productRow['is_automotive'] && $allowSystemAccess && !empty($systemUrl))
+                                                        <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
+                                                            Open Workspace
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>

@@ -188,6 +188,10 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertOk();
         $response->assertSee($automotivePlan->name, false);
         $response->assertDontSee($accountingPlan->name, false);
+        $response->assertSee('Products Catalog', false);
+        $response->assertSee('Automotive Service Management', false);
+        $response->assertSee('Accounting System', false);
+        $response->assertSee('AVAILABLE NOW', false);
     }
 
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void
@@ -538,6 +542,51 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $this->assertNotNull($productSubscription);
         $this->assertNotNull($productSubscription->legacy_subscription_id);
+    }
+
+    public function test_portal_marks_automotive_product_as_subscribed_when_product_subscription_exists(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Subscribed Product User',
+            'email' => 'portal-subscribed-product-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Subscribed Product Co',
+            'subdomain' => 'subscribed-product-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $plan = $this->createPlan('Subscribed Growth', 'subscribed-growth-' . uniqid(), 'monthly', 399);
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-subscribed-product-' . uniqid(),
+            'data' => ['company_name' => 'Subscribed Product Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        \App\Models\TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => Product::query()->where('code', 'automotive_service')->value('id'),
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('Products Catalog', false);
+        $response->assertSee('Manage Automotive', false);
+        $response->assertSee('ACTIVE', false);
+        $response->assertSee('This product is already attached to your workspace.', false);
     }
 
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Front;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOnboardingProfile;
+use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Automotive\StartTrialService;
@@ -40,12 +41,14 @@ class CustomerPortalController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        $tenantIds = $this->tenantIdsForUser($user);
         $subscription = $this->latestSubscriptionForUser($user);
         $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
         $domains = $subscription && ! empty($subscription->tenant_id)
             ? $this->domainsForTenant((string) $subscription->tenant_id)
             : collect();
         $paidPlans = $this->billingPlanCatalogService->getPaidPlans(self::PRODUCT_CODE);
+        $productCatalog = $this->productCatalogForTenantIds($tenantIds, (string) ($subscription->tenant_id ?? ''));
 
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
@@ -89,6 +92,7 @@ class CustomerPortalController extends Controller
             'hasLiveStripeSubscription' => $hasLiveStripeSubscription,
             'hasPendingPaidCheckout' => $hasPendingPaidCheckout,
             'isTrialWorkspace' => $isTrialWorkspace,
+            'productCatalog' => $productCatalog,
         ]);
     }
 
@@ -244,12 +248,7 @@ class CustomerPortalController extends Controller
             return null;
         }
 
-        $tenantIds = DB::connection($connection)
-            ->table('tenant_users')
-            ->where('user_id', $user->id)
-            ->pluck('tenant_id')
-            ->filter()
-            ->values();
+        $tenantIds = $this->tenantIdsForUser($user);
 
         if ($tenantIds->isEmpty()) {
             return null;
@@ -282,6 +281,90 @@ class CustomerPortalController extends Controller
             ->whereIn('tenant_id', $tenantIds->all())
             ->orderByDesc('id')
             ->first();
+    }
+
+    protected function tenantIdsForUser(object $user): Collection
+    {
+        $connection = $this->centralConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('tenant_users')) {
+            return collect();
+        }
+
+        return DB::connection($connection)
+            ->table('tenant_users')
+            ->where('user_id', $user->id)
+            ->pluck('tenant_id')
+            ->filter()
+            ->values();
+    }
+
+    protected function productCatalogForTenantIds(Collection $tenantIds, string $currentTenantId = ''): Collection
+    {
+        $connection = $this->centralConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('products')) {
+            return collect();
+        }
+
+        $productSubscriptions = collect();
+
+        if (
+            $tenantIds->isNotEmpty()
+            && Schema::connection($connection)->hasTable('tenant_product_subscriptions')
+        ) {
+            $productSubscriptions = DB::connection($connection)
+                ->table('tenant_product_subscriptions')
+                ->whereIn('tenant_id', $tenantIds->all())
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy('product_id')
+                ->map(fn (Collection $rows) => $rows->first());
+        }
+
+        return Product::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId): array {
+                $subscription = $productSubscriptions->get($product->id);
+                $status = (string) ($subscription->status ?? '');
+                $isAutomotive = (string) $product->code === self::PRODUCT_CODE;
+                $isSubscribed = $subscription !== null
+                    && ! in_array($status, ['expired', 'canceled'], true);
+
+                return [
+                    'id' => $product->id,
+                    'code' => (string) $product->code,
+                    'name' => (string) $product->name,
+                    'slug' => (string) $product->slug,
+                    'description' => (string) ($product->description ?? ''),
+                    'is_active' => (bool) $product->is_active,
+                    'is_automotive' => $isAutomotive,
+                    'is_subscribed' => $isSubscribed,
+                    'tenant_id' => (string) ($subscription->tenant_id ?? $currentTenantId),
+                    'subscription_status' => $status,
+                    'status_label' => $this->productStatusLabel($product, $subscription),
+                    'action_label' => $isAutomotive
+                        ? ($isSubscribed ? 'Manage Automotive' : 'Browse Automotive Plans')
+                        : ((bool) $product->is_active ? 'Catalog Ready' : 'Coming Soon'),
+                    'action_anchor' => $isAutomotive ? '#paid-plans' : '#products-catalog',
+                ];
+            })
+            ->values();
+    }
+
+    protected function productStatusLabel(Product $product, ?object $subscription): string
+    {
+        if ($subscription) {
+            return strtoupper(str_replace('_', ' ', (string) ($subscription->status ?? 'subscribed')));
+        }
+
+        if ((string) $product->code === self::PRODUCT_CODE) {
+            return 'AVAILABLE NOW';
+        }
+
+        return (bool) $product->is_active ? 'READY FOR ENABLEMENT' : 'COMING SOON';
     }
 
     protected function planById(int $planId): ?object
