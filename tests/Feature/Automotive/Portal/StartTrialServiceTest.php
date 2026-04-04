@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\TrialSignupCouponService;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -86,5 +87,78 @@ class StartTrialServiceTest extends TestCase
         $this->assertDatabaseMissing('tenant_users', ['tenant_id' => 'trial-company']);
 
         $this->assertSame(0, DB::table('coupon_redemptions')->where('tenant_id', 'trial-company')->count());
+    }
+
+    public function test_it_creates_central_trial_records_and_returns_login_url_on_success(): void
+    {
+        Event::fake([TenantCreated::class]);
+        Config::set('tenancy.bootstrappers', []);
+
+        Plan::query()->create([
+            'name' => 'Trial',
+            'slug' => 'trial',
+            'description' => 'Trial plan',
+            'price' => 0,
+            'currency' => 'USD',
+            'billing_period' => 'trial',
+            'is_active' => true,
+            'stripe_product_id' => null,
+            'stripe_price_id' => null,
+        ]);
+
+        $couponService = Mockery::mock(TrialSignupCouponService::class);
+        $couponService->shouldReceive('validateForTrialSignup')
+            ->once()
+            ->andReturn([
+                'ok' => true,
+                'coupon' => null,
+                'eligibility' => null,
+            ]);
+        $couponService->shouldNotReceive('attachCouponToSubscription');
+
+        $this->app->instance(TrialSignupCouponService::class, $couponService);
+
+        Artisan::shouldReceive('call')
+            ->once()
+            ->with('tenants:migrate', Mockery::on(function (array $payload): bool {
+                return ($payload['--force'] ?? null) === true
+                    && ($payload['--tenants'][0] ?? null) === 'trial-success';
+            }))
+            ->andReturn(0);
+
+        $service = app(StartTrialService::class);
+
+        $result = $service->start([
+            'name' => 'Success User',
+            'email' => 'trial-success@example.test',
+            'password' => 'secret-pass',
+            'company_name' => 'Success Company',
+            'subdomain' => 'trial-success',
+            'coupon_code' => '',
+            'base_host' => 'example.test',
+        ]);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame(201, $result['status']);
+        $this->assertSame('trial-success', $result['tenant_id']);
+        $this->assertSame('trial-success.example.test', $result['domain']);
+        $this->assertSame('https://trial-success.example.test/automotive/admin/login', $result['login_url']);
+
+        $centralUser = User::query()->where('email', 'trial-success@example.test')->firstOrFail();
+
+        $this->assertDatabaseHas('tenants', ['id' => 'trial-success']);
+        $this->assertDatabaseHas('domains', [
+            'tenant_id' => 'trial-success',
+            'domain' => 'trial-success.example.test',
+        ]);
+        $this->assertDatabaseHas('tenant_users', [
+            'tenant_id' => 'trial-success',
+            'user_id' => $centralUser->id,
+            'role' => 'owner',
+        ]);
+        $this->assertDatabaseHas('subscriptions', [
+            'tenant_id' => 'trial-success',
+            'status' => 'trialing',
+        ]);
     }
 }
