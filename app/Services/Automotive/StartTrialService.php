@@ -5,6 +5,7 @@ namespace App\Services\Automotive;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Billing\TenantProductSubscriptionSyncService;
 use App\Services\Billing\TrialSignupCouponService;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
@@ -16,7 +17,8 @@ use Stancl\Tenancy\Database\Models\Domain;
 class StartTrialService
 {
     public function __construct(
-        protected TrialSignupCouponService $trialSignupCouponService
+        protected TrialSignupCouponService $trialSignupCouponService,
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
     ) {
     }
 
@@ -126,6 +128,8 @@ public function start(array $data): array
                         planId: $trialPlan?->id
                     );
                 }
+
+                $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription((int) $subscriptionId);
             });
 
             Artisan::call('tenants:migrate', [
@@ -166,6 +170,12 @@ public function start(array $data): array
                 DB::connection($centralConnection)->table('subscriptions')
                     ->where('tenant_id', $tenant->id)
                     ->delete();
+
+                if (DB::connection($centralConnection)->getSchemaBuilder()->hasTable('tenant_product_subscriptions')) {
+                    DB::connection($centralConnection)->table('tenant_product_subscriptions')
+                        ->where('tenant_id', $tenant->id)
+                        ->delete();
+                }
 
                 DB::connection($centralConnection)->table('tenant_users')
                     ->where('tenant_id', $tenant->id)

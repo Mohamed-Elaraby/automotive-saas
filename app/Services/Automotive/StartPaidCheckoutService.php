@@ -7,6 +7,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
+use App\Services\Billing\TenantProductSubscriptionSyncService;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +17,8 @@ class StartPaidCheckoutService
 
     public function __construct(
         protected BillingPlanCatalogService $billingPlanCatalogService,
-        protected PaymentGatewayManager $paymentGatewayManager
+        protected PaymentGatewayManager $paymentGatewayManager,
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
     ) {
     }
 
@@ -137,6 +139,7 @@ class StartPaidCheckoutService
                 }
 
                 $subscription->save();
+                $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
             }
 
             return [
@@ -215,7 +218,7 @@ class StartPaidCheckoutService
             }
         }
 
-        return Subscription::query()->create([
+        $subscription = Subscription::query()->create([
             'tenant_id' => $tenantId,
             'plan_id' => $planId,
             'status' => SubscriptionStatuses::PAST_DUE,
@@ -228,6 +231,10 @@ class StartPaidCheckoutService
             'gateway_checkout_session_id' => null,
             'gateway_price_id' => null,
         ]);
+
+        $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
+
+        return $subscription;
     }
 
     protected function centralConnectionName(): string

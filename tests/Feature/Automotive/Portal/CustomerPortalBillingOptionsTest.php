@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Models\TenantProductSubscription;
 use App\Models\User;
 use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Billing\PaymentGatewayManager;
@@ -477,6 +478,66 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $this->assertFalse($result['ok']);
         $this->assertSame(422, $result['status']);
         $this->assertSame('The selected paid plan was not found or is not active.', $result['message']);
+    }
+
+    public function test_paid_checkout_updates_tenant_product_subscription_when_legacy_subscription_is_created(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Product Mirror User',
+            'email' => 'portal-product-mirror-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $profile = CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Product Mirror Co',
+            'subdomain' => 'product-mirror-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $plan = $this->createPlan('Mirror Growth', 'mirror-growth-' . uniqid(), 'monthly', 399);
+
+        $tenant = Tenant::query()->create([
+            'id' => $profile->subdomain,
+            'data' => ['company_name' => 'Product Mirror Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('createRenewalSession')
+            ->once()
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://checkout.stripe.test/session/mirror',
+                'session_id' => 'cs_mirror_new',
+            ]);
+
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')->once()->with('stripe')->andReturn($gateway);
+
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $result = app(StartPaidCheckoutService::class)->start($user, $profile, $plan->id);
+
+        $this->assertTrue($result['ok']);
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => $tenant->id,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_mirror_new',
+        ]);
+
+        $productSubscription = TenantProductSubscription::query()
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        $this->assertNotNull($productSubscription);
+        $this->assertNotNull($productSubscription->legacy_subscription_id);
     }
 
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan

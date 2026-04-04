@@ -13,7 +13,8 @@ class StripeWebhookSyncService
     public function __construct(
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
         protected BillingNotificationService $billingNotificationService,
-        protected ProvisionTenantWorkspaceService $provisionTenantWorkspaceService
+        protected ProvisionTenantWorkspaceService $provisionTenantWorkspaceService,
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
     ) {
     }
 
@@ -270,12 +271,17 @@ protected function handleCheckoutSessionCompleted(array $payload): void
     }
 
     $subscription->save();
+    $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
 
     if ($sessionSubscriptionId !== '') {
         $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($sessionSubscriptionId)
             ?? $subscription->fresh();
     } else {
         $subscription = $subscription->fresh();
+    }
+
+    if ($subscription) {
+        $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
     }
 
     $this->provisionWorkspaceAfterSuccessfulCheckout($subscription);

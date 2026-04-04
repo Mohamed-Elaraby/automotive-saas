@@ -3,6 +3,8 @@
 namespace Tests\Feature\Automotive\Portal;
 
 use App\Models\Plan;
+use App\Models\Product;
+use App\Models\TenantProductSubscription;
 use App\Models\User;
 use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\TrialSignupCouponService;
@@ -30,7 +32,10 @@ class StartTrialServiceTest extends TestCase
     {
         Event::fake([TenantCreated::class]);
 
+        $automotiveProductId = Product::query()->where('code', 'automotive_service')->value('id');
+
         Plan::query()->create([
+            'product_id' => $automotiveProductId,
             'name' => 'Trial',
             'slug' => 'trial',
             'description' => 'Trial plan',
@@ -84,6 +89,7 @@ class StartTrialServiceTest extends TestCase
         $this->assertDatabaseMissing('tenants', ['id' => 'trial-company']);
         $this->assertDatabaseMissing('domains', ['tenant_id' => 'trial-company']);
         $this->assertDatabaseMissing('subscriptions', ['tenant_id' => 'trial-company']);
+        $this->assertDatabaseMissing('tenant_product_subscriptions', ['tenant_id' => 'trial-company']);
         $this->assertDatabaseMissing('tenant_users', ['tenant_id' => 'trial-company']);
 
         $this->assertSame(0, DB::table('coupon_redemptions')->where('tenant_id', 'trial-company')->count());
@@ -94,7 +100,10 @@ class StartTrialServiceTest extends TestCase
         Event::fake([TenantCreated::class]);
         Config::set('tenancy.bootstrappers', []);
 
+        $automotiveProductId = Product::query()->where('code', 'automotive_service')->value('id');
+
         Plan::query()->create([
+            'product_id' => $automotiveProductId,
             'name' => 'Trial',
             'slug' => 'trial',
             'description' => 'Trial plan',
@@ -160,5 +169,16 @@ class StartTrialServiceTest extends TestCase
             'tenant_id' => 'trial-success',
             'status' => 'trialing',
         ]);
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => 'trial-success',
+            'status' => 'trialing',
+        ]);
+
+        $productSubscription = TenantProductSubscription::query()
+            ->where('tenant_id', 'trial-success')
+            ->first();
+
+        $this->assertNotNull($productSubscription);
+        $this->assertNotNull($productSubscription->legacy_subscription_id);
     }
 }

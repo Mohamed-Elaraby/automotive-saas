@@ -4,8 +4,10 @@ namespace Tests\Feature\Billing;
 
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\TenantProductSubscription;
 use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Services\Billing\StripeWebhookSyncService;
+use App\Services\Billing\TenantProductSubscriptionSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Mockery;
@@ -50,7 +52,12 @@ class StripeWebhookSyncServiceTest extends TestCase
         $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
         $provisionService->shouldNotReceive('ensureProvisioned');
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
 
         $event = (object) [
             'type' => 'invoice.payment_failed',
@@ -102,7 +109,12 @@ class StripeWebhookSyncServiceTest extends TestCase
         $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
         $provisionService->shouldNotReceive('ensureProvisioned');
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
 
         $event = (object) [
             'type' => 'invoice.paid',
@@ -158,7 +170,12 @@ class StripeWebhookSyncServiceTest extends TestCase
             ->once()
             ->with((string) $subscription->tenant_id);
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
 
         $event = (object) [
             'type' => 'checkout.session.completed',
@@ -208,7 +225,12 @@ class StripeWebhookSyncServiceTest extends TestCase
             ->once()
             ->with('tenant-metadata-webhook');
 
-        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
 
         $event = (object) [
             'type' => 'checkout.session.completed',
@@ -238,6 +260,19 @@ class StripeWebhookSyncServiceTest extends TestCase
         $this->assertSame('sub_test_metadata_001', $subscription->gateway_subscription_id);
         $this->assertSame('cs_test_metadata_001', $subscription->gateway_checkout_session_id);
         $this->assertSame($plan->id, $subscription->plan_id);
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => 'tenant-metadata-webhook',
+            'plan_id' => $plan->id,
+            'gateway_subscription_id' => 'sub_test_metadata_001',
+        ]);
+
+        $productSubscription = TenantProductSubscription::query()
+            ->where('tenant_id', 'tenant-metadata-webhook')
+            ->first();
+
+        $this->assertNotNull($productSubscription);
+        $this->assertNotNull($productSubscription->legacy_subscription_id);
     }
 
     protected function createStripeSubscription(array $overrides = []): Subscription
@@ -266,6 +301,7 @@ class StripeWebhookSyncServiceTest extends TestCase
     protected function createPlan(): Plan
     {
         return Plan::query()->create([
+            'product_id' => \App\Models\Product::query()->where('code', 'automotive_service')->value('id'),
             'name' => 'Webhook Test Plan ' . uniqid(),
             'slug' => 'webhook-test-plan-' . uniqid(),
             'description' => 'Webhook test plan',
