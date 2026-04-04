@@ -184,6 +184,62 @@ class StripeWebhookSyncServiceTest extends TestCase
         $this->assertSame('sub_test_bootstrap_001', $subscription->gateway_subscription_id);
     }
 
+    public function test_checkout_session_completed_can_create_subscription_from_metadata_and_provision_workspace(): void
+    {
+        Carbon::setTestNow('2026-03-26 12:00:00');
+
+        $plan = $this->createPlan();
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldReceive('syncByGatewaySubscriptionId')
+            ->once()
+            ->with('sub_test_metadata_001')
+            ->andReturnUsing(function () {
+                return Subscription::query()
+                    ->where('gateway_subscription_id', 'sub_test_metadata_001')
+                    ->first();
+            });
+
+        $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
+        $notificationService->shouldReceive('checkoutCompleted')->once();
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldReceive('ensureProvisioned')
+            ->once()
+            ->with('tenant-metadata-webhook');
+
+        $service = new StripeWebhookSyncService($syncService, $notificationService, $provisionService);
+
+        $event = (object) [
+            'type' => 'checkout.session.completed',
+            'data' => (object) [
+                'object' => (object) [
+                    'id' => 'cs_test_metadata_001',
+                    'mode' => 'subscription',
+                    'payment_status' => 'paid',
+                    'customer' => 'cus_test_metadata_001',
+                    'subscription' => 'sub_test_metadata_001',
+                    'metadata' => (object) [
+                        'tenant_id' => 'tenant-metadata-webhook',
+                        'plan_id' => (string) $plan->id,
+                    ],
+                ],
+            ],
+        ];
+
+        $service->handleEvent($event);
+
+        $subscription = Subscription::query()
+            ->where('tenant_id', 'tenant-metadata-webhook')
+            ->firstOrFail();
+
+        $this->assertSame('stripe', $subscription->gateway);
+        $this->assertSame('cus_test_metadata_001', $subscription->gateway_customer_id);
+        $this->assertSame('sub_test_metadata_001', $subscription->gateway_subscription_id);
+        $this->assertSame('cs_test_metadata_001', $subscription->gateway_checkout_session_id);
+        $this->assertSame($plan->id, $subscription->plan_id);
+    }
+
     protected function createStripeSubscription(array $overrides = []): Subscription
     {
         return Subscription::query()->create(array_merge([

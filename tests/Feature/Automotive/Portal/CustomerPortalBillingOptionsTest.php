@@ -338,6 +338,59 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $this->assertNull($subscription->ends_at);
     }
 
+    public function test_paid_checkout_can_start_for_reserved_tenant_before_workspace_exists(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Reserved Portal User',
+            'email' => 'portal-reserved-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $profile = CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Reserved Portal Co',
+            'subdomain' => 'reserved-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $plan = $this->createPlan('Growth', 'growth-reserved-' . uniqid(), 'monthly', 399);
+
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('createRenewalSession')
+            ->once()
+            ->with(Mockery::on(function (array $payload) use ($plan, $profile, $user): bool {
+                return ($payload['tenant_id'] ?? null) === $profile->subdomain
+                    && ($payload['subscription_row_id'] ?? null) === null
+                    && ($payload['plan_id'] ?? null) === $plan->id
+                    && ($payload['stripe_price_id'] ?? null) === $plan->stripe_price_id
+                    && ($payload['customer_email'] ?? null) === $user->email;
+            }))
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://checkout.stripe.test/session/reserved',
+                'session_id' => 'cs_reserved_new',
+            ]);
+
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')
+            ->once()
+            ->with('stripe')
+            ->andReturn($gateway);
+
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $result = app(StartPaidCheckoutService::class)->start($user, $profile, $plan->id);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame('https://checkout.stripe.test/session/reserved', $result['checkout_url']);
+        $this->assertSame($profile->subdomain, $result['tenant_id']);
+        $this->assertNull($result['subscription_id']);
+        $this->assertDatabaseMissing('subscriptions', [
+            'tenant_id' => $profile->subdomain,
+            'gateway_checkout_session_id' => 'cs_reserved_new',
+        ]);
+    }
+
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan
     {
         return Plan::query()->create([
