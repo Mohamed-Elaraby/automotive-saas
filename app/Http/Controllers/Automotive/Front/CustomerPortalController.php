@@ -239,8 +239,7 @@ class CustomerPortalController extends Controller
         $connection = $this->centralConnectionName();
 
         if (
-            ! Schema::connection($connection)->hasTable('subscriptions')
-            || ! Schema::connection($connection)->hasTable('tenant_users')
+            ! Schema::connection($connection)->hasTable('tenant_users')
         ) {
             return null;
         }
@@ -253,6 +252,28 @@ class CustomerPortalController extends Controller
             ->values();
 
         if ($tenantIds->isEmpty()) {
+            return null;
+        }
+
+        if (
+            Schema::connection($connection)->hasTable('tenant_product_subscriptions')
+            && Schema::connection($connection)->hasTable('products')
+        ) {
+            $productSubscription = DB::connection($connection)
+                ->table('tenant_product_subscriptions')
+                ->join('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
+                ->whereIn('tenant_product_subscriptions.tenant_id', $tenantIds->all())
+                ->where('products.code', self::PRODUCT_CODE)
+                ->orderByDesc('tenant_product_subscriptions.id')
+                ->select('tenant_product_subscriptions.*')
+                ->first();
+
+            if ($productSubscription) {
+                return $productSubscription;
+            }
+        }
+
+        if (! Schema::connection($connection)->hasTable('subscriptions')) {
             return null;
         }
 
