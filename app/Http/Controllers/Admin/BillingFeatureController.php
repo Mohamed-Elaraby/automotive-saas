@@ -11,15 +11,47 @@ use Illuminate\Validation\Rule;
 
 class BillingFeatureController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $filters = [
+            'q' => trim((string) $request->string('q')),
+            'status' => (string) $request->string('status'),
+            'usage' => (string) $request->string('usage'),
+        ];
+
         $features = BillingFeature::query()
             ->withCount('plans')
+            ->with([
+                'plans' => fn ($query) => $query
+                    ->select('plans.id', 'plans.name')
+                    ->orderBy('plans.name'),
+            ])
+            ->when($filters['q'] !== '', function ($query) use ($filters) {
+                $search = $filters['q'];
+
+                $query->where(function ($nested) use ($search) {
+                    $nested->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when(in_array($filters['status'], ['active', 'inactive'], true), function ($query) use ($filters) {
+                $query->where('is_active', $filters['status'] === 'active');
+            })
+            ->when(in_array($filters['usage'], ['assigned', 'unassigned'], true), function ($query) use ($filters) {
+                if ($filters['usage'] === 'assigned') {
+                    $query->has('plans');
+
+                    return;
+                }
+
+                $query->doesntHave('plans');
+            })
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
-        return view('admin.billing-features.index', compact('features'));
+        return view('admin.billing-features.index', compact('features', 'filters'));
     }
 
     public function create()

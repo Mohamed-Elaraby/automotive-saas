@@ -26,6 +26,44 @@
                 <div class="alert alert-danger">{{ $errors->first('delete') }}</div>
             @endif
 
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="GET" action="{{ route('admin.billing-features.index') }}" class="row g-3 align-items-end">
+                        <div class="col-12 col-lg-5">
+                            <label for="feature-search" class="form-label">Search</label>
+                            <input
+                                id="feature-search"
+                                type="text"
+                                name="q"
+                                value="{{ $filters['q'] ?? '' }}"
+                                class="form-control"
+                                placeholder="Search by name, slug, or description"
+                            >
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <label for="feature-status" class="form-label">Status</label>
+                            <select id="feature-status" name="status" class="form-select">
+                                <option value="">All statuses</option>
+                                <option value="active" @selected(($filters['status'] ?? '') === 'active')>Active</option>
+                                <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-lg-2">
+                            <label for="feature-usage" class="form-label">Usage</label>
+                            <select id="feature-usage" name="usage" class="form-select">
+                                <option value="">Any usage</option>
+                                <option value="assigned" @selected(($filters['usage'] ?? '') === 'assigned')>Used in plans</option>
+                                <option value="unassigned" @selected(($filters['usage'] ?? '') === 'unassigned')>Unused</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-lg-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">Apply</button>
+                            <a href="{{ route('admin.billing-features.index') }}" class="btn btn-outline-white flex-fill">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-nowrap datatable">
                     <thead>
@@ -54,7 +92,19 @@
                                     <span class="badge badge-soft-danger d-inline-flex align-items-center">Inactive</span>
                                 @endif
                             </td>
-                            <td>{{ $feature->plans_count }}</td>
+                            <td>
+                                <div class="fw-medium text-dark">{{ $feature->plans_count }}</div>
+                                @if ($feature->plans_count > 0)
+                                    <small class="text-muted d-block">
+                                        {{ $feature->plans->take(3)->pluck('name')->implode(', ') }}
+                                        @if ($feature->plans_count > 3)
+                                            +{{ $feature->plans_count - 3 }} more
+                                        @endif
+                                    </small>
+                                @else
+                                    <small class="text-muted d-block">Not assigned yet</small>
+                                @endif
+                            </td>
                             <td>{{ $feature->sort_order }}</td>
                             <td class="action-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown">
@@ -91,7 +141,7 @@
                         <tr>
                             <td colspan="7">
                                 <div class="text-center py-4">
-                                    <p class="mb-0">No billing features found.</p>
+                                    <p class="mb-0">No billing features match the current filters.</p>
                                 </div>
                             </td>
                         </tr>
