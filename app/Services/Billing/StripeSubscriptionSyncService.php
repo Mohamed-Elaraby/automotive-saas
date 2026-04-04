@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\Plan;
 use App\Models\Subscription;
+use Carbon\Carbon;
 use RuntimeException;
 use Stripe\Collection;
 use Stripe\StripeClient;
@@ -69,6 +70,10 @@ class StripeSubscriptionSyncService
         $payload = is_array($stripeSubscription) ? $stripeSubscription : $stripeSubscription->toArray();
         $stripeStatus = $payload['status'] ?? null;
         $mappedStatus = $this->mapStripeStatus($stripeStatus);
+        $currentPeriodEnd = $this->timestampToCarbon($payload['current_period_end'] ?? null);
+        $trialEndsAt = $this->timestampToCarbon($payload['trial_end'] ?? null);
+        $cancelledAt = $this->timestampToCarbon($payload['canceled_at'] ?? null);
+        $cancelAtPeriodEnd = (bool) ($payload['cancel_at_period_end'] ?? false);
 
         $gatewaySubscriptionId = (string) ($payload['id'] ?? '');
         $gatewayCustomerId = (string) ($payload['customer'] ?? '');
@@ -94,16 +99,20 @@ class StripeSubscriptionSyncService
             $subscription->plan_id = $resolvedPlanId;
         }
 
+        if ($trialEndsAt) {
+            $subscription->trial_ends_at = $trialEndsAt;
+        }
+
         $subscription->save();
 
-        match ($mappedStatus) {
-            'active' => $this->markPaidActive($subscription),
-            'trialing' => $this->markTrialing($subscription),
-            'past_due' => $this->billingLifecycleService->markAsPastDue($subscription),
-            'expired' => $this->billingLifecycleService->markAsExpired($subscription),
-            'suspended' => $this->billingLifecycleService->markAsSuspended($subscription),
-            default => null,
-        };
+        $this->applyStripeLifecycleState(
+            $subscription,
+            $mappedStatus,
+            $currentPeriodEnd,
+            $trialEndsAt,
+            $cancelledAt,
+            $cancelAtPeriodEnd
+        );
 
         $fresh = Subscription::query()->findOrFail($subscription->id);
         $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($fresh);
@@ -182,6 +191,68 @@ class StripeSubscriptionSyncService
         return $subscription;
     }
 
+    protected function applyStripeLifecycleState(
+        Subscription $subscription,
+        string $mappedStatus,
+        ?Carbon $currentPeriodEnd,
+        ?Carbon $trialEndsAt,
+        ?Carbon $cancelledAt,
+        bool $cancelAtPeriodEnd
+    ): void {
+        if ($mappedStatus === 'active') {
+            $this->markPaidActive($subscription);
+
+            if ($cancelAtPeriodEnd && $currentPeriodEnd && $currentPeriodEnd->isFuture()) {
+                $this->billingLifecycleService->markAsCancelled(
+                    $subscription,
+                    $cancelledAt ?? now(),
+                    $currentPeriodEnd
+                );
+            }
+
+            return;
+        }
+
+        if ($mappedStatus === 'trialing') {
+            $this->markTrialing($subscription);
+
+            if ($trialEndsAt) {
+                Subscription::query()->whereKey($subscription->id)->update([
+                    'trial_ends_at' => $trialEndsAt,
+                ]);
+            }
+
+            return;
+        }
+
+        if ($mappedStatus === 'past_due') {
+            $this->billingLifecycleService->markAsPastDue($subscription);
+            return;
+        }
+
+        if ($mappedStatus === 'suspended') {
+            $this->billingLifecycleService->markAsSuspended($subscription);
+            return;
+        }
+
+        if ($mappedStatus === 'expired') {
+            if ($currentPeriodEnd && $currentPeriodEnd->isFuture()) {
+                $this->billingLifecycleService->markAsCancelled(
+                    $subscription,
+                    $cancelledAt ?? now(),
+                    $currentPeriodEnd
+                );
+
+                return;
+            }
+
+            $this->billingLifecycleService->markAsExpired(
+                $subscription,
+                $currentPeriodEnd ?? $cancelledAt ?? now()
+            );
+        }
+    }
+
     protected function stripeSecret(): string
     {
         $secret = trim((string) config('billing.gateways.stripe.secret'));
@@ -258,5 +329,22 @@ class StripeSubscriptionSyncService
             'gateway_subscription_id' => (string) ($items[0]->id ?? ''),
             'gateway_customer_id' => $gatewayCustomerId,
         ];
+    }
+
+    protected function timestampToCarbon(mixed $value): ?Carbon
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        if ($value instanceof Carbon) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return Carbon::createFromTimestamp((int) $value);
+        }
+
+        return Carbon::parse((string) $value);
     }
 }
