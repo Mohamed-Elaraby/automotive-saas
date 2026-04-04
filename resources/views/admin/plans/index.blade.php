@@ -28,6 +28,54 @@
                 <div class="alert alert-danger">{{ $errors->first('delete') }}</div>
             @endif
 
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="GET" action="{{ route('admin.plans.index') }}" class="row g-3 align-items-end">
+                        <div class="col-12 col-lg-4">
+                            <label for="plan-search" class="form-label">Search</label>
+                            <input
+                                id="plan-search"
+                                type="text"
+                                name="q"
+                                value="{{ $filters['q'] ?? '' }}"
+                                class="form-control"
+                                placeholder="Search by name or slug"
+                            >
+                        </div>
+                        <div class="col-6 col-lg-2">
+                            <label for="plan-period" class="form-label">Billing</label>
+                            <select id="plan-period" name="billing_period" class="form-select">
+                                <option value="">All periods</option>
+                                <option value="trial" @selected(($filters['billing_period'] ?? '') === 'trial')>Trial</option>
+                                <option value="monthly" @selected(($filters['billing_period'] ?? '') === 'monthly')>Monthly</option>
+                                <option value="yearly" @selected(($filters['billing_period'] ?? '') === 'yearly')>Yearly</option>
+                                <option value="one_time" @selected(($filters['billing_period'] ?? '') === 'one_time')>One Time</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-lg-2">
+                            <label for="plan-status" class="form-label">Status</label>
+                            <select id="plan-status" name="status" class="form-select">
+                                <option value="">All statuses</option>
+                                <option value="active" @selected(($filters['status'] ?? '') === 'active')>Active</option>
+                                <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-lg-2">
+                            <label for="plan-stripe" class="form-label">Stripe</label>
+                            <select id="plan-stripe" name="stripe" class="form-select">
+                                <option value="">Any linkage</option>
+                                <option value="linked" @selected(($filters['stripe'] ?? '') === 'linked')>Linked</option>
+                                <option value="unlinked" @selected(($filters['stripe'] ?? '') === 'unlinked')>Unlinked</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-lg-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">Apply</button>
+                            <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white flex-fill">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-nowrap datatable">
                     <thead>
@@ -148,7 +196,7 @@
                         <tr>
                             <td colspan="11">
                                 <div class="text-center py-4">
-                                    <p class="mb-0">No plans found.</p>
+                                    <p class="mb-0">No plans match the current filters.</p>
                                 </div>
                             </td>
                         </tr>

@@ -13,10 +13,44 @@ use Illuminate\Validation\Rule;
 
 class PlanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $filters = [
+            'q' => trim((string) $request->string('q')),
+            'billing_period' => (string) $request->string('billing_period'),
+            'status' => (string) $request->string('status'),
+            'stripe' => (string) $request->string('stripe'),
+        ];
+
         $plans = Plan::query()
             ->with('billingFeatures')
+            ->when($filters['q'] !== '', function ($query) use ($filters) {
+                $search = $filters['q'];
+
+                $query->where(function ($nested) use ($search) {
+                    $nested->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
+                });
+            })
+            ->when(in_array($filters['billing_period'], ['trial', 'monthly', 'yearly', 'one_time'], true), function ($query) use ($filters) {
+                $query->where('billing_period', $filters['billing_period']);
+            })
+            ->when(in_array($filters['status'], ['active', 'inactive'], true), function ($query) use ($filters) {
+                $query->where('is_active', $filters['status'] === 'active');
+            })
+            ->when(in_array($filters['stripe'], ['linked', 'unlinked'], true), function ($query) use ($filters) {
+                if ($filters['stripe'] === 'linked') {
+                    $query->whereNotNull('stripe_price_id')
+                        ->where('stripe_price_id', '!=', '');
+
+                    return;
+                }
+
+                $query->where(function ($nested) {
+                    $nested->whereNull('stripe_price_id')
+                        ->orWhere('stripe_price_id', '');
+                });
+            })
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
@@ -31,7 +65,7 @@ class PlanController extends Controller
                 return $plan;
             });
 
-        return view('admin.plans.index', compact('plans'));
+        return view('admin.plans.index', compact('plans', 'filters'));
     }
 
     public function create()

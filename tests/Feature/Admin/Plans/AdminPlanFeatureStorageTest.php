@@ -144,6 +144,57 @@ class AdminPlanFeatureStorageTest extends TestCase
         $response->assertDontSee('Storage: - MB');
     }
 
+    public function test_plans_index_can_filter_by_search_period_status_and_stripe_linkage(): void
+    {
+        $admin = $this->createAdmin();
+
+        Plan::query()->create([
+            'name' => 'Growth Monthly',
+            'slug' => 'growth-monthly',
+            'price' => 399,
+            'currency' => 'AED',
+            'billing_period' => 'monthly',
+            'stripe_price_id' => 'price_growth_monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        Plan::query()->create([
+            'name' => 'Growth Yearly',
+            'slug' => 'growth-yearly',
+            'price' => 3999,
+            'currency' => 'AED',
+            'billing_period' => 'yearly',
+            'stripe_price_id' => 'price_growth_yearly',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        Plan::query()->create([
+            'name' => 'Starter Monthly',
+            'slug' => 'starter-monthly',
+            'price' => 99,
+            'currency' => 'AED',
+            'billing_period' => 'monthly',
+            'is_active' => false,
+            'sort_order' => 3,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.plans.index', [
+                'q' => 'growth',
+                'billing_period' => 'monthly',
+                'status' => 'active',
+                'stripe' => 'linked',
+            ]));
+
+        $response->assertOk();
+        $response->assertSee('Growth Monthly');
+        $response->assertDontSee('Growth Yearly');
+        $response->assertDontSee('Starter Monthly');
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([
