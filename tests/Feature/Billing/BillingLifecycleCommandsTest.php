@@ -4,11 +4,11 @@ namespace Tests\Feature\Billing;
 
 use App\Models\Plan;
 use App\Models\Subscription;
-use App\Models\Tenant;
 use App\Services\Billing\BillingNotificationService;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Mockery;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Tests\TestCase;
@@ -44,6 +44,13 @@ class BillingLifecycleCommandsTest extends TestCase
             'gateway' => 'stripe',
         ]);
 
+        $cancelledSubscription = $this->createSubscription([
+            'status' => SubscriptionStatuses::CANCELLED,
+            'cancelled_at' => now()->subDays(5),
+            'ends_at' => now()->subMinute(),
+            'gateway' => 'stripe',
+        ]);
+
         $notifications = Mockery::mock(BillingNotificationService::class);
         $notifications->shouldReceive('trialEnding')
             ->once()
@@ -57,30 +64,43 @@ class BillingLifecycleCommandsTest extends TestCase
                 Mockery::on(fn ($subscription) => (int) $subscription->id === (int) $pastDueSubscription->id),
                 Mockery::on(fn ($context) => ($context['source'] ?? null) === 'billing.run_lifecycle')
             );
+        $notifications->shouldReceive('subscriptionExpired')
+            ->once()
+            ->with(
+                Mockery::on(fn ($subscription) => (int) $subscription->id === (int) $cancelledSubscription->id),
+                Mockery::on(fn ($context) => ($context['source'] ?? null) === 'billing.run_lifecycle'
+                    && ($context['previous_status'] ?? null) === SubscriptionStatuses::CANCELLED)
+            );
 
         $this->app->instance(BillingNotificationService::class, $notifications);
 
         $this->artisan('billing:run-lifecycle')
             ->expectsOutput("Trial ending notification emitted for subscription #{$trialSubscription->id}")
             ->expectsOutput("Subscription #{$pastDueSubscription->id} marked as suspended.")
+            ->expectsOutput("Subscription #{$cancelledSubscription->id} marked as expired.")
             ->assertExitCode(SymfonyCommand::SUCCESS);
 
         $this->assertSame(SubscriptionStatuses::TRIALING, $trialSubscription->fresh()->status);
         $this->assertSame(SubscriptionStatuses::SUSPENDED, $pastDueSubscription->fresh()->status);
         $this->assertNotNull($pastDueSubscription->fresh()->suspended_at);
+        $this->assertSame(SubscriptionStatuses::EXPIRED, $cancelledSubscription->fresh()->status);
     }
 
     public function test_tenants_cleanup_expires_ended_trials_without_deleting_recently_expired_tenants(): void
     {
         Carbon::setTestNow('2026-04-04 02:00:00');
 
-        $tenant = Tenant::query()->create([
-            'id' => 'tenant-cleanup-expire',
-            'data' => ['db_name' => 'tenant_cleanup_expire'],
+        $tenantId = 'tenant-cleanup-expire';
+
+        DB::table('tenants')->insert([
+            'id' => $tenantId,
+            'data' => json_encode(['db_name' => 'tenant_cleanup_expire'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $subscription = $this->createSubscription([
-            'tenant_id' => $tenant->id,
+            'tenant_id' => $tenantId,
             'status' => SubscriptionStatuses::TRIALING,
             'trial_ends_at' => now()->subDay(),
             'gateway' => null,
@@ -91,13 +111,13 @@ class BillingLifecycleCommandsTest extends TestCase
         $this->artisan('tenants:cleanup --grace-days=7')
             ->expectsOutput('Starting tenants cleanup...')
             ->expectsOutput('Trials to expire: 1')
-            ->expectsOutput("Expiring tenant [{$tenant->id}]")
+            ->expectsOutput("Expiring tenant [{$tenantId}]")
             ->expectsOutput('Expired tenants past grace period: 0')
             ->expectsOutput('Tenants cleanup finished.')
             ->assertExitCode(SymfonyCommand::SUCCESS);
 
         $this->assertSame(SubscriptionStatuses::EXPIRED, $subscription->fresh()->status);
-        $this->assertDatabaseHas('tenants', ['id' => $tenant->id]);
+        $this->assertDatabaseHas('tenants', ['id' => $tenantId]);
     }
 
     public function test_tenants_cleanup_dry_run_does_not_mutate_trial_status(): void

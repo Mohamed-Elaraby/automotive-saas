@@ -68,6 +68,29 @@ class RunBillingLifecycleCommand extends Command
             }
         }
 
+        $cancelledToExpire = Subscription::query()
+            ->where('status', SubscriptionStatuses::CANCELLED)
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', $now)
+            ->get();
+
+        foreach ($cancelledToExpire as $subscription) {
+            try {
+                $lifecycleService->markAsExpired($subscription, Carbon::now());
+
+                $billingNotificationService->subscriptionExpired($subscription->fresh(), [
+                    'source' => 'billing.run_lifecycle',
+                    'ends_at' => optional($subscription->ends_at)?->format('Y-m-d H:i:s'),
+                    'previous_status' => SubscriptionStatuses::CANCELLED,
+                ]);
+
+                $this->info("Subscription #{$subscription->id} marked as expired.");
+            } catch (Throwable $e) {
+                report($e);
+                $this->error("Failed to expire cancelled subscription #{$subscription->id}");
+            }
+        }
+
         return self::SUCCESS;
     }
 }
