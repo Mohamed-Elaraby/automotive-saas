@@ -102,6 +102,7 @@ Route::prefix('admin')
                 Route::get('/', [BillingFeatureController::class, 'index'])->name('index');
                 Route::get('/create', [BillingFeatureController::class, 'create'])->name('create');
                 Route::post('/', [BillingFeatureController::class, 'store'])->name('store');
+                Route::get('/{billingFeature}', [BillingFeatureController::class, 'show'])->name('show');
                 Route::get('/{billingFeature}/edit', [BillingFeatureController::class, 'edit'])->name('edit');
                 Route::put('/{billingFeature}', [BillingFeatureController::class, 'update'])->name('update');
                 Route::patch('/{billingFeature}/toggle-active', [BillingFeatureController::class, 'toggleActive'])->name('toggle-active');

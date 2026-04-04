@@ -64,6 +64,29 @@ class BillingFeatureController extends Controller
         ]);
     }
 
+    public function show(BillingFeature $billingFeature)
+    {
+        $billingFeature->load([
+            'plans' => fn ($query) => $query
+                ->select([
+                    'plans.id',
+                    'plans.name',
+                    'plans.slug',
+                    'plans.price',
+                    'plans.currency',
+                    'plans.billing_period',
+                    'plans.is_active',
+                    'plans.sort_order',
+                ])
+                ->orderBy('billing_feature_plan.sort_order')
+                ->orderBy('plans.name'),
+        ]);
+
+        return view('admin.billing-features.show', [
+            'feature' => $billingFeature,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $feature = BillingFeature::query()->create($this->validatedData($request));

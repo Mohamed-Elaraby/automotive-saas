@@ -124,6 +124,53 @@ class AdminBillingFeatureCrudTest extends TestCase
         $response->assertDontSee('Customer follow-up tools');
     }
 
+    public function test_admin_can_view_feature_usage_drilldown(): void
+    {
+        $admin = $this->createAdmin();
+
+        $feature = BillingFeature::query()->create([
+            'name' => 'Inventory Control',
+            'slug' => 'inventory-control',
+            'description' => 'Track stock across branches',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $growth = Plan::query()->create([
+            'name' => 'Growth',
+            'slug' => 'growth',
+            'price' => 199,
+            'currency' => 'AED',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $starter = Plan::query()->create([
+            'name' => 'Starter',
+            'slug' => 'starter',
+            'price' => 99,
+            'currency' => 'AED',
+            'billing_period' => 'yearly',
+            'is_active' => false,
+            'sort_order' => 2,
+        ]);
+
+        $feature->plans()->attach($growth->id, ['sort_order' => 1]);
+        $feature->plans()->attach($starter->id, ['sort_order' => 2]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.billing-features.show', $feature));
+
+        $response->assertOk();
+        $response->assertSee('Inventory Control');
+        $response->assertSee('Track stock across branches');
+        $response->assertSee('Growth');
+        $response->assertSee('Starter');
+        $response->assertSee(route('admin.plans.edit', $growth), false);
+        $response->assertSee(route('admin.plans.edit', $starter), false);
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([
