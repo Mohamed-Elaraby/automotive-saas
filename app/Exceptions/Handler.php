@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -97,7 +98,7 @@ class Handler extends ExceptionHandler
     protected function storeExceptionInDatabase(Throwable $e): void
     {
         try {
-            if ($this->shouldntReport($e)) {
+            if ($this->shouldntReport($e) || $this->shouldIgnoreAdministrativeNoise($e)) {
                 return;
             }
 
@@ -156,7 +157,7 @@ class Handler extends ExceptionHandler
     protected function storeExceptionNotification(Throwable $e): void
     {
         try {
-            if ($this->shouldntReport($e)) {
+            if ($this->shouldntReport($e) || $this->shouldIgnoreAdministrativeNoise($e)) {
                 return;
             }
 
@@ -188,5 +189,51 @@ class Handler extends ExceptionHandler
             );
         } catch (Throwable $notificationException) {
         }
+    }
+
+    protected function shouldIgnoreAdministrativeNoise(Throwable $e): bool
+    {
+        if (! $e instanceof TenantCouldNotBeIdentifiedOnDomainException) {
+            return false;
+        }
+
+        $host = strtolower((string) request()?->getHost());
+
+        if ($host === '') {
+            return true;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+
+        if ($host === 'localhost') {
+            return true;
+        }
+
+        return ! $this->looksLikeDnsHost($host);
+    }
+
+    protected function looksLikeDnsHost(string $host): bool
+    {
+        if (! str_contains($host, '.')) {
+            return false;
+        }
+
+        foreach (explode('.', $host) as $label) {
+            if ($label === '' || strlen($label) > 63) {
+                return false;
+            }
+
+            if ($label[0] === '-' || substr($label, -1) === '-') {
+                return false;
+            }
+
+            if (! preg_match('/^[a-z0-9-]+$/', $label)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
