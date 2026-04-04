@@ -43,6 +43,11 @@ class Plan extends Model
         return $this->hasMany(Subscription::class);
     }
 
+    public function tenantProductSubscriptions()
+    {
+        return $this->hasMany(TenantProductSubscription::class);
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);

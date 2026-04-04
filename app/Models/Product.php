@@ -32,4 +32,9 @@ class Product extends Model
     {
         return $this->hasMany(Plan::class);
     }
+
+    public function tenantProductSubscriptions()
+    {
+        return $this->hasMany(TenantProductSubscription::class);
+    }
 }
