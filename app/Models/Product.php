@@ -7,35 +7,29 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
+        'code',
         'name',
-        'sku',
-        'barcode',
-        'unit',
-        'cost_price',
-        'sale_price',
-        'min_stock_alert',
+        'slug',
         'description',
         'is_active',
+        'sort_order',
     ];
 
     protected $casts = [
-        'cost_price' => 'decimal:2',
-        'sale_price' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 
-    public function inventories()
+    public function __construct(array $attributes = [])
     {
-        return $this->hasMany(Inventory::class);
+        parent::__construct($attributes);
+
+        $this->setConnection(
+            config('tenancy.database.central_connection') ?? config('database.default')
+        );
     }
 
-    public function transferItems()
+    public function plans()
     {
-        return $this->hasMany(StockTransferItem::class);
-    }
-
-    public function stockMovements()
-    {
-        return $this->hasMany(StockMovement::class);
+        return $this->hasMany(Plan::class);
     }
 }

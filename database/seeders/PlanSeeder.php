@@ -3,14 +3,20 @@
 namespace Database\Seeders;
 
 use App\Models\Plan;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 
 class PlanSeeder extends Seeder
 {
     public function run(): void
     {
+        $automotiveProductId = Product::query()
+            ->where('code', 'automotive_service')
+            ->value('id');
+
         $plans = [
             [
+                'product_id' => $automotiveProductId,
                 'name' => 'Trial',
                 'slug' => 'trial',
                 'price' => 0,
@@ -23,15 +29,10 @@ class PlanSeeder extends Seeder
                 'max_branches' => 1,
                 'max_products' => 200,
                 'max_storage_mb' => 512,
-                'features' => [
-                    'invoicing' => true,
-                    'inventory' => true,
-                    'reports' => false,
-                    'api_access' => false,
-                ],
                 'description' => '14-day free trial plan.',
             ],
             [
+                'product_id' => $automotiveProductId,
                 'name' => 'Starter',
                 'slug' => 'starter',
                 'price' => 199,
@@ -44,15 +45,10 @@ class PlanSeeder extends Seeder
                 'max_branches' => 1,
                 'max_products' => 2000,
                 'max_storage_mb' => 2048,
-                'features' => [
-                    'invoicing' => true,
-                    'inventory' => true,
-                    'reports' => true,
-                    'api_access' => false,
-                ],
                 'description' => 'Starter plan for small businesses.',
             ],
             [
+                'product_id' => $automotiveProductId,
                 'name' => 'Growth',
                 'slug' => 'growth',
                 'price' => 399,
@@ -65,15 +61,10 @@ class PlanSeeder extends Seeder
                 'max_branches' => 3,
                 'max_products' => 10000,
                 'max_storage_mb' => 5120,
-                'features' => [
-                    'invoicing' => true,
-                    'inventory' => true,
-                    'reports' => true,
-                    'api_access' => true,
-                ],
                 'description' => 'Growth plan for expanding businesses.',
             ],
             [
+                'product_id' => $automotiveProductId,
                 'name' => 'Pro',
                 'slug' => 'pro',
                 'price' => 799,
@@ -86,13 +77,6 @@ class PlanSeeder extends Seeder
                 'max_branches' => 10,
                 'max_products' => 50000,
                 'max_storage_mb' => 20480,
-                'features' => [
-                    'invoicing' => true,
-                    'inventory' => true,
-                    'reports' => true,
-                    'api_access' => true,
-                    'priority_support' => true,
-                ],
                 'description' => 'Advanced plan for larger operations.',
             ],
         ];

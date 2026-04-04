@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // <seven-scaffold-seeders>
+        $this->call(ProductSeeder::class);
         $this->call(PlanSeeder::class);
         $this->call(ReferenceDataSeeder::class);
         $this->call(CentralAdminSeeder::class);
