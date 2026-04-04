@@ -10,7 +10,8 @@ use Stripe\StripeClient;
 class StripeSubscriptionSyncService
 {
     public function __construct(
-        protected TenantBillingLifecycleService $billingLifecycleService
+        protected TenantBillingLifecycleService $billingLifecycleService,
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
     ) {
     }
 
@@ -72,7 +73,10 @@ public function syncFromStripePayload(Subscription $subscription, object|array $
             default => null,
         };
 
-        return Subscription::query()->findOrFail($subscription->id);
+        $fresh = Subscription::query()->findOrFail($subscription->id);
+        $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($fresh);
+
+        return $fresh;
     }
 
     protected function markPaidActive(Subscription $subscription): Subscription
