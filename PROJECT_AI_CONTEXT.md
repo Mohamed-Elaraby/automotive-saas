@@ -517,13 +517,21 @@ Important files:
 - webhook provisioning invocation coverage
 - tenant subscription access middleware coverage
 - trial provisioning rollback coverage
+- trial onboarding success-path coverage
+- paid onboarding success-path coverage
+- tenant admin login/access end-to-end coverage
+- tenant product routes loading hardened by replacing `require_once` with `require` inside `routes/tenant.php`
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
-- complete `StartTrialService` success-path coverage
-- complete paid onboarding success-path verification via webhook/provisioning end-to-end
-- verify tenant admin login/access flow end-to-end after provisioning
 - move from SaaS foundation validation into tenant product MVP work
+- define multi-product SaaS architecture:
+  - one tenant
+  - many products
+  - shared core data
+  - per-product subscriptions
+- add central `products` catalog and `tenant_product_subscriptions`
+- refactor automotive-only onboarding/billing assumptions into product-aware services
 - implement roles & permissions for central admin
 - implement real-time notifications via SSE
 - convert lifecycle automation to queue/jobs only if truly needed later
@@ -616,8 +624,152 @@ php artisan view:cache
 - `routes/products/automotive/admin.php`
 - `app/Http/Controllers/Automotive/Admin/Auth/AuthController.php`
 - `resources/views/automotive/admin/layouts/adminLayout/partials/header.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
 
-## 18) Bottom Line
+## 18) Multi-Product SaaS Direction
+
+### 18.1 Target Model
+The system should move from:
+- `one tenant = one automotive product workspace`
+
+To:
+- `one tenant = one customer company/workspace`
+- `one tenant can subscribe to one or more products`
+- products can be activated later without creating a new tenant
+
+Examples:
+- automotive service management
+- parts/inventory management
+- accounting
+- future modules such as rental management
+
+### 18.2 Architectural Rule
+Do **not** create a separate tenant per product.
+
+Correct direction:
+- single tenant per customer
+- shared tenant users, branches, customers, suppliers, currencies, taxes, settings
+- separate product modules on top of the same tenant context
+
+This is required for:
+- automatic cross-product integration
+- shared customer/supplier master data
+- unified reporting
+- unified authentication and permissions
+- easier upsell from one product to another later
+
+### 18.3 New Central Concepts Required
+Add a central `products` catalog table, for example:
+- `id`
+- `code`
+- `name`
+- `slug`
+- `description`
+- `is_active`
+- `sort_order`
+
+Add central `tenant_product_subscriptions`, for example:
+- `id`
+- `tenant_id`
+- `product_id`
+- `plan_id`
+- `status`
+- `gateway`
+- `gateway_customer_id`
+- `gateway_subscription_id`
+- `gateway_checkout_session_id`
+- `gateway_price_id`
+- lifecycle timestamps similar to current `subscriptions`
+
+Likely evolution path:
+- current `plans` become product-aware via `product_id`
+- current `subscriptions` should either:
+  - evolve into `tenant_product_subscriptions`
+  - or remain as legacy base records temporarily during migration
+
+### 18.4 Shared Core vs Product Modules
+Shared tenant core should hold things like:
+- tenant users
+- branches
+- customers
+- suppliers
+- company settings
+- currencies / taxes
+
+Product modules should hold their own operational data:
+- automotive service:
+  - vehicles
+  - job cards
+  - repair orders
+  - inspections
+- parts/inventory:
+  - warehouses
+  - stock lots
+  - purchasing
+  - sales invoices
+- accounting:
+  - chart of accounts
+  - journals
+  - vouchers
+  - ledgers
+
+### 18.5 Integration Rule Between Products
+Products should integrate through clear application/domain events, not by tightly coupling tables ad hoc.
+
+Examples:
+- service invoice posted -> accounting journal entry
+- spare parts consumed in repair order -> stock movement + accounting cost entry
+- sales invoice posted in parts module -> customer balance + accounting posting
+
+### 18.6 Current Single-Product Assumptions That Must Be Refactored
+Current code still assumes `automotive` as the only product in several areas:
+- `routes/products/automotive/*`
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Services/Automotive/StartTrialService.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
+- portal views under `resources/views/automotive/portal/*`
+- tenant admin entry URLs like `/automotive/admin/login`
+- plans/subscriptions currently have no `product_id`
+
+### 18.7 Recommended Migration Strategy
+Use staged migration, not a big-bang rewrite.
+
+Stage 1:
+- add `products` catalog
+- seed first product = `automotive-service`
+- add `product_id` to `plans`
+- keep current billing behavior working for the first product
+
+Stage 2:
+- introduce `tenant_product_subscriptions`
+- update portal and checkout services to subscribe per product
+- show available products in the customer portal
+
+Stage 3:
+- extract common onboarding/billing flow into product-aware services
+- examples:
+  - `StartProductTrialService`
+  - `StartProductCheckoutService`
+  - `ProvisionTenantProductService`
+
+Stage 4:
+- keep one shared tenant admin shell
+- load menus/modules depending on active subscribed products
+
+Stage 5:
+- implement second product without creating a second tenant
+- verify automatic shared-data integration
+
+### 18.8 Immediate Next Execution Step
+Before building a second product, the next real architecture task should be:
+- create the central `products` model/migration/seed
+- add `product_id` to `plans`
+- make current automotive plans explicitly belong to the automotive product
+
+This is the lowest-risk first step toward multi-product SaaS and preserves the current working system while opening the door for future products.
+
+## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
 - Central admin is broadly functional and now includes strong tenant/subscription operations.
@@ -640,10 +792,13 @@ If a new session starts from this file only, the safest current summary is:
 - Notifications are present and tested.
 - Customer portal can restart paid checkout correctly after terminal Stripe cancellation.
 - Webhook-driven provisioning invocation and tenant access gating are covered by tests.
-- Trial provisioning rollback is covered by tests.
+- Trial provisioning rollback and success path are covered by tests.
+- Paid onboarding success path is covered from checkout start through webhook subscription bootstrap/provisioning trigger.
+- Tenant admin login/access is covered end-to-end after provisioning.
 - Paid plans now read real shared feature catalog data and real limits.
 - Plan features are no longer ad hoc text; they are managed via a shared billing features catalog with admin CRUD.
 - Admin plan form now includes a live customer-portal preview for price, limits, and selected features.
+- The project is now ready to move from single-product SaaS validation into multi-product architecture work.
 - The codebase has multiple isolated UI namespaces; keep them separated.
 - Do not use `route:cache`.
 - Always verify current files before assuming older flow descriptions are still correct.
