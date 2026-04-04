@@ -328,6 +328,28 @@ Important files:
 - `tests/Feature/Admin/Subscriptions/AdminSubscriptionsIndexTest.php`
 - `tests/Feature/Admin/Subscriptions/AdminStripeSubscriptionActionsTest.php`
 
+### 10.7 Latest Billing Automation / Policy Hardening
+Confirmed implemented after the above:
+- `billing:run-lifecycle` now handles:
+  - trial ending soon notifications
+  - `past_due -> suspended`
+  - `canceled -> expired` when `ends_at` is reached
+- tenant cleanup policy is now explicit and safer:
+  - automatic cleanup is limited to expired trial tenants
+  - tenants with Stripe/billing linkage are skipped
+  - expired paid tenants are not auto-deleted by cleanup
+- cleanup eligibility logic is extracted to a dedicated service:
+  - `app/Services/Billing/TenantCleanupEligibilityService.php`
+- command-level tests now exist for lifecycle automation and cleanup policy
+
+Important files:
+- `app/Console/Commands/Billing/RunBillingLifecycleCommand.php`
+- `app/Console/Commands/TenantsCleanup.php`
+- `app/Services/Billing/TenantBillingLifecycleService.php`
+- `app/Services/Billing/TenantCleanupEligibilityService.php`
+- `tests/Feature/Billing/BillingLifecycleCommandsTest.php`
+- `tests/Feature/Billing/TenantCleanupEligibilityServiceTest.php`
+
 ## 11) Portal / Front State
 Current confirmed state from code:
 - automotive auth routes are active:
@@ -377,6 +399,21 @@ Important files:
 - `app/Services/Billing/BillingPlanCatalogService.php`
 - `resources/views/automotive/portal/index.blade.php`
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+
+### 11.2 SaaS Flow Validation State
+Confirmed from latest code/tests:
+- webhook checkout completion calls tenant workspace provisioning service
+- tenant admin access middleware is covered for:
+  - active access allowed
+  - blocked tenant redirected to billing
+  - billing routes remain accessible while blocked
+- trial provisioning rollback is covered:
+  - if `tenants:migrate` fails during trial setup, central records are rolled back safely
+
+Important test files:
+- `tests/Feature/Billing/StripeWebhookSyncServiceTest.php`
+- `tests/Feature/Automotive/Admin/EnsureTenantSubscriptionIsActiveMiddlewareTest.php`
+- `tests/Feature/Automotive/Portal/StartTrialServiceTest.php`
 
 ## 12) Tenant Admin State
 Current confirmed state from code:
@@ -435,11 +472,24 @@ Important note:
 - if central app must be served on raw IP, add the IP to `config/tenancy.php`
 - otherwise better ignore/filter this exception from notifications in future hardening work
 
+### 13.5 Tenant Identification Noise Filtering
+Confirmed implemented after the issue above:
+- raw IP / clearly invalid host tenancy identification noise is now ignored by exception logging/notification flow
+- this prevents repeated admin notifications and system error logs for:
+  - direct server IP traffic
+  - obviously invalid hosts
+- real hostname-based tenancy identification failures are still recorded
+
+Important files:
+- `app/Exceptions/Handler.php`
+- `tests/Feature/Tenancy/TenantIdentificationNoiseFilteringTest.php`
+
 ## 14) Known Operating Constraints
 - Production mail delivery for some admin auth/reset flows may still need real SMTP/Mailgun verification.
 - Roles & permissions with Laratrust are not yet confirmed as implemented in the current codebase.
 - SSE real-time notifications are not yet confirmed as implemented.
-- Full SaaS automation jobs for delayed suspend/delete are not yet confirmed as implemented.
+- lifecycle automation exists via scheduled commands/services, but is not built as a full jobs/queue workflow yet.
+- `StartTrialService` rollback-on-failure is covered, but full success-path trial provisioning coverage is still a remaining validation item.
 
 ## 15) Current Priority State
 
@@ -458,15 +508,25 @@ Important note:
 - portal paid plans redesign
 - plan features refactor to shared catalog
 - live plan preview in admin plan form
+- tenancy exception noise filtering
+- billing lifecycle scheduled automation baseline
+- tenant cleanup policy hardening
+- billing-features search/filter and usage drilldown
+- plans index filtering and plan usage drilldown
+- admin plan limits semantics guidance
+- webhook provisioning invocation coverage
+- tenant subscription access middleware coverage
+- trial provisioning rollback coverage
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
-- harden tenancy exception filtering for raw IP / invalid host traffic
-- improve admin billing-features catalog with search/filter and maybe usage drilldown
-- add preview or inline guidance for limits semantics if admins still confuse them
+- complete `StartTrialService` success-path coverage
+- complete paid onboarding success-path verification via webhook/provisioning end-to-end
+- verify tenant admin login/access flow end-to-end after provisioning
+- move from SaaS foundation validation into tenant product MVP work
 - implement roles & permissions for central admin
 - implement real-time notifications via SSE
-- implement automation jobs for lifecycle suspend/delete policies
+- convert lifecycle automation to queue/jobs only if truly needed later
 
 ## 16) Validation / Testing Notes
 - Do not rely only on code inspection for UI-heavy changes.
@@ -498,6 +558,11 @@ php artisan test tests\Feature\Admin\Subscriptions\AdminSubscriptionAdvancedCont
 php artisan test tests\Feature\Admin\Notifications
 php artisan test tests\Feature\Admin\Plans
 php artisan test tests\Feature\Automotive\Portal\CustomerPortalBillingOptionsTest.php
+php artisan test tests\Feature\Billing\BillingLifecycleCommandsTest.php
+php artisan test tests\Feature\Billing\TenantCleanupEligibilityServiceTest.php
+php artisan test tests\Feature\Billing\StripeWebhookSyncServiceTest.php
+php artisan test tests\Feature\Automotive\Admin\EnsureTenantSubscriptionIsActiveMiddlewareTest.php
+php artisan test tests\Feature\Automotive\Portal\StartTrialServiceTest.php
 ```
 
 Important migration note after latest plan features refactor:
@@ -523,8 +588,11 @@ php artisan view:cache
 - `app/Services/Admin/AdminTenantLifecycleService.php`
 - `app/Services/Admin/TenantImpersonationService.php`
 - `app/Services/Admin/AdminSubscriptionControlService.php`
+- `app/Console/Commands/Billing/RunBillingLifecycleCommand.php`
+- `app/Console/Commands/TenantsCleanup.php`
 - `app/Services/Billing/StripeSubscriptionManagementService.php`
 - `app/Services/Billing/StripeSubscriptionPlanChangeService.php`
+- `app/Services/Billing/TenantCleanupEligibilityService.php`
 - `resources/views/admin/tenants/index.blade.php`
 - `resources/views/admin/tenants/show.blade.php`
 - `resources/views/admin/subscriptions/index.blade.php`
@@ -538,6 +606,8 @@ php artisan view:cache
 - `routes/products/automotive/front.php`
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
 - `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Automotive/StartTrialService.php`
+- `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
 - `app/Services/Billing/BillingPlanCatalogService.php`
 - `resources/views/automotive/front/*`
 - `resources/views/automotive/portal/*`
@@ -552,12 +622,25 @@ If a new session starts from this file only, the safest current summary is:
 
 - Central admin is broadly functional and now includes strong tenant/subscription operations.
 - Tenants management is substantially advanced, including deletion and impersonation.
+- Admin plan and billing-feature management is now much more operationally usable:
+  - billing-features filtering/search
+  - billing-feature usage drilldown
+  - plans filtering
+  - plan usage drilldown
+  - clearer limits semantics in plan form/index
 - Subscriptions management now includes:
   - advanced local controls for non-Stripe subscriptions
   - Stripe-native admin actions for real Stripe subscriptions
   - better diagnostics and safer action gating
+- Billing lifecycle automation exists and is tested at command level:
+  - trial ending notifications
+  - overdue suspension
+  - cancelled-to-expired transition
+  - safer tenant cleanup policy for expired trials only
 - Notifications are present and tested.
 - Customer portal can restart paid checkout correctly after terminal Stripe cancellation.
+- Webhook-driven provisioning invocation and tenant access gating are covered by tests.
+- Trial provisioning rollback is covered by tests.
 - Paid plans now read real shared feature catalog data and real limits.
 - Plan features are no longer ad hoc text; they are managed via a shared billing features catalog with admin CRUD.
 - Admin plan form now includes a live customer-portal preview for price, limits, and selected features.
