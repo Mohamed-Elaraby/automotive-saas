@@ -91,6 +91,7 @@ Route::prefix('admin')
                 Route::get('/create', [PlanController::class, 'create'])->name('create');
                 Route::post('/', [PlanController::class, 'store'])->name('store');
                 Route::get('/{plan}/edit', [PlanController::class, 'edit'])->name('edit');
+                Route::get('/{plan}', [PlanController::class, 'show'])->name('show');
                 Route::put('/{plan}', [PlanController::class, 'update'])->name('update');
                 Route::patch('/{plan}/toggle-active', [PlanController::class, 'toggleActive'])->name('toggle-active');
                 Route::delete('/{plan}', [PlanController::class, 'destroy'])->name('destroy');

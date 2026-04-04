@@ -6,6 +6,7 @@ use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Admin;
 use App\Models\BillingFeature;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -193,6 +194,62 @@ class AdminPlanFeatureStorageTest extends TestCase
         $response->assertSee('Growth Monthly');
         $response->assertDontSee('Growth Yearly');
         $response->assertDontSee('Starter Monthly');
+    }
+
+    public function test_admin_can_view_plan_usage_drilldown(): void
+    {
+        $admin = $this->createAdmin();
+
+        $plan = Plan::query()->create([
+            'name' => 'Growth Monthly',
+            'slug' => 'growth-monthly',
+            'price' => 399,
+            'currency' => 'AED',
+            'billing_period' => 'monthly',
+            'stripe_price_id' => 'price_growth_monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $feature = BillingFeature::query()->create([
+            'name' => 'Inventory',
+            'slug' => 'inventory',
+            'description' => 'Inventory management',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $plan->billingFeatures()->attach($feature->id, ['sort_order' => 1]);
+
+        $activeSubscription = Subscription::query()->create([
+            'tenant_id' => 'tenant-growth-active',
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_growth_active',
+        ]);
+
+        $trialSubscription = Subscription::query()->create([
+            'tenant_id' => 'tenant-growth-trial',
+            'plan_id' => $plan->id,
+            'status' => 'trialing',
+            'gateway' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.plans.show', $plan));
+
+        $response->assertOk();
+        $response->assertSee('Growth Monthly');
+        $response->assertSee('Subscription Status Breakdown');
+        $response->assertSee('Linked Subscriptions');
+        $response->assertSee('Active');
+        $response->assertSee('Trialing');
+        $response->assertSee('tenant-growth-active');
+        $response->assertSee('tenant-growth-trial');
+        $response->assertSee(route('admin.subscriptions.show', $activeSubscription->id), false);
+        $response->assertSee(route('admin.subscriptions.show', $trialSubscription->id), false);
     }
 
     protected function createAdmin(): Admin

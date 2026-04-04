@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BillingFeature;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +79,31 @@ class PlanController extends Controller
                 'sort_order' => 0,
             ]),
             'availableFeatures' => $this->availableFeatures(),
+        ]);
+    }
+
+    public function show(Plan $plan)
+    {
+        $plan->load('billingFeatures');
+
+        $subscriptions = Subscription::query()
+            ->where('plan_id', $plan->id)
+            ->latest('id')
+            ->get();
+
+        $usageByStatus = $subscriptions
+            ->groupBy(fn (Subscription $subscription) => (string) $subscription->status)
+            ->map(fn ($group, $status) => [
+                'status' => $status,
+                'count' => $group->count(),
+            ])
+            ->sortByDesc('count')
+            ->values();
+
+        return view('admin.plans.show', [
+            'plan' => $plan,
+            'subscriptions' => $subscriptions,
+            'usageByStatus' => $usageByStatus,
         ]);
     }
 

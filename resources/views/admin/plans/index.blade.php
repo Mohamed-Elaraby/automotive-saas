@@ -167,6 +167,11 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
+                                        <a href="{{ route('admin.plans.show', $plan) }}" class="dropdown-item d-flex align-items-center">
+                                            <i class="isax isax-eye me-2"></i>View Usage
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a href="{{ route('admin.plans.edit', $plan) }}" class="dropdown-item d-flex align-items-center">
                                             <i class="isax isax-edit me-2"></i>Edit
                                         </a>
