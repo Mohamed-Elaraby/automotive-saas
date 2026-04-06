@@ -37,4 +37,9 @@ class Product extends Model
     {
         return $this->hasMany(TenantProductSubscription::class);
     }
+
+    public function enablementRequests()
+    {
+        return $this->hasMany(ProductEnablementRequest::class);
+    }
 }

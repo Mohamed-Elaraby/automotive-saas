@@ -25,6 +25,11 @@ try {
                 </a>
             </li>
             <li>
+                <a href="{{ route('admin.products.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Products">
+                    <i class="isax isax-box"></i>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('admin.plans.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Plans">
                     <i class="isax isax-crown5"></i>
                 </a>
@@ -128,6 +133,13 @@ try {
                                 <a href="{{ route('admin.plans.index') }}">
                                     <i class="isax isax-crown5"></i>
                                     <span>Plans</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ in_array($page, ['products-index', 'products-create', 'products-edit'], true) ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.products.index') }}">
+                                    <i class="isax isax-box"></i>
+                                    <span>Products</span>
                                 </a>
                             </li>
 

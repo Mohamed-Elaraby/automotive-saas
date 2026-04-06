@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductEnablementRequestController;
 use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
@@ -96,6 +97,17 @@ Route::prefix('admin')
                 Route::put('/{plan}', [PlanController::class, 'update'])->name('update');
                 Route::patch('/{plan}/toggle-active', [PlanController::class, 'toggleActive'])->name('toggle-active');
                 Route::delete('/{plan}', [PlanController::class, 'destroy'])->name('destroy');
+            });
+
+        Route::prefix('products')
+            ->name('products.')
+            ->group(function () {
+                Route::get('/', [ProductController::class, 'index'])->name('index');
+                Route::get('/create', [ProductController::class, 'create'])->name('create');
+                Route::post('/', [ProductController::class, 'store'])->name('store');
+                Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
+                Route::put('/{product}', [ProductController::class, 'update'])->name('update');
+                Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
             });
 
         Route::prefix('billing-features')
