@@ -3,6 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Models\Plan;
+use Illuminate\Support\Collection;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 use Throwable;
@@ -19,6 +20,49 @@ class StripePlanCatalogSyncService
     public function isConfigured(): bool
     {
         return $this->stripeSecret() !== '';
+    }
+
+    public function syncPaidPlans(bool $apply = false, ?string $slug = null): Collection
+    {
+        $plans = Plan::query()
+            ->where('is_active', true)
+            ->where('billing_period', '!=', 'trial')
+            ->when(filled($slug), fn ($query) => $query->where('slug', $slug))
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return $plans->map(function (Plan $plan) use ($apply) {
+            $beforeAudit = app(StripePriceInspectorService::class)->auditPlan($plan);
+            $oldPriceId = $plan->stripe_price_id ?: '-';
+            $result = $apply
+                ? $this->syncPlan($plan)
+                : [
+                    'ok' => true,
+                    'message' => 'Dry-run only.',
+                    'stripe_product_id' => $plan->stripe_product_id,
+                    'stripe_price_id' => $plan->stripe_price_id,
+                ];
+
+            $plan->refresh();
+            $afterAudit = app(StripePriceInspectorService::class)->auditPlan($plan);
+
+            return [
+                'plan_name' => (string) $plan->name,
+                'slug' => (string) $plan->slug,
+                'local_price' => (float) $plan->price,
+                'currency' => strtoupper((string) $plan->currency),
+                'billing_period' => (string) $plan->billing_period,
+                'old_price_id' => $oldPriceId,
+                'new_price_id' => $plan->stripe_price_id ?: '-',
+                'product_id' => $plan->product_id,
+                'action' => $apply
+                    ? (($result['ok'] ?? false) ? 'SYNCED' : 'FAILED')
+                    : 'DRY_RUN',
+                'aligned_before' => (bool) ($beforeAudit['checks']['is_aligned'] ?? false),
+                'aligned_after' => (bool) ($afterAudit['checks']['is_aligned'] ?? false),
+            ];
+        });
     }
 
     public function syncPlan(Plan $plan): array

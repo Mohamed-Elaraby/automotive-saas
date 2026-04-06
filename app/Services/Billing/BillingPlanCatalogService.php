@@ -4,16 +4,20 @@ namespace App\Services\Billing;
 
 use App\Models\Plan;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class BillingPlanCatalogService
 {
     public function getPaidPlans(?string $productCode = null): Collection
     {
         $query = Plan::query()
-            ->with('billingFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->orderBy('sort_order');
+
+        if ($this->supportsBillingFeatures()) {
+            $query->with('billingFeatures');
+        }
 
         if (filled($productCode)) {
             $query->whereHas('product', function ($productQuery) use ($productCode) {
@@ -31,10 +35,13 @@ class BillingPlanCatalogService
     public function findPaidPlanById(int|string $planId, ?string $productCode = null): ?object
     {
         $query = Plan::query()
-            ->with('billingFeatures')
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->where('id', $planId);
+
+        if ($this->supportsBillingFeatures()) {
+            $query->with('billingFeatures');
+        }
 
         if (filled($productCode)) {
             $query->whereHas('product', function ($productQuery) use ($productCode) {
@@ -114,5 +121,13 @@ class BillingPlanCatalogService
             ->unique()
             ->values()
             ->all();
+    }
+
+    protected function supportsBillingFeatures(): bool
+    {
+        $connection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+
+        return Schema::connection($connection)->hasTable('billing_features')
+            && Schema::connection($connection)->hasTable('billing_feature_plan');
     }
 }
