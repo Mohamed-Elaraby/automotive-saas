@@ -400,11 +400,7 @@
                                 </div>
                             </div>
 
-                            @if(!$selectedProductSupportsCheckout && $paidPlans->count() === 0)
-                                <div class="alert alert-light border mb-0">
-                                    {{ $selectedProductName }} does not have active paid plans configured yet. This portal section is now ready for product-level enablement once plans are added.
-                                </div>
-                            @elseif(!$selectedProductSupportsCheckout)
+                            @if(!$selectedProductSupportsCheckout)
                                 <div class="alert alert-info">
                                     {{ $selectedProductName }} is visible in the shared workspace catalog.
                                     Billing checkout for additional products is intentionally not live yet in this portal.
@@ -430,53 +426,59 @@
                                     @endif
                                 </div>
 
-                                <div class="row">
-                                    @foreach($paidPlans as $paidPlan)
-                                        @php
-                                            $featureList = collect($paidPlan->features_array ?? [])->take(6);
-                                            $limitLines = collect($paidPlan->limits_array ?? [])->map(function ($limit) {
-                                                return $limit['label'] . ' ' . $limit['value'];
-                                            });
-                                        @endphp
-                                        <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
-                                            <div class="card pricing-starter flex-fill w-100">
-                                                <div class="card-body d-flex flex-column">
-                                                    <div class="border-bottom">
-                                                        <div class="mb-3">
-                                                            <h5 class="mb-1">{{ $paidPlan->name }}</h5>
-                                                            <p class="mb-0">{{ $paidPlan->description ?: ($selectedProductDescription ?: 'Configured product plan.') }}</p>
+                                @if($paidPlans->count() === 0)
+                                    <div class="alert alert-light border mb-0">
+                                        {{ $selectedProductName }} does not have active paid plans configured yet. This portal section is now ready for product-level enablement once plans are added.
+                                    </div>
+                                @else
+                                    <div class="row">
+                                        @foreach($paidPlans as $paidPlan)
+                                            @php
+                                                $featureList = collect($paidPlan->features_array ?? [])->take(6);
+                                                $limitLines = collect($paidPlan->limits_array ?? [])->map(function ($limit) {
+                                                    return $limit['label'] . ' ' . $limit['value'];
+                                                });
+                                            @endphp
+                                            <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+                                                <div class="card pricing-starter flex-fill w-100">
+                                                    <div class="card-body d-flex flex-column">
+                                                        <div class="border-bottom">
+                                                            <div class="mb-3">
+                                                                <h5 class="mb-1">{{ $paidPlan->name }}</h5>
+                                                                <p class="mb-0">{{ $paidPlan->description ?: ($selectedProductDescription ?: 'Configured product plan.') }}</p>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <h3 class="d-flex align-items-center mb-1">
+                                                                    {{ str_replace(' ' . $paidPlan->currency_code, '', $paidPlan->display_price) }}
+                                                                </h3>
+                                                                <p class="mb-0">
+                                                                    {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} billing
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                        <div class="mb-3">
-                                                            <h3 class="d-flex align-items-center mb-1">
-                                                                {{ str_replace(' ' . $paidPlan->currency_code, '', $paidPlan->display_price) }}
-                                                            </h3>
-                                                            <p class="mb-0">
-                                                                {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} billing
-                                                            </p>
+                                                        <div class="mt-3 mb-3">
+                                                            @foreach($limitLines as $limitLine)
+                                                                <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                                    <i class="isax isax-tick-circle me-2"></i>{{ $limitLine }}
+                                                                </p>
+                                                            @endforeach
+                                                            @foreach($featureList as $feature)
+                                                                <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                                    <i class="isax isax-tick-circle me-2"></i>{{ $feature }}
+                                                                </p>
+                                                            @endforeach
                                                         </div>
-                                                    </div>
-                                                    <div class="mt-3 mb-3">
-                                                        @foreach($limitLines as $limitLine)
-                                                            <p class="text-dark d-flex align-items-center mb-2 text-truncate">
-                                                                <i class="isax isax-tick-circle me-2"></i>{{ $limitLine }}
-                                                            </p>
-                                                        @endforeach
-                                                        @foreach($featureList as $feature)
-                                                            <p class="text-dark d-flex align-items-center mb-2 text-truncate">
-                                                                <i class="isax isax-tick-circle me-2"></i>{{ $feature }}
-                                                            </p>
-                                                        @endforeach
-                                                    </div>
-                                                    <div class="mt-auto">
-                                                        <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
-                                                            <i class="isax isax-lock me-1"></i> Product Enablement Is Next
-                                                        </button>
+                                                        <div class="mt-auto">
+                                                            <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
+                                                                <i class="isax isax-lock me-1"></i> Product Enablement Is Next
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    @endforeach
-                                </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             @elseif($hasLiveStripeSubscription)
                                 <div class="alert alert-info mb-0">
                                     This account already has a live Stripe subscription. Further billing changes should be managed from inside the tenant billing area.

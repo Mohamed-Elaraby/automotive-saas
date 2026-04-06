@@ -48,7 +48,10 @@ class CustomerPortalController extends Controller
         $domains = $subscription && ! empty($subscription->tenant_id)
             ? $this->domainsForTenant((string) $subscription->tenant_id)
             : collect();
-        $productCatalog = $this->productCatalogForTenantIds($tenantIds, (string) ($subscription->tenant_id ?? ''));
+        $productCatalog = $this->productCatalogForTenantIds(
+            $tenantIds,
+            (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''))
+        );
         $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog);
         $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
         $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);

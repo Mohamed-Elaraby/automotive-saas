@@ -305,9 +305,12 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($user, 'web')->post(route('automotive.portal.products.request-enable'), [
-            'product_id' => $product->id,
-        ]);
+        $response = $this->actingAs($user, 'web')
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('automotive.portal.products.request-enable'), [
+                '_token' => 'test-token',
+                'product_id' => $product->id,
+            ]);
 
         $response->assertRedirect(route('automotive.portal', ['product' => $product->slug]));
         $response->assertSessionHas('success', 'Your product enablement request was submitted successfully.');
@@ -342,9 +345,12 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'is_active' => true,
         ]);
 
-        $response = $this->actingAs($user, 'web')->post(route('automotive.portal.products.request-enable'), [
-            'product_id' => $product->id,
-        ]);
+        $response = $this->actingAs($user, 'web')
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('automotive.portal.products.request-enable'), [
+                '_token' => 'test-token',
+                'product_id' => $product->id,
+            ]);
 
         $response->assertRedirect(route('automotive.portal', ['product' => $product->slug]));
         $response->assertSessionHasErrors([

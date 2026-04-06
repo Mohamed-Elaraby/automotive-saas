@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\ProductEnablementRequestController;
 use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
@@ -108,6 +109,12 @@ Route::prefix('admin')
                 Route::put('/{billingFeature}', [BillingFeatureController::class, 'update'])->name('update');
                 Route::patch('/{billingFeature}/toggle-active', [BillingFeatureController::class, 'toggleActive'])->name('toggle-active');
                 Route::delete('/{billingFeature}', [BillingFeatureController::class, 'destroy'])->name('destroy');
+            });
+
+        Route::prefix('product-enablement-requests')
+            ->name('product-enablement-requests.')
+            ->group(function () {
+                Route::get('/', [ProductEnablementRequestController::class, 'index'])->name('index');
             });
 
         Route::prefix('subscriptions')

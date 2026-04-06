@@ -65,6 +65,11 @@ try {
                 </a>
             </li>
             <li>
+                <a href="{{ route('admin.product-enablement-requests.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Product Enablement Requests">
+                    <i class="isax isax-box-add"></i>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('admin.activity-logs.index') }}" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Activity Logs">
                     <i class="isax isax-document-text"></i>
                 </a>
@@ -203,6 +208,13 @@ try {
                                 <a href="{{ route('admin.notifications.index') }}">
                                     <i class="isax isax-notification-bing"></i>
                                     <span>Notifications</span>
+                                </a>
+                            </li>
+
+                            <li class="{{ $page === 'product-enablement-requests-index' ? 'active subdrop' : '' }}">
+                                <a href="{{ route('admin.product-enablement-requests.index') }}">
+                                    <i class="isax isax-box-add"></i>
+                                    <span>Product Enablement</span>
                                 </a>
                             </li>
 
