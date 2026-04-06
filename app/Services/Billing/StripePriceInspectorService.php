@@ -51,6 +51,7 @@ class StripePriceInspectorService
                 'success' => true,
                 'exists' => true,
                 'price_id' => $price->id,
+                'active' => (bool) ($price->active ?? false),
                 'unit_amount' => $price->unit_amount,
                 'unit_amount_decimal' => $price->unit_amount_decimal !== null
                     ? (float) ($price->unit_amount_decimal / 100)
@@ -68,6 +69,7 @@ class StripePriceInspectorService
                 'success' => false,
                 'exists' => false,
                 'price_id' => $priceId,
+                'active' => null,
                 'unit_amount' => null,
                 'unit_amount_decimal' => null,
                 'currency' => null,
@@ -83,6 +85,7 @@ class StripePriceInspectorService
                 'success' => false,
                 'exists' => false,
                 'price_id' => $priceId,
+                'active' => null,
                 'unit_amount' => null,
                 'unit_amount_decimal' => null,
                 'currency' => null,
@@ -117,7 +120,10 @@ class StripePriceInspectorService
             && $localInterval !== null
             && $stripe['interval'] === $localInterval;
 
-        $isAligned = $stripe['success'] && $amountMatches && $currencyMatches && $intervalMatches;
+        $activeMatches = $stripe['success']
+            && ($stripe['active'] ?? false) === true;
+
+        $isAligned = $stripe['success'] && $activeMatches && $amountMatches && $currencyMatches && $intervalMatches;
 
         return [
             'local' => [
@@ -128,6 +134,7 @@ class StripePriceInspectorService
             ],
             'stripe' => $stripe,
             'checks' => [
+                'active_matches' => $activeMatches,
                 'amount_matches' => $amountMatches,
                 'currency_matches' => $currencyMatches,
                 'interval_matches' => $intervalMatches,
@@ -135,7 +142,9 @@ class StripePriceInspectorService
             ],
             'message' => $isAligned
                 ? 'Local plan pricing is aligned with Stripe.'
-                : 'Local plan pricing does not match the linked Stripe price.',
+                : (($stripe['success'] && ($stripe['active'] ?? false) === false)
+                    ? 'The linked Stripe price exists but is inactive.'
+                    : 'Local plan pricing does not match the linked Stripe price.'),
         ];
     }
 

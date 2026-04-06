@@ -38,13 +38,25 @@ public function createRenewalSession(array $payload): array
         ];
     }
 
-    if (! empty($payload['plan_for_audit'])) {
-        $audit = $this->stripePriceInspectorService->auditPlan((object) $payload['plan_for_audit']);
+        if (! empty($payload['plan_for_audit'])) {
+            $audit = $this->stripePriceInspectorService->auditPlan((object) $payload['plan_for_audit']);
 
-        if (! ($audit['checks']['is_aligned'] ?? false)) {
-            return [
-                'success' => false,
-                'gateway' => 'stripe',
+            if (! ($audit['checks']['is_aligned'] ?? false)) {
+                $stripePriceExists = (bool) ($audit['stripe']['exists'] ?? false);
+                $stripePriceActive = (bool) ($audit['stripe']['active'] ?? false);
+
+                if ($stripePriceExists && ! $stripePriceActive) {
+                    return [
+                        'success' => false,
+                        'gateway' => 'stripe',
+                        'checkout_url' => null,
+                        'message' => 'The selected paid plan is linked to an inactive Stripe price. Sync the plan prices in admin before checkout.',
+                    ];
+                }
+
+                return [
+                    'success' => false,
+                    'gateway' => 'stripe',
                 'checkout_url' => null,
                 'message' => 'The selected plan pricing does not match the linked Stripe price. Please fix the Stripe price mapping before checkout.',
             ];
