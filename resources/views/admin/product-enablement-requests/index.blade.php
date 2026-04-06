@@ -63,6 +63,7 @@
                                     <th>Tenant</th>
                                     <th>User</th>
                                     <th>Status</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -87,10 +88,26 @@
                                                 {{ strtoupper((string) $requestRow->status) }}
                                             </span>
                                         </td>
+                                        <td class="text-end">
+                                            @if($requestRow->status === 'pending')
+                                                <div class="d-inline-flex gap-2">
+                                                    <form method="POST" action="{{ route('admin.product-enablement-requests.approve', $requestRow->id) }}">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                    </form>
+                                                    <form method="POST" action="{{ route('admin.product-enablement-requests.reject', $requestRow->id) }}">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                                    </form>
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">No pending action</span>
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No product enablement requests found.</td>
+                                        <td colspan="6" class="text-center text-muted py-4">No product enablement requests found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

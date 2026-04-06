@@ -57,4 +57,30 @@ class ProductEnablementRequestController extends Controller
             'statusOptions' => ['pending', 'approved', 'rejected'],
         ]);
     }
+
+    public function approve(ProductEnablementRequest $productEnablementRequest)
+    {
+        $productEnablementRequest->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'rejected_at' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.product-enablement-requests.index')
+            ->with('success', 'Product enablement request approved successfully.');
+    }
+
+    public function reject(ProductEnablementRequest $productEnablementRequest)
+    {
+        $productEnablementRequest->update([
+            'status' => 'rejected',
+            'rejected_at' => now(),
+            'approved_at' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.product-enablement-requests.index')
+            ->with('success', 'Product enablement request rejected successfully.');
+    }
 }

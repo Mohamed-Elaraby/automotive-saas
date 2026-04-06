@@ -115,6 +115,8 @@ Route::prefix('admin')
             ->name('product-enablement-requests.')
             ->group(function () {
                 Route::get('/', [ProductEnablementRequestController::class, 'index'])->name('index');
+                Route::post('/{productEnablementRequest}/approve', [ProductEnablementRequestController::class, 'approve'])->name('approve');
+                Route::post('/{productEnablementRequest}/reject', [ProductEnablementRequestController::class, 'reject'])->name('reject');
             });
 
         Route::prefix('subscriptions')
