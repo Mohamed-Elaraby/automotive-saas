@@ -401,10 +401,23 @@
                             </div>
 
                             @if(!$selectedProductSupportsCheckout)
+                                @php
+                                    $selectedProductEnablementStatus = (string) ($selectedProductEnablementRequest->status ?? '');
+                                @endphp
                                 <div class="alert alert-info">
                                     {{ $selectedProductName }} is visible in the shared workspace catalog.
                                     Billing checkout for additional products is intentionally not live yet in this portal.
                                 </div>
+
+                                @if($selectedProductEnablementStatus === 'rejected')
+                                    <div class="alert alert-warning">
+                                        Your last enablement request for {{ $selectedProductName }} was rejected. You can submit a new request when ready.
+                                    </div>
+                                @elseif($selectedProductEnablementStatus === 'approved')
+                                    <div class="alert alert-success">
+                                        Your enablement request for {{ $selectedProductName }} was approved. Final attachment is pending the next rollout step.
+                                    </div>
+                                @endif
 
                                 <div class="mb-4 d-flex flex-wrap gap-2">
                                     @if(empty($selectedProduct['is_active']))
@@ -415,16 +428,20 @@
                                         <button type="button" class="btn btn-success" disabled>
                                             Product Already Attached
                                         </button>
-                                    @elseif(!empty($selectedProductEnablementRequest))
+                                    @elseif($selectedProductEnablementStatus === 'pending')
                                         <button type="button" class="btn btn-outline-white" disabled>
                                             Enablement Request Pending
+                                        </button>
+                                    @elseif($selectedProductEnablementStatus === 'approved')
+                                        <button type="button" class="btn btn-success" disabled>
+                                            Enablement Approved
                                         </button>
                                     @else
                                         <form method="POST" action="{{ route('automotive.portal.products.request-enable') }}">
                                             @csrf
                                             <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
                                             <button type="submit" class="btn btn-primary">
-                                                Request Product Enablement
+                                                {{ $selectedProductEnablementStatus === 'rejected' ? 'Request Product Enablement Again' : 'Request Product Enablement' }}
                                             </button>
                                         </form>
                                     @endif

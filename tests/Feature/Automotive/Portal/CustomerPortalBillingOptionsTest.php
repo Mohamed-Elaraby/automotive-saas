@@ -410,6 +410,57 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Enablement Request Pending', false);
     }
 
+    public function test_rejected_non_automotive_enablement_request_can_be_requested_again(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Enablement Rejected User',
+            'email' => 'portal-enable-rejected-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Enablement Rejected Co',
+            'subdomain' => 'portal-enable-rejected-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-enable-rejected-' . uniqid(),
+            'data' => ['company_name' => 'Portal Enablement Rejected Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_rejected_' . uniqid(),
+            'name' => 'Accounting Rejected',
+            'slug' => 'accounting-rejected-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'rejected',
+            'requested_at' => now(),
+            'rejected_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
+
+        $response->assertOk();
+        $response->assertSee('was rejected', false);
+        $response->assertSee('Request Product Enablement Again', false);
+        $response->assertDontSee('Enablement Request Pending', false);
+    }
+
     public function test_inactive_non_automotive_product_shows_coming_soon_instead_of_request_button(): void
     {
         $user = User::query()->create([

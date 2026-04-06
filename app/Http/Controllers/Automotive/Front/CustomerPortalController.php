@@ -460,6 +460,8 @@ class CustomerPortalController extends Controller
             ->where('user_id', $userId)
             ->where('tenant_id', $tenantId)
             ->where('product_id', $productId)
+            ->orderByDesc('requested_at')
+            ->orderByDesc('id')
             ->first();
     }
 
