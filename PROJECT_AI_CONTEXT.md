@@ -789,6 +789,30 @@ The next execution step is:
 - validate real Stripe/live-record consistency after the new sync recovery logic
 - then add product-level purchase/enablement flow for the second product on the same tenant
 
+Operational support now added for this step:
+- artisan command:
+  - `php artisan billing:review-stripe-consistency`
+  - supports:
+    - `--sync`
+    - `--only-issues`
+    - `--format=table|json|csv`
+    - `--output=/path/to/file`
+- mirror repair command:
+  - `php artisan billing:repair-product-subscription-mirrors`
+  - supports:
+    - `--apply`
+    - `--only-missing`
+    - `--tenant=...`
+    - `--subscription=...`
+- runbook:
+  - `STRIPE_CONSISTENCY_REVIEW_RUNBOOK.md`
+
+Portal foundation now added for the next multi-product step:
+- customer portal supports selecting a catalog product via query/CTA
+- non-automotive products now open a product-specific enablement/plans panel
+- direct checkout remains intentionally limited to automotive for now
+- this is a safe UI foundation before implementing second-product purchase flow
+
 ### 18.9 Current Multi-Product Implementation Status
 Already implemented:
 - `app/Models/Product.php`

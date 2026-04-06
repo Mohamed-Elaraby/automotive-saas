@@ -31,7 +31,7 @@ class CustomerPortalController extends Controller
     ) {
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $user = Auth::guard('web')->user();
 
@@ -47,8 +47,10 @@ class CustomerPortalController extends Controller
         $domains = $subscription && ! empty($subscription->tenant_id)
             ? $this->domainsForTenant((string) $subscription->tenant_id)
             : collect();
-        $paidPlans = $this->billingPlanCatalogService->getPaidPlans(self::PRODUCT_CODE);
         $productCatalog = $this->productCatalogForTenantIds($tenantIds, (string) ($subscription->tenant_id ?? ''));
+        $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog);
+        $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
+        $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);
 
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
@@ -93,6 +95,8 @@ class CustomerPortalController extends Controller
             'hasPendingPaidCheckout' => $hasPendingPaidCheckout,
             'isTrialWorkspace' => $isTrialWorkspace,
             'productCatalog' => $productCatalog,
+            'selectedProduct' => $selectedProduct,
+            'selectedProductSupportsCheckout' => $selectedProductCode === self::PRODUCT_CODE,
         ]);
     }
 
@@ -347,11 +351,30 @@ class CustomerPortalController extends Controller
                     'status_label' => $this->productStatusLabel($product, $subscription),
                     'action_label' => $isAutomotive
                         ? ($isSubscribed ? 'Manage Automotive' : 'Browse Automotive Plans')
-                        : ((bool) $product->is_active ? 'Catalog Ready' : 'Coming Soon'),
-                    'action_anchor' => $isAutomotive ? '#paid-plans' : '#products-catalog',
+                        : ((bool) $product->is_active ? 'Explore Enablement' : 'Coming Soon'),
+                    'action_url' => route('automotive.portal', ['product' => $product->slug]) . '#paid-plans',
                 ];
             })
             ->values();
+    }
+
+    protected function resolveSelectedProduct(Request $request, Collection $productCatalog): ?array
+    {
+        $selected = trim((string) $request->query('product'));
+
+        if ($selected !== '') {
+            $matched = $productCatalog->first(function (array $productRow) use ($selected) {
+                return (string) $productRow['slug'] === $selected
+                    || (string) $productRow['code'] === $selected;
+            });
+
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        return $productCatalog->firstWhere('code', self::PRODUCT_CODE)
+            ?: $productCatalog->first();
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription): string

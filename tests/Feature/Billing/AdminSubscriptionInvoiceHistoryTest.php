@@ -8,9 +8,13 @@ use App\Models\Subscription;
 use App\Services\Billing\BillingNotificationService;
 use App\Services\Billing\StripeInvoiceHistoryService;
 use App\Services\Billing\StripeInvoiceLedgerBackfillService;
+use App\Services\Billing\StripeSubscriptionManagementService;
+use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\StripeSubscriptionSyncService;
 use App\Services\Billing\SubscriptionLifecycleNormalizationService;
 use App\Services\Billing\TenantBillingLifecycleService;
+use App\Services\Admin\AdminActivityLogger;
+use App\Services\Admin\AdminSubscriptionControlService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -92,15 +96,23 @@ class AdminSubscriptionInvoiceHistoryTest extends TestCase
 
     protected function makeController(StripeInvoiceHistoryService $stripeInvoiceHistoryService): object
     {
+        $adminSubscriptionControlService = Mockery::mock(AdminSubscriptionControlService::class);
+        $adminActivityLogger = Mockery::mock(AdminActivityLogger::class);
         $stripeSubscriptionSyncService = Mockery::mock(StripeSubscriptionSyncService::class);
+        $stripeSubscriptionManagementService = Mockery::mock(StripeSubscriptionManagementService::class);
+        $stripeSubscriptionPlanChangeService = Mockery::mock(StripeSubscriptionPlanChangeService::class);
         $stripeInvoiceLedgerBackfillService = Mockery::mock(StripeInvoiceLedgerBackfillService::class);
         $tenantBillingLifecycleService = Mockery::mock(TenantBillingLifecycleService::class);
         $subscriptionLifecycleNormalizationService = Mockery::mock(SubscriptionLifecycleNormalizationService::class);
         $billingNotificationService = Mockery::mock(BillingNotificationService::class);
 
         return new class(
+            $adminSubscriptionControlService,
+            $adminActivityLogger,
             $stripeInvoiceHistoryService,
             $stripeSubscriptionSyncService,
+            $stripeSubscriptionManagementService,
+            $stripeSubscriptionPlanChangeService,
             $stripeInvoiceLedgerBackfillService,
             $tenantBillingLifecycleService,
             $subscriptionLifecycleNormalizationService,

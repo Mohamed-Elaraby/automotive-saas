@@ -3,6 +3,8 @@
 namespace App\Console;
 
 use App\Console\Commands\Billing\RunBillingLifecycleCommand;
+use App\Console\Commands\Billing\ReviewStripeSubscriptionConsistencyCommand;
+use App\Console\Commands\Billing\RepairTenantProductSubscriptionMirrorsCommand;
 use App\Console\Commands\Billing\SyncStripePlanPricesCommand;
 use App\Console\Commands\Billing\VerifyBillingPlanPricesCommand;
 use App\Console\Commands\Notifications\CleanupNotificationsCommand;
@@ -15,6 +17,8 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         TenantsCleanup::class,
         RunBillingLifecycleCommand::class,
+        RepairTenantProductSubscriptionMirrorsCommand::class,
+        ReviewStripeSubscriptionConsistencyCommand::class,
         VerifyBillingPlanPricesCommand::class,
         SyncStripePlanPricesCommand::class,
         CleanupNotificationsCommand::class,

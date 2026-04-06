@@ -72,8 +72,9 @@ return BillingInvoice::query()->updateOrCreate(
                 'hosted_invoice_url' => $invoice->hosted_invoice_url,
                 'invoice_pdf' => $invoice->invoice_pdf,
                 'created_at' => $invoice->issued_at?->timestamp,
-                    'tenant_id' => $invoice->tenant_id,
-                ];
+                'subscription_id' => $invoice->gateway_subscription_id,
+                'tenant_id' => $invoice->tenant_id,
+            ];
             })->values()->all(),
         'message' => null,
     ];

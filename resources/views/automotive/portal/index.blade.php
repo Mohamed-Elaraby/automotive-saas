@@ -347,7 +347,7 @@
                                                 </div>
 
                                                 <div class="mt-auto d-flex flex-wrap gap-2">
-                                                    <a href="{{ $productRow['action_anchor'] }}" class="btn btn-outline-white">
+                                                    <a href="{{ $productRow['action_url'] }}" class="btn btn-outline-white">
                                                         {{ $productRow['action_label'] }}
                                                     </a>
 
@@ -375,13 +375,21 @@
                                     'one_time' => 'One Time',
                                 ])->filter(fn ($label, $period) => $plansByPeriod->has($period));
                                 $activePeriod = (string) ($periodTabs->keys()->first() ?? 'monthly');
+                                $selectedProductName = (string) ($selectedProduct['name'] ?? 'Selected Product');
+                                $selectedProductDescription = (string) ($selectedProduct['description'] ?? '');
                             @endphp
 
                             <div class="mb-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                     <div>
-                                        <h6 class="mb-1">Streamline your teamwork. Start free.</h6>
-                                        <p class="text-muted mb-0">Choose the perfect paid plan for your workspace, compare the real limits, then continue to Stripe checkout.</p>
+                                        <h6 class="mb-1">{{ $selectedProductName }} Plans &amp; Enablement</h6>
+                                        <p class="text-muted mb-0">
+                                            @if($selectedProductSupportsCheckout)
+                                                Choose the perfect paid plan for your workspace, compare the real limits, then continue to Stripe checkout.
+                                            @else
+                                                Review the product catalog direction and available plan structure for this module. Direct checkout for additional products is the next rollout step.
+                                            @endif
+                                        </p>
                                     </div>
 
                                     @if(!empty($profile?->coupon_code))
@@ -392,7 +400,64 @@
                                 </div>
                             </div>
 
-                            @if($hasLiveStripeSubscription)
+                            @if(!$selectedProductSupportsCheckout && $paidPlans->count() === 0)
+                                <div class="alert alert-light border mb-0">
+                                    {{ $selectedProductName }} does not have active paid plans configured yet. This portal section is now ready for product-level enablement once plans are added.
+                                </div>
+                            @elseif(!$selectedProductSupportsCheckout)
+                                <div class="alert alert-info">
+                                    {{ $selectedProductName }} is visible in the shared workspace catalog.
+                                    Billing checkout for additional products is intentionally not live yet in this portal.
+                                </div>
+
+                                <div class="row">
+                                    @foreach($paidPlans as $paidPlan)
+                                        @php
+                                            $featureList = collect($paidPlan->features_array ?? [])->take(6);
+                                            $limitLines = collect($paidPlan->limits_array ?? [])->map(function ($limit) {
+                                                return $limit['label'] . ' ' . $limit['value'];
+                                            });
+                                        @endphp
+                                        <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
+                                            <div class="card pricing-starter flex-fill w-100">
+                                                <div class="card-body d-flex flex-column">
+                                                    <div class="border-bottom">
+                                                        <div class="mb-3">
+                                                            <h5 class="mb-1">{{ $paidPlan->name }}</h5>
+                                                            <p class="mb-0">{{ $paidPlan->description ?: ($selectedProductDescription ?: 'Configured product plan.') }}</p>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <h3 class="d-flex align-items-center mb-1">
+                                                                {{ str_replace(' ' . $paidPlan->currency_code, '', $paidPlan->display_price) }}
+                                                            </h3>
+                                                            <p class="mb-0">
+                                                                {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} billing
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-3 mb-3">
+                                                        @foreach($limitLines as $limitLine)
+                                                            <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                                <i class="isax isax-tick-circle me-2"></i>{{ $limitLine }}
+                                                            </p>
+                                                        @endforeach
+                                                        @foreach($featureList as $feature)
+                                                            <p class="text-dark d-flex align-items-center mb-2 text-truncate">
+                                                                <i class="isax isax-tick-circle me-2"></i>{{ $feature }}
+                                                            </p>
+                                                        @endforeach
+                                                    </div>
+                                                    <div class="mt-auto">
+                                                        <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
+                                                            <i class="isax isax-lock me-1"></i> Product Enablement Is Next
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @elseif($hasLiveStripeSubscription)
                                 <div class="alert alert-info mb-0">
                                     This account already has a live Stripe subscription. Further billing changes should be managed from inside the tenant billing area.
                                 </div>

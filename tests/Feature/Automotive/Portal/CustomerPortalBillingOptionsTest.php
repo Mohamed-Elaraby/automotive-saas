@@ -194,6 +194,82 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('AVAILABLE NOW', false);
     }
 
+    public function test_portal_can_focus_a_non_automotive_product_enablement_panel(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Product Focus User',
+            'email' => 'portal-product-focus-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Product Focus Co',
+            'subdomain' => 'portal-product-focus-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_focus_' . uniqid(),
+            'name' => 'Accounting Suite',
+            'slug' => 'accounting-suite-' . uniqid(),
+            'description' => 'Shared accounting module',
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'description' => 'Accounting enablement plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $accountingProduct->slug]));
+
+        $response->assertOk();
+        $response->assertSee('Accounting Suite Plans &amp; Enablement', false);
+        $response->assertSee('Billing checkout for additional products is intentionally not live yet in this portal.', false);
+        $response->assertSee((string) $accountingPlan->name, false);
+        $response->assertSee('Product Enablement Is Next', false);
+        $response->assertDontSee('Select &amp; Continue', false);
+    }
+
+    public function test_non_automotive_product_card_links_to_product_specific_enablement_panel(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Product Card User',
+            'email' => 'portal-product-card-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Product Card Co',
+            'subdomain' => 'portal-product-card-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $otherProduct = Product::query()->create([
+            'code' => 'inventory_focus_' . uniqid(),
+            'name' => 'Inventory Control',
+            'slug' => 'inventory-control-' . uniqid(),
+            'description' => 'Shared inventory module',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('Explore Enablement', false);
+        $response->assertSee(route('automotive.portal', ['product' => $otherProduct->slug]) . '#paid-plans', false);
+    }
+
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void
     {
         $user = User::query()->create([
