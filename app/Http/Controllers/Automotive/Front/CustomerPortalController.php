@@ -261,7 +261,7 @@ class CustomerPortalController extends Controller
 
         if (! $product || ! $product->is_active) {
             return redirect()
-                ->route('automotive.portal')
+                ->route('automotive.portal', ['product' => $product?->slug])
                 ->withErrors([
                     'portal' => 'The selected product is not available for enablement.',
                 ]);

@@ -407,7 +407,11 @@
                                 </div>
 
                                 <div class="mb-4 d-flex flex-wrap gap-2">
-                                    @if(!empty($selectedProduct['is_subscribed']))
+                                    @if(empty($selectedProduct['is_active']))
+                                        <button type="button" class="btn btn-outline-white" disabled>
+                                            Product Coming Soon
+                                        </button>
+                                    @elseif(!empty($selectedProduct['is_subscribed']))
                                         <button type="button" class="btn btn-success" disabled>
                                             Product Already Attached
                                         </button>

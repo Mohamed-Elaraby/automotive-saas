@@ -410,6 +410,35 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Enablement Request Pending', false);
     }
 
+    public function test_inactive_non_automotive_product_shows_coming_soon_instead_of_request_button(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Inactive Product User',
+            'email' => 'portal-inactive-product-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Inactive Product Co',
+            'subdomain' => 'portal-inactive-product-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'inactive_module_' . uniqid(),
+            'name' => 'Inactive Module',
+            'slug' => 'inactive-module-' . uniqid(),
+            'is_active' => false,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
+
+        $response->assertOk();
+        $response->assertSee('Product Coming Soon', false);
+        $response->assertDontSee('Request Product Enablement', false);
+    }
+
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void
     {
         $user = User::query()->create([
