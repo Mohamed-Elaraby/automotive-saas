@@ -521,17 +521,29 @@ Important files:
 - paid onboarding success-path coverage
 - tenant admin login/access end-to-end coverage
 - tenant product routes loading hardened by replacing `require_once` with `require` inside `routes/tenant.php`
+- central `products` catalog added
+- `plans.product_id` added and current automotive plans attached to `automotive_service`
+- `tenant_product_subscriptions` table/model added with legacy backfill
+- onboarding and billing flows now mirror legacy `subscriptions` into `tenant_product_subscriptions`
+- automotive billing catalog and portal became product-aware
+- tenant/portal read path now prefers `tenant_product_subscriptions` with legacy fallback
+- customer portal now shows a visible `Products Catalog` section in UI
+- Stripe admin sync can now recover missing `gateway_subscription_id` from checkout session or customer lookup
+- Stripe sync now keeps `tenant_product_subscriptions` mirrored
+- Stripe cancellation sync logic now respects `current_period_end`:
+  - future period end => `cancelled`
+  - past period end => `expired`
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
-- move from SaaS foundation validation into tenant product MVP work
-- define multi-product SaaS architecture:
-  - one tenant
-  - many products
-  - shared core data
-  - per-product subscriptions
-- add central `products` catalog and `tenant_product_subscriptions`
-- refactor automotive-only onboarding/billing assumptions into product-aware services
+- finish operational Stripe consistency review:
+  - verify plan/price mapping against live Stripe data for real subscriptions
+  - verify invoice history is filtered by `gateway_subscription_id` after recovery sync
+  - confirm whether any local records still point to wrong plan before sync
+- continue multi-product rollout in UI/flows:
+  - add non-automotive product CTAs in portal
+  - prepare second-product subscription flow on same tenant
+- move from SaaS foundation validation into tenant product MVP work once billing consistency is confirmed
 - implement roles & permissions for central admin
 - implement real-time notifications via SSE
 - convert lifecycle automation to queue/jobs only if truly needed later
@@ -762,12 +774,65 @@ Stage 5:
 - verify automatic shared-data integration
 
 ### 18.8 Immediate Next Execution Step
-Before building a second product, the next real architecture task should be:
-- create the central `products` model/migration/seed
-- add `product_id` to `plans`
-- make current automotive plans explicitly belong to the automotive product
+Current progress in this staged migration:
+- Stage 1 is done:
+  - central `products` exists
+  - first product `automotive_service` exists
+  - `plans` are product-aware
+- Stage 2 is partially done:
+  - `tenant_product_subscriptions` exists
+  - legacy onboarding/billing flows mirror into it
+  - portal and tenant read path already prefer it
+- portal UI now exposes a visible products catalog
 
-This is the lowest-risk first step toward multi-product SaaS and preserves the current working system while opening the door for future products.
+The next execution step is:
+- validate real Stripe/live-record consistency after the new sync recovery logic
+- then add product-level purchase/enablement flow for the second product on the same tenant
+
+### 18.9 Current Multi-Product Implementation Status
+Already implemented:
+- `app/Models/Product.php`
+- `app/Models/TenantProductSubscription.php`
+- `database/migrations/2026_04_04_120000_create_products_table.php`
+- `database/migrations/2026_04_04_121000_add_product_id_to_plans_table.php`
+- `database/migrations/2026_04_04_122000_create_tenant_product_subscriptions_table.php`
+- `database/seeders/ProductSeeder.php`
+- product-aware billing catalog reads
+- product-aware automotive portal paid plans
+- product-aware tenant/portal read path
+- portal `Products Catalog` UI block
+
+Important implementation note:
+- current runtime still keeps legacy `subscriptions` as the operational base record in many admin/billing areas
+- `tenant_product_subscriptions` is now populated and read in the tenant-facing path, but central admin screens are still primarily legacy-subscription based
+- migration is therefore in a safe hybrid state, not yet full cutover
+
+### 18.10 Stripe Consistency Lessons From Real Data
+Recent real-record review exposed two important production-relevant behaviors:
+- some local Stripe-linked subscriptions may have:
+  - `gateway_customer_id`
+  - `gateway_checkout_session_id`
+  - but missing `gateway_subscription_id`
+- local plan/status may be stale before Stripe sync
+
+Fixes now implemented:
+- admin `Sync From Stripe` can recover missing `gateway_subscription_id`
+  - first from Stripe checkout session
+  - then from customer subscriptions if the lookup is unambiguous
+- Stripe sync now mirrors lifecycle/identity updates back into `tenant_product_subscriptions`
+- Stripe sync no longer maps `canceled` blindly to `expired`
+  - it now checks `current_period_end`
+
+Important operator note:
+- if a local Stripe-linked subscription looks inconsistent in admin vs portal, run admin `Sync From Stripe` again after the latest fixes
+- after sync:
+  - plan should match the actual Stripe `price_id`
+  - status should reflect Stripe cancellation timing more accurately
+
+Important cleanup note:
+- local tests generate temporary tenant sqlite files under `database/tenant_*`
+- these files were accidentally committed once during manual git flow
+- they should remain ignored and never be committed again
 
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
@@ -798,7 +863,19 @@ If a new session starts from this file only, the safest current summary is:
 - Paid plans now read real shared feature catalog data and real limits.
 - Plan features are no longer ad hoc text; they are managed via a shared billing features catalog with admin CRUD.
 - Admin plan form now includes a live customer-portal preview for price, limits, and selected features.
-- The project is now ready to move from single-product SaaS validation into multi-product architecture work.
+- Multi-product architecture work is already underway in code:
+  - products catalog
+  - plan/product linkage
+  - tenant product subscriptions
+  - tenant-facing read path migration
+  - visible portal products catalog UI
+- Stripe sync is now significantly safer:
+  - missing subscription id recovery
+  - product-subscription mirror updates
+  - better cancellation-period mapping
+- The project is now in a hybrid transition state:
+  - central admin still largely legacy-subscription based
+  - tenant/portal path is already partially product-subscription based
 - The codebase has multiple isolated UI namespaces; keep them separated.
 - Do not use `route:cache`.
 - Always verify current files before assuming older flow descriptions are still correct.
