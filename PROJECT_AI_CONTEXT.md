@@ -86,6 +86,7 @@ This separation is intentional and should remain.
 
 ### 6.1 Central Admin
 Confirmed present in code:
+- products catalog management
 - plans management
 - coupons CRUD
 - subscriptions management
@@ -95,6 +96,7 @@ Confirmed present in code:
 - activity logs
 - system error logs
 - SaaS general settings
+- product enablement requests monitoring
 - reference data:
   - currencies
   - countries
@@ -102,9 +104,11 @@ Confirmed present in code:
   - cities
 
 Important central files:
+- `app/Http/Controllers/Admin/ProductController.php`
 - `app/Http/Controllers/Admin/PlanController.php`
 - `app/Http/Controllers/Admin/CouponController.php`
 - `app/Http/Controllers/Admin/SubscriptionController.php`
+- `app/Http/Controllers/Admin/ProductEnablementRequestController.php`
 - `app/Http/Controllers/Admin/TenantController.php`
 - `app/Http/Controllers/Admin/BillingReportController.php`
 - `app/Http/Controllers/Admin/AdminNotificationController.php`
@@ -392,6 +396,17 @@ Confirmed implemented:
   - real selected features
   - limits merged into `What you get`
   - no separate ugly boxed limits block
+- customer portal now supports non-automotive product focus via:
+  - `?product=<slug>`
+- non-automotive products can submit `product enablement requests` from the portal
+- portal now distinguishes enablement request states correctly:
+  - `pending`
+  - `approved`
+  - `rejected`
+- after admin rejection, portal no longer shows stale `pending`
+- rejected requests now show a warning and allow re-submission
+- inactive products now show `Product Coming Soon`
+  - and do not show misleading request buttons
 
 Important files:
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
@@ -522,12 +537,23 @@ Important files:
 - tenant admin login/access end-to-end coverage
 - tenant product routes loading hardened by replacing `require_once` with `require` inside `routes/tenant.php`
 - central `products` catalog added
+- central admin `products` CRUD UI is now live:
+  - index
+  - create
+  - edit
+  - safe delete when product is unused
 - `plans.product_id` added and current automotive plans attached to `automotive_service`
 - `tenant_product_subscriptions` table/model added with legacy backfill
 - onboarding and billing flows now mirror legacy `subscriptions` into `tenant_product_subscriptions`
 - automotive billing catalog and portal became product-aware
 - tenant/portal read path now prefers `tenant_product_subscriptions` with legacy fallback
 - customer portal now shows a visible `Products Catalog` section in UI
+- non-automotive products can now be selected from the portal and use a dedicated enablement panel
+- `product_enablement_requests` flow is now live end-to-end at the UI layer:
+  - customer can request enablement from portal
+  - central admin can list/filter requests
+  - central admin can approve or reject requests
+  - portal reflects request status correctly after admin action
 - Stripe admin sync can now recover missing `gateway_subscription_id` from checkout session or customer lookup
 - Stripe sync now keeps `tenant_product_subscriptions` mirrored
 - Stripe cancellation sync logic now respects `current_period_end`:
@@ -536,13 +562,15 @@ Important files:
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
-- finish operational Stripe consistency review:
-  - verify plan/price mapping against live Stripe data for real subscriptions
-  - verify invoice history is filtered by `gateway_subscription_id` after recovery sync
-  - confirm whether any local records still point to wrong plan before sync
-- continue multi-product rollout in UI/flows:
-  - add non-automotive product CTAs in portal
-  - prepare second-product subscription flow on same tenant
+- connect admin approval to a real provisioning/billing action:
+  - on `approve`, create or activate the matching `tenant_product_subscription`
+  - define whether approval means:
+    - internal enablement only
+    - or a pending paid checkout step for the second product
+  - once approved, make portal/admin show the product as attached or ready for final billing
+- after that, implement the true second-product commercial flow on the same tenant:
+  - product-level paid checkout for non-automotive products
+  - Stripe session/subscription linkage into `tenant_product_subscriptions`
 - move from SaaS foundation validation into tenant product MVP work once billing consistency is confirmed
 - implement roles & permissions for central admin
 - implement real-time notifications via SSE
