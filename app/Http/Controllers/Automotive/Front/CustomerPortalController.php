@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Automotive\Front;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Product;
+use App\Models\ProductEnablementRequest;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Automotive\StartTrialService;
@@ -51,6 +52,11 @@ class CustomerPortalController extends Controller
         $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog);
         $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
         $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);
+        $selectedProductEnablementRequest = $this->productEnablementRequestForUser(
+            $user->id,
+            (string) ($selectedProduct['tenant_id'] ?? ''),
+            (int) ($selectedProduct['id'] ?? 0)
+        );
 
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
@@ -97,6 +103,7 @@ class CustomerPortalController extends Controller
             'productCatalog' => $productCatalog,
             'selectedProduct' => $selectedProduct,
             'selectedProductSupportsCheckout' => $selectedProductCode === self::PRODUCT_CODE,
+            'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
         ]);
     }
 
@@ -237,6 +244,63 @@ class CustomerPortalController extends Controller
             ]);
     }
 
+    public function requestProductEnablement(Request $request): RedirectResponse
+    {
+        $user = Auth::guard('web')->user();
+
+        abort_unless($user, 403);
+
+        $validated = $request->validate([
+            'product_id' => ['required', 'integer'],
+        ]);
+
+        $product = Product::query()->find((int) $validated['product_id']);
+
+        if (! $product || ! $product->is_active) {
+            return redirect()
+                ->route('automotive.portal')
+                ->withErrors([
+                    'portal' => 'The selected product is not available for enablement.',
+                ]);
+        }
+
+        if ((string) $product->code === self::PRODUCT_CODE) {
+            return redirect()
+                ->route('automotive.portal', ['product' => $product->slug])
+                ->withErrors([
+                    'portal' => 'Automotive uses the direct paid checkout flow instead of enablement request.',
+                ]);
+        }
+
+        $tenantId = (string) ($this->tenantIdsForUser($user)->first() ?? '');
+
+        if ($tenantId === '') {
+            return redirect()
+                ->route('automotive.portal', ['product' => $product->slug])
+                ->withErrors([
+                    'portal' => 'Start your primary workspace first before requesting additional product enablement.',
+                ]);
+        }
+
+        ProductEnablementRequest::query()->updateOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'product_id' => $product->id,
+            ],
+            [
+                'user_id' => $user->id,
+                'status' => 'pending',
+                'requested_at' => now(),
+                'approved_at' => null,
+                'rejected_at' => null,
+            ]
+        );
+
+        return redirect()
+            ->route('automotive.portal', ['product' => $product->slug])
+            ->with('success', 'Your product enablement request was submitted successfully.');
+    }
+
     protected function centralConnectionName(): string
     {
         return (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
@@ -375,6 +439,25 @@ class CustomerPortalController extends Controller
 
         return $productCatalog->firstWhere('code', self::PRODUCT_CODE)
             ?: $productCatalog->first();
+    }
+
+    protected function productEnablementRequestForUser(int $userId, string $tenantId, int $productId): ?ProductEnablementRequest
+    {
+        if ($userId <= 0 || $tenantId === '' || $productId <= 0) {
+            return null;
+        }
+
+        $connection = $this->centralConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('product_enablement_requests')) {
+            return null;
+        }
+
+        return ProductEnablementRequest::query()
+            ->where('user_id', $userId)
+            ->where('tenant_id', $tenantId)
+            ->where('product_id', $productId)
+            ->first();
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription): string

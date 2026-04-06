@@ -7,6 +7,7 @@ use App\Models\BillingFeature;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\ProductEnablementRequest;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
@@ -268,6 +269,139 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Explore Enablement', false);
         $response->assertSee(route('automotive.portal', ['product' => $otherProduct->slug]) . '#paid-plans', false);
+    }
+
+    public function test_user_can_request_enablement_for_non_automotive_product_after_workspace_exists(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Enablement User',
+            'email' => 'portal-enable-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Enablement Co',
+            'subdomain' => 'portal-enable-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-enable-request-' . uniqid(),
+            'data' => ['company_name' => 'Portal Enablement Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_request_' . uniqid(),
+            'name' => 'Accounting Enablement',
+            'slug' => 'accounting-enable-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->post(route('automotive.portal.products.request-enable'), [
+            'product_id' => $product->id,
+        ]);
+
+        $response->assertRedirect(route('automotive.portal', ['product' => $product->slug]));
+        $response->assertSessionHas('success', 'Your product enablement request was submitted successfully.');
+
+        $this->assertDatabaseHas('product_enablement_requests', [
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'pending',
+        ]);
+    }
+
+    public function test_enablement_request_is_blocked_before_primary_workspace_exists(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Enablement Blocked User',
+            'email' => 'portal-enable-blocked-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Enablement Blocked Co',
+            'subdomain' => 'portal-enable-blocked-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'inventory_request_' . uniqid(),
+            'name' => 'Inventory Request',
+            'slug' => 'inventory-request-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->post(route('automotive.portal.products.request-enable'), [
+            'product_id' => $product->id,
+        ]);
+
+        $response->assertRedirect(route('automotive.portal', ['product' => $product->slug]));
+        $response->assertSessionHasErrors([
+            'portal' => 'Start your primary workspace first before requesting additional product enablement.',
+        ]);
+
+        $this->assertDatabaseMissing('product_enablement_requests', [
+            'product_id' => $product->id,
+        ]);
+    }
+
+    public function test_non_automotive_enablement_panel_shows_pending_request_state(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Enablement Pending User',
+            'email' => 'portal-enable-pending-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Enablement Pending Co',
+            'subdomain' => 'portal-enable-pending-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-enable-pending-' . uniqid(),
+            'data' => ['company_name' => 'Portal Enablement Pending Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_pending_' . uniqid(),
+            'name' => 'Accounting Pending',
+            'slug' => 'accounting-pending-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'pending',
+            'requested_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
+
+        $response->assertOk();
+        $response->assertSee('Enablement Request Pending', false);
     }
 
     public function test_terminal_cancelled_stripe_subscription_does_not_block_new_paid_checkout_in_portal(): void

@@ -31,6 +31,7 @@ Route::prefix('automotive')
             Route::get('/portal', [CustomerPortalController::class, 'index'])->name('portal');
             Route::post('/portal/start-trial', [CustomerPortalController::class, 'startTrial'])->name('portal.start-trial');
             Route::post('/portal/subscribe', [CustomerPortalController::class, 'startPaidCheckout'])->name('portal.subscribe');
+            Route::post('/portal/products/request-enable', [CustomerPortalController::class, 'requestProductEnablement'])->name('portal.products.request-enable');
             Route::get('/portal/checkout/success', [CustomerPortalController::class, 'checkoutSuccess'])->name('portal.checkout.success');
             Route::get('/portal/checkout/cancel', [CustomerPortalController::class, 'checkoutCancel'])->name('portal.checkout.cancel');
         });

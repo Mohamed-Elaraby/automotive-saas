@@ -410,6 +410,26 @@
                                     Billing checkout for additional products is intentionally not live yet in this portal.
                                 </div>
 
+                                <div class="mb-4 d-flex flex-wrap gap-2">
+                                    @if(!empty($selectedProduct['is_subscribed']))
+                                        <button type="button" class="btn btn-success" disabled>
+                                            Product Already Attached
+                                        </button>
+                                    @elseif(!empty($selectedProductEnablementRequest))
+                                        <button type="button" class="btn btn-outline-white" disabled>
+                                            Enablement Request Pending
+                                        </button>
+                                    @else
+                                        <form method="POST" action="{{ route('automotive.portal.products.request-enable') }}">
+                                            @csrf
+                                            <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
+                                            <button type="submit" class="btn btn-primary">
+                                                Request Product Enablement
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+
                                 <div class="row">
                                     @foreach($paidPlans as $paidPlan)
                                         @php
