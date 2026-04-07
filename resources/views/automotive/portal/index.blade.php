@@ -52,6 +52,41 @@
                         </div>
                     @endif
 
+                    @if(($portalNotifications ?? collect())->isNotEmpty())
+                        <div class="card mb-3 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <h6 class="mb-1">Recent Notifications</h6>
+                                    <p class="text-muted mb-0">Latest updates about your product requests and workspace access.</p>
+                                </div>
+
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach($portalNotifications as $portalNotification)
+                                        @php
+                                            $portalSeverityClass = match((string) $portalNotification->severity) {
+                                                'success' => 'alert-success',
+                                                'warning' => 'alert-warning',
+                                                'error' => 'alert-danger',
+                                                default => 'alert-info',
+                                            };
+                                        @endphp
+                                        <div class="alert {{ $portalSeverityClass }} mb-0">
+                                            <div class="d-flex align-items-start justify-content-between gap-3">
+                                                <div>
+                                                    <div class="fw-semibold">{{ $portalNotification->title }}</div>
+                                                    @if(!empty($portalNotification->message))
+                                                        <div>{{ $portalNotification->message }}</div>
+                                                    @endif
+                                                </div>
+                                                <small class="text-nowrap">{{ optional($portalNotification->notified_at)->diffForHumans() }}</small>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     @if($hasPendingPaidCheckout)
                         <div class="alert alert-warning mb-3">
                             Your last checkout was not completed. Your current subscription state has not changed yet, and you can continue checkout when you are ready.

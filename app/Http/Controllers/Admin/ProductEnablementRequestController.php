@@ -71,13 +71,12 @@ class ProductEnablementRequestController extends Controller
             ->with('success', 'Product enablement request approved successfully.');
     }
 
-    public function reject(ProductEnablementRequest $productEnablementRequest)
+    public function reject(
+        ProductEnablementRequest $productEnablementRequest,
+        ProductEnablementApprovalService $productEnablementApprovalService
+    )
     {
-        $productEnablementRequest->update([
-            'status' => 'rejected',
-            'rejected_at' => now(),
-            'approved_at' => null,
-        ]);
+        $productEnablementApprovalService->reject($productEnablementRequest);
 
         return redirect()
             ->route('admin.product-enablement-requests.index')

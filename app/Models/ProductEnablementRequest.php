@@ -31,4 +31,14 @@ class ProductEnablementRequest extends Model
             config('tenancy.database.central_connection') ?? config('database.default')
         );
     }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

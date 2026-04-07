@@ -5,6 +5,7 @@ namespace Tests\Feature\Automotive\Portal;
 use App\Contracts\Billing\PaymentGatewayInterface;
 use App\Models\BillingFeature;
 use App\Models\CustomerOnboardingProfile;
+use App\Models\CustomerPortalNotification;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
@@ -408,6 +409,59 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Enablement Request Pending', false);
+    }
+
+    public function test_portal_shows_customer_notification_when_enablement_request_is_approved(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Notification User',
+            'email' => 'portal-notification-approved-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Notification Co',
+            'subdomain' => 'portal-notification-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-portal-notification-' . uniqid(),
+            'data' => ['company_name' => 'Portal Notification Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_notification_' . uniqid(),
+            'name' => 'Accounting Notification',
+            'slug' => 'accounting-notification-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        CustomerPortalNotification::query()->create([
+            'user_id' => $user->id,
+            'type' => 'product_enablement_request',
+            'title' => 'Product enablement approved',
+            'message' => 'Accounting Notification is now available in your workspace.',
+            'severity' => 'success',
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'notified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
+
+        $response->assertOk();
+        $response->assertSee('Recent Notifications', false);
+        $response->assertSee('Product enablement approved', false);
+        $response->assertSee('Accounting Notification is now available in your workspace.', false);
     }
 
     public function test_rejected_non_automotive_enablement_request_can_be_requested_again(): void

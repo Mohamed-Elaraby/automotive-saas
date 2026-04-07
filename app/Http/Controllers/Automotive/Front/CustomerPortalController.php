@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Front;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOnboardingProfile;
+use App\Models\CustomerPortalNotification;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
 use App\Services\Admin\AppSettingsService;
@@ -60,6 +61,7 @@ class CustomerPortalController extends Controller
             (string) ($selectedProduct['tenant_id'] ?? ''),
             (int) ($selectedProduct['id'] ?? 0)
         );
+        $portalNotifications = $this->portalNotificationsForUser($user->id);
 
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
@@ -107,6 +109,7 @@ class CustomerPortalController extends Controller
             'selectedProduct' => $selectedProduct,
             'selectedProductSupportsCheckout' => $selectedProductCode === self::PRODUCT_CODE,
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
+            'portalNotifications' => $portalNotifications,
         ]);
     }
 
@@ -463,6 +466,26 @@ class CustomerPortalController extends Controller
             ->orderByDesc('requested_at')
             ->orderByDesc('id')
             ->first();
+    }
+
+    protected function portalNotificationsForUser(int $userId): Collection
+    {
+        if ($userId <= 0) {
+            return collect();
+        }
+
+        $connection = $this->centralConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('customer_portal_notifications')) {
+            return collect();
+        }
+
+        return CustomerPortalNotification::query()
+            ->where('user_id', $userId)
+            ->orderByDesc('notified_at')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription): string

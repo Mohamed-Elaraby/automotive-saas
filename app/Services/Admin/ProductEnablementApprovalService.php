@@ -2,15 +2,27 @@
 
 namespace App\Services\Admin;
 
+use App\Data\AdminNotificationData;
+use App\Data\CustomerPortalNotificationData;
 use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
+use App\Services\Notifications\AdminNotificationService;
+use App\Services\Notifications\CustomerPortalNotificationService;
 use Illuminate\Support\Facades\DB;
 
 class ProductEnablementApprovalService
 {
+    public function __construct(
+        protected AdminNotificationService $adminNotificationService,
+        protected CustomerPortalNotificationService $customerPortalNotificationService
+    ) {
+    }
+
     public function approve(ProductEnablementRequest $request): TenantProductSubscription
     {
         return DB::transaction(function () use ($request): TenantProductSubscription {
+            $request->loadMissing(['product', 'user']);
+
             $request->update([
                 'status' => 'approved',
                 'approved_at' => now(),
@@ -25,6 +37,8 @@ class ProductEnablementApprovalService
                 ->first();
 
             if ($attachedSubscription) {
+                $this->emitDecisionNotifications($request, 'approved', true);
+
                 return $attachedSubscription;
             }
 
@@ -54,16 +68,97 @@ class ProductEnablementApprovalService
                     'gateway_price_id' => null,
                 ])->save();
 
-                return $manualSubscription->fresh();
+                $freshSubscription = $manualSubscription->fresh();
+                $this->emitDecisionNotifications($request, 'approved', true);
+
+                return $freshSubscription;
             }
 
-            return TenantProductSubscription::query()->create([
+            $subscription = TenantProductSubscription::query()->create([
                 'tenant_id' => $request->tenant_id,
                 'product_id' => $request->product_id,
                 'plan_id' => null,
                 'status' => 'active',
                 'payment_failures_count' => 0,
             ]);
+
+            $this->emitDecisionNotifications($request, 'approved', true);
+
+            return $subscription;
         });
+    }
+
+    public function reject(ProductEnablementRequest $request): void
+    {
+        DB::transaction(function () use ($request): void {
+            $request->loadMissing(['product', 'user']);
+
+            $request->update([
+                'status' => 'rejected',
+                'rejected_at' => now(),
+                'approved_at' => null,
+            ]);
+
+            $this->emitDecisionNotifications($request, 'rejected', false);
+        });
+    }
+
+    protected function emitDecisionNotifications(ProductEnablementRequest $request, string $decision, bool $attached): void
+    {
+        $productName = (string) ($request->product?->name ?: 'Requested product');
+        $decisionLabel = $decision === 'approved' ? 'approved' : 'rejected';
+
+        $adminMessage = $decision === 'approved'
+            ? "{$productName} was approved for tenant {$request->tenant_id} and is now attached to the workspace."
+            : "{$productName} was rejected for tenant {$request->tenant_id}.";
+
+        $portalTitle = $decision === 'approved'
+            ? 'Product enablement approved'
+            : 'Product enablement request rejected';
+
+        $portalMessage = $decision === 'approved'
+            ? "{$productName} is now available in your workspace."
+            : "Your request to enable {$productName} was rejected. You can review the product and submit a new request later.";
+
+        $this->adminNotificationService->create(new AdminNotificationData(
+            type: 'product_enablement_request',
+            title: 'Product enablement request ' . $decisionLabel,
+            message: $adminMessage,
+            severity: $decision === 'approved' ? 'success' : 'warning',
+            sourceType: ProductEnablementRequest::class,
+            sourceId: $request->id,
+            routeName: 'admin.product-enablement-requests.index',
+            routeParams: [],
+            targetUrl: null,
+            tenantId: $request->tenant_id,
+            userId: $request->user_id,
+            userEmail: (string) ($request->user?->email ?? ''),
+            contextPayload: [
+                'event' => 'product_enablement_request_' . $decisionLabel,
+                'product_id' => $request->product_id,
+                'product_name' => $productName,
+                'attached' => $attached,
+            ],
+        ));
+
+        if (! empty($request->user_id)) {
+            $this->customerPortalNotificationService->create(new CustomerPortalNotificationData(
+                userId: (int) $request->user_id,
+                type: 'product_enablement_request',
+                title: $portalTitle,
+                message: $portalMessage,
+                severity: $decision === 'approved' ? 'success' : 'warning',
+                tenantId: $request->tenant_id,
+                productId: $request->product_id,
+                targetUrl: filled($request->product?->slug)
+                    ? route('automotive.portal', ['product' => $request->product->slug])
+                    : route('automotive.portal'),
+                contextPayload: [
+                    'event' => 'product_enablement_request_' . $decisionLabel,
+                    'request_id' => $request->id,
+                    'attached' => $attached,
+                ],
+            ));
+        }
     }
 }
