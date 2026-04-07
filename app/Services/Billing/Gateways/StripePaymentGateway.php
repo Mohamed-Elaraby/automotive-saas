@@ -79,15 +79,17 @@ public function createRenewalSession(array $payload): array
             'metadata' => [
                 'tenant_id' => (string) ($payload['tenant_id'] ?? ''),
                 'subscription_row_id' => (string) ($payload['subscription_row_id'] ?? ''),
+                'tenant_product_subscription_id' => (string) ($payload['tenant_product_subscription_id'] ?? ''),
                 'plan_id' => (string) ($payload['plan_id'] ?? ''),
-                'product_scope' => 'automotive',
+                'product_scope' => (string) ($payload['product_scope'] ?? 'automotive'),
             ],
             'subscription_data' => [
                 'metadata' => [
                     'tenant_id' => (string) ($payload['tenant_id'] ?? ''),
                     'subscription_row_id' => (string) ($payload['subscription_row_id'] ?? ''),
+                    'tenant_product_subscription_id' => (string) ($payload['tenant_product_subscription_id'] ?? ''),
                     'plan_id' => (string) ($payload['plan_id'] ?? ''),
-                    'product_scope' => 'automotive',
+                    'product_scope' => (string) ($payload['product_scope'] ?? 'automotive'),
                 ],
             ],
         ]);

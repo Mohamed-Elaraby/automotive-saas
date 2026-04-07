@@ -8,6 +8,7 @@ use App\Models\CustomerOnboardingProfile;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Automotive\StartAdditionalProductCheckoutService;
 use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\BillingPlanCatalogService;
@@ -63,6 +64,10 @@ class CustomerPortalController extends Controller
             (string) ($selectedProduct['tenant_id'] ?? ''),
             (int) ($selectedProduct['id'] ?? 0)
         );
+        $selectedProductSubscription = $this->selectedProductSubscriptionForTenant(
+            (string) ($selectedProduct['tenant_id'] ?? ''),
+            (int) ($selectedProduct['id'] ?? 0)
+        );
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
         $systemUrl = $primaryDomain['admin_login_url'] ?? null;
@@ -86,6 +91,18 @@ class CustomerPortalController extends Controller
                 (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE
                 || $isTrialWorkspace
             );
+        $selectedProductSupportsCheckout = $selectedProductCode === self::PRODUCT_CODE
+            || (
+                (int) ($selectedProduct['id'] ?? 0) > 0
+                && (string) $selectedProductCode !== self::PRODUCT_CODE
+                && (
+                    (string) ($selectedProductEnablementRequest->status ?? '') === 'approved'
+                    || $selectedProductSubscription !== null
+                )
+            );
+        $selectedProductHasLiveBilling = $selectedProductCode === self::PRODUCT_CODE
+            ? $hasLiveStripeSubscription
+            : $this->hasLiveTenantProductBilling($selectedProductSubscription);
 
         return view('automotive.portal.index', [
             'user' => $user,
@@ -107,8 +124,10 @@ class CustomerPortalController extends Controller
             'isTrialWorkspace' => $isTrialWorkspace,
             'productCatalog' => $productCatalog,
             'selectedProduct' => $selectedProduct,
-            'selectedProductSupportsCheckout' => $selectedProductCode === self::PRODUCT_CODE,
+            'selectedProductSupportsCheckout' => $selectedProductSupportsCheckout,
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
+            'selectedProductSubscription' => $selectedProductSubscription,
+            'selectedProductHasLiveBilling' => $selectedProductHasLiveBilling,
         ]);
     }
 
@@ -200,6 +219,7 @@ class CustomerPortalController extends Controller
 
     public function startPaidCheckout(
         StartPaidCheckoutService $service,
+        StartAdditionalProductCheckoutService $startAdditionalProductCheckoutService,
         Request $request
     ): RedirectResponse {
         $user = Auth::guard('web')->user();
@@ -208,6 +228,7 @@ class CustomerPortalController extends Controller
 
         $validated = $request->validate([
             'plan_id' => ['required', 'integer'],
+            'product_id' => ['nullable', 'integer'],
         ]);
 
         $profile = CustomerOnboardingProfile::query()
@@ -222,7 +243,10 @@ class CustomerPortalController extends Controller
                 ]);
         }
 
-        $result = $service->start($user, $profile, (int) $validated['plan_id']);
+        $productId = (int) ($validated['product_id'] ?? 0);
+        $result = $productId > 0 && $this->isAdditionalProductCheckout($productId)
+            ? $startAdditionalProductCheckoutService->start($user, $profile, (int) $validated['plan_id'], $productId)
+            : $service->start($user, $profile, (int) $validated['plan_id']);
 
         if (! ($result['ok'] ?? false)) {
             return redirect()
@@ -236,14 +260,14 @@ class CustomerPortalController extends Controller
     public function checkoutSuccess(): RedirectResponse
     {
         return redirect()
-            ->route('automotive.portal')
+            ->route('automotive.portal', ['product' => request()->query('product')])
             ->with('success', 'Your checkout session was completed. Subscription sync will finalize via Stripe webhook.');
     }
 
     public function checkoutCancel(): RedirectResponse
     {
         return redirect()
-            ->route('automotive.portal')
+            ->route('automotive.portal', ['product' => request()->query('product')])
             ->withErrors([
                 'portal' => 'Checkout was cancelled before completion.',
             ]);
@@ -489,6 +513,42 @@ class CustomerPortalController extends Controller
             ->orderByDesc('requested_at')
             ->orderByDesc('id')
             ->first();
+    }
+
+    protected function selectedProductSubscriptionForTenant(string $tenantId, int $productId): ?object
+    {
+        if ($tenantId === '' || $productId <= 0) {
+            return null;
+        }
+
+        $connection = $this->centralConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('tenant_product_subscriptions')) {
+            return null;
+        }
+
+        return DB::connection($connection)
+            ->table('tenant_product_subscriptions')
+            ->where('tenant_id', $tenantId)
+            ->where('product_id', $productId)
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    protected function hasLiveTenantProductBilling(?object $subscription): bool
+    {
+        if (! $subscription || ! filled($subscription->gateway_subscription_id ?? null)) {
+            return false;
+        }
+
+        return in_array((string) ($subscription->status ?? ''), SubscriptionStatuses::accessAllowedStatuses(), true);
+    }
+
+    protected function isAdditionalProductCheckout(int $productId): bool
+    {
+        $product = Product::query()->find($productId);
+
+        return $product && (string) $product->code !== self::PRODUCT_CODE;
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription): string

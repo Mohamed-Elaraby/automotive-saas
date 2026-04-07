@@ -275,6 +275,83 @@ class StripeWebhookSyncServiceTest extends TestCase
         $this->assertNotNull($productSubscription->legacy_subscription_id);
     }
 
+    public function test_checkout_session_completed_updates_tenant_product_subscription_for_additional_product_flow(): void
+    {
+        Carbon::setTestNow('2026-03-26 12:00:00');
+
+        $product = \App\Models\Product::query()->create([
+            'code' => 'accounting_webhook_' . uniqid(),
+            'name' => 'Accounting Webhook',
+            'slug' => 'accounting-webhook-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Webhook Additional Plan ' . uniqid(),
+            'slug' => 'webhook-additional-plan-' . uniqid(),
+            'description' => 'Webhook additional product plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_test_additional_' . uniqid(),
+            'stripe_price_id' => 'price_test_additional_' . uniqid(),
+        ]);
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-product-webhook',
+            'product_id' => $product->id,
+            'plan_id' => null,
+            'status' => 'past_due',
+            'payment_failures_count' => 0,
+        ]);
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldNotReceive('syncByGatewaySubscriptionId');
+
+        $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
+        $notificationService->shouldNotReceive('checkoutCompleted');
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldNotReceive('ensureProvisioned');
+
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
+
+        $event = (object) [
+            'type' => 'checkout.session.completed',
+            'data' => (object) [
+                'object' => (object) [
+                    'id' => 'cs_test_product_checkout_001',
+                    'mode' => 'subscription',
+                    'payment_status' => 'paid',
+                    'customer' => 'cus_test_product_checkout_001',
+                    'subscription' => 'sub_test_product_checkout_001',
+                    'metadata' => (object) [
+                        'tenant_product_subscription_id' => (string) $productSubscription->id,
+                        'plan_id' => (string) $plan->id,
+                    ],
+                ],
+            ],
+        ];
+
+        $service->handleEvent($event);
+
+        $productSubscription->refresh();
+
+        $this->assertSame('stripe', $productSubscription->gateway);
+        $this->assertSame('cus_test_product_checkout_001', $productSubscription->gateway_customer_id);
+        $this->assertSame('sub_test_product_checkout_001', $productSubscription->gateway_subscription_id);
+        $this->assertSame('cs_test_product_checkout_001', $productSubscription->gateway_checkout_session_id);
+        $this->assertSame('active', $productSubscription->status);
+        $this->assertSame($plan->id, $productSubscription->plan_id);
+    }
+
     protected function createStripeSubscription(array $overrides = []): Subscription
     {
         return Subscription::query()->create(array_merge([

@@ -483,6 +483,99 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Accounting Notification is now available in your workspace.', false);
     }
 
+    public function test_user_can_start_paid_checkout_for_approved_additional_product(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Additional Checkout User',
+            'email' => 'portal-additional-checkout-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Additional Checkout Co',
+            'subdomain' => 'portal-additional-checkout-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-additional-checkout-' . uniqid(),
+            'data' => ['company_name' => 'Portal Additional Checkout Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_checkout_' . uniqid(),
+            'name' => 'Accounting Checkout',
+            'slug' => 'accounting-checkout-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createPlan('Accounting Growth', 'accounting-growth-' . uniqid(), 'monthly', 299, $product->id);
+
+        ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'approved',
+            'requested_at' => now()->subDay(),
+            'approved_at' => now()->subHour(),
+        ]);
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('createRenewalSession')
+            ->once()
+            ->withArgs(function ($payload) use ($tenant, $productSubscription, $plan, $product) {
+                return ($payload['tenant_id'] ?? null) === $tenant->id
+                    && ($payload['tenant_product_subscription_id'] ?? null) === $productSubscription->id
+                    && ($payload['plan_id'] ?? null) === $plan->id
+                    && ($payload['product_scope'] ?? null) === $product->code;
+            })
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://checkout.stripe.test/session/additional-product',
+                'session_id' => 'cs_additional_product_new',
+            ]);
+
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')->once()->with('stripe')->andReturn($gateway);
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $response = $this->actingAs($user, 'web')
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('automotive.portal.subscribe'), [
+                '_token' => 'test-token',
+                'plan_id' => $plan->id,
+                'product_id' => $product->id,
+            ]);
+
+        $response->assertRedirect('https://checkout.stripe.test/session/additional-product');
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'id' => $productSubscription->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_additional_product_new',
+            'gateway_price_id' => $plan->stripe_price_id,
+            'gateway' => 'stripe',
+            'status' => 'past_due',
+        ]);
+    }
+
     public function test_rejected_non_automotive_enablement_request_can_be_requested_again(): void
     {
         $user = User::query()->create([
@@ -958,9 +1051,9 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('This product is already attached to your workspace.', false);
     }
 
-    protected function createPlan(string $name, string $slug, string $billingPeriod, int $price): Plan
+    protected function createPlan(string $name, string $slug, string $billingPeriod, int $price, ?int $productId = null): Plan
     {
-        $productId = Product::query()->where('code', 'automotive_service')->value('id');
+        $productId = $productId ?: Product::query()->where('code', 'automotive_service')->value('id');
 
         return Plan::query()->create([
             'product_id' => $productId,

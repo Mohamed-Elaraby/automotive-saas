@@ -406,7 +406,7 @@
                                 @endphp
                                 <div class="alert alert-info">
                                     {{ $selectedProductName }} is visible in the shared workspace catalog.
-                                    Billing checkout for additional products is intentionally not live yet in this portal.
+                                    Submit or review enablement first. Billing checkout becomes available here after approval.
                                 </div>
 
                                 @if($selectedProductEnablementStatus === 'rejected')
@@ -491,7 +491,7 @@
                                                         </div>
                                                         <div class="mt-auto">
                                                             <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
-                                                                <i class="isax isax-lock me-1"></i> Product Enablement Is Next
+                                                                <i class="isax isax-lock me-1"></i> Approval Required Before Checkout
                                                             </button>
                                                         </div>
                                                     </div>
@@ -598,16 +598,21 @@
                                                                         <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
                                                                             <i class="isax isax-bill me-1"></i> Current Plan
                                                                         </button>
-                                                                    @elseif($canStartPaidCheckout)
+                                                                    @elseif(($selectedProduct['is_automotive'] ?? false) ? $canStartPaidCheckout : !$selectedProductHasLiveBilling)
                                                                         <form method="POST" action="{{ route('automotive.portal.subscribe') }}">
                                                                             @csrf
                                                                             <input type="hidden" name="plan_id" value="{{ $paidPlan->id }}">
+                                                                            @if(!($selectedProduct['is_automotive'] ?? false))
+                                                                                <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
+                                                                            @endif
                                                                             <button type="submit" class="d-flex align-items-center justify-content-center btn border w-100">
                                                                                 <i class="isax isax-shopping-cart me-1"></i>
-                                                                                @if($status === 'trialing')
+                                                                                @if(($selectedProduct['is_automotive'] ?? false) && $status === 'trialing')
                                                                                     Upgrade to {{ $paidPlan->name }}
-                                                                                @elseif($status === 'past_due')
+                                                                                @elseif(($selectedProduct['is_automotive'] ?? false) && $status === 'past_due')
                                                                                     Continue Checkout
+                                                                                @elseif(!($selectedProduct['is_automotive'] ?? false) && !empty($selectedProductSubscription?->gateway_checkout_session_id) && empty($selectedProductSubscription?->gateway_subscription_id))
+                                                                                    Continue Product Checkout
                                                                                 @else
                                                                                     Select &amp; Continue
                                                                                 @endif

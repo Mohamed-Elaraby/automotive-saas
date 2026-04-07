@@ -4,6 +4,8 @@ namespace App\Services\Billing;
 
 use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Models\Subscription;
+use App\Models\TenantProductSubscription;
+use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Throwable;
@@ -215,10 +217,23 @@ protected function handleCheckoutSessionCompleted(array $payload): void
     $sessionSubscriptionId = (string) ($session['subscription'] ?? '');
     $sessionCustomerId = (string) ($session['customer'] ?? '');
     $subscriptionRowId = (int) Arr::get($session, 'metadata.subscription_row_id', 0);
+    $tenantProductSubscriptionId = (int) Arr::get($session, 'metadata.tenant_product_subscription_id', 0);
     $tenantIdFromMetadata = (string) Arr::get($session, 'metadata.tenant_id', '');
     $planIdFromMetadata = (int) Arr::get($session, 'metadata.plan_id', 0);
 
     if ($sessionId === '') {
+        return;
+    }
+
+    if ($tenantProductSubscriptionId > 0) {
+        $this->handleTenantProductCheckoutSessionCompleted(
+            $tenantProductSubscriptionId,
+            $sessionId,
+            $sessionCustomerId,
+            $sessionSubscriptionId,
+            $planIdFromMetadata
+        );
+
         return;
     }
 
@@ -295,6 +310,34 @@ protected function handleCheckoutSessionCompleted(array $payload): void
         'subscription_id_from_session' => $sessionSubscriptionId !== '' ? $sessionSubscriptionId : null,
         'subscription_row_id_from_metadata' => $subscriptionRowId > 0 ? $subscriptionRowId : null,
     ]);
+}
+
+protected function handleTenantProductCheckoutSessionCompleted(
+    int $tenantProductSubscriptionId,
+    string $sessionId,
+    string $sessionCustomerId,
+    string $sessionSubscriptionId,
+    int $planIdFromMetadata
+): void {
+    $productSubscription = TenantProductSubscription::query()->find($tenantProductSubscriptionId);
+
+    if (! $productSubscription) {
+        return;
+    }
+
+    $productSubscription->fill([
+        'gateway' => 'stripe',
+        'gateway_checkout_session_id' => $sessionId,
+        'gateway_customer_id' => $sessionCustomerId !== '' ? $sessionCustomerId : $productSubscription->gateway_customer_id,
+        'gateway_subscription_id' => $sessionSubscriptionId !== '' ? $sessionSubscriptionId : $productSubscription->gateway_subscription_id,
+        'status' => $sessionSubscriptionId !== '' ? SubscriptionStatuses::ACTIVE : SubscriptionStatuses::PAST_DUE,
+    ]);
+
+    if ($planIdFromMetadata > 0) {
+        $productSubscription->plan_id = $planIdFromMetadata;
+    }
+
+    $productSubscription->save();
 }
 
 protected function syncAndFindSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?Subscription
