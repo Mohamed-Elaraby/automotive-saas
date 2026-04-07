@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\Admin;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
+use App\Models\TenantProductSubscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -112,6 +113,72 @@ class ProductEnablementRequestsIndexTest extends TestCase
         $this->assertDatabaseHas('product_enablement_requests', [
             'id' => $requestRow->id,
             'status' => 'approved',
+        ]);
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => 'tenant-approve',
+            'product_id' => $product->id,
+            'status' => 'active',
+            'legacy_subscription_id' => null,
+        ]);
+    }
+
+    public function test_approving_request_does_not_duplicate_existing_attached_product_subscription(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Central Admin',
+            'email' => 'admin-approve-existing-enable-' . uniqid() . '@example.test',
+            'password' => 'password',
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'Portal User',
+            'email' => 'portal-approve-existing-enable-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'approve_existing_product_' . uniqid(),
+            'name' => 'Approve Existing Product',
+            'slug' => 'approve-existing-product-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $existingSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-approve-existing',
+            'product_id' => $product->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        $requestRow = ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => 'tenant-approve-existing',
+            'product_id' => $product->id,
+            'status' => 'pending',
+            'requested_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('admin.product-enablement-requests.approve', $requestRow->id), [
+                '_token' => 'test-token',
+            ]);
+
+        $response->assertRedirect(route('admin.product-enablement-requests.index'));
+
+        $this->assertSame(
+            1,
+            TenantProductSubscription::query()
+                ->where('tenant_id', 'tenant-approve-existing')
+                ->where('product_id', $product->id)
+                ->count()
+        );
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'id' => $existingSubscription->id,
+            'tenant_id' => 'tenant-approve-existing',
+            'product_id' => $product->id,
+            'status' => 'active',
         ]);
     }
 

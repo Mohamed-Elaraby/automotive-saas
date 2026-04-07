@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
+use App\Services\Admin\ProductEnablementApprovalService;
 use Illuminate\Http\Request;
 
 class ProductEnablementRequestController extends Controller
@@ -58,13 +59,12 @@ class ProductEnablementRequestController extends Controller
         ]);
     }
 
-    public function approve(ProductEnablementRequest $productEnablementRequest)
+    public function approve(
+        ProductEnablementRequest $productEnablementRequest,
+        ProductEnablementApprovalService $productEnablementApprovalService
+    )
     {
-        $productEnablementRequest->update([
-            'status' => 'approved',
-            'approved_at' => now(),
-            'rejected_at' => null,
-        ]);
+        $productEnablementApprovalService->approve($productEnablementRequest);
 
         return redirect()
             ->route('admin.product-enablement-requests.index')

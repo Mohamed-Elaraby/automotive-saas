@@ -415,7 +415,7 @@
                                     </div>
                                 @elseif($selectedProductEnablementStatus === 'approved')
                                     <div class="alert alert-success">
-                                        Your enablement request for {{ $selectedProductName }} was approved. Final attachment is pending the next rollout step.
+                                        Your enablement request for {{ $selectedProductName }} was approved and the product is now attached to your workspace.
                                     </div>
                                 @endif
 
