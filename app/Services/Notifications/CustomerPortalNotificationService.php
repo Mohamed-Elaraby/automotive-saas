@@ -37,7 +37,7 @@ class CustomerPortalNotificationService
 
     protected function findExistingDuplicate(CustomerPortalNotificationData $data): ?CustomerPortalNotification
     {
-        $windowMinutes = 10;
+        $windowMinutes = max(1, (int) config('notifications.portal.deduplication.window_minutes', 10));
         $event = (string) ($data->contextPayload['event'] ?? '');
 
         $query = CustomerPortalNotification::query()

@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Automotive\Front;
 
+use App\Data\AdminNotificationData;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOnboardingProfile;
-use App\Models\CustomerPortalNotification;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\BillingPlanCatalogService;
+use App\Services\Notifications\AdminNotificationService;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -29,7 +30,8 @@ class CustomerPortalController extends Controller
 
     public function __construct(
         protected AppSettingsService $settingsService,
-        protected BillingPlanCatalogService $billingPlanCatalogService
+        protected BillingPlanCatalogService $billingPlanCatalogService,
+        protected AdminNotificationService $adminNotificationService
     ) {
     }
 
@@ -61,8 +63,6 @@ class CustomerPortalController extends Controller
             (string) ($selectedProduct['tenant_id'] ?? ''),
             (int) ($selectedProduct['id'] ?? 0)
         );
-        $portalNotifications = $this->portalNotificationsForUser($user->id);
-
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
         $systemUrl = $primaryDomain['admin_login_url'] ?? null;
@@ -109,7 +109,6 @@ class CustomerPortalController extends Controller
             'selectedProduct' => $selectedProduct,
             'selectedProductSupportsCheckout' => $selectedProductCode === self::PRODUCT_CODE,
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
-            'portalNotifications' => $portalNotifications,
         ]);
     }
 
@@ -288,7 +287,7 @@ class CustomerPortalController extends Controller
                 ]);
         }
 
-        ProductEnablementRequest::query()->updateOrCreate(
+        $requestRow = ProductEnablementRequest::query()->updateOrCreate(
             [
                 'tenant_id' => $tenantId,
                 'product_id' => $product->id,
@@ -301,6 +300,26 @@ class CustomerPortalController extends Controller
                 'rejected_at' => null,
             ]
         );
+
+        $this->adminNotificationService->create(new AdminNotificationData(
+            type: 'product_enablement_request',
+            title: 'New product enablement request submitted',
+            message: "{$user->name} requested {$product->name} for tenant {$tenantId}.",
+            severity: 'info',
+            sourceType: ProductEnablementRequest::class,
+            sourceId: $requestRow->id,
+            routeName: 'admin.product-enablement-requests.index',
+            routeParams: [],
+            targetUrl: null,
+            tenantId: $tenantId,
+            userId: $user->id,
+            userEmail: $user->email,
+            contextPayload: [
+                'event' => 'product_enablement_request_submitted',
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+            ],
+        ));
 
         return redirect()
             ->route('automotive.portal', ['product' => $product->slug])
@@ -466,26 +485,6 @@ class CustomerPortalController extends Controller
             ->orderByDesc('requested_at')
             ->orderByDesc('id')
             ->first();
-    }
-
-    protected function portalNotificationsForUser(int $userId): Collection
-    {
-        if ($userId <= 0) {
-            return collect();
-        }
-
-        $connection = $this->centralConnectionName();
-
-        if (! Schema::connection($connection)->hasTable('customer_portal_notifications')) {
-            return collect();
-        }
-
-        return CustomerPortalNotification::query()
-            ->where('user_id', $userId)
-            ->orderByDesc('notified_at')
-            ->orderByDesc('id')
-            ->limit(5)
-            ->get();
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription): string

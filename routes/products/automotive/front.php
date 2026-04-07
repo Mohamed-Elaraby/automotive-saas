@@ -5,6 +5,7 @@ use App\Http\Controllers\Automotive\Front\Auth\ForgotPasswordController;
 use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
 use App\Http\Controllers\Automotive\Front\Auth\ResetPasswordController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalController;
+use App\Http\Controllers\Automotive\Front\CustomerPortalNotificationController;
 use App\Http\Controllers\Automotive\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,9 @@ Route::prefix('automotive')
             Route::post('/portal/start-trial', [CustomerPortalController::class, 'startTrial'])->name('portal.start-trial');
             Route::post('/portal/subscribe', [CustomerPortalController::class, 'startPaidCheckout'])->name('portal.subscribe');
             Route::post('/portal/products/request-enable', [CustomerPortalController::class, 'requestProductEnablement'])->name('portal.products.request-enable');
+            Route::get('/portal/notifications/unread-summary', [CustomerPortalNotificationController::class, 'unreadSummary'])->name('portal.notifications.unread-summary');
+            Route::get('/portal/notifications/stream', [CustomerPortalNotificationController::class, 'stream'])->name('portal.notifications.stream');
+            Route::post('/portal/notifications/{notification}/mark-read', [CustomerPortalNotificationController::class, 'markRead'])->name('portal.notifications.mark-read');
             Route::get('/portal/checkout/success', [CustomerPortalController::class, 'checkoutSuccess'])->name('portal.checkout.success');
             Route::get('/portal/checkout/cancel', [CustomerPortalController::class, 'checkoutCancel'])->name('portal.checkout.cancel');
         });

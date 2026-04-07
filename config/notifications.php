@@ -38,4 +38,13 @@ return [
             'delete_resolved_system_errors_after_days' => (int) env('ADMIN_NOTIFICATIONS_DELETE_RESOLVED_ERRORS_AFTER_DAYS', 60),
         ],
     ],
+
+    'portal' => [
+        'transport' => env('PORTAL_NOTIFICATIONS_TRANSPORT', 'sse'),
+        'sse_poll_seconds' => (int) env('PORTAL_NOTIFICATIONS_SSE_POLL_SECONDS', 10),
+
+        'deduplication' => [
+            'window_minutes' => (int) env('PORTAL_NOTIFICATIONS_DEDUP_WINDOW_MINUTES', 10),
+        ],
+    ],
 ];

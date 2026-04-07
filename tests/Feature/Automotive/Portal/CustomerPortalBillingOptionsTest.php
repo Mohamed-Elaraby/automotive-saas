@@ -3,6 +3,7 @@
 namespace Tests\Feature\Automotive\Portal;
 
 use App\Contracts\Billing\PaymentGatewayInterface;
+use App\Models\AdminNotification;
 use App\Models\BillingFeature;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\CustomerPortalNotification;
@@ -322,6 +323,12 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'product_id' => $product->id,
             'status' => 'pending',
         ]);
+        $this->assertDatabaseHas('admin_notifications', [
+            'type' => 'product_enablement_request',
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'severity' => 'info',
+        ]);
     }
 
     public function test_enablement_request_is_blocked_before_primary_workspace_exists(): void
@@ -459,7 +466,6 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
 
         $response->assertOk();
-        $response->assertSee('Recent Notifications', false);
         $response->assertSee('Product enablement approved', false);
         $response->assertSee('Accounting Notification is now available in your workspace.', false);
     }
