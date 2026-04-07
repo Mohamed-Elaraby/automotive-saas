@@ -329,6 +329,19 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'user_id' => $user->id,
             'severity' => 'info',
         ]);
+
+        $notification = AdminNotification::query()
+            ->where('source_id', ProductEnablementRequest::query()->value('id'))
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($notification);
+        $this->assertSame('admin.product-enablement-requests.index', $notification->route_name);
+        $this->assertSame([
+            'status' => 'pending',
+            'product_id' => $product->id,
+            'q' => $tenant->id,
+        ], $notification->route_params);
     }
 
     public function test_enablement_request_is_blocked_before_primary_workspace_exists(): void

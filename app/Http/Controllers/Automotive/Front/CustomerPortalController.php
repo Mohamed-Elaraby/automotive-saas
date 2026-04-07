@@ -309,7 +309,11 @@ class CustomerPortalController extends Controller
             sourceType: ProductEnablementRequest::class,
             sourceId: $requestRow->id,
             routeName: 'admin.product-enablement-requests.index',
-            routeParams: [],
+            routeParams: [
+                'status' => 'pending',
+                'product_id' => $product->id,
+                'q' => $tenantId,
+            ],
             targetUrl: null,
             tenantId: $tenantId,
             userId: $user->id,
