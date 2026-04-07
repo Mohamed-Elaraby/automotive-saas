@@ -135,6 +135,53 @@ class ProductEnablementRequestsIndexTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_view_product_enablement_request_details(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Central Admin',
+            'email' => 'admin-show-enable-' . uniqid() . '@example.test',
+            'password' => 'password',
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'Portal User',
+            'email' => 'portal-show-enable-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'show_product_' . uniqid(),
+            'name' => 'Show Product',
+            'slug' => 'show-product-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $requestRow = ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => 'tenant-show',
+            'product_id' => $product->id,
+            'status' => 'pending',
+            'requested_at' => now(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-show',
+            'product_id' => $product->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        $response = $this->actingAs($admin, 'admin')
+            ->get(route('admin.product-enablement-requests.show', $requestRow->id));
+
+        $response->assertOk();
+        $response->assertSee('Enablement Request Details', false);
+        $response->assertSee('Show Product', false);
+        $response->assertSee('tenant-show', false);
+        $response->assertSee($user->email, false);
+        $response->assertSee('Latest Tenant Product Subscription', false);
+    }
+
     public function test_approving_request_does_not_duplicate_existing_attached_product_subscription(): void
     {
         $admin = Admin::query()->create([

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
+use App\Models\TenantProductSubscription;
 use App\Services\Admin\ProductEnablementApprovalService;
 use Illuminate\Http\Request;
 
@@ -56,6 +57,22 @@ class ProductEnablementRequestController extends Controller
             'filters' => $filters,
             'products' => $products,
             'statusOptions' => ['pending', 'approved', 'rejected'],
+        ]);
+    }
+
+    public function show(ProductEnablementRequest $productEnablementRequest)
+    {
+        $productEnablementRequest->loadMissing(['product', 'user']);
+
+        $latestProductSubscription = TenantProductSubscription::query()
+            ->where('tenant_id', $productEnablementRequest->tenant_id)
+            ->where('product_id', $productEnablementRequest->product_id)
+            ->orderByDesc('id')
+            ->first();
+
+        return view('admin.product-enablement-requests.show', [
+            'requestRow' => $productEnablementRequest,
+            'latestProductSubscription' => $latestProductSubscription,
         ]);
     }
 

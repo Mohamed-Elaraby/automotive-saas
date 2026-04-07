@@ -71,7 +71,11 @@
                                     <tr>
                                         <td>{{ optional($requestRow->requested_at)->format('Y-m-d H:i') ?: '-' }}</td>
                                         <td>
-                                            <div class="fw-semibold">{{ $requestRow->product_name ?? '-' }}</div>
+                                            <div class="fw-semibold">
+                                                <a href="{{ route('admin.product-enablement-requests.show', $requestRow->id) }}" class="text-decoration-none">
+                                                    {{ $requestRow->product_name ?? '-' }}
+                                                </a>
+                                            </div>
                                             <div class="text-muted small">{{ strtoupper((string) ($requestRow->product_code ?? '')) }}</div>
                                         </td>
                                         <td>{{ $requestRow->tenant_id }}</td>
@@ -91,6 +95,7 @@
                                         <td class="text-end">
                                             @if($requestRow->status === 'pending')
                                                 <div class="d-inline-flex gap-2">
+                                                    <a href="{{ route('admin.product-enablement-requests.show', $requestRow->id) }}" class="btn btn-sm btn-outline-primary">Review</a>
                                                     <form method="POST" action="{{ route('admin.product-enablement-requests.approve', $requestRow->id) }}">
                                                         @csrf
                                                         <button type="submit" class="btn btn-sm btn-success">Approve</button>
@@ -101,7 +106,7 @@
                                                     </form>
                                                 </div>
                                             @else
-                                                <span class="text-muted small">No pending action</span>
+                                                <a href="{{ route('admin.product-enablement-requests.show', $requestRow->id) }}" class="btn btn-sm btn-outline-primary">View</a>
                                             @endif
                                         </td>
                                     </tr>
