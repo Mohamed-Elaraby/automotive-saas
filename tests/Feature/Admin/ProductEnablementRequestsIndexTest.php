@@ -123,11 +123,8 @@ class ProductEnablementRequestsIndexTest extends TestCase
             'status' => 'active',
             'legacy_subscription_id' => null,
         ]);
-        $this->assertDatabaseHas('admin_notifications', [
-            'type' => 'product_enablement_request',
+        $this->assertDatabaseMissing('admin_notifications', [
             'source_id' => $requestRow->id,
-            'tenant_id' => 'tenant-approve',
-            'user_id' => $user->id,
             'severity' => 'success',
         ]);
         $this->assertDatabaseHas('customer_portal_notifications', [
@@ -195,7 +192,7 @@ class ProductEnablementRequestsIndexTest extends TestCase
             'product_id' => $product->id,
             'status' => 'active',
         ]);
-        $this->assertSame(1, AdminNotification::query()->where('source_id', $requestRow->id)->count());
+        $this->assertSame(0, AdminNotification::query()->where('source_id', $requestRow->id)->count());
         $this->assertSame(1, CustomerPortalNotification::query()->where('user_id', $user->id)->count());
     }
 
@@ -241,11 +238,8 @@ class ProductEnablementRequestsIndexTest extends TestCase
             'id' => $requestRow->id,
             'status' => 'rejected',
         ]);
-        $this->assertDatabaseHas('admin_notifications', [
-            'type' => 'product_enablement_request',
+        $this->assertDatabaseMissing('admin_notifications', [
             'source_id' => $requestRow->id,
-            'tenant_id' => 'tenant-reject',
-            'user_id' => $user->id,
             'severity' => 'warning',
         ]);
         $this->assertDatabaseHas('customer_portal_notifications', [
