@@ -14,8 +14,19 @@ class CustomerPortalNotificationService
             return null;
         }
 
-        if ($this->shouldDeduplicate($data)) {
-            return $this->findExistingDuplicate($data);
+        $existingDuplicate = $this->findExistingDuplicate($data);
+        if ($existingDuplicate) {
+            $existingDuplicate->update([
+                'message' => $data->message,
+                'severity' => $data->severity,
+                'target_url' => $data->targetUrl,
+                'context_payload' => $data->contextPayload,
+                'is_read' => false,
+                'read_at' => null,
+                'notified_at' => now(),
+            ]);
+
+            return $existingDuplicate->fresh();
         }
 
         return CustomerPortalNotification::query()->create(
@@ -28,11 +39,6 @@ class CustomerPortalNotificationService
         $connection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
 
         return Schema::connection($connection)->hasTable('customer_portal_notifications');
-    }
-
-    protected function shouldDeduplicate(CustomerPortalNotificationData $data): bool
-    {
-        return $this->findExistingDuplicate($data) !== null;
     }
 
     protected function findExistingDuplicate(CustomerPortalNotificationData $data): ?CustomerPortalNotification

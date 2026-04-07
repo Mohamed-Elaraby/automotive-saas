@@ -16,8 +16,24 @@ class AdminNotificationService
             return null;
         }
 
-        if ($this->shouldDeduplicate($data)) {
-            return $this->findExistingDuplicate($data);
+        $existingDuplicate = $this->findExistingDuplicate($data);
+        if ((bool) config('notifications.admin.deduplication.enabled', true) && $existingDuplicate) {
+            $existingDuplicate->update([
+                'message' => $data->message,
+                'route_name' => $data->routeName,
+                'route_params' => $data->routeParams,
+                'target_url' => $data->targetUrl,
+                'user_id' => $data->userId,
+                'user_email' => $data->userEmail,
+                'context_payload' => $data->contextPayload,
+                'is_read' => false,
+                'read_at' => null,
+                'is_archived' => false,
+                'archived_at' => null,
+                'notified_at' => now(),
+            ]);
+
+            return $existingDuplicate->fresh();
         }
 
         $notification = AdminNotification::query()->create(
@@ -59,12 +75,6 @@ protected function tableExists(): bool
     $connection = (string) (config('tenancy.database.central_connection') ?? config('database.default'));
 
     return Schema::connection($connection)->hasTable('admin_notifications');
-}
-
-protected function shouldDeduplicate(AdminNotificationData $data): bool
-{
-    return (bool) config('notifications.admin.deduplication.enabled', true)
-        && $this->findExistingDuplicate($data) !== null;
 }
 
 protected function findExistingDuplicate(AdminNotificationData $data): ?AdminNotification
