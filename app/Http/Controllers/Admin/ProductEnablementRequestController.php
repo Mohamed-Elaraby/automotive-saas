@@ -78,25 +78,41 @@ class ProductEnablementRequestController extends Controller
 
     public function approve(
         ProductEnablementRequest $productEnablementRequest,
-        ProductEnablementApprovalService $productEnablementApprovalService
+        ProductEnablementApprovalService $productEnablementApprovalService,
+        Request $request
     )
     {
-        $productEnablementApprovalService->approve($productEnablementRequest);
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $productEnablementApprovalService->approve(
+            $productEnablementRequest,
+            trim((string) ($validated['notes'] ?? '')) ?: null
+        );
 
         return redirect()
-            ->route('admin.product-enablement-requests.index')
+            ->route('admin.product-enablement-requests.show', $productEnablementRequest->id)
             ->with('success', 'Product enablement request approved successfully.');
     }
 
     public function reject(
         ProductEnablementRequest $productEnablementRequest,
-        ProductEnablementApprovalService $productEnablementApprovalService
+        ProductEnablementApprovalService $productEnablementApprovalService,
+        Request $request
     )
     {
-        $productEnablementApprovalService->reject($productEnablementRequest);
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $productEnablementApprovalService->reject(
+            $productEnablementRequest,
+            trim((string) ($validated['notes'] ?? '')) ?: null
+        );
 
         return redirect()
-            ->route('admin.product-enablement-requests.index')
+            ->route('admin.product-enablement-requests.show', $productEnablementRequest->id)
             ->with('success', 'Product enablement request rejected successfully.');
     }
 }

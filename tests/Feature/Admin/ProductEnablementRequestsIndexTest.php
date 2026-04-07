@@ -107,14 +107,16 @@ class ProductEnablementRequestsIndexTest extends TestCase
             ->withSession(['_token' => 'test-token'])
             ->post(route('admin.product-enablement-requests.approve', $requestRow->id), [
                 '_token' => 'test-token',
+                'notes' => 'Approved after reviewing tenant readiness.',
             ]);
 
-        $response->assertRedirect(route('admin.product-enablement-requests.index'));
+        $response->assertRedirect(route('admin.product-enablement-requests.show', $requestRow->id));
         $response->assertSessionHas('success', 'Product enablement request approved successfully.');
 
         $this->assertDatabaseHas('product_enablement_requests', [
             'id' => $requestRow->id,
             'status' => 'approved',
+            'notes' => 'Approved after reviewing tenant readiness.',
         ]);
 
         $this->assertDatabaseHas('tenant_product_subscriptions', [
@@ -222,9 +224,10 @@ class ProductEnablementRequestsIndexTest extends TestCase
             ->withSession(['_token' => 'test-token'])
             ->post(route('admin.product-enablement-requests.approve', $requestRow->id), [
                 '_token' => 'test-token',
+                'notes' => 'Already attached previously.',
             ]);
 
-        $response->assertRedirect(route('admin.product-enablement-requests.index'));
+        $response->assertRedirect(route('admin.product-enablement-requests.show', $requestRow->id));
 
         $this->assertSame(
             1,
@@ -276,14 +279,16 @@ class ProductEnablementRequestsIndexTest extends TestCase
             ->withSession(['_token' => 'test-token'])
             ->post(route('admin.product-enablement-requests.reject', $requestRow->id), [
                 '_token' => 'test-token',
+                'notes' => 'Missing onboarding prerequisites.',
             ]);
 
-        $response->assertRedirect(route('admin.product-enablement-requests.index'));
+        $response->assertRedirect(route('admin.product-enablement-requests.show', $requestRow->id));
         $response->assertSessionHas('success', 'Product enablement request rejected successfully.');
 
         $this->assertDatabaseHas('product_enablement_requests', [
             'id' => $requestRow->id,
             'status' => 'rejected',
+            'notes' => 'Missing onboarding prerequisites.',
         ]);
         $this->assertDatabaseMissing('admin_notifications', [
             'source_id' => $requestRow->id,

@@ -17,16 +17,6 @@
 
                 <div class="d-flex align-items-center gap-2">
                     <a href="{{ route('admin.product-enablement-requests.index') }}" class="btn btn-outline-white">Back To Requests</a>
-                    @if($requestRow->status === 'pending')
-                        <form method="POST" action="{{ route('admin.product-enablement-requests.approve', $requestRow->id) }}">
-                            @csrf
-                            <button type="submit" class="btn btn-success">Approve</button>
-                        </form>
-                        <form method="POST" action="{{ route('admin.product-enablement-requests.reject', $requestRow->id) }}">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-danger">Reject</button>
-                        </form>
-                    @endif
                 </div>
             </div>
 
@@ -89,6 +79,13 @@
                                         <div class="fw-semibold">{{ optional($requestRow->rejected_at)->format('Y-m-d H:i') ?: '-' }}</div>
                                     </div>
                                 </div>
+
+                                <div class="col-12">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="text-muted small mb-1">Admin Notes</div>
+                                        <div class="fw-semibold">{{ filled($requestRow->notes) ? $requestRow->notes : '-' }}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -126,6 +123,28 @@
                             @endif
                         </div>
                     </div>
+
+                    @if($requestRow->status === 'pending')
+                        <div class="card mt-4">
+                            <div class="card-body">
+                                <h5 class="mb-3">Decision</h5>
+
+                                <form method="POST" action="{{ route('admin.product-enablement-requests.approve', $requestRow->id) }}" class="mb-3">
+                                    @csrf
+                                    <label class="form-label">Approval Notes</label>
+                                    <textarea name="notes" rows="4" class="form-control mb-3" placeholder="Optional note for the customer or internal context...">{{ old('notes', (string) $requestRow->notes) }}</textarea>
+                                    <button type="submit" class="btn btn-success">Approve Request</button>
+                                </form>
+
+                                <form method="POST" action="{{ route('admin.product-enablement-requests.reject', $requestRow->id) }}">
+                                    @csrf
+                                    <label class="form-label">Rejection Notes</label>
+                                    <textarea name="notes" rows="4" class="form-control mb-3" placeholder="Explain why the request is being rejected...">{{ old('notes', (string) $requestRow->notes) }}</textarea>
+                                    <button type="submit" class="btn btn-outline-danger">Reject Request</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

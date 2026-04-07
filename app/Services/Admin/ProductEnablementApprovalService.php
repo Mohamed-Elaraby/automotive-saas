@@ -15,15 +15,16 @@ class ProductEnablementApprovalService
     ) {
     }
 
-    public function approve(ProductEnablementRequest $request): TenantProductSubscription
+    public function approve(ProductEnablementRequest $request, ?string $notes = null): TenantProductSubscription
     {
-        return DB::transaction(function () use ($request): TenantProductSubscription {
+        return DB::transaction(function () use ($request, $notes): TenantProductSubscription {
             $request->loadMissing(['product', 'user']);
 
             $request->update([
                 'status' => 'approved',
                 'approved_at' => now(),
                 'rejected_at' => null,
+                'notes' => $notes,
             ]);
 
             $attachedSubscription = TenantProductSubscription::query()
@@ -34,7 +35,7 @@ class ProductEnablementApprovalService
                 ->first();
 
             if ($attachedSubscription) {
-                $this->emitDecisionNotifications($request, 'approved', true);
+                $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'approved', true);
 
                 return $attachedSubscription;
             }
@@ -66,7 +67,7 @@ class ProductEnablementApprovalService
                 ])->save();
 
                 $freshSubscription = $manualSubscription->fresh();
-                $this->emitDecisionNotifications($request, 'approved', true);
+                $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'approved', true);
 
                 return $freshSubscription;
             }
@@ -79,24 +80,25 @@ class ProductEnablementApprovalService
                 'payment_failures_count' => 0,
             ]);
 
-            $this->emitDecisionNotifications($request, 'approved', true);
+            $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'approved', true);
 
             return $subscription;
         });
     }
 
-    public function reject(ProductEnablementRequest $request): void
+    public function reject(ProductEnablementRequest $request, ?string $notes = null): void
     {
-        DB::transaction(function () use ($request): void {
+        DB::transaction(function () use ($request, $notes): void {
             $request->loadMissing(['product', 'user']);
 
             $request->update([
                 'status' => 'rejected',
                 'rejected_at' => now(),
                 'approved_at' => null,
+                'notes' => $notes,
             ]);
 
-            $this->emitDecisionNotifications($request, 'rejected', false);
+            $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'rejected', false);
         });
     }
 
@@ -112,6 +114,10 @@ class ProductEnablementApprovalService
         $portalMessage = $decision === 'approved'
             ? "{$productName} is now available in your workspace."
             : "Your request to enable {$productName} was rejected. You can review the product and submit a new request later.";
+
+        if (filled($request->notes)) {
+            $portalMessage .= ' Admin note: ' . trim((string) $request->notes);
+        }
 
         if (! empty($request->user_id)) {
             $this->customerPortalNotificationService->create(new CustomerPortalNotificationData(
