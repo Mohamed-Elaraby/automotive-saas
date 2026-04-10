@@ -242,6 +242,11 @@ This is the most recently expanded central admin area.
     - last 24h
     - older than 7 days
   - quick `Sync From Stripe` action from the table itself
+  - bulk operations:
+    - `Sync Selected`
+    - `Sync All Filtered`
+    - `Retry Failed Only`
+  - bulk sync returns a persisted summary via flash + activity log
 - suspend latest subscription
 - activate latest subscription
 - extend trial

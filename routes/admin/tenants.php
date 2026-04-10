@@ -12,6 +12,7 @@ Route::prefix('admin')
             ->group(function () {
                 Route::get('/', [TenantController::class, 'index'])->name('index');
                 Route::get('/product-subscriptions', [TenantController::class, 'productSubscriptionsIndex'])->name('product-subscriptions.index');
+                Route::post('/product-subscriptions/bulk-sync-stripe', [TenantController::class, 'bulkSyncProductSubscriptionsFromStripe'])->name('product-subscriptions.bulk-sync-stripe');
                 Route::get('/product-subscriptions/{subscriptionId}', [TenantController::class, 'showProductSubscription'])->name('product-subscriptions.show');
                 Route::post('/product-subscriptions/{subscriptionId}/sync-stripe', [TenantController::class, 'syncProductSubscriptionFromStripe'])->name('product-subscriptions.sync-stripe');
                 Route::get('/{tenantId}', [TenantController::class, 'show'])->name('show');

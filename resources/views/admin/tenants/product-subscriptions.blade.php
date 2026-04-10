@@ -43,6 +43,14 @@
                 </div>
             </div>
 
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
             <div class="row">
                 <div class="col-xl-2 col-md-4 col-sm-6">
                     <div class="card">
@@ -192,10 +200,39 @@
 
             <div class="card">
                 <div class="card-body">
+                    <form method="POST" action="{{ route('admin.tenants.product-subscriptions.bulk-sync-stripe') }}">
+                        @csrf
+                        @foreach($filters as $filterKey => $filterValue)
+                            @if($filterValue !== null && $filterValue !== '')
+                                @if(is_array($filterValue))
+                                    @foreach($filterValue as $item)
+                                        <input type="hidden" name="{{ $filterKey }}[]" value="{{ $item }}">
+                                    @endforeach
+                                @else
+                                    <input type="hidden" name="{{ $filterKey }}" value="{{ $filterValue }}">
+                                @endif
+                            @endif
+                        @endforeach
+
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button type="submit" name="bulk_sync_action" value="selected" class="btn btn-success">
+                                Sync Selected
+                            </button>
+                            <button type="submit" name="bulk_sync_action" value="filtered" class="btn btn-outline-success">
+                                Sync All Filtered
+                            </button>
+                            <button type="submit" name="bulk_sync_action" value="failed_only" class="btn btn-outline-danger">
+                                Retry Failed Only
+                            </button>
+                        </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead>
                             <tr>
+                                <th style="width: 44px;">
+                                    <input type="checkbox" class="form-check-input" id="select-all-product-subscriptions">
+                                </th>
                                 <th>#</th>
                                 <th>Tenant</th>
                                 <th>Product</th>
@@ -222,6 +259,14 @@
                                     $isStale = $isStaleSync($subscription->last_synced_from_stripe_at ?? null);
                                 @endphp
                                 <tr>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input product-subscription-checkbox"
+                                            name="selected_ids[]"
+                                            value="{{ $subscription->id }}"
+                                        >
+                                    </td>
                                     <td>{{ $subscription->id }}</td>
                                     <td>
                                         <div class="fw-semibold">{{ $subscription->tenant_id }}</div>
@@ -305,7 +350,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted py-4">
+                                    <td colspan="11" class="text-center text-muted py-4">
                                         No product subscriptions matched the current filters.
                                     </td>
                                 </tr>
@@ -313,6 +358,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </form>
 
                     <div class="mt-3">
                         {{ $subscriptions->links() }}
@@ -321,4 +367,21 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectAll = document.getElementById('select-all-product-subscriptions');
+            const checkboxes = Array.from(document.querySelectorAll('.product-subscription-checkbox'));
+
+            if (!selectAll || checkboxes.length === 0) {
+                return;
+            }
+
+            selectAll.addEventListener('change', function () {
+                checkboxes.forEach(function (checkbox) {
+                    checkbox.checked = selectAll.checked;
+                });
+            });
+        });
+    </script>
 @endsection

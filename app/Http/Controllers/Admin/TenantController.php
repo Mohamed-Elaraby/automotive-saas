@@ -173,14 +173,7 @@ public function show(string $tenantId): View
 
 public function productSubscriptionsIndex(Request $request): View
 {
-    $filters = [
-        'tenant_id' => trim((string) $request->string('tenant_id')),
-        'status' => trim((string) $request->string('status')),
-        'product_id' => $request->filled('product_id') ? (int) $request->input('product_id') : null,
-        'gateway' => trim((string) $request->string('gateway')),
-        'last_sync_status' => trim((string) $request->string('last_sync_status')),
-        'sync_freshness' => trim((string) $request->string('sync_freshness')),
-    ];
+    $filters = $this->productSubscriptionFilters($request);
 
     $subscriptions = new LengthAwarePaginator([], 0, 20, 1, [
         'path' => $request->url(),
@@ -189,48 +182,7 @@ public function productSubscriptionsIndex(Request $request): View
 
     if (Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')) {
         $query = $this->productSubscriptionsBaseQuery();
-
-        if ($filters['tenant_id'] !== '') {
-            $query->where('tenant_product_subscriptions.tenant_id', 'like', '%' . $filters['tenant_id'] . '%');
-        }
-
-        if ($filters['status'] !== '') {
-            $query->where('tenant_product_subscriptions.status', $filters['status']);
-        }
-
-        if ($filters['product_id']) {
-            $query->where('tenant_product_subscriptions.product_id', $filters['product_id']);
-        }
-
-        if ($filters['gateway'] !== '') {
-            $query->where('tenant_product_subscriptions.gateway', $filters['gateway']);
-        }
-
-        if ($filters['last_sync_status'] !== '') {
-            if ($filters['last_sync_status'] === 'never') {
-                $query->whereNull('tenant_product_subscriptions.last_sync_status');
-            } else {
-                $query->where('tenant_product_subscriptions.last_sync_status', $filters['last_sync_status']);
-            }
-        }
-
-        if ($filters['sync_freshness'] !== '') {
-            if ($filters['sync_freshness'] === 'never') {
-                $query->whereNull('tenant_product_subscriptions.last_synced_from_stripe_at');
-            }
-
-            if ($filters['sync_freshness'] === 'recent_24h') {
-                $query->whereNotNull('tenant_product_subscriptions.last_synced_from_stripe_at')
-                    ->where('tenant_product_subscriptions.last_synced_from_stripe_at', '>=', now()->subDay());
-            }
-
-            if ($filters['sync_freshness'] === 'stale_7d') {
-                $query->where(function ($builder) {
-                    $builder->whereNull('tenant_product_subscriptions.last_synced_from_stripe_at')
-                        ->orWhere('tenant_product_subscriptions.last_synced_from_stripe_at', '<', now()->subDays(7));
-                });
-            }
-        }
+        $this->applyProductSubscriptionFilters($query, $filters, 'tenant_product_subscriptions');
 
         $subscriptions = $query
             ->orderByDesc('tenant_product_subscriptions.id')
@@ -286,6 +238,96 @@ public function productSubscriptionsIndex(Request $request): View
             'stale_7d',
         ],
     ]);
+}
+
+public function bulkSyncProductSubscriptionsFromStripe(
+    Request $request,
+    AdminTenantProductSubscriptionStripeSyncService $syncService
+): RedirectResponse {
+    $validated = $request->validate([
+        'bulk_sync_action' => ['required', 'in:selected,filtered,failed_only'],
+        'selected_ids' => ['array'],
+        'selected_ids.*' => ['integer'],
+    ]);
+
+    $filters = $this->productSubscriptionFilters($request);
+    $action = (string) $validated['bulk_sync_action'];
+    $selectedIds = collect($validated['selected_ids'] ?? [])
+        ->filter(fn ($id) => is_numeric($id))
+        ->map(fn ($id) => (int) $id)
+        ->unique()
+        ->values();
+
+    $query = TenantProductSubscription::query();
+    $this->applyProductSubscriptionFilters($query, $filters, $query->getModel()->getTable());
+
+    if ($action === 'selected') {
+        if ($selectedIds->isEmpty()) {
+            return redirect()
+                ->route('admin.tenants.product-subscriptions.index', $this->productSubscriptionRouteFilters($filters))
+                ->with('error', 'Select at least one product subscription before running bulk sync.');
+        }
+
+        $query->whereKey($selectedIds->all());
+    }
+
+    if ($action === 'failed_only') {
+        $query->where('last_sync_status', 'failed');
+    }
+
+    $subscriptions = $query
+        ->orderBy('id')
+        ->get();
+
+    if ($subscriptions->isEmpty()) {
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.index', $this->productSubscriptionRouteFilters($filters))
+            ->with('error', 'No product subscriptions matched the current bulk sync scope.');
+    }
+
+    $summary = [
+        'total' => $subscriptions->count(),
+        'succeeded' => 0,
+        'failed' => 0,
+        'skipped' => 0,
+    ];
+
+    foreach ($subscriptions as $subscription) {
+        if (! $this->productSubscriptionCanSyncFromStripe($subscription)) {
+            $summary['skipped']++;
+            continue;
+        }
+
+        try {
+            $syncService->sync($subscription);
+            $summary['succeeded']++;
+        } catch (Throwable $exception) {
+            $summary['failed']++;
+        }
+    }
+
+    $this->activityLogger->log(
+        action: 'tenant.product_subscription.bulk_synced_from_stripe',
+        subjectType: 'tenant_product_subscription',
+        subjectId: null,
+        tenantId: null,
+        contextPayload: [
+            'source' => 'admin.product_subscription.bulk_sync_from_stripe',
+            'bulk_sync_action' => $action,
+            'filters' => $this->productSubscriptionRouteFilters($filters),
+            'selected_ids' => $selectedIds->all(),
+            'summary' => $summary,
+        ]
+    );
+
+    return redirect()
+        ->route('admin.tenants.product-subscriptions.index', $this->productSubscriptionRouteFilters($filters))
+        ->with('success', sprintf(
+            'Bulk Stripe sync finished. Succeeded: %d, failed: %d, skipped: %d.',
+            $summary['succeeded'],
+            $summary['failed'],
+            $summary['skipped']
+        ));
 }
 
 public function showProductSubscription(int $subscriptionId): View
@@ -1063,6 +1105,78 @@ protected function productSubscriptionsBaseQuery()
     }
 
     return $query;
+}
+
+protected function productSubscriptionFilters(Request $request): array
+{
+    return [
+        'tenant_id' => trim((string) $request->string('tenant_id')),
+        'status' => trim((string) $request->string('status')),
+        'product_id' => $request->filled('product_id') ? (int) $request->input('product_id') : null,
+        'gateway' => trim((string) $request->string('gateway')),
+        'last_sync_status' => trim((string) $request->string('last_sync_status')),
+        'sync_freshness' => trim((string) $request->string('sync_freshness')),
+    ];
+}
+
+protected function applyProductSubscriptionFilters(object $query, array $filters, string $table): void
+{
+    if (($filters['tenant_id'] ?? '') !== '') {
+        $query->where($table . '.tenant_id', 'like', '%' . $filters['tenant_id'] . '%');
+    }
+
+    if (($filters['status'] ?? '') !== '') {
+        $query->where($table . '.status', $filters['status']);
+    }
+
+    if (! empty($filters['product_id'])) {
+        $query->where($table . '.product_id', $filters['product_id']);
+    }
+
+    if (($filters['gateway'] ?? '') !== '') {
+        $query->where($table . '.gateway', $filters['gateway']);
+    }
+
+    if (($filters['last_sync_status'] ?? '') !== '') {
+        if ($filters['last_sync_status'] === 'never') {
+            $query->whereNull($table . '.last_sync_status');
+        } else {
+            $query->where($table . '.last_sync_status', $filters['last_sync_status']);
+        }
+    }
+
+    if (($filters['sync_freshness'] ?? '') !== '') {
+        if ($filters['sync_freshness'] === 'never') {
+            $query->whereNull($table . '.last_synced_from_stripe_at');
+        }
+
+        if ($filters['sync_freshness'] === 'recent_24h') {
+            $query->whereNotNull($table . '.last_synced_from_stripe_at')
+                ->where($table . '.last_synced_from_stripe_at', '>=', now()->subDay());
+        }
+
+        if ($filters['sync_freshness'] === 'stale_7d') {
+            $query->where(function ($builder) use ($table) {
+                $builder->whereNull($table . '.last_synced_from_stripe_at')
+                    ->orWhere($table . '.last_synced_from_stripe_at', '<', now()->subDays(7));
+            });
+        }
+    }
+}
+
+protected function productSubscriptionRouteFilters(array $filters): array
+{
+    return collect($filters)
+        ->filter(fn ($value) => ! ($value === null || $value === ''))
+        ->all();
+}
+
+protected function productSubscriptionCanSyncFromStripe(TenantProductSubscription $subscription): bool
+{
+    return ($subscription->gateway ?? null) === 'stripe'
+        || filled($subscription->gateway_subscription_id)
+        || filled($subscription->gateway_customer_id)
+        || filled($subscription->gateway_checkout_session_id);
 }
 
 protected function findProductSubscriptionOrFail(int $subscriptionId): array
