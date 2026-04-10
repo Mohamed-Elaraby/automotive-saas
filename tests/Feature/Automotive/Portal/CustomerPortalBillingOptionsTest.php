@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
 use App\Models\User;
 use App\Services\Automotive\StartPaidCheckoutService;
+use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\PaymentGatewayManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -81,6 +82,51 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Select &amp; Continue', false);
         $response->assertDontSee('Billing Managed In System', false);
+    }
+
+    public function test_start_trial_ignores_email_like_coupon_values_from_profile(): void
+    {
+        $email = 'client_1@gmail.com';
+
+        $user = User::query()->create([
+            'name' => 'Portal Trial Coupon User',
+            'email' => $email,
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Trial Coupon Co',
+            'subdomain' => 'portal-trial-coupon-' . uniqid(),
+            'base_host' => 'example.test',
+            'coupon_code' => $email,
+            'password_payload' => \Illuminate\Support\Facades\Crypt::encryptString('secret-pass'),
+        ]);
+
+        $service = Mockery::mock(StartTrialService::class);
+        $service->shouldReceive('start')
+            ->once()
+            ->withArgs(function (array $payload) use ($email): bool {
+                return ($payload['email'] ?? null) === $email
+                    && ($payload['coupon_code'] ?? null) === '';
+            })
+            ->andReturn([
+                'ok' => true,
+                'status' => 201,
+                'tenant_id' => 'trial-coupon-tenant',
+                'domain' => 'trial-coupon-tenant.example.test',
+                'login_url' => 'https://trial-coupon-tenant.example.test/automotive/admin/login',
+            ]);
+        $this->app->instance(StartTrialService::class, $service);
+
+        $response = $this->actingAs($user, 'web')
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('automotive.portal.start-trial'), [
+                '_token' => 'test-token',
+            ]);
+
+        $response->assertRedirect(route('automotive.portal'));
+        $response->assertSessionHas('success', 'Your free trial system is ready now.');
     }
 
     public function test_portal_paid_plan_cards_show_real_plan_limits(): void

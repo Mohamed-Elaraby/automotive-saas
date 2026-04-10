@@ -200,7 +200,7 @@ class CustomerPortalController extends Controller
             'password' => $password,
             'company_name' => $profile->company_name,
             'subdomain' => strtolower(trim((string) $profile->subdomain)),
-            'coupon_code' => strtoupper(trim((string) ($profile->coupon_code ?? ''))),
+            'coupon_code' => $this->displayableCouponCode($profile, $user) ?? '',
             'base_host' => $profile->base_host ?: request()->getHost(),
         ];
 
