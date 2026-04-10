@@ -109,7 +109,7 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
         $response->assertSee('price_show_tps', false);
         $response->assertSee((string) $tenant->id, false);
         $response->assertSee('Tenant Snapshot', false);
-        $response->assertSee('Latest Invoice', false);
+        $response->assertSee('Latest Synced Invoice', false);
         $response->assertSee('INV-SHOW-TPS', false);
         $response->assertSee('in_show_tps', false);
         $response->assertSee('Health Hints', false);

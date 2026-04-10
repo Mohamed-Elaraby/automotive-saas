@@ -225,7 +225,7 @@
 
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white">
-                            <h6 class="mb-0">Latest Invoice</h6>
+                            <h6 class="mb-0">Latest Synced Invoice</h6>
                         </div>
                         <div class="card-body">
                             @if($latestInvoice)
@@ -297,7 +297,7 @@
                                 </table>
                             @else
                                 <div class="alert alert-warning mb-0">
-                                    No local invoice snapshot was found for this product subscription.
+                                    No synced invoice snapshot was found for this product subscription yet.
                                 </div>
                             @endif
                         </div>
