@@ -15,6 +15,18 @@
             default => 'bg-light text-dark',
         };
 
+        $statusBadgeClassFor = function (?string $status): string {
+            return match ($status) {
+                'active' => 'bg-success',
+                'trialing' => 'bg-info text-dark',
+                'past_due' => 'bg-warning text-dark',
+                'suspended' => 'bg-danger',
+                'cancelled' => 'bg-secondary',
+                'expired' => 'bg-dark',
+                default => 'bg-light text-dark',
+            };
+        };
+
         $yesNoBadge = function (bool $value): string {
             return $value
                 ? '<span class="badge bg-success">Yes</span>'
@@ -398,6 +410,102 @@
                         </div>
                     </div>
 
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Product Subscriptions</h6>
+                            <span class="badge bg-light text-dark">{{ $productSubscriptions->count() }}</span>
+                        </div>
+                        <div class="card-body">
+                            @if($productSubscriptions->isNotEmpty())
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped align-middle mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Plan</th>
+                                            <th>Status</th>
+                                            <th>Gateway</th>
+                                            <th>Stripe IDs</th>
+                                            <th>Lifecycle</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @foreach($productSubscriptions as $productSubscription)
+                                            @php
+                                                $productStatus = $productSubscription['status'] ?? null;
+                                                $productName = $productSubscription['product_name']
+                                                    ?: $productSubscription['product_slug']
+                                                    ?: $productSubscription['product_code']
+                                                    ?: ('Product #' . ($productSubscription['product_id'] ?? '?'));
+                                                $planName = $productSubscription['plan_name']
+                                                    ?: $productSubscription['plan_slug']
+                                                    ?: ($productSubscription['plan_id'] ? ('Plan #' . $productSubscription['plan_id']) : '-');
+                                                $billingLabel = $productSubscription['plan_billing_period']
+                                                    ? strtoupper((string) $productSubscription['plan_billing_period'])
+                                                    : null;
+                                                $priceLabel = $productSubscription['plan_price'] !== null
+                                                    ? $productSubscription['plan_price'] . ' ' . ($productSubscription['plan_currency'] ?? '')
+                                                    : null;
+                                            @endphp
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-semibold">{{ $productName }}</div>
+                                                    <div class="small text-muted">Record #{{ $productSubscription['id'] }}</div>
+                                                </td>
+                                                <td>
+                                                    <div>{{ $planName }}</div>
+                                                    @if($billingLabel || $priceLabel)
+                                                        <div class="small text-muted">
+                                                            {{ $billingLabel ?: '-' }}{{ $billingLabel && $priceLabel ? ' | ' : '' }}{{ $priceLabel ?: '' }}
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <span class="badge {{ $statusBadgeClassFor($productStatus) }}">
+                                                        {{ $productStatus ? strtoupper(str_replace('_', ' ', $productStatus)) : 'UNKNOWN' }}
+                                                    </span>
+                                                    @if(($productSubscription['payment_failures_count'] ?? 0) > 0)
+                                                        <div class="small text-danger mt-1">
+                                                            Failures: {{ $productSubscription['payment_failures_count'] }}
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div>{{ $productSubscription['gateway'] ?: '-' }}</div>
+                                                    @if(!empty($productSubscription['gateway_price_id']))
+                                                        <div class="small text-muted">{{ $productSubscription['gateway_price_id'] }}</div>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="small">
+                                                        <strong>Customer:</strong> {{ $productSubscription['gateway_customer_id'] ?: '-' }}
+                                                    </div>
+                                                    <div class="small">
+                                                        <strong>Subscription:</strong> {{ $productSubscription['gateway_subscription_id'] ?: '-' }}
+                                                    </div>
+                                                    <div class="small">
+                                                        <strong>Checkout:</strong> {{ $productSubscription['gateway_checkout_session_id'] ?: '-' }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="small"><strong>Trial:</strong> {{ $productSubscription['trial_ends_at'] ?: '-' }}</div>
+                                                    <div class="small"><strong>Ends:</strong> {{ $productSubscription['ends_at'] ?: '-' }}</div>
+                                                    <div class="small"><strong>Cancelled:</strong> {{ $productSubscription['cancelled_at'] ?: '-' }}</div>
+                                                    <div class="small"><strong>Past Due:</strong> {{ $productSubscription['past_due_started_at'] ?: '-' }}</div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-warning mb-0">
+                                    No product-level subscriptions were found for this tenant.
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-white">
                             <h6 class="mb-0">Tenant Payload</h6>
@@ -464,6 +572,14 @@
                                 <tr>
                                     <th>Has Subscription</th>
                                     <td>{!! $yesNoBadge((bool) ($diagnostics['has_subscription'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Has Product Subscriptions</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_product_subscriptions'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Product Subscriptions Count</th>
+                                    <td>{{ $diagnostics['product_subscriptions_count'] ?? 0 }}</td>
                                 </tr>
                                 <tr>
                                     <th>Has Plan</th>

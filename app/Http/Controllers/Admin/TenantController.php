@@ -149,9 +149,10 @@ public function show(string $tenantId): View
 
     $domains = $this->domainsByTenantIds([$tenantId])->get($tenantId, collect())->values();
     $subscription = $this->latestSubscriptionsByTenantIds([$tenantId])->get($tenantId);
+    $productSubscriptions = $this->productSubscriptionsByTenantIds([$tenantId])->get($tenantId, collect());
     $tenantData = $this->normalizedTenantData($tenant);
     $ownerSnapshot = $this->ownerSnapshot($tenantData);
-    $diagnostics = $this->tenantDiagnostics($tenant, $row, $domains, $subscription, $tenantData);
+    $diagnostics = $this->tenantDiagnostics($tenant, $row, $domains, $subscription, $productSubscriptions, $tenantData);
     $availablePlans = $this->lifecycleService->availablePlans();
 
     return view('admin.tenants.show', [
@@ -159,6 +160,7 @@ public function show(string $tenantId): View
         'row' => $row,
         'domains' => $domains,
         'subscription' => $subscription,
+        'productSubscriptions' => $productSubscriptions,
         'tenantData' => $tenantData,
         'ownerSnapshot' => $ownerSnapshot,
         'diagnostics' => $diagnostics,
@@ -711,6 +713,91 @@ protected function latestSubscriptionsByTenantIds(array $tenantIds): Collection
         });
 }
 
+/**
+ * @param  array<int, string>  $tenantIds
+ * @return Collection<string, Collection<int, array<string, mixed>>>
+ */
+protected function productSubscriptionsByTenantIds(array $tenantIds): Collection
+{
+    if (
+        empty($tenantIds)
+        || ! Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')
+    ) {
+        return collect();
+    }
+
+    $query = DB::connection($this->centralConnectionName())
+        ->table('tenant_product_subscriptions')
+        ->whereIn('tenant_id', $tenantIds)
+        ->orderByDesc('id')
+        ->select('tenant_product_subscriptions.*');
+
+    if ($this->productsTableExists()) {
+        $query->leftJoin('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
+            ->addSelect([
+                'products.name as product_name',
+                'products.slug as product_slug',
+                'products.code as product_code',
+            ]);
+    }
+
+    if ($this->plansTableExists()) {
+        $query->leftJoin('plans', 'plans.id', '=', 'tenant_product_subscriptions.plan_id')
+            ->addSelect([
+                'plans.name as plan_name',
+                'plans.slug as plan_slug',
+                'plans.billing_period as plan_billing_period',
+                'plans.price as plan_price',
+                'plans.currency as plan_currency',
+            ]);
+    }
+
+    $rows = $query->get();
+
+    if ($rows->isEmpty()) {
+        return collect();
+    }
+
+    return $rows
+        ->groupBy(fn ($row) => (string) $row->tenant_id)
+        ->map(function (Collection $group): Collection {
+            return $group->map(function ($row): array {
+                return [
+                    'id' => $row->id,
+                    'tenant_id' => (string) $row->tenant_id,
+                    'product_id' => $row->product_id,
+                    'product_name' => $row->product_name ?? null,
+                    'product_slug' => $row->product_slug ?? null,
+                    'product_code' => $row->product_code ?? null,
+                    'plan_id' => $row->plan_id,
+                    'plan_name' => $row->plan_name ?? null,
+                    'plan_slug' => $row->plan_slug ?? null,
+                    'plan_billing_period' => $row->plan_billing_period ?? null,
+                    'plan_price' => $row->plan_price ?? null,
+                    'plan_currency' => $row->plan_currency ?? null,
+                    'status' => $row->status ?? null,
+                    'trial_ends_at' => $row->trial_ends_at ?? null,
+                    'grace_ends_at' => $row->grace_ends_at ?? null,
+                    'last_payment_failed_at' => $row->last_payment_failed_at ?? null,
+                    'past_due_started_at' => $row->past_due_started_at ?? null,
+                    'suspended_at' => $row->suspended_at ?? null,
+                    'cancelled_at' => $row->cancelled_at ?? null,
+                    'payment_failures_count' => (int) ($row->payment_failures_count ?? 0),
+                    'ends_at' => $row->ends_at ?? null,
+                    'external_id' => $row->external_id ?? null,
+                    'gateway' => $row->gateway ?? null,
+                    'gateway_customer_id' => $row->gateway_customer_id ?? null,
+                    'gateway_subscription_id' => $row->gateway_subscription_id ?? null,
+                    'gateway_checkout_session_id' => $row->gateway_checkout_session_id ?? null,
+                    'gateway_price_id' => $row->gateway_price_id ?? null,
+                    'legacy_subscription_id' => $row->legacy_subscription_id ?? null,
+                    'created_at' => $row->created_at ?? null,
+                    'updated_at' => $row->updated_at ?? null,
+                ];
+            })->values();
+        });
+}
+
 protected function normalizedTenantData(Model $tenant): array
 {
     $data = $tenant->getAttribute('data');
@@ -753,6 +840,7 @@ protected function tenantDiagnostics(
     ?array $row,
     Collection $domains,
     ?array $subscription,
+    Collection $productSubscriptions,
     array $tenantData
 ): array {
     $attributes = $tenantData['attributes'] ?? [];
@@ -773,6 +861,8 @@ protected function tenantDiagnostics(
         'domains_count' => $domains->count(),
         'has_primary_domain' => ! empty($row['primary_domain']),
         'has_subscription' => ! empty($subscription),
+        'product_subscriptions_count' => $productSubscriptions->count(),
+        'has_product_subscriptions' => $productSubscriptions->isNotEmpty(),
         'has_plan' => ! empty($subscription['plan_name']),
         'has_gateway' => ! empty($subscription['gateway']),
         'has_gateway_customer_id' => ! empty($subscription['gateway_customer_id']),
@@ -895,5 +985,10 @@ protected function gatewayOptions(): array
         ->map(fn ($gateway) => (string) $gateway)
         ->values()
         ->all();
+}
+
+protected function productsTableExists(): bool
+{
+    return Schema::connection($this->centralConnectionName())->hasTable('products');
 }
 }
