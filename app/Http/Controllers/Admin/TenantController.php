@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\Admin\SyncTenantProductSubscriptionFromStripeJob;
+use App\Models\AdminActivityLog;
 use App\Models\TenantProductSubscription;
 use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
@@ -220,6 +221,7 @@ public function productSubscriptionsIndex(Request $request): View
         'statusCounts' => $statusCounts,
         'products' => $products,
         'gatewayOptions' => $gatewayOptions,
+        'recentBulkOperations' => $this->recentProductSubscriptionBulkOperations(),
         'statusOptions' => [
             'trialing',
             'active',
@@ -1225,6 +1227,34 @@ protected function productSubscriptionCanSyncFromStripe(TenantProductSubscriptio
         || filled($subscription->gateway_subscription_id)
         || filled($subscription->gateway_customer_id)
         || filled($subscription->gateway_checkout_session_id);
+}
+
+protected function recentProductSubscriptionBulkOperations(): Collection
+{
+    return AdminActivityLog::query()
+        ->whereIn('action', [
+            'tenant.product_subscription.bulk_sync_queued_from_stripe',
+            'tenant.product_subscription.bulk_synced_from_stripe',
+        ])
+        ->latest('id')
+        ->limit(6)
+        ->get()
+        ->map(function (AdminActivityLog $log): array {
+            $context = is_array($log->context_payload) ? $log->context_payload : [];
+            $summary = is_array($context['summary'] ?? null) ? $context['summary'] : [];
+
+            return [
+                'id' => $log->id,
+                'action' => $log->action,
+                'admin_email' => $log->admin_email,
+                'created_at' => $log->created_at,
+                'filters' => is_array($context['filters'] ?? null) ? $context['filters'] : [],
+                'bulk_sync_action' => $context['bulk_sync_action'] ?? null,
+                'summary' => $summary,
+                'show_url' => route('admin.activity-logs.show', $log),
+                'is_queued' => $log->action === 'tenant.product_subscription.bulk_sync_queued_from_stripe',
+            ];
+        });
 }
 
 protected function findProductSubscriptionOrFail(int $subscriptionId): array

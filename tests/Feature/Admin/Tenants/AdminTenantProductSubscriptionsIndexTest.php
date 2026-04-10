@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin\Tenants;
 
 use App\Models\Admin;
+use App\Models\AdminActivityLog;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Tenant;
@@ -92,6 +93,21 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
             'last_sync_error' => 'Stripe lookup failed.',
         ]);
 
+        AdminActivityLog::query()->create([
+            'admin_user_id' => $admin->id,
+            'admin_email' => $admin->email,
+            'action' => 'tenant.product_subscription.bulk_sync_queued_from_stripe',
+            'subject_type' => 'tenant_product_subscription',
+            'tenant_id' => null,
+            'context_payload' => [
+                'bulk_sync_action' => 'filtered',
+                'summary' => [
+                    'queued' => 2,
+                    'skipped' => 1,
+                ],
+            ],
+        ]);
+
         $response = $this
             ->actingAs($admin, 'admin')
             ->get(route('admin.tenants.product-subscriptions.index', [
@@ -112,6 +128,9 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
         $response->assertSee('SUCCESS', false);
         $response->assertSee('STALE', false);
         $response->assertSee('Sync', false);
+        $response->assertSee('Recent Bulk Operations', false);
+        $response->assertSee('QUEUED', false);
+        $response->assertSee('Queued: 2 | Skipped: 1', false);
         $response->assertDontSee($otherTenant->id, false);
         $response->assertDontSee('cus_other_tps', false);
         $response->assertDontSee('FAILED', false);

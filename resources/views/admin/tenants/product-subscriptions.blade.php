@@ -199,6 +199,64 @@
             </div>
 
             <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Recent Bulk Operations</h6>
+                    <a href="{{ route('admin.activity-logs.index', ['subject_type' => 'tenant_product_subscription']) }}" class="btn btn-sm btn-outline-secondary">
+                        Open Activity Logs
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if($recentBulkOperations->isEmpty())
+                        <div class="alert alert-light mb-0">No bulk product subscription operations were logged yet.</div>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>When</th>
+                                    <th>Mode</th>
+                                    <th>Status</th>
+                                    <th>Summary</th>
+                                    <th>Admin</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach($recentBulkOperations as $operation)
+                                    @php
+                                        $summary = $operation['summary'] ?? [];
+                                        $summaryText = collect([
+                                            isset($summary['queued']) ? 'Queued: ' . $summary['queued'] : null,
+                                            isset($summary['succeeded']) ? 'Succeeded: ' . $summary['succeeded'] : null,
+                                            isset($summary['failed']) ? 'Failed: ' . $summary['failed'] : null,
+                                            isset($summary['skipped']) ? 'Skipped: ' . $summary['skipped'] : null,
+                                        ])->filter()->implode(' | ');
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $operation['id'] }}</td>
+                                        <td>{{ optional($operation['created_at'])->format('Y-m-d H:i:s') ?: '-' }}</td>
+                                        <td>{{ $operation['bulk_sync_action'] ?: '-' }}</td>
+                                        <td>
+                                            <span class="badge {{ $operation['is_queued'] ? 'bg-warning text-dark' : 'bg-success' }}">
+                                                {{ $operation['is_queued'] ? 'QUEUED' : 'COMPLETED' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $summaryText !== '' ? $summaryText : '-' }}</td>
+                                        <td>{{ $operation['admin_email'] ?: '-' }}</td>
+                                        <td class="text-end">
+                                            <a href="{{ $operation['show_url'] }}" class="btn btn-sm btn-outline-primary">View Log</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="card">
                 <div class="card-body">
                     <form method="POST" action="{{ route('admin.tenants.product-subscriptions.bulk-sync-stripe') }}">
                         @csrf
