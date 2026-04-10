@@ -400,6 +400,17 @@
                                 </div>
                             </div>
 
+                            @if(($selectedProductCapabilities ?? collect())->isNotEmpty())
+                                <div class="alert alert-light border mb-4">
+                                    <div class="fw-semibold mb-2">Included Product Capabilities</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach($selectedProductCapabilities as $capabilityName)
+                                            <span class="badge bg-white text-dark border">{{ $capabilityName }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             @if(!$selectedProductSupportsCheckout)
                                 @php
                                     $selectedProductEnablementStatus = (string) ($selectedProductEnablementRequest->status ?? '');

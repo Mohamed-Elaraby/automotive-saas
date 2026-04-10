@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         // <seven-scaffold-seeders>
         $this->call(ProductSeeder::class);
+        $this->call(ProductCapabilitiesSeeder::class);
         $this->call(PlanSeeder::class);
         $this->call(ReferenceDataSeeder::class);
         $this->call(CentralAdminSeeder::class);

@@ -9,6 +9,7 @@ use App\Models\CustomerOnboardingProfile;
 use App\Models\CustomerPortalNotification;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\ProductCapability;
 use App\Models\ProductEnablementRequest;
 use App\Models\Subscription;
 use App\Models\Tenant;
@@ -306,10 +307,21 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'stripe_price_id' => 'price_' . uniqid(),
         ]);
 
+        ProductCapability::query()->create([
+            'product_id' => $accountingProduct->id,
+            'code' => 'general_ledger',
+            'name' => 'General Ledger',
+            'slug' => 'general-ledger',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $accountingProduct->slug]));
 
         $response->assertOk();
         $response->assertSee('Accounting Suite Plans &amp; Enablement', false);
+        $response->assertSee('Included Product Capabilities', false);
+        $response->assertSee('General Ledger', false);
         $response->assertSee('Submit or review enablement first. Billing checkout becomes available here after approval.', false);
         $response->assertSee((string) $accountingPlan->name, false);
         $response->assertSee('Approval Required Before Checkout', false);

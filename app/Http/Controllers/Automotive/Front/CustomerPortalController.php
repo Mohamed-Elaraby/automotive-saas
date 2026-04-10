@@ -59,6 +59,7 @@ class CustomerPortalController extends Controller
         );
         $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog);
         $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
+        $selectedProductCapabilities = collect($selectedProduct['capabilities'] ?? []);
         $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);
         $selectedProductEnablementRequest = $this->productEnablementRequestForUser(
             $user->id,
@@ -134,6 +135,7 @@ class CustomerPortalController extends Controller
             'isTrialWorkspace' => $isTrialWorkspace,
             'productCatalog' => $productCatalog,
             'selectedProduct' => $selectedProduct,
+            'selectedProductCapabilities' => $selectedProductCapabilities,
             'selectedProductSupportsCheckout' => $selectedProductSupportsCheckout,
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
             'selectedProductSubscription' => $selectedProductSubscription,
@@ -441,12 +443,24 @@ class CustomerPortalController extends Controller
         }
 
         $productSubscriptions = collect();
+        $capabilitiesByProductId = collect();
         $paidPlanCounts = Plan::query()
             ->where('is_active', true)
             ->where('billing_period', '!=', 'trial')
             ->selectRaw('product_id, COUNT(*) as aggregate')
             ->groupBy('product_id')
             ->pluck('aggregate', 'product_id');
+
+        if (Schema::connection($connection)->hasTable('product_capabilities')) {
+            $capabilitiesByProductId = DB::connection($connection)
+                ->table('product_capabilities')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['product_id', 'name'])
+                ->groupBy('product_id')
+                ->map(fn (Collection $items) => $items->pluck('name')->values()->all());
+        }
 
         if (
             $tenantIds->isNotEmpty()
@@ -465,7 +479,7 @@ class CustomerPortalController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCounts): array {
+            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCounts, $capabilitiesByProductId): array {
                 $subscription = $productSubscriptions->get($product->id);
                 $status = (string) ($subscription->status ?? '');
                 $isAutomotive = (string) $product->code === self::PRODUCT_CODE;
@@ -481,6 +495,7 @@ class CustomerPortalController extends Controller
                     'description' => (string) ($product->description ?? ''),
                     'is_active' => (bool) $product->is_active,
                     'has_paid_plans' => $hasPaidPlans,
+                    'capabilities' => $capabilitiesByProductId->get($product->id, []),
                     'is_automotive' => $isAutomotive,
                     'is_subscribed' => $isSubscribed,
                     'tenant_id' => (string) ($subscription->tenant_id ?? $currentTenantId),
