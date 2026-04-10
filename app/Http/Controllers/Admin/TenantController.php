@@ -179,6 +179,7 @@ public function productSubscriptionsIndex(Request $request): View
         'product_id' => $request->filled('product_id') ? (int) $request->input('product_id') : null,
         'gateway' => trim((string) $request->string('gateway')),
         'last_sync_status' => trim((string) $request->string('last_sync_status')),
+        'sync_freshness' => trim((string) $request->string('sync_freshness')),
     ];
 
     $subscriptions = new LengthAwarePaginator([], 0, 20, 1, [
@@ -210,6 +211,24 @@ public function productSubscriptionsIndex(Request $request): View
                 $query->whereNull('tenant_product_subscriptions.last_sync_status');
             } else {
                 $query->where('tenant_product_subscriptions.last_sync_status', $filters['last_sync_status']);
+            }
+        }
+
+        if ($filters['sync_freshness'] !== '') {
+            if ($filters['sync_freshness'] === 'never') {
+                $query->whereNull('tenant_product_subscriptions.last_synced_from_stripe_at');
+            }
+
+            if ($filters['sync_freshness'] === 'recent_24h') {
+                $query->whereNotNull('tenant_product_subscriptions.last_synced_from_stripe_at')
+                    ->where('tenant_product_subscriptions.last_synced_from_stripe_at', '>=', now()->subDay());
+            }
+
+            if ($filters['sync_freshness'] === 'stale_7d') {
+                $query->where(function ($builder) {
+                    $builder->whereNull('tenant_product_subscriptions.last_synced_from_stripe_at')
+                        ->orWhere('tenant_product_subscriptions.last_synced_from_stripe_at', '<', now()->subDays(7));
+                });
             }
         }
 
@@ -260,6 +279,11 @@ public function productSubscriptionsIndex(Request $request): View
             'success',
             'failed',
             'never',
+        ],
+        'syncFreshnessOptions' => [
+            'never',
+            'recent_24h',
+            'stale_7d',
         ],
     ]);
 }

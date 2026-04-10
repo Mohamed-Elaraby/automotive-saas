@@ -22,6 +22,14 @@
                 default => 'bg-light text-dark',
             };
         };
+
+        $isStaleSync = function ($syncedAt): bool {
+            if (empty($syncedAt)) {
+                return true;
+            }
+
+            return \Carbon\Carbon::parse($syncedAt)->lt(now()->subDays(7));
+        };
     @endphp
 
     <div class="page-wrapper">
@@ -154,6 +162,24 @@
                                 </select>
                             </div>
 
+                            <div class="col-md-2">
+                                <label class="form-label">Sync Freshness</label>
+                                <select name="sync_freshness" class="form-select">
+                                    <option value="">All freshness states</option>
+                                    @foreach($syncFreshnessOptions as $freshness)
+                                        <option value="{{ $freshness }}" @selected(($filters['sync_freshness'] ?? '') === $freshness)>
+                                            @if($freshness === 'never')
+                                                Never Synced
+                                            @elseif($freshness === 'recent_24h')
+                                                Last 24h
+                                            @else
+                                                Older Than 7 Days
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div class="col-12 d-flex gap-2">
                                 <button type="submit" class="btn btn-primary">Apply Filters</button>
                                 <a href="{{ route('admin.tenants.product-subscriptions.index') }}" class="btn btn-outline-secondary">Reset</a>
@@ -193,6 +219,7 @@
                                         || !empty($subscription->gateway_subscription_id)
                                         || !empty($subscription->gateway_customer_id)
                                         || !empty($subscription->gateway_checkout_session_id);
+                                    $isStale = $isStaleSync($subscription->last_synced_from_stripe_at ?? null);
                                 @endphp
                                 <tr>
                                     <td>{{ $subscription->id }}</td>
@@ -235,6 +262,9 @@
                                             </span>
                                         @else
                                             <span class="badge bg-light text-dark">NEVER</span>
+                                        @endif
+                                        @if($isStale)
+                                            <span class="badge bg-warning text-dark ms-1">STALE</span>
                                         @endif
                                         <div class="small text-muted mt-1">
                                             {{ $subscription->last_synced_from_stripe_at ? \Carbon\Carbon::parse($subscription->last_synced_from_stripe_at)->format('Y-m-d H:i') : '-' }}

@@ -76,7 +76,7 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
             'gateway' => 'stripe',
             'gateway_customer_id' => 'cus_match_tps',
             'gateway_subscription_id' => 'sub_match_tps',
-            'last_synced_from_stripe_at' => now()->subHour(),
+            'last_synced_from_stripe_at' => now()->subDays(10),
             'last_sync_status' => 'success',
         ]);
 
@@ -100,6 +100,7 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
                 'status' => 'active',
                 'gateway' => 'stripe',
                 'last_sync_status' => 'success',
+                'sync_freshness' => 'stale_7d',
             ]));
 
         $response->assertOk();
@@ -109,6 +110,7 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
         $response->assertSee('Inventory Pro', false);
         $response->assertSee('cus_match_tps', false);
         $response->assertSee('SUCCESS', false);
+        $response->assertSee('STALE', false);
         $response->assertSee('Sync', false);
         $response->assertDontSee($otherTenant->id, false);
         $response->assertDontSee('cus_other_tps', false);

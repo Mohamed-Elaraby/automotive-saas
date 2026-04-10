@@ -237,6 +237,10 @@ This is the most recently expanded central admin area.
     - `last_sync_error`
 - the central `tenant_product_subscriptions` index now supports:
   - filtering by `last_sync_status`
+  - filtering by sync freshness:
+    - never synced
+    - last 24h
+    - older than 7 days
   - quick `Sync From Stripe` action from the table itself
 - suspend latest subscription
 - activate latest subscription
