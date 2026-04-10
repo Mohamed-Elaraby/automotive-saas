@@ -325,6 +325,12 @@ public function syncProductSubscriptionFromStripe(
             ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
             ->with('error', $exception->getMessage());
     } catch (Throwable $exception) {
+        $subscription->update([
+            'last_synced_from_stripe_at' => now(),
+            'last_sync_status' => 'failed',
+            'last_sync_error' => 'Unable to sync the product subscription from Stripe right now.',
+        ]);
+
         report($exception);
 
         return redirect()
@@ -955,6 +961,9 @@ protected function productSubscriptionsByTenantIds(array $tenantIds): Collection
                     'gateway_subscription_id' => $row->gateway_subscription_id ?? null,
                     'gateway_checkout_session_id' => $row->gateway_checkout_session_id ?? null,
                     'gateway_price_id' => $row->gateway_price_id ?? null,
+                    'last_synced_from_stripe_at' => $row->last_synced_from_stripe_at ?? null,
+                    'last_sync_status' => $row->last_sync_status ?? null,
+                    'last_sync_error' => $row->last_sync_error ?? null,
                     'legacy_subscription_id' => $row->legacy_subscription_id ?? null,
                     'created_at' => $row->created_at ?? null,
                     'updated_at' => $row->updated_at ?? null,
@@ -988,6 +997,9 @@ protected function productSubscriptionsBaseQuery()
             'tenant_product_subscriptions.gateway_subscription_id',
             'tenant_product_subscriptions.gateway_checkout_session_id',
             'tenant_product_subscriptions.gateway_price_id',
+            'tenant_product_subscriptions.last_synced_from_stripe_at',
+            'tenant_product_subscriptions.last_sync_status',
+            'tenant_product_subscriptions.last_sync_error',
             'tenant_product_subscriptions.created_at',
             'tenant_product_subscriptions.updated_at',
         ]);
@@ -1058,6 +1070,9 @@ protected function findProductSubscriptionOrFail(int $subscriptionId): array
         'gateway_subscription_id' => $record->gateway_subscription_id ?? null,
         'gateway_checkout_session_id' => $record->gateway_checkout_session_id ?? null,
         'gateway_price_id' => $record->gateway_price_id ?? null,
+        'last_synced_from_stripe_at' => $record->last_synced_from_stripe_at ?? null,
+        'last_sync_status' => $record->last_sync_status ?? null,
+        'last_sync_error' => $record->last_sync_error ?? null,
         'created_at' => $record->created_at ?? null,
         'updated_at' => $record->updated_at ?? null,
     ];
@@ -1074,6 +1089,9 @@ protected function productSubscriptionDiagnostics(array $subscription): array
         'has_gateway_subscription_id' => ! empty($subscription['gateway_subscription_id']),
         'has_gateway_checkout_session_id' => ! empty($subscription['gateway_checkout_session_id']),
         'has_gateway_price_id' => ! empty($subscription['gateway_price_id']),
+        'has_last_sync_timestamp' => ! empty($subscription['last_synced_from_stripe_at']),
+        'last_sync_status' => $subscription['last_sync_status'] ?? null,
+        'has_last_sync_error' => ! empty($subscription['last_sync_error']),
         'has_legacy_subscription_id' => ! empty($subscription['legacy_subscription_id']),
         'has_payment_failures' => (int) ($subscription['payment_failures_count'] ?? 0) > 0,
         'has_end_date' => ! empty($subscription['ends_at']),

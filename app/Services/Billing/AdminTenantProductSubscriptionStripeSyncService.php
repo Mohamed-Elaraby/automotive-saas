@@ -21,6 +21,7 @@ class AdminTenantProductSubscriptionStripeSyncService
     public function sync(TenantProductSubscription $subscription): TenantProductSubscription
     {
         if (! $this->isStripeLinked($subscription)) {
+            $this->markSyncFailure($subscription, 'This product subscription is not linked to the Stripe gateway.');
             throw new RuntimeException('This product subscription is not linked to the Stripe gateway.');
         }
 
@@ -28,16 +29,22 @@ class AdminTenantProductSubscriptionStripeSyncService
             $legacySubscription = $subscription->legacySubscription;
 
             if (! $legacySubscription) {
+                $this->markSyncFailure($subscription, 'The linked legacy subscription record could not be found.');
                 throw new RuntimeException('The linked legacy subscription record could not be found.');
             }
 
             $syncedLegacy = $this->stripeSubscriptionSyncService->syncLocalStripeSubscription($legacySubscription);
 
             if (! $syncedLegacy) {
+                $this->markSyncFailure($subscription, 'Unable to resolve a live Stripe subscription ID for this product subscription from the stored checkout/customer data.');
                 throw new RuntimeException('Unable to resolve a live Stripe subscription ID for this product subscription from the stored checkout/customer data.');
             }
 
-            $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($syncedLegacy);
+            $mirror = $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($syncedLegacy);
+
+            if ($mirror) {
+                $this->markSyncSuccess($mirror);
+            }
 
             return TenantProductSubscription::query()->findOrFail($subscription->id);
         }
@@ -45,6 +52,7 @@ class AdminTenantProductSubscriptionStripeSyncService
         $gatewaySubscriptionId = $this->resolveGatewaySubscriptionId($subscription);
 
         if ($gatewaySubscriptionId === '') {
+            $this->markSyncFailure($subscription, 'No Stripe subscription ID could be resolved for this product subscription.');
             throw new RuntimeException('No Stripe subscription ID could be resolved for this product subscription.');
         }
 
@@ -92,10 +100,10 @@ class AdminTenantProductSubscriptionStripeSyncService
             $subscription = $this->markRecovered($subscription);
 
             if ($cancelAtPeriodEnd && $currentPeriodEnd && $currentPeriodEnd->isFuture()) {
-                return $this->markCancelled($subscription, $cancelledAt, $currentPeriodEnd);
+                return $this->markSyncSuccess($this->markCancelled($subscription, $cancelledAt, $currentPeriodEnd));
             }
 
-            return $subscription->fresh();
+            return $this->markSyncSuccess($subscription->fresh());
         }
 
         if ($mappedStatus === SubscriptionStatuses::TRIALING) {
@@ -109,26 +117,26 @@ class AdminTenantProductSubscriptionStripeSyncService
                 'payment_failures_count' => 0,
             ]);
 
-            return $subscription->fresh();
+            return $this->markSyncSuccess($subscription->fresh());
         }
 
         if ($mappedStatus === SubscriptionStatuses::PAST_DUE) {
-            return $this->markPastDue($subscription);
+            return $this->markSyncSuccess($this->markPastDue($subscription));
         }
 
         if ($mappedStatus === SubscriptionStatuses::SUSPENDED) {
-            return $this->markSuspended($subscription);
+            return $this->markSyncSuccess($this->markSuspended($subscription));
         }
 
         if ($mappedStatus === SubscriptionStatuses::EXPIRED) {
             if ($currentPeriodEnd && $currentPeriodEnd->isFuture()) {
-                return $this->markCancelled($subscription, $cancelledAt, $currentPeriodEnd);
+                return $this->markSyncSuccess($this->markCancelled($subscription, $cancelledAt, $currentPeriodEnd));
             }
 
-            return $this->markExpired($subscription, $currentPeriodEnd ?? $cancelledAt);
+            return $this->markSyncSuccess($this->markExpired($subscription, $currentPeriodEnd ?? $cancelledAt));
         }
 
-        return $subscription->fresh();
+        return $this->markSyncSuccess($subscription->fresh());
     }
 
     protected function isStripeLinked(TenantProductSubscription $subscription): bool
@@ -347,5 +355,25 @@ class AdminTenantProductSubscriptionStripeSyncService
     protected function client(): StripeClient
     {
         return new StripeClient($this->stripeSecret());
+    }
+
+    protected function markSyncSuccess(TenantProductSubscription $subscription): TenantProductSubscription
+    {
+        $subscription->update([
+            'last_synced_from_stripe_at' => now(),
+            'last_sync_status' => 'success',
+            'last_sync_error' => null,
+        ]);
+
+        return $subscription->fresh();
+    }
+
+    protected function markSyncFailure(TenantProductSubscription $subscription, string $message): void
+    {
+        $subscription->update([
+            'last_synced_from_stripe_at' => now(),
+            'last_sync_status' => 'failed',
+            'last_sync_error' => $message,
+        ]);
     }
 }

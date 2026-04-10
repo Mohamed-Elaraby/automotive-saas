@@ -26,6 +26,9 @@ class TenantProductSubscription extends Model
         'gateway_subscription_id',
         'gateway_checkout_session_id',
         'gateway_price_id',
+        'last_synced_from_stripe_at',
+        'last_sync_status',
+        'last_sync_error',
     ];
 
     protected $casts = [
@@ -36,6 +39,7 @@ class TenantProductSubscription extends Model
         'suspended_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'ends_at' => 'datetime',
+        'last_synced_from_stripe_at' => 'datetime',
         'payment_failures_count' => 'integer',
     ];
 

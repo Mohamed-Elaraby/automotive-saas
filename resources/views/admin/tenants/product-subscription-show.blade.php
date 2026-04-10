@@ -199,6 +199,18 @@
                                     <td>{{ $subscription['gateway_price_id'] ?: '-' }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Last Synced From Stripe At</th>
+                                    <td>{{ $subscription['last_synced_from_stripe_at'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Sync Status</th>
+                                    <td>{{ $subscription['last_sync_status'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Sync Error</th>
+                                    <td>{{ $subscription['last_sync_error'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
                                     <th>Payment Failures Count</th>
                                     <td>{{ (int) ($subscription['payment_failures_count'] ?? 0) }}</td>
                                 </tr>
@@ -428,6 +440,18 @@
                                 <tr>
                                     <th>Stripe Price ID</th>
                                     <td>{!! $yesNoBadge((bool) ($diagnostics['has_gateway_price_id'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Sync Timestamp</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_last_sync_timestamp'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Sync Status</th>
+                                    <td>{{ $diagnostics['last_sync_status'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Sync Error</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_last_sync_error'] ?? false)) !!}</td>
                                 </tr>
                                 <tr>
                                     <th>Legacy Subscription ID</th>

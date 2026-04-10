@@ -72,17 +72,21 @@ class AdminTenantProductSubscriptionStripeSyncTest extends TestCase
             'gateway_subscription_id' => 'sub_sync',
         ]);
 
-        $syncedSubscription = $subscription->replicate()->fill([
-            'id' => $subscription->id,
-            'status' => 'active',
-            'gateway_price_id' => 'price_sync',
-        ]);
-
         $syncService = Mockery::mock(AdminTenantProductSubscriptionStripeSyncService::class);
         $syncService->shouldReceive('sync')
             ->once()
             ->with(Mockery::on(fn ($model) => (int) $model->id === (int) $subscription->id))
-            ->andReturn($syncedSubscription);
+            ->andReturnUsing(function () use ($subscription) {
+                $subscription->update([
+                    'status' => 'active',
+                    'gateway_price_id' => 'price_sync',
+                    'last_synced_from_stripe_at' => now(),
+                    'last_sync_status' => 'success',
+                    'last_sync_error' => null,
+                ]);
+
+                return $subscription->fresh();
+            });
 
         $this->app->instance(AdminTenantProductSubscriptionStripeSyncService::class, $syncService);
 
@@ -93,6 +97,12 @@ class AdminTenantProductSubscriptionStripeSyncTest extends TestCase
         $response
             ->assertRedirect(route('admin.tenants.product-subscriptions.show', $subscription->id))
             ->assertSessionHas('success', 'Product subscription data was synced successfully from Stripe.');
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'id' => $subscription->id,
+            'last_sync_status' => 'success',
+            'last_sync_error' => null,
+        ]);
 
         $this->assertDatabaseHas('admin_activity_logs', [
             'action' => 'tenant.product_subscription.synced_from_stripe',

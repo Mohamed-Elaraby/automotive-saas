@@ -68,6 +68,8 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
             'gateway_subscription_id' => 'sub_show_tps',
             'gateway_checkout_session_id' => 'cs_show_tps',
             'gateway_price_id' => 'price_show_tps',
+            'last_synced_from_stripe_at' => now()->subMinutes(30),
+            'last_sync_status' => 'success',
             'payment_failures_count' => 1,
             'ends_at' => now()->addMonth(),
         ]);
@@ -116,6 +118,9 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
         $response->assertSee('Latest local invoice is paid.', false);
         $response->assertSee('Diagnostics', false);
         $response->assertSee('Legacy Subscription ID', false);
+        $response->assertSee('Last Synced From Stripe At', false);
+        $response->assertSee('Last Sync Status', false);
+        $response->assertSee('success', false);
         $response->assertSee(route('admin.subscriptions.show', $legacySubscription->id), false);
         $response->assertSee('Open Legacy Subscription', false);
     }

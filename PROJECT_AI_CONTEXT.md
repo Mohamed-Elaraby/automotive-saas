@@ -230,6 +230,11 @@ This is the most recently expanded central admin area.
   - diagnostics
   - latest local invoice snapshot
   - health hints based on Stripe/billing data completeness
+  - direct `Sync From Stripe` action
+  - persisted last-sync metadata:
+    - `last_synced_from_stripe_at`
+    - `last_sync_status`
+    - `last_sync_error`
 - suspend latest subscription
 - activate latest subscription
 - extend trial
