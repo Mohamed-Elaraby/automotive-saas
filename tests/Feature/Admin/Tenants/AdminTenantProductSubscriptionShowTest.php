@@ -116,5 +116,7 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
         $response->assertSee('Latest local invoice is paid.', false);
         $response->assertSee('Diagnostics', false);
         $response->assertSee('Legacy Subscription ID', false);
+        $response->assertSee(route('admin.subscriptions.show', $legacySubscription->id), false);
+        $response->assertSee('Open Legacy Subscription', false);
     }
 }

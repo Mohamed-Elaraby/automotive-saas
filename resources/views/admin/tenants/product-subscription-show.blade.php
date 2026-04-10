@@ -48,6 +48,9 @@
 
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ route('admin.tenants.product-subscriptions.index', ['tenant_id' => $subscription['tenant_id']]) }}" class="btn btn-light">Back</a>
+                    @if(!empty($subscription['legacy_subscription_id']))
+                        <a href="{{ route('admin.subscriptions.show', $subscription['legacy_subscription_id']) }}" class="btn btn-primary">Open Legacy Subscription</a>
+                    @endif
                     <a href="{{ route('admin.tenants.show', $subscription['tenant_id']) }}" class="btn btn-outline-primary">Open Tenant</a>
                 </div>
             </div>
@@ -144,7 +147,15 @@
                                 </tr>
                                 <tr>
                                     <th>Legacy Subscription ID</th>
-                                    <td>{{ $subscription['legacy_subscription_id'] ?: '-' }}</td>
+                                    <td>
+                                        @if(!empty($subscription['legacy_subscription_id']))
+                                            <a href="{{ route('admin.subscriptions.show', $subscription['legacy_subscription_id']) }}">
+                                                {{ $subscription['legacy_subscription_id'] }}
+                                            </a>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>External ID</th>
@@ -420,6 +431,9 @@
                         </div>
                         <div class="card-body d-grid gap-2">
                             <a href="{{ route('admin.tenants.product-subscriptions.index', ['tenant_id' => $subscription['tenant_id']]) }}" class="btn btn-light">Back to Product Subscriptions</a>
+                            @if(!empty($subscription['legacy_subscription_id']))
+                                <a href="{{ route('admin.subscriptions.show', $subscription['legacy_subscription_id']) }}" class="btn btn-primary">Open Legacy Subscription</a>
+                            @endif
                             <a href="{{ route('admin.tenants.show', $subscription['tenant_id']) }}" class="btn btn-outline-primary">Open Tenant Details</a>
                         </div>
                     </div>
