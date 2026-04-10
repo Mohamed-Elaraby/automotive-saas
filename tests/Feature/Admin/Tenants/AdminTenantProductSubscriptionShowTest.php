@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin\Tenants;
 use App\Models\Admin;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\BillingInvoice;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
@@ -71,6 +72,29 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
             'ends_at' => now()->addMonth(),
         ]);
 
+        BillingInvoice::query()->create([
+            'subscription_id' => $legacySubscription->id,
+            'tenant_id' => $tenant->id,
+            'gateway' => 'stripe',
+            'gateway_invoice_id' => 'in_show_tps',
+            'gateway_customer_id' => 'cus_show_tps',
+            'gateway_subscription_id' => 'sub_show_tps',
+            'invoice_number' => 'INV-SHOW-TPS',
+            'status' => 'paid',
+            'billing_reason' => 'subscription_cycle',
+            'currency' => 'usd',
+            'total_minor' => 49900,
+            'total_decimal' => 499,
+            'amount_paid_minor' => 49900,
+            'amount_paid_decimal' => 499,
+            'amount_due_minor' => 0,
+            'amount_due_decimal' => 0,
+            'hosted_invoice_url' => 'https://example.test/invoices/show',
+            'invoice_pdf' => 'https://example.test/invoices/show.pdf',
+            'issued_at' => now()->subDay(),
+            'paid_at' => now()->subHours(12),
+        ]);
+
         $response = $this
             ->actingAs($admin, 'admin')
             ->get(route('admin.tenants.product-subscriptions.show', $subscription->id));
@@ -85,6 +109,11 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
         $response->assertSee('price_show_tps', false);
         $response->assertSee((string) $tenant->id, false);
         $response->assertSee('Tenant Snapshot', false);
+        $response->assertSee('Latest Invoice', false);
+        $response->assertSee('INV-SHOW-TPS', false);
+        $response->assertSee('in_show_tps', false);
+        $response->assertSee('Health Hints', false);
+        $response->assertSee('Latest local invoice is paid.', false);
         $response->assertSee('Diagnostics', false);
         $response->assertSee('Legacy Subscription ID', false);
     }

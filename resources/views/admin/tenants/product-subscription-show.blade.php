@@ -27,6 +27,15 @@
         $planName = $subscription['plan_name']
             ?: $subscription['plan_slug']
             ?: ($subscription['plan_id'] ? ('Plan #' . $subscription['plan_id']) : '-');
+
+        $hintAlertClass = function (string $severity): string {
+            return match ($severity) {
+                'success' => 'alert-success',
+                'warning' => 'alert-warning',
+                'error' => 'alert-danger',
+                default => 'alert-info',
+            };
+        };
     @endphp
 
     <div class="page-wrapper">
@@ -213,6 +222,86 @@
                             </table>
                         </div>
                     </div>
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">Latest Invoice</h6>
+                        </div>
+                        <div class="card-body">
+                            @if($latestInvoice)
+                                <table class="table table-sm table-striped align-middle mb-0">
+                                    <tbody>
+                                    <tr>
+                                        <th style="width: 240px;">Invoice ID</th>
+                                        <td>{{ $latestInvoice['gateway_invoice_id'] ?: ('Local #' . $latestInvoice['id']) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Invoice Number</th>
+                                        <td>{{ $latestInvoice['invoice_number'] ?: '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status</th>
+                                        <td>{{ $latestInvoice['status'] ?: '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Billing Reason</th>
+                                        <td>{{ $latestInvoice['billing_reason'] ?: '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total</th>
+                                        <td>
+                                            {{ $latestInvoice['total_decimal'] !== null ? number_format((float) $latestInvoice['total_decimal'], 2) : '-' }}
+                                            {{ strtoupper((string) ($latestInvoice['currency'] ?? '')) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Amount Paid</th>
+                                        <td>
+                                            {{ $latestInvoice['amount_paid_decimal'] !== null ? number_format((float) $latestInvoice['amount_paid_decimal'], 2) : '-' }}
+                                            {{ strtoupper((string) ($latestInvoice['currency'] ?? '')) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Amount Due</th>
+                                        <td>
+                                            {{ $latestInvoice['amount_due_decimal'] !== null ? number_format((float) $latestInvoice['amount_due_decimal'], 2) : '-' }}
+                                            {{ strtoupper((string) ($latestInvoice['currency'] ?? '')) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Issued At</th>
+                                        <td>{{ $latestInvoice['issued_at'] ?: '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Paid At</th>
+                                        <td>{{ $latestInvoice['paid_at'] ?: '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Links</th>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @if(!empty($latestInvoice['hosted_invoice_url']))
+                                                    <a href="{{ $latestInvoice['hosted_invoice_url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">
+                                                        Hosted Invoice
+                                                    </a>
+                                                @endif
+                                                @if(!empty($latestInvoice['invoice_pdf']))
+                                                    <a href="{{ $latestInvoice['invoice_pdf'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
+                                                        Invoice PDF
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            @else
+                                <div class="alert alert-warning mb-0">
+                                    No local invoice snapshot was found for this product subscription.
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-xl-4">
@@ -245,6 +334,27 @@
                                 </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0">Health Hints</h6>
+                        </div>
+                        <div class="card-body">
+                            @if(!empty($healthHints))
+                                <div class="d-grid gap-2">
+                                    @foreach($healthHints as $hint)
+                                        <div class="alert {{ $hintAlertClass((string) ($hint['severity'] ?? 'info')) }} mb-0">
+                                            {{ $hint['message'] ?? '' }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="alert alert-light mb-0">
+                                    No immediate health hints were generated for this record.
+                                </div>
+                            @endif
                         </div>
                     </div>
 

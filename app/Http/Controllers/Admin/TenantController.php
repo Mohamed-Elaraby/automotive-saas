@@ -254,6 +254,8 @@ public function showProductSubscription(int $subscriptionId): View
     $tenantData = $this->normalizedTenantData($tenant);
     $ownerSnapshot = $this->ownerSnapshot($tenantData);
     $diagnostics = $this->productSubscriptionDiagnostics($subscription);
+    $latestInvoice = $this->latestInvoiceForProductSubscription($subscription);
+    $healthHints = $this->productSubscriptionHealthHints($subscription, $latestInvoice);
 
     return view('admin.tenants.product-subscription-show', [
         'subscription' => $subscription,
@@ -261,6 +263,8 @@ public function showProductSubscription(int $subscriptionId): View
         'tenantData' => $tenantData,
         'ownerSnapshot' => $ownerSnapshot,
         'diagnostics' => $diagnostics,
+        'latestInvoice' => $latestInvoice,
+        'healthHints' => $healthHints,
     ]);
 }
 
@@ -1009,6 +1013,102 @@ protected function productSubscriptionDiagnostics(array $subscription): array
         'has_payment_failures' => (int) ($subscription['payment_failures_count'] ?? 0) > 0,
         'has_end_date' => ! empty($subscription['ends_at']),
     ];
+}
+
+protected function latestInvoiceForProductSubscription(array $subscription): ?array
+{
+    if (! Schema::connection($this->centralConnectionName())->hasTable('billing_invoices')) {
+        return null;
+    }
+
+    $query = DB::connection($this->centralConnectionName())
+        ->table('billing_invoices')
+        ->orderByDesc('issued_at')
+        ->orderByDesc('id');
+
+    $gatewaySubscriptionId = (string) ($subscription['gateway_subscription_id'] ?? '');
+
+    if ($gatewaySubscriptionId !== '') {
+        $query->where('gateway_subscription_id', $gatewaySubscriptionId);
+    } else {
+        $query->where('tenant_id', (string) $subscription['tenant_id']);
+
+        if (! empty($subscription['gateway'])) {
+            $query->where('gateway', (string) $subscription['gateway']);
+        }
+    }
+
+    $invoice = $query->first();
+
+    if (! $invoice) {
+        return null;
+    }
+
+    return [
+        'id' => $invoice->id,
+        'subscription_id' => $invoice->subscription_id ?? null,
+        'tenant_id' => (string) ($invoice->tenant_id ?? ''),
+        'gateway' => $invoice->gateway ?? null,
+        'gateway_invoice_id' => $invoice->gateway_invoice_id ?? null,
+        'gateway_customer_id' => $invoice->gateway_customer_id ?? null,
+        'gateway_subscription_id' => $invoice->gateway_subscription_id ?? null,
+        'invoice_number' => $invoice->invoice_number ?? null,
+        'status' => $invoice->status ?? null,
+        'billing_reason' => $invoice->billing_reason ?? null,
+        'currency' => $invoice->currency ?? null,
+        'total_decimal' => $invoice->total_decimal ?? null,
+        'amount_paid_decimal' => $invoice->amount_paid_decimal ?? null,
+        'amount_due_decimal' => $invoice->amount_due_decimal ?? null,
+        'hosted_invoice_url' => $invoice->hosted_invoice_url ?? null,
+        'invoice_pdf' => $invoice->invoice_pdf ?? null,
+        'issued_at' => $invoice->issued_at ?? null,
+        'paid_at' => $invoice->paid_at ?? null,
+    ];
+}
+
+protected function productSubscriptionHealthHints(array $subscription, ?array $latestInvoice): array
+{
+    $hints = [];
+
+    if (($subscription['gateway'] ?? null) === 'stripe' && empty($subscription['gateway_subscription_id'])) {
+        $hints[] = [
+            'severity' => 'warning',
+            'message' => 'Stripe gateway is set, but the gateway subscription ID is still missing.',
+        ];
+    }
+
+    if (($subscription['status'] ?? null) === 'past_due' && (int) ($subscription['payment_failures_count'] ?? 0) === 0) {
+        $hints[] = [
+            'severity' => 'warning',
+            'message' => 'The record is marked past due, but payment failures count is still zero.',
+        ];
+    }
+
+    if (($subscription['status'] ?? null) === 'active' && ! empty($subscription['ends_at'])) {
+        $hints[] = [
+            'severity' => 'info',
+            'message' => 'The record is active and already has an end date. Verify whether this is a scheduled cancellation.',
+        ];
+    }
+
+    if (! $latestInvoice) {
+        $hints[] = [
+            'severity' => 'info',
+            'message' => 'No local billing invoice is linked to this product subscription yet.',
+        ];
+    } elseif (($latestInvoice['status'] ?? null) === 'paid') {
+        $hints[] = [
+            'severity' => 'success',
+            'message' => 'Latest local invoice is paid.',
+        ];
+    } elseif (in_array((string) ($latestInvoice['status'] ?? ''), ['open', 'uncollectible', 'void'], true)) {
+        $hints[] = [
+            'severity' => 'warning',
+            'message' => 'Latest local invoice is not settled. Review invoice status and payment collection path.',
+        ];
+    }
+
+    return $hints;
 }
 
 protected function productSubscriptionStatusCounts(): array

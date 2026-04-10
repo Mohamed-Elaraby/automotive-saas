@@ -228,6 +228,8 @@ This is the most recently expanded central admin area.
   - lifecycle timeline
   - tenant snapshot
   - diagnostics
+  - latest local invoice snapshot
+  - health hints based on Stripe/billing data completeness
 - suspend latest subscription
 - activate latest subscription
 - extend trial
