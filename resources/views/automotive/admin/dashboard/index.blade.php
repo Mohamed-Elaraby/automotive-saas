@@ -24,6 +24,45 @@
                 </div>
             </div>
 
+            @if(!empty($focusedWorkspaceProduct))
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                            <div>
+                                <div class="text-muted small mb-1">Focused Workspace Product</div>
+                                <h5 class="mb-1">{{ $focusedWorkspaceProduct['product_name'] }}</h5>
+                                <p class="text-muted mb-2">
+                                    {{ $focusedWorkspaceProduct['plan_name'] ?: 'No plan mapped yet' }} ·
+                                    {{ $focusedWorkspaceProduct['is_accessible'] ? 'Connected to this workspace' : $focusedWorkspaceProduct['status_label'] }}
+                                </p>
+                                @if(!empty($focusedWorkspaceProduct['capabilities']))
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach($focusedWorkspaceProduct['capabilities'] as $capabilityName)
+                                            <span class="badge bg-primary-subtle text-primary border">{{ $capabilityName }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-muted small">No active capabilities are attached to this product yet.</div>
+                                @endif
+                            </div>
+
+                            @if(($workspaceProducts ?? collect())->count() > 1)
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach($workspaceProducts as $workspaceProduct)
+                                        <a
+                                            href="{{ route('automotive.admin.dashboard', ['workspace_product' => $workspaceProduct['product_code']]) }}"
+                                            class="btn {{ $focusedWorkspaceProduct['product_code'] === $workspaceProduct['product_code'] ? 'btn-primary' : 'btn-outline-white' }}"
+                                        >
+                                            {{ $workspaceProduct['product_name'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-xxl-3 col-xl-4 col-md-6 d-flex">
                     <div class="card flex-fill">

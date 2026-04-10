@@ -1,4 +1,5 @@
 <!-- Sidenav Menu Start -->
+@php($selectedWorkspaceProduct = trim((string) request()->query('workspace_product')))
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
         <!-- Add -->
@@ -118,8 +119,8 @@
                         <li>
                             <ul>
                                 @foreach($tenantWorkspaceProducts as $workspaceProduct)
-                                    <li>
-                                        <a href="{{ route('automotive.admin.dashboard') }}">
+                                    <li class="{{ $selectedWorkspaceProduct !== '' && ($selectedWorkspaceProduct === (string) $workspaceProduct['product_code'] || $selectedWorkspaceProduct === (string) $workspaceProduct['product_slug']) ? 'active' : '' }}">
+                                        <a href="{{ route('automotive.admin.dashboard', ['workspace_product' => $workspaceProduct['product_code']]) }}">
                                             <i class="isax {{ $workspaceProduct['is_primary_workspace_product'] ? 'isax-car' : 'isax-layer' }}"></i>
                                             <span>{{ $workspaceProduct['product_name'] }}</span>
                                             <small class="ms-auto text-muted">

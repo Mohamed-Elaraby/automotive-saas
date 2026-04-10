@@ -1099,6 +1099,21 @@ Important architectural note:
 Important operator note:
 - to create pricing for a non-automotive product such as accounting or spare parts, create the product first, then create plans attached to that product from the plans form
 
+### 18.15 Workspace Product Switcher Foundation
+The shared tenant workspace can now focus on a selected attached product inside the same tenant domain.
+
+What changed:
+- tenant dashboard accepts `workspace_product` as a focused workspace context selector
+- sidebar workspace-product entries now link back into the same dashboard with product focus preserved
+- dashboard now shows:
+  - focused workspace product
+  - the focused product's capabilities
+  - quick switching buttons between attached products
+
+Important scope note:
+- this is still a context/navigation layer, not full module runtime routing
+- it is the correct step before implementing product-specific module pages/controllers under the shared workspace
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

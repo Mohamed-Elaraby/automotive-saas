@@ -87,4 +87,29 @@ class TenantWorkspaceProductService
             })
             ->values();
     }
+
+    public function resolveFocusedProduct(Collection $workspaceProducts, mixed $selection = null): ?array
+    {
+        $selected = trim((string) $selection);
+
+        if ($selected !== '') {
+            $matched = $workspaceProducts->first(function (array $product) use ($selected) {
+                return (string) $product['product_code'] === $selected
+                    || (string) $product['product_slug'] === $selected
+                    || (string) $product['product_id'] === $selected;
+            });
+
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        $primary = $workspaceProducts->firstWhere('is_primary_workspace_product', true);
+
+        if ($primary) {
+            return $primary;
+        }
+
+        return $workspaceProducts->first();
+    }
 }

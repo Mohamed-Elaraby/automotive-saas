@@ -166,10 +166,19 @@ class TenantAdminAccessFlowTest extends TestCase
 
         $dashboardResponse->assertOk();
         $dashboardResponse->assertSee('Workspace Products', false);
+        $dashboardResponse->assertSee('Focused Workspace Product', false);
         $dashboardResponse->assertSee('Accounting Suite', false);
         $dashboardResponse->assertSee('Spare Parts', false);
         $dashboardResponse->assertSee('General Ledger', false);
         $dashboardResponse->assertSee('Connected', false);
+
+        $focusedResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product={$accountingProduct->code}");
+
+        $focusedResponse->assertOk();
+        $focusedResponse->assertSee('Focused Workspace Product', false);
+        $focusedResponse->assertSee('Accounting Suite', false);
+        $focusedResponse->assertSee('General Ledger', false);
+        $focusedResponse->assertSee("workspace_product={$accountingProduct->code}", false);
     }
 
     /**
