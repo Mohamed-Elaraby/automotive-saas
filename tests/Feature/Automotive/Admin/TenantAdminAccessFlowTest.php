@@ -5,6 +5,7 @@ namespace Tests\Feature\Automotive\Admin;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\ProductCapability;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
@@ -147,6 +148,15 @@ class TenantAdminAccessFlowTest extends TestCase
             'gateway_subscription_id' => 'sub_spare_parts_' . uniqid(),
         ]);
 
+        ProductCapability::query()->create([
+            'product_id' => $accountingProduct->id,
+            'code' => 'general_ledger',
+            'name' => 'General Ledger',
+            'slug' => 'general-ledger',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
@@ -158,6 +168,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertSee('Workspace Products', false);
         $dashboardResponse->assertSee('Accounting Suite', false);
         $dashboardResponse->assertSee('Spare Parts', false);
+        $dashboardResponse->assertSee('General Ledger', false);
         $dashboardResponse->assertSee('Connected', false);
     }
 

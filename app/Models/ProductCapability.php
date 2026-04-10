@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Product extends Model
+class ProductCapability extends Model
 {
     protected $fillable = [
+        'product_id',
         'code',
         'name',
         'slug',
@@ -28,25 +29,8 @@ class Product extends Model
         );
     }
 
-    public function plans()
+    public function product()
     {
-        return $this->hasMany(Plan::class);
-    }
-
-    public function tenantProductSubscriptions()
-    {
-        return $this->hasMany(TenantProductSubscription::class);
-    }
-
-    public function enablementRequests()
-    {
-        return $this->hasMany(ProductEnablementRequest::class);
-    }
-
-    public function capabilities()
-    {
-        return $this->hasMany(ProductCapability::class)
-            ->orderBy('sort_order')
-            ->orderBy('name');
+        return $this->belongsTo(Product::class);
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductCapabilityController;
 use App\Http\Controllers\Admin\ProductEnablementRequestController;
 use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
@@ -105,6 +106,16 @@ Route::prefix('admin')
                 Route::get('/', [ProductController::class, 'index'])->name('index');
                 Route::get('/create', [ProductController::class, 'create'])->name('create');
                 Route::post('/', [ProductController::class, 'store'])->name('store');
+                Route::prefix('/{product}/capabilities')
+                    ->name('capabilities.')
+                    ->group(function () {
+                        Route::get('/', [ProductCapabilityController::class, 'index'])->name('index');
+                        Route::get('/create', [ProductCapabilityController::class, 'create'])->name('create');
+                        Route::post('/', [ProductCapabilityController::class, 'store'])->name('store');
+                        Route::get('/{capability}/edit', [ProductCapabilityController::class, 'edit'])->name('edit');
+                        Route::put('/{capability}', [ProductCapabilityController::class, 'update'])->name('update');
+                        Route::delete('/{capability}', [ProductCapabilityController::class, 'destroy'])->name('destroy');
+                    });
                 Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
                 Route::put('/{product}', [ProductController::class, 'update'])->name('update');
                 Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');

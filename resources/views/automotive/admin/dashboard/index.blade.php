@@ -234,6 +234,13 @@
                                                 <div class="text-muted small">
                                                     {{ $workspaceProduct['plan_name'] ?: 'No plan mapped yet' }}
                                                 </div>
+                                                @if(!empty($workspaceProduct['capabilities']))
+                                                    <div class="mt-2 d-flex flex-wrap gap-1">
+                                                        @foreach($workspaceProduct['capabilities'] as $capabilityName)
+                                                            <span class="badge bg-light text-dark">{{ $capabilityName }}</span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="text-end">
                                                 <span class="badge {{ $workspaceProduct['is_accessible'] ? 'bg-success' : 'bg-secondary' }}">

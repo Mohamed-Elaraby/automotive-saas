@@ -1,37 +1,28 @@
-<?php $page = 'products-index'; ?>
+<?php $page = 'product-capabilities-index'; ?>
 @extends('admin.layouts.centralLayout.mainlayout')
 
 @section('content')
     <div class="page-wrapper">
         <div class="content">
-            @component('admin.layouts.components.title-meta')
-                @slot('title')
-                    Products
-                @endslot
-            @endcomponent
-
             <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="content-page-header">
-                    <h5>Products</h5>
-                    <p class="text-muted mb-0">Manage the central multi-product catalog used by plans and portal enablement.</p>
+                    <h5>{{ $product->name }} Capabilities</h5>
+                    <p class="text-muted mb-0">Manage product-level modules and capabilities for this product.</p>
                 </div>
 
-                <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
-                    Add Product
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">Back to Products</a>
+                    <a href="{{ route('admin.products.capabilities.create', $product) }}" class="btn btn-primary">Add Capability</a>
+                </div>
             </div>
 
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
-            @if(session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
-            @endif
-
             <div class="card mb-4">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('admin.products.index') }}">
+                    <form method="GET" action="{{ route('admin.products.capabilities.index', $product) }}">
                         <div class="row g-3">
                             <div class="col-md-8">
                                 <label class="form-label">Search</label>
@@ -55,8 +46,8 @@
 
             <div class="card">
                 <div class="card-body">
-                    @if($products->isEmpty())
-                        <div class="alert alert-light mb-0">No products found.</div>
+                    @if($capabilities->isEmpty())
+                        <div class="alert alert-light mb-0">No capabilities found for this product yet.</div>
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped align-middle">
@@ -66,46 +57,31 @@
                                     <th>Name</th>
                                     <th>Slug</th>
                                     <th>Status</th>
-                                    <th>Plans</th>
-                                    <th>Capabilities</th>
-                                    <th>Subscriptions</th>
                                     <th>Sort</th>
                                     <th></th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                @foreach($products as $product)
+                                @foreach($capabilities as $capability)
                                     <tr>
-                                        <td>{{ $product->code }}</td>
+                                        <td>{{ $capability->code }}</td>
                                         <td>
-                                            <div class="fw-semibold">{{ $product->name }}</div>
-                                            <div class="text-muted small">{{ $product->description ?: '-' }}</div>
+                                            <div class="fw-semibold">{{ $capability->name }}</div>
+                                            <div class="text-muted small">{{ $capability->description ?: '-' }}</div>
                                         </td>
-                                        <td>{{ $product->slug }}</td>
+                                        <td>{{ $capability->slug }}</td>
                                         <td>
-                                            <span class="badge {{ $product->is_active ? 'bg-success' : 'bg-secondary' }}">
-                                                {{ $product->is_active ? 'Active' : 'Inactive' }}
+                                            <span class="badge {{ $capability->is_active ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ $capability->is_active ? 'Active' : 'Inactive' }}
                                             </span>
                                         </td>
-                                        <td>
-                                            <a href="{{ route('admin.plans.index', ['product_id' => $product->id]) }}" class="btn btn-sm btn-outline-primary">
-                                                {{ $product->plans_count }} Plans
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('admin.products.capabilities.index', $product) }}" class="btn btn-sm btn-outline-info">
-                                                {{ $product->capabilities_count }} Capabilities
-                                            </a>
-                                        </td>
-                                        <td>{{ $product->tenant_product_subscriptions_count }}</td>
-                                        <td>{{ $product->sort_order }}</td>
+                                        <td>{{ $capability->sort_order }}</td>
                                         <td class="text-end">
                                             <div class="d-inline-flex gap-2">
-                                                <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-primary">
+                                                <a href="{{ route('admin.products.capabilities.edit', [$product, $capability]) }}" class="btn btn-sm btn-outline-primary">
                                                     Edit
                                                 </a>
-
-                                                <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Delete this product?');">
+                                                <form method="POST" action="{{ route('admin.products.capabilities.destroy', [$product, $capability]) }}" onsubmit="return confirm('Delete this capability?');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -120,7 +96,7 @@
                             </table>
                         </div>
 
-                        {{ $products->links() }}
+                        {{ $capabilities->links() }}
                     @endif
                 </div>
             </div>

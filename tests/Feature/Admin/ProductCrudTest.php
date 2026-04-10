@@ -107,7 +107,9 @@ class ProductCrudTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('1 Plans', false);
+        $response->assertSee('0 Capabilities', false);
         $response->assertSee(route('admin.plans.index', ['product_id' => $product->id]), false);
+        $response->assertSee(route('admin.products.capabilities.index', $product), false);
     }
 
     public function test_admin_cannot_delete_product_when_it_is_used(): void
@@ -159,7 +161,7 @@ class ProductCrudTest extends TestCase
 
         $response
             ->assertRedirect(route('admin.products.index'))
-            ->assertSessionHas('error', 'This product cannot be deleted because it is already used by plans, subscriptions, or enablement requests.');
+            ->assertSessionHas('error', 'This product cannot be deleted because it is already used by plans, capabilities, subscriptions, or enablement requests.');
 
         $this->assertDatabaseHas('products', [
             'id' => $product->id,

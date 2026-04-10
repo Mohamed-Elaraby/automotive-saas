@@ -50,9 +50,23 @@ class TenantWorkspaceProductService
                 'plans.name as plan_name',
             ]);
 
+        $capabilitiesByProductId = collect();
+
+        if (Schema::connection($connection)->hasTable('product_capabilities')) {
+            $capabilitiesByProductId = DB::connection($connection)
+                ->table('product_capabilities')
+                ->whereIn('product_id', $rows->pluck('product_id')->filter()->unique()->all())
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['product_id', 'name'])
+                ->groupBy('product_id')
+                ->map(fn (Collection $items) => $items->pluck('name')->values()->all());
+        }
+
         return $rows
             ->unique('product_id')
-            ->map(function (object $row): array {
+            ->map(function (object $row) use ($capabilitiesByProductId): array {
                 $status = (string) ($row->status ?? '');
                 $isAccessible = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true);
 
@@ -64,6 +78,7 @@ class TenantWorkspaceProductService
                     'product_name' => (string) ($row->product_name ?? ('Product #' . $row->product_id)),
                     'product_slug' => (string) ($row->product_slug ?? ''),
                     'plan_name' => (string) ($row->plan_name ?? ''),
+                    'capabilities' => $capabilitiesByProductId->get($row->product_id, []),
                     'status' => $status,
                     'status_label' => strtoupper(str_replace('_', ' ', $status ?: 'unknown')),
                     'is_accessible' => $isAccessible,

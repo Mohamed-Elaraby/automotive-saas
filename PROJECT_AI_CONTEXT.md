@@ -1078,6 +1078,24 @@ Important scope note:
 - this does **not** yet add separate routes/modules for non-automotive products
 - it is the required foundation before product capabilities/modules can be attached and surfaced inside the same workspace
 
+### 18.14 Product Capabilities / Modules Foundation
+Product-level capabilities/modules now exist as a central admin-managed concept separate from plans.
+
+What exists now:
+- `product_capabilities` table
+- central admin CRUD per product
+- product index shows capability counts and links into capability management
+- tenant workspace dashboard now surfaces active capabilities for attached products
+
+Important architectural note:
+- capabilities are currently metadata and visibility signals
+- they do **not** yet create tenant routes/controllers/pages per non-automotive product
+- this is the right sequence:
+  1. attach products to the tenant workspace
+  2. define product capabilities centrally
+  3. surface those capabilities in the shared workspace
+  4. later implement each capability/module runtime
+
 Important operator note:
 - to create pricing for a non-automotive product such as accounting or spare parts, create the product first, then create plans attached to that product from the plans form
 

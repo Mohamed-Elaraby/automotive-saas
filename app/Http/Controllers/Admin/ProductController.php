@@ -23,7 +23,7 @@ class ProductController extends Controller
         ];
 
         $products = Product::query()
-            ->withCount(['plans', 'tenantProductSubscriptions'])
+            ->withCount(['plans', 'tenantProductSubscriptions', 'capabilities'])
             ->when($filters['search'] !== '', function ($query) use ($filters) {
                 $search = $filters['search'];
 
@@ -86,11 +86,12 @@ class ProductController extends Controller
         $hasPlans = Plan::query()->where('product_id', $product->id)->exists();
         $hasSubscriptions = TenantProductSubscription::query()->where('product_id', $product->id)->exists();
         $hasRequests = ProductEnablementRequest::query()->where('product_id', $product->id)->exists();
+        $hasCapabilities = $product->capabilities()->exists();
 
-        if ($hasPlans || $hasSubscriptions || $hasRequests) {
+        if ($hasPlans || $hasSubscriptions || $hasRequests || $hasCapabilities) {
             return redirect()
                 ->route('admin.products.index')
-                ->with('error', 'This product cannot be deleted because it is already used by plans, subscriptions, or enablement requests.');
+                ->with('error', 'This product cannot be deleted because it is already used by plans, capabilities, subscriptions, or enablement requests.');
         }
 
         $product->delete();
