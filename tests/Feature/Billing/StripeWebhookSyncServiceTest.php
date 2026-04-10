@@ -352,6 +352,170 @@ class StripeWebhookSyncServiceTest extends TestCase
         $this->assertSame($plan->id, $productSubscription->plan_id);
     }
 
+    public function test_invoice_payment_failed_updates_additional_product_subscription_to_past_due(): void
+    {
+        Carbon::setTestNow('2026-03-26 12:00:00');
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-product-failed',
+            'product_id' => \App\Models\Product::query()->where('code', 'automotive_service')->value('id'),
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_test_product_failed_001',
+            'payment_failures_count' => 0,
+        ]);
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldReceive('syncByGatewaySubscriptionId')
+            ->once()
+            ->with('sub_test_product_failed_001')
+            ->andReturn(null);
+
+        $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
+        $notificationService->shouldNotReceive('paymentFailed');
+        $notificationService->shouldNotReceive('renewalFailed');
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldNotReceive('ensureProvisioned');
+
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
+
+        $event = (object) [
+            'type' => 'invoice.payment_failed',
+            'data' => (object) [
+                'object' => (object) [
+                    'id' => 'in_test_product_failed_001',
+                    'subscription' => 'sub_test_product_failed_001',
+                    'billing_reason' => 'subscription_cycle',
+                    'attempt_count' => 1,
+                ],
+            ],
+        ];
+
+        $service->handleEvent($event);
+
+        $productSubscription->refresh();
+
+        $this->assertSame('past_due', $productSubscription->status);
+        $this->assertSame(1, $productSubscription->payment_failures_count);
+        $this->assertNotNull($productSubscription->last_payment_failed_at);
+        $this->assertNotNull($productSubscription->grace_ends_at);
+    }
+
+    public function test_invoice_paid_recovers_additional_product_subscription_to_active(): void
+    {
+        Carbon::setTestNow('2026-03-26 12:00:00');
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-product-paid',
+            'product_id' => \App\Models\Product::query()->where('code', 'automotive_service')->value('id'),
+            'status' => 'past_due',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_test_product_paid_001',
+            'payment_failures_count' => 2,
+            'last_payment_failed_at' => now()->subDay(),
+            'past_due_started_at' => now()->subDay(),
+            'grace_ends_at' => now()->addDay(),
+        ]);
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldReceive('syncByGatewaySubscriptionId')
+            ->once()
+            ->with('sub_test_product_paid_001')
+            ->andReturn(null);
+
+        $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
+        $notificationService->shouldNotReceive('invoicePaid');
+        $notificationService->shouldNotReceive('renewalSucceeded');
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldNotReceive('ensureProvisioned');
+
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
+
+        $event = (object) [
+            'type' => 'invoice.paid',
+            'data' => (object) [
+                'object' => (object) [
+                    'id' => 'in_test_product_paid_001',
+                    'subscription' => 'sub_test_product_paid_001',
+                    'billing_reason' => 'subscription_cycle',
+                ],
+            ],
+        ];
+
+        $service->handleEvent($event);
+
+        $productSubscription->refresh();
+
+        $this->assertSame('active', $productSubscription->status);
+        $this->assertSame(0, $productSubscription->payment_failures_count);
+        $this->assertNull($productSubscription->last_payment_failed_at);
+        $this->assertNull($productSubscription->grace_ends_at);
+    }
+
+    public function test_customer_subscription_deleted_cancels_additional_product_subscription_until_period_end(): void
+    {
+        Carbon::setTestNow('2026-03-26 12:00:00');
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-product-deleted',
+            'product_id' => \App\Models\Product::query()->where('code', 'automotive_service')->value('id'),
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_test_product_deleted_001',
+            'payment_failures_count' => 0,
+        ]);
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldReceive('syncByGatewaySubscriptionId')
+            ->once()
+            ->with('sub_test_product_deleted_001')
+            ->andReturn(null);
+
+        $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
+        $notificationService->shouldNotReceive('subscriptionCancelled');
+        $notificationService->shouldNotReceive('subscriptionExpired');
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldNotReceive('ensureProvisioned');
+
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class)
+        );
+
+        $event = (object) [
+            'type' => 'customer.subscription.deleted',
+            'data' => (object) [
+                'object' => (object) [
+                    'id' => 'sub_test_product_deleted_001',
+                    'current_period_end' => now()->addDay()->timestamp,
+                ],
+            ],
+        ];
+
+        $service->handleEvent($event);
+
+        $productSubscription->refresh();
+
+        $this->assertSame('canceled', $productSubscription->status);
+        $this->assertNotNull($productSubscription->cancelled_at);
+        $this->assertNotNull($productSubscription->ends_at);
+    }
+
     protected function createStripeSubscription(array $overrides = []): Subscription
     {
         return Subscription::query()->create(array_merge([

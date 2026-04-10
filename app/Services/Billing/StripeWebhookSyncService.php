@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Models\Plan;
 use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Models\Subscription;
 use App\Models\TenantProductSubscription;
@@ -55,6 +56,12 @@ protected function handleInvoicePaymentFailed(array $payload): void
     $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
 
     if (! $subscription) {
+        $productSubscription = $this->findTenantProductSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+        if ($productSubscription) {
+            $this->markTenantProductSubscriptionPastDue($productSubscription);
+        }
+
         return;
     }
 
@@ -93,6 +100,12 @@ protected function handleInvoicePaid(array $payload): void
     $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
 
     if (! $subscription) {
+        $productSubscription = $this->findTenantProductSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+        if ($productSubscription) {
+            $this->markTenantProductSubscriptionRecovered($productSubscription);
+        }
+
         return;
     }
 
@@ -136,6 +149,12 @@ protected function handleCustomerSubscriptionUpdated(array $payload): void
         $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
 
         if (! $subscription) {
+            $productSubscription = $this->findTenantProductSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+            if ($productSubscription) {
+                $this->syncTenantProductSubscriptionFromStripePayload($productSubscription, $stripeSubscription);
+            }
+
             return;
         }
 
@@ -189,6 +208,19 @@ protected function handleCustomerSubscriptionDeleted(array $payload): void
     $subscription = $this->syncAndFindSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
 
     if (! $subscription) {
+        $productSubscription = $this->findTenantProductSubscriptionByGatewaySubscriptionId($gatewaySubscriptionId);
+
+        if ($productSubscription) {
+            $periodEndUnix = (int) ($stripeSubscription['current_period_end'] ?? 0);
+            $periodEnd = $periodEndUnix > 0 ? Carbon::createFromTimestamp($periodEndUnix) : null;
+
+            if ($periodEnd && $periodEnd->isFuture()) {
+                $this->markTenantProductSubscriptionCancelled($productSubscription, null, $periodEnd);
+            } else {
+                $this->markTenantProductSubscriptionExpired($productSubscription, $periodEnd);
+            }
+        }
+
         return;
     }
 
@@ -338,6 +370,198 @@ protected function handleTenantProductCheckoutSessionCompleted(
     }
 
     $productSubscription->save();
+}
+
+protected function findTenantProductSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?TenantProductSubscription
+{
+    return TenantProductSubscription::query()
+        ->where('gateway', 'stripe')
+        ->where('gateway_subscription_id', $gatewaySubscriptionId)
+        ->first();
+}
+
+protected function syncTenantProductSubscriptionFromStripePayload(
+    TenantProductSubscription $subscription,
+    array $stripeSubscription
+): TenantProductSubscription {
+    $mappedStatus = $this->mapStripeStatus((string) ($stripeSubscription['status'] ?? ''));
+    $currentPeriodEnd = $this->timestampToCarbon($stripeSubscription['current_period_end'] ?? null);
+    $trialEndsAt = $this->timestampToCarbon($stripeSubscription['trial_end'] ?? null);
+    $cancelledAt = $this->timestampToCarbon($stripeSubscription['canceled_at'] ?? null);
+    $cancelAtPeriodEnd = (bool) ($stripeSubscription['cancel_at_period_end'] ?? false);
+    $gatewayPriceId = (string) ($stripeSubscription['items']['data'][0]['price']['id'] ?? '');
+    $resolvedPlanId = $this->resolveLocalPlanId((array) $stripeSubscription, $gatewayPriceId !== '' ? $gatewayPriceId : null);
+
+    $subscription->fill([
+        'gateway' => 'stripe',
+        'gateway_customer_id' => (string) ($stripeSubscription['customer'] ?? '') ?: $subscription->gateway_customer_id,
+        'gateway_subscription_id' => (string) ($stripeSubscription['id'] ?? '') ?: $subscription->gateway_subscription_id,
+    ]);
+
+    if ($gatewayPriceId !== '') {
+        $subscription->gateway_price_id = $gatewayPriceId;
+    }
+
+    if ($resolvedPlanId !== null) {
+        $subscription->plan_id = $resolvedPlanId;
+    }
+
+    if ($trialEndsAt) {
+        $subscription->trial_ends_at = $trialEndsAt;
+    }
+
+    $subscription->save();
+
+    if ($mappedStatus === SubscriptionStatuses::ACTIVE) {
+        $this->markTenantProductSubscriptionRecovered($subscription);
+
+        if ($cancelAtPeriodEnd && $currentPeriodEnd && $currentPeriodEnd->isFuture()) {
+            return $this->markTenantProductSubscriptionCancelled($subscription, $cancelledAt, $currentPeriodEnd);
+        }
+
+        return $subscription->fresh();
+    }
+
+    if ($mappedStatus === SubscriptionStatuses::TRIALING) {
+        $subscription->update([
+            'status' => SubscriptionStatuses::TRIALING,
+            'trial_ends_at' => $trialEndsAt,
+            'last_payment_failed_at' => null,
+            'past_due_started_at' => null,
+            'grace_ends_at' => null,
+            'suspended_at' => null,
+            'payment_failures_count' => 0,
+        ]);
+
+        return $subscription->fresh();
+    }
+
+    if ($mappedStatus === SubscriptionStatuses::PAST_DUE) {
+        return $this->markTenantProductSubscriptionPastDue($subscription);
+    }
+
+    if ($mappedStatus === SubscriptionStatuses::SUSPENDED) {
+        return $this->markTenantProductSubscriptionSuspended($subscription);
+    }
+
+    if ($mappedStatus === SubscriptionStatuses::EXPIRED) {
+        if ($currentPeriodEnd && $currentPeriodEnd->isFuture()) {
+            return $this->markTenantProductSubscriptionCancelled($subscription, $cancelledAt, $currentPeriodEnd);
+        }
+
+        return $this->markTenantProductSubscriptionExpired($subscription, $currentPeriodEnd ?? $cancelledAt);
+    }
+
+    return $subscription->fresh();
+}
+
+protected function markTenantProductSubscriptionPastDue(TenantProductSubscription $subscription, ?Carbon $failedAt = null): TenantProductSubscription
+{
+    $failedAt ??= now();
+    $graceDays = (int) config('billing.grace_period_days', 3);
+
+    $subscription->update([
+        'status' => SubscriptionStatuses::PAST_DUE,
+        'last_payment_failed_at' => $failedAt,
+        'past_due_started_at' => $subscription->past_due_started_at ?? $failedAt,
+        'grace_ends_at' => (clone $failedAt)->addDays($graceDays),
+        'suspended_at' => null,
+        'payment_failures_count' => ((int) ($subscription->payment_failures_count ?? 0)) + 1,
+    ]);
+
+    return $subscription->fresh();
+}
+
+protected function markTenantProductSubscriptionRecovered(TenantProductSubscription $subscription, ?Carbon $recoveredAt = null): TenantProductSubscription
+{
+    $subscription->update([
+        'status' => SubscriptionStatuses::ACTIVE,
+        'last_payment_failed_at' => null,
+        'past_due_started_at' => null,
+        'grace_ends_at' => null,
+        'suspended_at' => null,
+        'payment_failures_count' => 0,
+        'updated_at' => $recoveredAt ?? now(),
+    ]);
+
+    return $subscription->fresh();
+}
+
+protected function markTenantProductSubscriptionSuspended(TenantProductSubscription $subscription, ?Carbon $suspendedAt = null): TenantProductSubscription
+{
+    $subscription->update([
+        'status' => SubscriptionStatuses::SUSPENDED,
+        'suspended_at' => $subscription->suspended_at ?? ($suspendedAt ?? now()),
+    ]);
+
+    return $subscription->fresh();
+}
+
+protected function markTenantProductSubscriptionExpired(TenantProductSubscription $subscription, ?Carbon $expiredAt = null): TenantProductSubscription
+{
+    $expiredAt ??= now();
+
+    $subscription->update([
+        'status' => SubscriptionStatuses::EXPIRED,
+        'ends_at' => $subscription->ends_at ?? $expiredAt,
+        'suspended_at' => $subscription->suspended_at ?? $expiredAt,
+    ]);
+
+    return $subscription->fresh();
+}
+
+protected function markTenantProductSubscriptionCancelled(
+    TenantProductSubscription $subscription,
+    ?Carbon $cancelledAt = null,
+    ?Carbon $endsAt = null
+): TenantProductSubscription {
+    $subscription->update([
+        'status' => SubscriptionStatuses::CANCELLED,
+        'cancelled_at' => $cancelledAt ?? now(),
+        'ends_at' => $endsAt ?? $subscription->ends_at,
+    ]);
+
+    return $subscription->fresh();
+}
+
+protected function resolveLocalPlanId(array $payload, ?string $gatewayPriceId): ?int
+{
+    $metadataPlanId = (int) ($payload['metadata']['plan_id'] ?? 0);
+
+    if ($metadataPlanId > 0 && Plan::query()->whereKey($metadataPlanId)->exists()) {
+        return $metadataPlanId;
+    }
+
+    if ($gatewayPriceId !== null && $gatewayPriceId !== '') {
+        $plan = Plan::query()->where('stripe_price_id', $gatewayPriceId)->first();
+
+        if ($plan) {
+            return (int) $plan->id;
+        }
+    }
+
+    return null;
+}
+
+protected function mapStripeStatus(string $stripeStatus): string
+{
+    return match ($stripeStatus) {
+        'active' => SubscriptionStatuses::ACTIVE,
+        'trialing' => SubscriptionStatuses::TRIALING,
+        'past_due', 'unpaid', 'incomplete' => SubscriptionStatuses::PAST_DUE,
+        'paused' => SubscriptionStatuses::SUSPENDED,
+        'canceled', 'incomplete_expired' => SubscriptionStatuses::EXPIRED,
+        default => SubscriptionStatuses::PAST_DUE,
+    };
+}
+
+protected function timestampToCarbon(mixed $value): ?Carbon
+{
+    if (! $value) {
+        return null;
+    }
+
+    return Carbon::createFromTimestamp((int) $value);
 }
 
 protected function syncAndFindSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?Subscription
