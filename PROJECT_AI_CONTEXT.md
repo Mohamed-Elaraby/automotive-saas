@@ -223,6 +223,11 @@ This is the most recently expanded central admin area.
   - product
   - status
   - gateway
+- central admin now also has a dedicated details page for each `tenant_product_subscription`
+  - overview
+  - lifecycle timeline
+  - tenant snapshot
+  - diagnostics
 - suspend latest subscription
 - activate latest subscription
 - extend trial
@@ -667,6 +672,7 @@ Important files:
   - webhook completion updates `tenant_product_subscriptions`
 - tenant details page now exposes `tenant_product_subscriptions` operationally in central admin
 - central admin now has a first dedicated browsing/filtering screen for `tenant_product_subscriptions`
+- central admin can now open a single `tenant_product_subscription` record directly for diagnostics
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:

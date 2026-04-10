@@ -217,9 +217,14 @@
                                         @endif
                                     </td>
                                     <td class="text-end">
-                                        <a href="{{ route('admin.tenants.show', $subscription->tenant_id) }}" class="btn btn-sm btn-outline-primary">
-                                            Open Tenant
-                                        </a>
+                                        <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                            <a href="{{ route('admin.tenants.product-subscriptions.show', $subscription->id) }}" class="btn btn-sm btn-primary">
+                                                Open Record
+                                            </a>
+                                            <a href="{{ route('admin.tenants.show', $subscription->tenant_id) }}" class="btn btn-sm btn-outline-primary">
+                                                Open Tenant
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

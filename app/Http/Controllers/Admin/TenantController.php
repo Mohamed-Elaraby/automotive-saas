@@ -247,6 +247,23 @@ public function productSubscriptionsIndex(Request $request): View
     ]);
 }
 
+public function showProductSubscription(int $subscriptionId): View
+{
+    $subscription = $this->findProductSubscriptionOrFail($subscriptionId);
+    $tenant = $this->findTenantOrFail((string) $subscription['tenant_id']);
+    $tenantData = $this->normalizedTenantData($tenant);
+    $ownerSnapshot = $this->ownerSnapshot($tenantData);
+    $diagnostics = $this->productSubscriptionDiagnostics($subscription);
+
+    return view('admin.tenants.product-subscription-show', [
+        'subscription' => $subscription,
+        'tenant' => $tenant,
+        'tenantData' => $tenantData,
+        'ownerSnapshot' => $ownerSnapshot,
+        'diagnostics' => $diagnostics,
+    ]);
+}
+
 public function suspend(string $tenantId): RedirectResponse
 {
     $this->findTenantOrFail($tenantId);
@@ -927,6 +944,71 @@ protected function productSubscriptionsBaseQuery()
     }
 
     return $query;
+}
+
+protected function findProductSubscriptionOrFail(int $subscriptionId): array
+{
+    if (! Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')) {
+        throw new NotFoundHttpException();
+    }
+
+    $record = $this->productSubscriptionsBaseQuery()
+        ->where('tenant_product_subscriptions.id', $subscriptionId)
+        ->first();
+
+    if (! $record) {
+        throw new NotFoundHttpException();
+    }
+
+    return [
+        'id' => $record->id,
+        'tenant_id' => (string) $record->tenant_id,
+        'product_id' => $record->product_id,
+        'product_name' => $record->product_name ?? null,
+        'product_slug' => $record->product_slug ?? null,
+        'product_code' => $record->product_code ?? null,
+        'plan_id' => $record->plan_id,
+        'plan_name' => $record->plan_name ?? null,
+        'plan_slug' => $record->plan_slug ?? null,
+        'plan_billing_period' => $record->plan_billing_period ?? null,
+        'plan_price' => $record->plan_price ?? null,
+        'plan_currency' => $record->plan_currency ?? null,
+        'legacy_subscription_id' => $record->legacy_subscription_id ?? null,
+        'status' => $record->status ?? null,
+        'trial_ends_at' => $record->trial_ends_at ?? null,
+        'grace_ends_at' => $record->grace_ends_at ?? null,
+        'last_payment_failed_at' => $record->last_payment_failed_at ?? null,
+        'past_due_started_at' => $record->past_due_started_at ?? null,
+        'suspended_at' => $record->suspended_at ?? null,
+        'cancelled_at' => $record->cancelled_at ?? null,
+        'payment_failures_count' => (int) ($record->payment_failures_count ?? 0),
+        'ends_at' => $record->ends_at ?? null,
+        'external_id' => $record->external_id ?? null,
+        'gateway' => $record->gateway ?? null,
+        'gateway_customer_id' => $record->gateway_customer_id ?? null,
+        'gateway_subscription_id' => $record->gateway_subscription_id ?? null,
+        'gateway_checkout_session_id' => $record->gateway_checkout_session_id ?? null,
+        'gateway_price_id' => $record->gateway_price_id ?? null,
+        'created_at' => $record->created_at ?? null,
+        'updated_at' => $record->updated_at ?? null,
+    ];
+}
+
+protected function productSubscriptionDiagnostics(array $subscription): array
+{
+    return [
+        'has_product' => ! empty($subscription['product_id']),
+        'has_plan' => ! empty($subscription['plan_id']),
+        'has_gateway' => ! empty($subscription['gateway']),
+        'is_stripe_linked' => ($subscription['gateway'] ?? null) === 'stripe' || ! empty($subscription['gateway_subscription_id']),
+        'has_gateway_customer_id' => ! empty($subscription['gateway_customer_id']),
+        'has_gateway_subscription_id' => ! empty($subscription['gateway_subscription_id']),
+        'has_gateway_checkout_session_id' => ! empty($subscription['gateway_checkout_session_id']),
+        'has_gateway_price_id' => ! empty($subscription['gateway_price_id']),
+        'has_legacy_subscription_id' => ! empty($subscription['legacy_subscription_id']),
+        'has_payment_failures' => (int) ($subscription['payment_failures_count'] ?? 0) > 0,
+        'has_end_date' => ! empty($subscription['ends_at']),
+    ];
 }
 
 protected function productSubscriptionStatusCounts(): array

@@ -458,7 +458,11 @@
                                             <tr>
                                                 <td>
                                                     <div class="fw-semibold">{{ $productName }}</div>
-                                                    <div class="small text-muted">Record #{{ $productSubscription['id'] }}</div>
+                                                    <div class="small text-muted">
+                                                        <a href="{{ route('admin.tenants.product-subscriptions.show', $productSubscription['id']) }}">
+                                                            Record #{{ $productSubscription['id'] }}
+                                                        </a>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <div>{{ $planName }}</div>

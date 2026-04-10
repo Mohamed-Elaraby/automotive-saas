@@ -12,6 +12,7 @@ Route::prefix('admin')
             ->group(function () {
                 Route::get('/', [TenantController::class, 'index'])->name('index');
                 Route::get('/product-subscriptions', [TenantController::class, 'productSubscriptionsIndex'])->name('product-subscriptions.index');
+                Route::get('/product-subscriptions/{subscriptionId}', [TenantController::class, 'showProductSubscription'])->name('product-subscriptions.show');
                 Route::get('/{tenantId}', [TenantController::class, 'show'])->name('show');
 
                 Route::post('/{tenantId}/impersonate', [TenantController::class, 'impersonate'])->name('impersonate');
