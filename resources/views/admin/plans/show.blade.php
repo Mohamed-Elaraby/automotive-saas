@@ -63,6 +63,16 @@
                     <table class="table table-sm table-striped align-middle mb-0">
                         <tbody>
                         <tr>
+                            <th style="width: 240px;">Product</th>
+                            <td>
+                                @if($plan->product)
+                                    {{ $plan->product->name }} ({{ $plan->product->code }})
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        </tr>
+                        <tr>
                             <th style="width: 240px;">Slug</th>
                             <td>{{ $plan->slug }}</td>
                         </tr>

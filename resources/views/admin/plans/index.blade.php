@@ -80,6 +80,7 @@
                 <table class="table table-nowrap datatable">
                     <thead>
                     <tr>
+                        <th>Product</th>
                         <th>Name</th>
                         <th>Slug</th>
                         <th>Billing</th>
@@ -96,6 +97,12 @@
                     <tbody>
                     @forelse ($plans as $plan)
                         <tr>
+                            <td>
+                                <div>
+                                    <p class="text-dark fw-medium mb-1">{{ $plan->product?->name ?: 'No product' }}</p>
+                                    <small class="text-muted">{{ $plan->product?->code ?: '-' }}</small>
+                                </div>
+                            </td>
                             <td>
                                 <div>
                                     <p class="text-dark fw-medium mb-1">{{ $plan->name }}</p>
@@ -199,7 +206,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11">
+                            <td colspan="12">
                                 <div class="text-center py-4">
                                     <p class="mb-0">No plans match the current filters.</p>
                                 </div>

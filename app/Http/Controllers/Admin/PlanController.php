@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BillingFeature;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class PlanController extends Controller
         ];
 
         $plans = Plan::query()
-            ->with('billingFeatures')
+            ->with(['billingFeatures', 'product'])
             ->when($filters['q'] !== '', function ($query) use ($filters) {
                 $search = $filters['q'];
 
@@ -79,12 +80,13 @@ class PlanController extends Controller
                 'sort_order' => 0,
             ]),
             'availableFeatures' => $this->availableFeatures(),
+            'availableProducts' => $this->availableProducts(),
         ]);
     }
 
     public function show(Plan $plan)
     {
-        $plan->load('billingFeatures');
+        $plan->load(['billingFeatures', 'product']);
 
         $subscriptions = Subscription::query()
             ->where('plan_id', $plan->id)
@@ -135,11 +137,12 @@ class PlanController extends Controller
 
     public function edit(Plan $plan)
     {
-        $plan->load('billingFeatures');
+        $plan->load(['billingFeatures', 'product']);
 
         return view('admin.plans.edit', [
             'plan' => $plan,
             'availableFeatures' => $this->availableFeatures(),
+            'availableProducts' => $this->availableProducts(),
         ]);
     }
 
@@ -225,6 +228,7 @@ class PlanController extends Controller
     {
         return $request->validate([
                 'name' => ['required', 'string', 'max:255'],
+                'product_id' => ['required', 'integer', Rule::exists('products', 'id')],
                 'slug' => [
                     'required',
                     'string',
@@ -293,6 +297,14 @@ class PlanController extends Controller
     protected function availableFeatures()
     {
         return BillingFeature::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    protected function availableProducts()
+    {
+        return Product::query()
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();

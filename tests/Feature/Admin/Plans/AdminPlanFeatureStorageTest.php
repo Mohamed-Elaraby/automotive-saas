@@ -6,6 +6,7 @@ use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Admin;
 use App\Models\BillingFeature;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +34,13 @@ class AdminPlanFeatureStorageTest extends TestCase
     public function test_admin_store_assigns_selected_catalog_features_to_plan(): void
     {
         $admin = $this->createAdmin();
+        $product = Product::query()->create([
+            'code' => 'inventory_suite',
+            'name' => 'Inventory Suite',
+            'slug' => 'inventory-suite',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
         $inventory = BillingFeature::query()->create([
             'name' => 'Inventory',
             'slug' => 'inventory',
@@ -60,6 +68,7 @@ class AdminPlanFeatureStorageTest extends TestCase
         $response = $this
             ->actingAs($admin, 'admin')
             ->post(route('admin.plans.store'), [
+                'product_id' => $product->id,
                 'name' => 'Growth',
                 'slug' => 'growth',
                 'price' => 399,
@@ -97,6 +106,8 @@ class AdminPlanFeatureStorageTest extends TestCase
             ->get(route('admin.plans.create'));
 
         $response->assertOk();
+        $response->assertSee('Product');
+        $response->assertSee('Select a product');
         $response->assertSee('Limits Semantics');
         $response->assertSee('Only filled limits appear in the portal preview and paid plan cards.');
         $response->assertSee('Empty does not mean zero.');

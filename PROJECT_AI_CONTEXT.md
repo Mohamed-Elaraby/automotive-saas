@@ -1050,6 +1050,17 @@ Test coverage added/updated:
 - additional product pending checkout state is covered
 - additional product live billing managed-in-system state is covered
 
+### 18.12 Admin Plan Form Product Awareness
+Admin plan creation/edit is now operationally aligned with the multi-product model:
+- `product_id` is selected directly in the plan form and validated on save
+- the plan preview in admin continues to be live and now also reflects:
+  - selected product
+  - live description changes
+- plan index/show screens now surface the linked product explicitly
+
+Important operator note:
+- to create pricing for a non-automotive product such as accounting or spare parts, create the product first, then create plans attached to that product from the plans form
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

@@ -8,6 +8,7 @@
     $previewPrice = old('price', $plan->price);
     $previewCurrency = old('currency', $plan->currency ?: 'USD');
     $previewBillingPeriod = old('billing_period', $plan->billing_period ?: 'monthly');
+    $previewProductId = (int) old('product_id', $plan->product_id);
 @endphp
 
 <div class="card">
@@ -16,6 +17,22 @@
             <div class="col-md-6 mb-3">
                 <label class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" name="name" value="{{ old('name', $plan->name) }}" required data-plan-preview="name">
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-semibold">Product <span class="text-danger">*</span></label>
+                <select name="product_id" class="form-select" required data-plan-preview="product">
+                    <option value="">Select a product</option>
+                    @foreach($availableProducts as $product)
+                        <option
+                            value="{{ $product->id }}"
+                            data-product-name="{{ $product->name }}"
+                            @selected($previewProductId === (int) $product->id)
+                        >
+                            {{ $product->name }} @if($product->code)({{ $product->code }})@endif
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="col-md-6 mb-3">
@@ -99,7 +116,7 @@
 
             <div class="col-12 mb-3">
                 <label class="form-label fw-semibold">Description</label>
-                <textarea name="description" rows="4" class="form-control">{{ old('description', $plan->description) }}</textarea>
+                <textarea name="description" rows="4" class="form-control" data-plan-preview="description">{{ old('description', $plan->description) }}</textarea>
             </div>
 
             <div class="col-12 mb-0">
@@ -168,6 +185,12 @@
                                             <div class="mb-3">
                                                 <div class="d-flex align-items-center justify-content-between gap-2">
                                                     <div>
+                                                        <div class="text-muted small mb-1" id="plan-preview-product">
+                                                            @php
+                                                                $previewProduct = $availableProducts->firstWhere('id', $previewProductId);
+                                                            @endphp
+                                                            {{ $previewProduct?->name ?: 'Select a product' }}
+                                                        </div>
                                                         <h5 class="mb-1" id="plan-preview-name">{{ old('name', $plan->name ?: 'New Plan') }}</h5>
                                                         <p class="mb-0" id="plan-preview-description">{{ old('description', $plan->description ?: 'Plan description will appear here.') }}</p>
                                                     </div>
@@ -238,6 +261,7 @@
 
         const getField = (name) => form.querySelector('[name="' + name + '"]');
         const previewName = document.getElementById('plan-preview-name');
+        const previewProduct = document.getElementById('plan-preview-product');
         const previewDescription = document.getElementById('plan-preview-description');
         const previewPrice = document.getElementById('plan-preview-price');
         const previewCurrency = document.getElementById('plan-preview-currency');
@@ -309,12 +333,17 @@
 
         const renderPreviewMeta = () => {
             const nameField = getField('name');
+            const productField = getField('product_id');
             const descriptionField = getField('description');
             const priceField = getField('price');
             const currencyField = getField('currency');
             const billingField = getField('billing_period');
             const billingValue = billingField ? billingField.value : 'monthly';
+            const selectedProductOption = productField ? productField.options[productField.selectedIndex] : null;
 
+            previewProduct.textContent = selectedProductOption && selectedProductOption.value
+                ? (selectedProductOption.dataset.productName || selectedProductOption.textContent.trim())
+                : 'Select a product';
             previewName.textContent = (nameField && nameField.value.trim()) ? nameField.value.trim() : 'New Plan';
             previewDescription.textContent = (descriptionField && descriptionField.value.trim()) ? descriptionField.value.trim() : 'Plan description will appear here.';
             previewPrice.textContent = billingValue === 'trial' ? '0.00' : formatPrice(priceField ? priceField.value : '0');
