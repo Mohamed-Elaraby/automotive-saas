@@ -218,6 +218,11 @@ This is the most recently expanded central admin area.
   - gateway / Stripe IDs
   - lifecycle timestamps
   - diagnostics count
+- central admin now also has a dedicated `tenant_product_subscriptions` index screen with filters for:
+  - tenant
+  - product
+  - status
+  - gateway
 - suspend latest subscription
 - activate latest subscription
 - extend trial
@@ -661,6 +666,7 @@ Important files:
   - checkout metadata includes `tenant_product_subscription_id`
   - webhook completion updates `tenant_product_subscriptions`
 - tenant details page now exposes `tenant_product_subscriptions` operationally in central admin
+- central admin now has a first dedicated browsing/filtering screen for `tenant_product_subscriptions`
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
@@ -672,8 +678,7 @@ If continuing from current state, the most natural next options are:
 - decide whether additional products should remain `tenant_product_subscription`-only
   - or whether a hybrid legacy `subscriptions` mirror is still required for some central admin screens
 - expand central admin visibility beyond a single tenant details page:
-  - list/filter/report `tenant_product_subscriptions`
-  - add quick troubleshooting actions where needed
+  - add richer reporting and troubleshooting actions on top of the new list/filter screen
 - move from SaaS foundation validation into tenant product MVP work once billing consistency is confirmed
 - implement roles & permissions for central admin
 - real-time notifications via SSE are already active for admin + portal topbars; expand only if tenant admin also needs them

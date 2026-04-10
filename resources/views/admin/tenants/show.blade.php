@@ -413,7 +413,15 @@
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">Product Subscriptions</h6>
-                            <span class="badge bg-light text-dark">{{ $productSubscriptions->count() }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark">{{ $productSubscriptions->count() }}</span>
+                                <a
+                                    href="{{ route('admin.tenants.product-subscriptions.index', ['tenant_id' => $row['tenant_id'] ?? $tenant->getKey()]) }}"
+                                    class="btn btn-sm btn-outline-primary"
+                                >
+                                    Open Central View
+                                </a>
+                            </div>
                         </div>
                         <div class="card-body">
                             @if($productSubscriptions->isNotEmpty())
@@ -636,6 +644,10 @@
                         </div>
                         <div class="card-body d-grid gap-2">
                             <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Back to Tenants</a>
+
+                            <a href="{{ route('admin.tenants.product-subscriptions.index', ['tenant_id' => $row['tenant_id'] ?? $tenant->getKey()]) }}" class="btn btn-outline-dark">
+                                Product Subscriptions
+                            </a>
 
                             @if(!empty($row['subscription_show_url']))
                                 <a href="{{ $row['subscription_show_url'] }}" class="btn btn-primary">Open Linked Subscription</a>

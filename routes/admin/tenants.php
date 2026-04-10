@@ -11,6 +11,7 @@ Route::prefix('admin')
             ->name('tenants.')
             ->group(function () {
                 Route::get('/', [TenantController::class, 'index'])->name('index');
+                Route::get('/product-subscriptions', [TenantController::class, 'productSubscriptionsIndex'])->name('product-subscriptions.index');
                 Route::get('/{tenantId}', [TenantController::class, 'show'])->name('show');
 
                 Route::post('/{tenantId}/impersonate', [TenantController::class, 'impersonate'])->name('impersonate');

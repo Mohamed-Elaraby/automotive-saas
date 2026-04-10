@@ -168,6 +168,85 @@ public function show(string $tenantId): View
     ]);
 }
 
+public function productSubscriptionsIndex(Request $request): View
+{
+    $filters = [
+        'tenant_id' => trim((string) $request->string('tenant_id')),
+        'status' => trim((string) $request->string('status')),
+        'product_id' => $request->filled('product_id') ? (int) $request->input('product_id') : null,
+        'gateway' => trim((string) $request->string('gateway')),
+    ];
+
+    $subscriptions = new LengthAwarePaginator([], 0, 20, 1, [
+        'path' => $request->url(),
+        'query' => $request->query(),
+    ]);
+
+    if (Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')) {
+        $query = $this->productSubscriptionsBaseQuery();
+
+        if ($filters['tenant_id'] !== '') {
+            $query->where('tenant_product_subscriptions.tenant_id', 'like', '%' . $filters['tenant_id'] . '%');
+        }
+
+        if ($filters['status'] !== '') {
+            $query->where('tenant_product_subscriptions.status', $filters['status']);
+        }
+
+        if ($filters['product_id']) {
+            $query->where('tenant_product_subscriptions.product_id', $filters['product_id']);
+        }
+
+        if ($filters['gateway'] !== '') {
+            $query->where('tenant_product_subscriptions.gateway', $filters['gateway']);
+        }
+
+        $subscriptions = $query
+            ->orderByDesc('tenant_product_subscriptions.id')
+            ->paginate(20)
+            ->withQueryString();
+    }
+
+    $statusCounts = $this->productSubscriptionStatusCounts();
+
+    $products = collect();
+    if ($this->productsTableExists()) {
+        $products = DB::connection($this->centralConnectionName())
+            ->table('products')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
+    }
+
+    $gatewayOptions = collect();
+    if (Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')) {
+        $gatewayOptions = DB::connection($this->centralConnectionName())
+            ->table('tenant_product_subscriptions')
+            ->select('gateway')
+            ->whereNotNull('gateway')
+            ->where('gateway', '!=', '')
+            ->distinct()
+            ->orderBy('gateway')
+            ->pluck('gateway');
+    }
+
+    return view('admin.tenants.product-subscriptions', [
+        'subscriptions' => $subscriptions,
+        'filters' => $filters,
+        'statusCounts' => $statusCounts,
+        'products' => $products,
+        'gatewayOptions' => $gatewayOptions,
+        'statusOptions' => [
+            'trialing',
+            'active',
+            'past_due',
+            'suspended',
+            'cancelled',
+            'expired',
+        ],
+    ]);
+}
+
 public function suspend(string $tenantId): RedirectResponse
 {
     $this->findTenantOrFail($tenantId);
@@ -796,6 +875,89 @@ protected function productSubscriptionsByTenantIds(array $tenantIds): Collection
                 ];
             })->values();
         });
+}
+
+protected function productSubscriptionsBaseQuery()
+{
+    $query = DB::connection($this->centralConnectionName())
+        ->table('tenant_product_subscriptions')
+        ->select([
+            'tenant_product_subscriptions.id',
+            'tenant_product_subscriptions.tenant_id',
+            'tenant_product_subscriptions.product_id',
+            'tenant_product_subscriptions.plan_id',
+            'tenant_product_subscriptions.legacy_subscription_id',
+            'tenant_product_subscriptions.status',
+            'tenant_product_subscriptions.trial_ends_at',
+            'tenant_product_subscriptions.grace_ends_at',
+            'tenant_product_subscriptions.last_payment_failed_at',
+            'tenant_product_subscriptions.past_due_started_at',
+            'tenant_product_subscriptions.suspended_at',
+            'tenant_product_subscriptions.cancelled_at',
+            'tenant_product_subscriptions.payment_failures_count',
+            'tenant_product_subscriptions.ends_at',
+            'tenant_product_subscriptions.external_id',
+            'tenant_product_subscriptions.gateway',
+            'tenant_product_subscriptions.gateway_customer_id',
+            'tenant_product_subscriptions.gateway_subscription_id',
+            'tenant_product_subscriptions.gateway_checkout_session_id',
+            'tenant_product_subscriptions.gateway_price_id',
+            'tenant_product_subscriptions.created_at',
+            'tenant_product_subscriptions.updated_at',
+        ]);
+
+    if ($this->productsTableExists()) {
+        $query->leftJoin('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
+            ->addSelect([
+                'products.name as product_name',
+                'products.slug as product_slug',
+                'products.code as product_code',
+            ]);
+    }
+
+    if ($this->plansTableExists()) {
+        $query->leftJoin('plans', 'plans.id', '=', 'tenant_product_subscriptions.plan_id')
+            ->addSelect([
+                'plans.name as plan_name',
+                'plans.slug as plan_slug',
+                'plans.billing_period as plan_billing_period',
+                'plans.price as plan_price',
+                'plans.currency as plan_currency',
+            ]);
+    }
+
+    return $query;
+}
+
+protected function productSubscriptionStatusCounts(): array
+{
+    if (! Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')) {
+        return [
+            'total' => 0,
+            'active' => 0,
+            'trialing' => 0,
+            'past_due' => 0,
+            'suspended' => 0,
+            'cancelled' => 0,
+            'expired' => 0,
+        ];
+    }
+
+    $rows = DB::connection($this->centralConnectionName())
+        ->table('tenant_product_subscriptions')
+        ->select('status', DB::raw('count(*) as aggregate'))
+        ->groupBy('status')
+        ->get();
+
+    return [
+        'total' => (int) $rows->sum('aggregate'),
+        'active' => (int) optional($rows->firstWhere('status', 'active'))->aggregate,
+        'trialing' => (int) optional($rows->firstWhere('status', 'trialing'))->aggregate,
+        'past_due' => (int) optional($rows->firstWhere('status', 'past_due'))->aggregate,
+        'suspended' => (int) optional($rows->firstWhere('status', 'suspended'))->aggregate,
+        'cancelled' => (int) optional($rows->firstWhere('status', 'cancelled'))->aggregate,
+        'expired' => (int) optional($rows->firstWhere('status', 'expired'))->aggregate,
+    ];
 }
 
 protected function normalizedTenantData(Model $tenant): array
