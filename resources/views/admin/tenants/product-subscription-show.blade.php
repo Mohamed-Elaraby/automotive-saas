@@ -36,6 +36,11 @@
                 default => 'alert-info',
             };
         };
+
+        $canSyncFromStripe = ($subscription['gateway'] ?? null) === 'stripe'
+            || !empty($subscription['gateway_subscription_id'])
+            || !empty($subscription['gateway_customer_id'])
+            || !empty($subscription['gateway_checkout_session_id']);
     @endphp
 
     <div class="page-wrapper">
@@ -48,12 +53,28 @@
 
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ route('admin.tenants.product-subscriptions.index', ['tenant_id' => $subscription['tenant_id']]) }}" class="btn btn-light">Back</a>
+                    @if($canSyncFromStripe)
+                        <form method="POST" action="{{ route('admin.tenants.product-subscriptions.sync-stripe', $subscription['id']) }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-success">
+                                Sync From Stripe
+                            </button>
+                        </form>
+                    @endif
                     @if(!empty($subscription['legacy_subscription_id']))
                         <a href="{{ route('admin.subscriptions.show', $subscription['legacy_subscription_id']) }}" class="btn btn-primary">Open Legacy Subscription</a>
                     @endif
                     <a href="{{ route('admin.tenants.show', $subscription['tenant_id']) }}" class="btn btn-outline-primary">Open Tenant</a>
                 </div>
             </div>
+
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
 
             <div class="row mb-4">
                 <div class="col-xl-3 col-md-6">
@@ -431,6 +452,14 @@
                         </div>
                         <div class="card-body d-grid gap-2">
                             <a href="{{ route('admin.tenants.product-subscriptions.index', ['tenant_id' => $subscription['tenant_id']]) }}" class="btn btn-light">Back to Product Subscriptions</a>
+                            @if($canSyncFromStripe)
+                                <form method="POST" action="{{ route('admin.tenants.product-subscriptions.sync-stripe', $subscription['id']) }}">
+                                    @csrf
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success">Sync From Stripe</button>
+                                    </div>
+                                </form>
+                            @endif
                             @if(!empty($subscription['legacy_subscription_id']))
                                 <a href="{{ route('admin.subscriptions.show', $subscription['legacy_subscription_id']) }}" class="btn btn-primary">Open Legacy Subscription</a>
                             @endif

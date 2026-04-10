@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\TenantProductSubscription;
 use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
 use App\Services\Admin\TenantImpersonationService;
+use App\Services\Billing\AdminTenantProductSubscriptionStripeSyncService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
+use Throwable;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TenantController extends Controller
@@ -266,6 +269,68 @@ public function showProductSubscription(int $subscriptionId): View
         'latestInvoice' => $latestInvoice,
         'healthHints' => $healthHints,
     ]);
+}
+
+public function syncProductSubscriptionFromStripe(
+    Request $request,
+    int $subscriptionId,
+    AdminTenantProductSubscriptionStripeSyncService $syncService
+): RedirectResponse {
+    $subscription = TenantProductSubscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('error', 'The product subscription record was not found.');
+    }
+
+    try {
+        $before = $subscription->only([
+            'status',
+            'plan_id',
+            'gateway_customer_id',
+            'gateway_subscription_id',
+            'gateway_checkout_session_id',
+            'gateway_price_id',
+            'ends_at',
+        ]);
+
+        $synced = $syncService->sync($subscription);
+
+        $this->activityLogger->log(
+            action: 'tenant.product_subscription.synced_from_stripe',
+            subjectType: 'tenant_product_subscription',
+            subjectId: $synced->id ?? $subscriptionId,
+            tenantId: (string) $synced->tenant_id,
+            contextPayload: [
+                'source' => 'admin.product_subscription.sync_from_stripe',
+                'before' => $before,
+                'after' => $synced->only([
+                    'status',
+                    'plan_id',
+                    'gateway_customer_id',
+                    'gateway_subscription_id',
+                    'gateway_checkout_session_id',
+                    'gateway_price_id',
+                    'ends_at',
+                ]),
+            ]
+        );
+
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('success', 'Product subscription data was synced successfully from Stripe.');
+    } catch (RuntimeException $exception) {
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('error', $exception->getMessage());
+    } catch (Throwable $exception) {
+        report($exception);
+
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('error', 'Unable to sync the product subscription from Stripe right now.');
+    }
 }
 
 public function suspend(string $tenantId): RedirectResponse

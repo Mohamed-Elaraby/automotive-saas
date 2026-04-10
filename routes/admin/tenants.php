@@ -13,6 +13,7 @@ Route::prefix('admin')
                 Route::get('/', [TenantController::class, 'index'])->name('index');
                 Route::get('/product-subscriptions', [TenantController::class, 'productSubscriptionsIndex'])->name('product-subscriptions.index');
                 Route::get('/product-subscriptions/{subscriptionId}', [TenantController::class, 'showProductSubscription'])->name('product-subscriptions.show');
+                Route::post('/product-subscriptions/{subscriptionId}/sync-stripe', [TenantController::class, 'syncProductSubscriptionFromStripe'])->name('product-subscriptions.sync-stripe');
                 Route::get('/{tenantId}', [TenantController::class, 'show'])->name('show');
 
                 Route::post('/{tenantId}/impersonate', [TenantController::class, 'impersonate'])->name('impersonate');
