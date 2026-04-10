@@ -76,6 +76,8 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
             'gateway' => 'stripe',
             'gateway_customer_id' => 'cus_match_tps',
             'gateway_subscription_id' => 'sub_match_tps',
+            'last_synced_from_stripe_at' => now()->subHour(),
+            'last_sync_status' => 'success',
         ]);
 
         TenantProductSubscription::query()->create([
@@ -86,6 +88,8 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
             'gateway' => 'manual',
             'gateway_customer_id' => 'cus_other_tps',
             'gateway_subscription_id' => 'sub_other_tps',
+            'last_sync_status' => 'failed',
+            'last_sync_error' => 'Stripe lookup failed.',
         ]);
 
         $response = $this
@@ -95,6 +99,7 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
                 'product_id' => $matchingProduct->id,
                 'status' => 'active',
                 'gateway' => 'stripe',
+                'last_sync_status' => 'success',
             ]));
 
         $response->assertOk();
@@ -103,7 +108,10 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
         $response->assertSee('Inventory Suite', false);
         $response->assertSee('Inventory Pro', false);
         $response->assertSee('cus_match_tps', false);
+        $response->assertSee('SUCCESS', false);
+        $response->assertSee('Sync', false);
         $response->assertDontSee($otherTenant->id, false);
         $response->assertDontSee('cus_other_tps', false);
+        $response->assertDontSee('FAILED', false);
     }
 }

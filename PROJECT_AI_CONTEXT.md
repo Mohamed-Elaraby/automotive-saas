@@ -235,6 +235,9 @@ This is the most recently expanded central admin area.
     - `last_synced_from_stripe_at`
     - `last_sync_status`
     - `last_sync_error`
+- the central `tenant_product_subscriptions` index now supports:
+  - filtering by `last_sync_status`
+  - quick `Sync From Stripe` action from the table itself
 - suspend latest subscription
 - activate latest subscription
 - extend trial

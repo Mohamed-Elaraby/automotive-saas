@@ -178,6 +178,7 @@ public function productSubscriptionsIndex(Request $request): View
         'status' => trim((string) $request->string('status')),
         'product_id' => $request->filled('product_id') ? (int) $request->input('product_id') : null,
         'gateway' => trim((string) $request->string('gateway')),
+        'last_sync_status' => trim((string) $request->string('last_sync_status')),
     ];
 
     $subscriptions = new LengthAwarePaginator([], 0, 20, 1, [
@@ -202,6 +203,14 @@ public function productSubscriptionsIndex(Request $request): View
 
         if ($filters['gateway'] !== '') {
             $query->where('tenant_product_subscriptions.gateway', $filters['gateway']);
+        }
+
+        if ($filters['last_sync_status'] !== '') {
+            if ($filters['last_sync_status'] === 'never') {
+                $query->whereNull('tenant_product_subscriptions.last_sync_status');
+            } else {
+                $query->where('tenant_product_subscriptions.last_sync_status', $filters['last_sync_status']);
+            }
         }
 
         $subscriptions = $query
@@ -246,6 +255,11 @@ public function productSubscriptionsIndex(Request $request): View
             'suspended',
             'cancelled',
             'expired',
+        ],
+        'syncStatusOptions' => [
+            'success',
+            'failed',
+            'never',
         ],
     ]);
 }

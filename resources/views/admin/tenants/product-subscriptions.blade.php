@@ -14,6 +14,14 @@
                 default => 'bg-light text-dark',
             };
         };
+
+        $syncBadgeClass = function (?string $status): string {
+            return match (strtolower((string) $status)) {
+                'success' => 'bg-success',
+                'failed' => 'bg-danger',
+                default => 'bg-light text-dark',
+            };
+        };
     @endphp
 
     <div class="page-wrapper">
@@ -122,13 +130,25 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">Gateway</label>
                                 <select name="gateway" class="form-select">
                                     <option value="">All gateways</option>
                                     @foreach($gatewayOptions as $gateway)
                                         <option value="{{ $gateway }}" @selected(($filters['gateway'] ?? '') === $gateway)>
                                             {{ strtoupper($gateway) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Last Sync</label>
+                                <select name="last_sync_status" class="form-select">
+                                    <option value="">All sync states</option>
+                                    @foreach($syncStatusOptions as $syncStatus)
+                                        <option value="{{ $syncStatus }}" @selected(($filters['last_sync_status'] ?? '') === $syncStatus)>
+                                            {{ $syncStatus === 'never' ? 'Never Synced' : ucfirst($syncStatus) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -156,6 +176,7 @@
                                 <th>Plan</th>
                                 <th>Status</th>
                                 <th>Gateway</th>
+                                <th>Last Sync</th>
                                 <th>Identifiers</th>
                                 <th>Updated</th>
                                 <th class="text-end">Actions</th>
@@ -167,6 +188,11 @@
                                     $status = strtolower((string) ($subscription->status ?? 'unknown'));
                                     $productName = $subscription->product_name ?: $subscription->product_slug ?: $subscription->product_code ?: ('Product #' . ($subscription->product_id ?? '?'));
                                     $planName = $subscription->plan_name ?: $subscription->plan_slug ?: ($subscription->plan_id ? ('Plan #' . $subscription->plan_id) : 'No plan');
+                                    $syncStatus = strtolower((string) ($subscription->last_sync_status ?? ''));
+                                    $canSyncFromStripe = ($subscription->gateway ?? null) === 'stripe'
+                                        || !empty($subscription->gateway_subscription_id)
+                                        || !empty($subscription->gateway_customer_id)
+                                        || !empty($subscription->gateway_checkout_session_id);
                                 @endphp
                                 <tr>
                                     <td>{{ $subscription->id }}</td>
@@ -203,6 +229,18 @@
                                         <div class="small text-muted">{{ $subscription->gateway_price_id ?: '-' }}</div>
                                     </td>
                                     <td>
+                                        @if(!empty($subscription->last_sync_status))
+                                            <span class="badge {{ $syncBadgeClass($syncStatus) }}">
+                                                {{ strtoupper((string) $subscription->last_sync_status) }}
+                                            </span>
+                                        @else
+                                            <span class="badge bg-light text-dark">NEVER</span>
+                                        @endif
+                                        <div class="small text-muted mt-1">
+                                            {{ $subscription->last_synced_from_stripe_at ? \Carbon\Carbon::parse($subscription->last_synced_from_stripe_at)->format('Y-m-d H:i') : '-' }}
+                                        </div>
+                                    </td>
+                                    <td>
                                         <div class="small d-flex flex-column gap-1">
                                             <span><span class="fw-semibold">Customer:</span> {{ $subscription->gateway_customer_id ?: '-' }}</span>
                                             <span><span class="fw-semibold">Subscription:</span> {{ $subscription->gateway_subscription_id ?: '-' }}</span>
@@ -218,6 +256,14 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex flex-wrap gap-2 justify-content-end">
+                                            @if($canSyncFromStripe)
+                                                <form method="POST" action="{{ route('admin.tenants.product-subscriptions.sync-stripe', $subscription->id) }}" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        Sync
+                                                    </button>
+                                                </form>
+                                            @endif
                                             <a href="{{ route('admin.tenants.product-subscriptions.show', $subscription->id) }}" class="btn btn-sm btn-primary">
                                                 Open Record
                                             </a>
@@ -229,7 +275,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
+                                    <td colspan="10" class="text-center text-muted py-4">
                                         No product subscriptions matched the current filters.
                                     </td>
                                 </tr>
