@@ -117,9 +117,9 @@
                                             ">
                                             {{ $status ? strtoupper(str_replace('_', ' ', $status)) : 'NOT STARTED' }}
                                         </span>
-                                        @if(!empty($profile?->coupon_code))
+                                        @if(!empty($visibleCouponCode))
                                             <span class="badge bg-soft-success text-success mt-2">
-                                                Coupon Reserved: {{ $profile->coupon_code }}
+                                                Coupon Reserved: {{ $visibleCouponCode }}
                                             </span>
                                         @endif
                                     </div>
@@ -392,9 +392,9 @@
                                         </p>
                                     </div>
 
-                                    @if(!empty($profile?->coupon_code))
+                                    @if(!empty($visibleCouponCode))
                                         <span class="badge bg-soft-success text-success">
-                                            Reserved Coupon: {{ $profile->coupon_code }}
+                                            Reserved Coupon: {{ $visibleCouponCode }}
                                         </span>
                                     @endif
                                 </div>

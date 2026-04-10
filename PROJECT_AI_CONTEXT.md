@@ -1049,6 +1049,10 @@ Test coverage added/updated:
 - outdated portal expectation text was updated to match the real enabled flow
 - additional product pending checkout state is covered
 - additional product live billing managed-in-system state is covered
+- portal product-catalog labels are now more dynamic:
+  - active products with paid plans show `AVAILABLE NOW` and `Browse Product Plans`
+  - active products without paid plans still show enablement-oriented copy
+- misleading `coupon_code` values that look like email addresses are now hidden from the portal badge UI
 
 ### 18.12 Admin Plan Form Product Awareness
 Admin plan creation/edit is now operationally aligned with the multi-product model:

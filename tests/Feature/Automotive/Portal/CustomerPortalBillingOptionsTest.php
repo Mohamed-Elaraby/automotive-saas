@@ -195,6 +195,33 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Automotive Service Management', false);
         $response->assertSee('Accounting System', false);
         $response->assertSee('AVAILABLE NOW', false);
+        $response->assertSee('Browse Product Plans', false);
+    }
+
+    public function test_portal_hides_coupon_badge_when_coupon_value_is_an_email(): void
+    {
+        $email = 'client_1@gmail.com';
+
+        $user = User::query()->create([
+            'name' => 'Portal Coupon User',
+            'email' => $email,
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Coupon Co',
+            'subdomain' => 'portal-coupon-' . uniqid(),
+            'base_host' => 'example.test',
+            'coupon_code' => $email,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertDontSee('Coupon Reserved:', false);
+        $response->assertDontSee('Reserved Coupon:', false);
+        $response->assertDontSee(strtoupper($email), false);
     }
 
     public function test_portal_can_focus_a_non_automotive_product_enablement_panel(): void

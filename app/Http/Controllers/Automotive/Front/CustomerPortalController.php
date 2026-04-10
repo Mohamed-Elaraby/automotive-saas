@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Automotive\Front;
 use App\Data\AdminNotificationData;
 use App\Http\Controllers\Controller;
 use App\Models\CustomerOnboardingProfile;
+use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
 use App\Services\Admin\AppSettingsService;
@@ -115,6 +116,7 @@ class CustomerPortalController extends Controller
         return view('automotive.portal.index', [
             'user' => $user,
             'profile' => $profile,
+            'visibleCouponCode' => $this->displayableCouponCode($profile, $user),
             'subscription' => $subscription,
             'plan' => $plan,
             'status' => $status,
@@ -439,6 +441,12 @@ class CustomerPortalController extends Controller
         }
 
         $productSubscriptions = collect();
+        $paidPlanCounts = Plan::query()
+            ->where('is_active', true)
+            ->where('billing_period', '!=', 'trial')
+            ->selectRaw('product_id, COUNT(*) as aggregate')
+            ->groupBy('product_id')
+            ->pluck('aggregate', 'product_id');
 
         if (
             $tenantIds->isNotEmpty()
@@ -457,10 +465,11 @@ class CustomerPortalController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId): array {
+            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCounts): array {
                 $subscription = $productSubscriptions->get($product->id);
                 $status = (string) ($subscription->status ?? '');
                 $isAutomotive = (string) $product->code === self::PRODUCT_CODE;
+                $hasPaidPlans = (int) ($paidPlanCounts->get($product->id) ?? 0) > 0;
                 $isSubscribed = $subscription !== null
                     && ! in_array($status, ['expired', 'canceled'], true);
 
@@ -471,14 +480,13 @@ class CustomerPortalController extends Controller
                     'slug' => (string) $product->slug,
                     'description' => (string) ($product->description ?? ''),
                     'is_active' => (bool) $product->is_active,
+                    'has_paid_plans' => $hasPaidPlans,
                     'is_automotive' => $isAutomotive,
                     'is_subscribed' => $isSubscribed,
                     'tenant_id' => (string) ($subscription->tenant_id ?? $currentTenantId),
                     'subscription_status' => $status,
-                    'status_label' => $this->productStatusLabel($product, $subscription),
-                    'action_label' => $isAutomotive
-                        ? ($isSubscribed ? 'Manage Automotive' : 'Browse Automotive Plans')
-                        : ((bool) $product->is_active ? 'Explore Enablement' : 'Coming Soon'),
+                    'status_label' => $this->productStatusLabel($product, $subscription, $hasPaidPlans),
+                    'action_label' => $this->productActionLabel($product, $isSubscribed, $hasPaidPlans),
                     'action_url' => route('automotive.portal', ['product' => $product->slug]) . '#paid-plans',
                 ];
             })
@@ -561,17 +569,58 @@ class CustomerPortalController extends Controller
         return $product && (string) $product->code !== self::PRODUCT_CODE;
     }
 
-    protected function productStatusLabel(Product $product, ?object $subscription): string
+    protected function productStatusLabel(Product $product, ?object $subscription, bool $hasPaidPlans = false): string
     {
         if ($subscription) {
             return strtoupper(str_replace('_', ' ', (string) ($subscription->status ?? 'subscribed')));
         }
 
-        if ((string) $product->code === self::PRODUCT_CODE) {
+        if (! (bool) $product->is_active) {
+            return 'COMING SOON';
+        }
+
+        if ($hasPaidPlans) {
             return 'AVAILABLE NOW';
         }
 
-        return (bool) $product->is_active ? 'READY FOR ENABLEMENT' : 'COMING SOON';
+        return 'READY FOR SETUP';
+    }
+
+    protected function productActionLabel(Product $product, bool $isSubscribed, bool $hasPaidPlans): string
+    {
+        if (! (bool) $product->is_active) {
+            return 'Coming Soon';
+        }
+
+        if ($isSubscribed) {
+            return (string) $product->code === self::PRODUCT_CODE
+                ? 'Manage Automotive'
+                : 'Manage Product';
+        }
+
+        if ($hasPaidPlans) {
+            return 'Browse Product Plans';
+        }
+
+        return 'Explore Enablement';
+    }
+
+    protected function displayableCouponCode(?CustomerOnboardingProfile $profile, ?object $user): ?string
+    {
+        $coupon = trim((string) ($profile->coupon_code ?? ''));
+
+        if ($coupon === '') {
+            return null;
+        }
+
+        $userEmail = strtolower(trim((string) ($user->email ?? '')));
+        $couponLower = strtolower($coupon);
+
+        if ($couponLower === $userEmail || str_contains($coupon, '@')) {
+            return null;
+        }
+
+        return strtoupper($coupon);
     }
 
     protected function planById(int $planId): ?object
