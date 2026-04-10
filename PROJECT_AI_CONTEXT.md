@@ -181,8 +181,28 @@ Confirmed done and used by billing/admin flows:
 - central admin notifications index/show/unread/stream
 - bulk actions
 - archive/delete/read flows
+- admin topbar notifications already use SSE live updates
+- customer portal now has its own central `customer_portal_notifications` feed
+- portal header now includes a live notifications dropdown
+- portal notifications support:
+  - unread summary
+  - SSE stream
+  - mark read
+- product enablement flow notifications now behave as follows:
+  - when customer submits a new enablement request:
+    - admin receives a notification
+  - when admin approves or rejects:
+    - customer portal receives the notification
+  - admin does not receive a redundant notification for their own approve/reject action
 - feature tests exist under:
   - `tests/Feature/Admin/Notifications/*`
+
+Important portal notification files:
+- `app/Http/Controllers/Automotive/Front/CustomerPortalNotificationController.php`
+- `app/Models/CustomerPortalNotification.php`
+- `app/Services/Notifications/CustomerPortalNotificationService.php`
+- `database/migrations/2026_04_07_120000_create_customer_portal_notifications_table.php`
+- `resources/views/automotive/portal/layouts/portalLayout/partials/header.blade.php`
 
 ## 9) Tenants Management Status
 This is the most recently expanded central admin area.
@@ -407,6 +427,14 @@ Confirmed implemented:
 - rejected requests now show a warning and allow re-submission
 - inactive products now show `Product Coming Soon`
   - and do not show misleading request buttons
+- admin notifications for new enablement requests now deep-link to:
+  - `Product Enablement Requests`
+  - filtered by:
+    - pending
+    - product
+    - tenant search
+- customer portal now has live notifications in the header for enablement decisions
+- portal `checkout success/cancel` now preserves selected product context in the redirect
 
 Important files:
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
@@ -415,7 +443,55 @@ Important files:
 - `resources/views/automotive/portal/index.blade.php`
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
 
-### 11.2 SaaS Flow Validation State
+### 11.2 Latest Product Enablement Admin Workflow
+Confirmed implemented:
+- admin now has a dedicated request details screen for `product_enablement_requests`
+- request details page shows:
+  - product
+  - tenant
+  - portal user
+  - requested/approved/rejected timestamps
+  - current latest `tenant_product_subscription`
+- admin can approve or reject from the request details page
+- admin can now store decision notes on approve/reject
+- decision notes are saved to `product_enablement_requests.notes`
+- customer portal decision notification now includes the admin note when present
+- approve now creates or activates the matching `tenant_product_subscription`
+- reject keeps the request rejected and informs the customer only
+
+Important files:
+- `app/Http/Controllers/Admin/ProductEnablementRequestController.php`
+- `app/Services/Admin/ProductEnablementApprovalService.php`
+- `resources/views/admin/product-enablement-requests/index.blade.php`
+- `resources/views/admin/product-enablement-requests/show.blade.php`
+- `tests/Feature/Admin/ProductEnablementRequestsIndexTest.php`
+
+### 11.3 Latest Additional Product Checkout Foundation
+Confirmed implemented:
+- approved non-automotive products can now start a paid checkout from the customer portal
+- this new checkout path works on the same tenant/workspace
+- it uses `tenant_product_subscriptions` as the operational record for the additional product
+- new service added:
+  - `app/Services/Automotive/StartAdditionalProductCheckoutService.php`
+- Stripe checkout metadata now includes:
+  - `tenant_product_subscription_id`
+  - `product_scope`
+- Stripe `checkout.session.completed` now supports updating `tenant_product_subscriptions`
+  - without requiring a legacy `subscriptions` row for the additional product flow
+- this is currently a foundation step:
+  - checkout start is implemented
+  - checkout session completion mirror/update is implemented
+  - full Stripe lifecycle parity for additional products still remains a follow-up item
+
+Important files:
+- `app/Services/Automotive/StartAdditionalProductCheckoutService.php`
+- `app/Services/Billing/Gateways/StripePaymentGateway.php`
+- `app/Services/Billing/StripeWebhookSyncService.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+- `tests/Feature/Billing/StripeWebhookSyncServiceTest.php`
+
+### 11.4 SaaS Flow Validation State
 Confirmed from latest code/tests:
 - webhook checkout completion calls tenant workspace provisioning service
 - tenant admin access middleware is covered for:
@@ -502,7 +578,10 @@ Important files:
 ## 14) Known Operating Constraints
 - Production mail delivery for some admin auth/reset flows may still need real SMTP/Mailgun verification.
 - Roles & permissions with Laratrust are not yet confirmed as implemented in the current codebase.
-- SSE real-time notifications are not yet confirmed as implemented.
+- SSE real-time notifications are confirmed for:
+  - central admin topbar notifications
+  - customer portal topbar notifications
+- SSE is not yet confirmed as implemented for tenant admin.
 - lifecycle automation exists via scheduled commands/services, but is not built as a full jobs/queue workflow yet.
 - `StartTrialService` rollback-on-failure is covered, but full success-path trial provisioning coverage is still a remaining validation item.
 
@@ -554,26 +633,40 @@ Important files:
   - central admin can list/filter requests
   - central admin can approve or reject requests
   - portal reflects request status correctly after admin action
+- `product_enablement_requests` admin workflow is now more operational:
+  - request details page
+  - decision notes
+  - customer-facing decision notification with note
+- portal notification system is now live:
+  - `customer_portal_notifications`
+  - portal header dropdown
+  - unread summary
+  - SSE stream
+  - mark read
+- admin notification for new product enablement requests now opens the filtered request list directly
 - Stripe admin sync can now recover missing `gateway_subscription_id` from checkout session or customer lookup
 - Stripe sync now keeps `tenant_product_subscriptions` mirrored
 - Stripe cancellation sync logic now respects `current_period_end`:
   - future period end => `cancelled`
   - past period end => `expired`
+- additional product paid checkout foundation is now live:
+  - approved non-automotive product can start checkout in portal
+  - checkout metadata includes `tenant_product_subscription_id`
+  - webhook completion updates `tenant_product_subscriptions`
 
 ### 15.2 Next Logical Priorities
 If continuing from current state, the most natural next options are:
-- connect admin approval to a real provisioning/billing action:
-  - on `approve`, create or activate the matching `tenant_product_subscription`
-  - define whether approval means:
-    - internal enablement only
-    - or a pending paid checkout step for the second product
-  - once approved, make portal/admin show the product as attached or ready for final billing
-- after that, implement the true second-product commercial flow on the same tenant:
-  - product-level paid checkout for non-automotive products
-  - Stripe session/subscription linkage into `tenant_product_subscriptions`
+- extend the new additional-product checkout foundation into full lifecycle coverage:
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - invoice/payment events
+  - keep `tenant_product_subscriptions` fully in sync for non-automotive products
+- decide whether additional products should remain `tenant_product_subscription`-only
+  - or whether a hybrid legacy `subscriptions` mirror is still required for some central admin screens
+- add admin/customer visibility for additional product billing status beyond checkout start
 - move from SaaS foundation validation into tenant product MVP work once billing consistency is confirmed
 - implement roles & permissions for central admin
-- implement real-time notifications via SSE
+- real-time notifications via SSE are already active for admin + portal topbars; expand only if tenant admin also needs them
 - convert lifecycle automation to queue/jobs only if truly needed later
 
 ## 16) Validation / Testing Notes
@@ -632,10 +725,12 @@ php artisan view:cache
 - `app/Http/Controllers/Admin/TenantController.php`
 - `app/Http/Controllers/Admin/SubscriptionController.php`
 - `app/Http/Controllers/Admin/PlanController.php`
+- `app/Http/Controllers/Admin/ProductEnablementRequestController.php`
 - `app/Http/Controllers/Admin/BillingFeatureController.php`
 - `app/Services/Admin/AdminTenantLifecycleService.php`
 - `app/Services/Admin/TenantImpersonationService.php`
 - `app/Services/Admin/AdminSubscriptionControlService.php`
+- `app/Services/Admin/ProductEnablementApprovalService.php`
 - `app/Console/Commands/Billing/RunBillingLifecycleCommand.php`
 - `app/Console/Commands/TenantsCleanup.php`
 - `app/Services/Billing/StripeSubscriptionManagementService.php`
@@ -648,15 +743,19 @@ php artisan view:cache
 - `resources/views/admin/plans/index.blade.php`
 - `resources/views/admin/plans/_form.blade.php`
 - `resources/views/admin/billing-features/*`
+- `resources/views/admin/product-enablement-requests/*`
 - `resources/views/admin/layouts/centralLayout/partials/sidebar.blade.php`
 
 ### Automotive Front / Portal
 - `routes/products/automotive/front.php`
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Http/Controllers/Automotive/Front/CustomerPortalNotificationController.php`
 - `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Automotive/StartAdditionalProductCheckoutService.php`
 - `app/Services/Automotive/StartTrialService.php`
 - `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
 - `app/Services/Billing/BillingPlanCatalogService.php`
+- `app/Services/Notifications/CustomerPortalNotificationService.php`
 - `resources/views/automotive/front/*`
 - `resources/views/automotive/portal/*`
 
