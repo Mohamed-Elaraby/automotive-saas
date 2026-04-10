@@ -509,6 +509,26 @@
                                     No active paid plans are available right now.
                                 </div>
                             @else
+                                @if(!($selectedProduct['is_automotive'] ?? false) && $selectedProductHasPendingCheckout)
+                                    <div class="alert alert-warning mb-3">
+                                        Your last checkout for {{ $selectedProductName }} is still pending. Continue the product checkout below, or wait for Stripe webhook sync if payment already completed.
+                                    </div>
+                                @elseif(!($selectedProduct['is_automotive'] ?? false) && $selectedProductHasLiveBilling)
+                                    <div class="alert alert-info mb-3">
+                                        {{ $selectedProductName }} already has a live billed subscription on this workspace. Changes should be managed from the tenant billing area.
+                                    </div>
+                                @elseif(!($selectedProduct['is_automotive'] ?? false) && in_array($selectedProductStatus ?? '', ['past_due', 'suspended'], true))
+                                    <div class="alert alert-warning mb-3">
+                                        {{ $selectedProductName }} is currently <strong>{{ strtoupper(str_replace('_', ' ', (string) $selectedProductStatus)) }}</strong>.
+                                        Review billing below and continue checkout when ready.
+                                    </div>
+                                @elseif(!($selectedProduct['is_automotive'] ?? false) && in_array($selectedProductStatus ?? '', ['expired', 'canceled', 'cancelled'], true))
+                                    <div class="alert alert-warning mb-3">
+                                        Your previous {{ $selectedProductName }} subscription is <strong>{{ strtoupper(str_replace('_', ' ', (string) $selectedProductStatus)) }}</strong>.
+                                        You can start a new checkout below.
+                                    </div>
+                                @endif
+
                                 @if($periodTabs->count() > 1)
                                     <div class="d-flex align-items-center justify-content-center mb-4">
                                         <ul class="nav nav-tabs nav-solid-success nav-tabs-rounded p-1 rounded-pill bg-light" role="tablist">

@@ -1029,6 +1029,27 @@ Important cleanup note:
 - these files were accidentally committed once during manual git flow
 - they should remain ignored and never be committed again
 
+### 18.11 Additional Product Portal Delivery Pass
+The additional-product portal flow received a production-readiness pass focused on finishing delivery, not adding more admin tooling.
+
+Portal behavior now clarified:
+- non-automotive products still require enablement approval before checkout becomes available
+- once approved, checkout is live from the portal for product-specific plans
+- the portal now shows product-scoped billing state messages for additional products:
+  - pending Stripe checkout
+  - active live billing already attached to the workspace
+  - `past_due` / `suspended`
+  - `expired` / `canceled`
+
+Important implementation note:
+- the generic top-level billing banners were not enough because they were mostly primary-product focused
+- product-specific state is now computed per selected product and rendered inside the selected product plan section
+
+Test coverage added/updated:
+- outdated portal expectation text was updated to match the real enabled flow
+- additional product pending checkout state is covered
+- additional product live billing managed-in-system state is covered
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1064,6 +1085,12 @@ If a new session starts from this file only, the safest current summary is:
   - tenant product subscriptions
   - tenant-facing read path migration
   - visible portal products catalog UI
+- Additional product delivery is now materially more complete:
+  - enablement request flow
+  - approval-driven attach flow
+  - portal checkout start for approved products
+  - webhook sync for product subscriptions
+  - product-scoped portal billing state messaging
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates

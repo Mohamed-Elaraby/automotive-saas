@@ -103,6 +103,14 @@ class CustomerPortalController extends Controller
         $selectedProductHasLiveBilling = $selectedProductCode === self::PRODUCT_CODE
             ? $hasLiveStripeSubscription
             : $this->hasLiveTenantProductBilling($selectedProductSubscription);
+        $selectedProductStatus = (string) ($selectedProductSubscription->status ?? ($subscription->status ?? ''));
+        $selectedProductHasPendingCheckout = $selectedProductCode === self::PRODUCT_CODE
+            ? $hasPendingPaidCheckout
+            : (
+                $selectedProductSubscription !== null
+                && filled($selectedProductSubscription->gateway_checkout_session_id ?? null)
+                && ! filled($selectedProductSubscription->gateway_subscription_id ?? null)
+            );
 
         return view('automotive.portal.index', [
             'user' => $user,
@@ -128,6 +136,8 @@ class CustomerPortalController extends Controller
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
             'selectedProductSubscription' => $selectedProductSubscription,
             'selectedProductHasLiveBilling' => $selectedProductHasLiveBilling,
+            'selectedProductStatus' => $selectedProductStatus,
+            'selectedProductHasPendingCheckout' => $selectedProductHasPendingCheckout,
         ]);
     }
 

@@ -237,9 +237,9 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Accounting Suite Plans &amp; Enablement', false);
-        $response->assertSee('Billing checkout for additional products is intentionally not live yet in this portal.', false);
+        $response->assertSee('Submit or review enablement first. Billing checkout becomes available here after approval.', false);
         $response->assertSee((string) $accountingPlan->name, false);
-        $response->assertSee('Product Enablement Is Next', false);
+        $response->assertSee('Approval Required Before Checkout', false);
         $response->assertDontSee('Select &amp; Continue', false);
     }
 
@@ -574,6 +574,131 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'gateway' => 'stripe',
             'status' => 'past_due',
         ]);
+    }
+
+    public function test_approved_additional_product_with_pending_checkout_shows_resume_message(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Pending Additional Checkout User',
+            'email' => 'portal-pending-additional-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Pending Additional Co',
+            'subdomain' => 'portal-pending-additional-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-pending-additional-' . uniqid(),
+            'data' => ['company_name' => 'Portal Pending Additional Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_pending_checkout_' . uniqid(),
+            'name' => 'Accounting Pending Checkout',
+            'slug' => 'accounting-pending-checkout-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createPlan('Accounting Pending Plan', 'accounting-pending-plan-' . uniqid(), 'monthly', 299, $product->id);
+
+        ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'approved',
+            'requested_at' => now()->subDay(),
+            'approved_at' => now()->subHour(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'past_due',
+            'gateway' => 'stripe',
+            'gateway_checkout_session_id' => 'cs_pending_additional_only',
+            'gateway_subscription_id' => null,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
+
+        $response->assertOk();
+        $response->assertSee('is still pending', false);
+        $response->assertSee('Continue Product Checkout', false);
+    }
+
+    public function test_approved_additional_product_with_live_billing_shows_managed_in_system_message(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Live Additional Billing User',
+            'email' => 'portal-live-additional-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Live Additional Co',
+            'subdomain' => 'portal-live-additional-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-live-additional-' . uniqid(),
+            'data' => ['company_name' => 'Portal Live Additional Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_live_billing_' . uniqid(),
+            'name' => 'Accounting Live Billing',
+            'slug' => 'accounting-live-billing-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createPlan('Accounting Live Plan', 'accounting-live-plan-' . uniqid(), 'monthly', 299, $product->id);
+
+        ProductEnablementRequest::query()->create([
+            'user_id' => $user->id,
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'status' => 'approved',
+            'requested_at' => now()->subDay(),
+            'approved_at' => now()->subHour(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_checkout_session_id' => 'cs_live_additional_only',
+            'gateway_subscription_id' => 'sub_live_additional_only',
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
+
+        $response->assertOk();
+        $response->assertSee('already has a live billed subscription on this workspace', false);
+        $response->assertSee('Billing Managed In System', false);
+        $response->assertDontSee('Select &amp; Continue', false);
     }
 
     public function test_rejected_non_automotive_enablement_request_can_be_requested_again(): void
