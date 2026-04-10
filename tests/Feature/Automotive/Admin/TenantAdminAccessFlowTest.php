@@ -4,8 +4,10 @@ namespace Tests\Feature\Automotive\Admin;
 
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Models\TenantProductSubscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
@@ -87,6 +89,78 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertRedirect("http://{$domain}/automotive/admin/billing");
     }
 
+    public function test_dashboard_shows_all_workspace_products_for_the_same_tenant(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_suite_' . uniqid(),
+            'name' => 'Accounting Suite',
+            'slug' => 'accounting-suite-' . uniqid(),
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $sparePartsProduct = Product::query()->create([
+            'code' => 'spare_parts_' . uniqid(),
+            'name' => 'Spare Parts',
+            'slug' => 'spare-parts-' . uniqid(),
+            'is_active' => true,
+            'sort_order' => 3,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        $sparePartsPlan = Plan::query()->create([
+            'product_id' => $sparePartsProduct->id,
+            'name' => 'Spare Parts Pro',
+            'slug' => 'spare-parts-pro-' . uniqid(),
+            'price' => 249,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_accounting_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $sparePartsProduct->id,
+            'plan_id' => $sparePartsPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_spare_parts_' . uniqid(),
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard");
+
+        $dashboardResponse->assertOk();
+        $dashboardResponse->assertSee('Workspace Products', false);
+        $dashboardResponse->assertSee('Accounting Suite', false);
+        $dashboardResponse->assertSee('Spare Parts', false);
+        $dashboardResponse->assertSee('Connected', false);
+    }
+
     /**
      * @return array{0: Tenant, 1: string, 2: string, 3: string}
      */
@@ -97,7 +171,18 @@ class TenantAdminAccessFlowTest extends TestCase
         $password = 'secret-pass';
         $email = $tenantId . '@example.test';
 
+        $automotiveProduct = Product::query()->firstOrCreate(
+            ['code' => 'automotive_service'],
+            [
+                'name' => 'Automotive Service Management',
+                'slug' => 'automotive-service-management',
+                'is_active' => true,
+                'sort_order' => 1,
+            ]
+        );
+
         $plan = Plan::query()->create([
+            'product_id' => $automotiveProduct->id,
             'name' => 'Tenant Flow Plan',
             'slug' => 'tenant-flow-plan-' . uniqid(),
             'description' => 'Tenant flow plan',
@@ -132,6 +217,14 @@ class TenantAdminAccessFlowTest extends TestCase
             'gateway_subscription_id' => null,
             'gateway_checkout_session_id' => null,
             'gateway_price_id' => null,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $automotiveProduct->id,
+            'plan_id' => $plan->id,
+            'status' => $subscriptionStatus,
+            'gateway' => null,
         ]);
 
         Artisan::call('tenants:migrate', [

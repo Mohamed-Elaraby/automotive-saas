@@ -220,6 +220,40 @@
                 <div class="col-xxl-4 col-xl-12 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
+                            <h5 class="card-title mb-0">Workspace Products</h5>
+                        </div>
+                        <div class="card-body">
+                            @if(($workspaceProducts ?? collect())->isEmpty())
+                                <p class="text-muted mb-0">No product subscriptions are attached to this workspace yet.</p>
+                            @else
+                                <div class="d-flex flex-column gap-3">
+                                    @foreach($workspaceProducts as $workspaceProduct)
+                                        <div class="d-flex justify-content-between align-items-start border-bottom pb-2">
+                                            <div>
+                                                <div class="fw-semibold">{{ $workspaceProduct['product_name'] }}</div>
+                                                <div class="text-muted small">
+                                                    {{ $workspaceProduct['plan_name'] ?: 'No plan mapped yet' }}
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $workspaceProduct['is_accessible'] ? 'bg-success' : 'bg-secondary' }}">
+                                                    {{ $workspaceProduct['is_accessible'] ? 'Connected' : $workspaceProduct['status_label'] }}
+                                                </span>
+                                                @if(!$workspaceProduct['is_primary_workspace_product'])
+                                                    <div class="text-muted small mt-1">Modules can be attached into this shared workspace.</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xxl-4 col-xl-12 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header">
                             <h5 class="card-title mb-0">Quick Navigation</h5>
                         </div>
                         <div class="card-body">

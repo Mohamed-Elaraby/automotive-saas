@@ -10,12 +10,14 @@ use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Tenancy\TenantPlanService;
+use App\Services\Tenancy\TenantWorkspaceProductService;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     public function __construct(
-        protected TenantPlanService $tenantPlanService
+        protected TenantPlanService $tenantPlanService,
+        protected TenantWorkspaceProductService $tenantWorkspaceProductService
     ) {
     }
 
@@ -37,6 +39,7 @@ public function index(): View
 
     $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
     $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
 
     $lowStockItems = Inventory::query()
         ->with(['product', 'branch'])
@@ -72,6 +75,7 @@ public function index(): View
         'productLimit',
         'subscription',
         'plan',
+        'workspaceProducts',
         'lowStockItems',
         'recentTransfers',
         'recentMovements'

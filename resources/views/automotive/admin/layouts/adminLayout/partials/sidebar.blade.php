@@ -113,6 +113,25 @@
                         </ul>
                     </li>
 
+                    @if(($tenantWorkspaceProducts ?? collect())->isNotEmpty())
+                        <li class="menu-title"><span>Workspace Products</span></li>
+                        <li>
+                            <ul>
+                                @foreach($tenantWorkspaceProducts as $workspaceProduct)
+                                    <li>
+                                        <a href="{{ route('automotive.admin.dashboard') }}">
+                                            <i class="isax {{ $workspaceProduct['is_primary_workspace_product'] ? 'isax-car' : 'isax-layer' }}"></i>
+                                            <span>{{ $workspaceProduct['product_name'] }}</span>
+                                            <small class="ms-auto text-muted">
+                                                {{ $workspaceProduct['is_accessible'] ? 'Connected' : $workspaceProduct['status_label'] }}
+                                            </small>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </li>
+                    @endif
+
                     <li class="menu-title"><span>Manage</span></li>
                     <li>
                         <ul>

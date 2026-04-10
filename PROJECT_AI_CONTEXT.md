@@ -1064,6 +1064,20 @@ Admin plan creation/edit is now operationally aligned with the multi-product mod
 - plan index now supports filtering by product
 - products index links each plan count directly to the filtered plans view
 
+### 18.13 Tenant Workspace Product Context
+The tenant workspace foundation is no longer treated purely as a single-product automotive shell.
+
+What changed:
+- tenant admin sidebar now loads the tenant's attached workspace products from `tenant_product_subscriptions`
+- tenant dashboard now shows a `Workspace Products` card for the same tenant
+- this makes the shared workspace aware of:
+  - the primary automotive product
+  - any additional subscribed products such as accounting or spare parts
+
+Important scope note:
+- this does **not** yet add separate routes/modules for non-automotive products
+- it is the required foundation before product capabilities/modules can be attached and surfaced inside the same workspace
+
 Important operator note:
 - to create pricing for a non-automotive product such as accounting or spare parts, create the product first, then create plans attached to that product from the plans form
 
