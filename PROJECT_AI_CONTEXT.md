@@ -246,6 +246,8 @@ This is the most recently expanded central admin area.
     - `Sync Selected`
     - `Sync All Filtered`
     - `Retry Failed Only`
+  - `Sync Selected` remains immediate
+  - `Sync All Filtered` and `Retry Failed Only` are now queue-driven jobs
   - bulk sync returns a persisted summary via flash + activity log
 - suspend latest subscription
 - activate latest subscription

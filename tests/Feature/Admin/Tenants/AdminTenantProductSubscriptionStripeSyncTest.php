@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin\Tenants;
 
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Jobs\Admin\SyncTenantProductSubscriptionFromStripeJob;
 use App\Models\Admin;
 use App\Models\Plan;
 use App\Models\Product;
@@ -10,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
 use App\Services\Billing\AdminTenantProductSubscriptionStripeSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Tests\TestCase;
 
@@ -194,7 +196,7 @@ class AdminTenantProductSubscriptionStripeSyncTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_retry_failed_only_for_filtered_scope(): void
+    public function test_admin_can_queue_retry_failed_only_for_filtered_scope(): void
     {
         $admin = Admin::query()->create([
             'name' => 'Central Admin',
@@ -248,21 +250,7 @@ class AdminTenantProductSubscriptionStripeSyncTest extends TestCase
             'last_sync_status' => 'success',
         ]);
 
-        $syncService = Mockery::mock(AdminTenantProductSubscriptionStripeSyncService::class);
-        $syncService->shouldReceive('sync')
-            ->once()
-            ->with(Mockery::on(fn ($model) => (int) $model->id === (int) $failed->id))
-            ->andReturnUsing(function () use ($failed) {
-                $failed->update([
-                    'last_synced_from_stripe_at' => now(),
-                    'last_sync_status' => 'success',
-                    'last_sync_error' => null,
-                ]);
-
-                return $failed->fresh();
-            });
-
-        $this->app->instance(AdminTenantProductSubscriptionStripeSyncService::class, $syncService);
+        Queue::fake();
 
         $response = $this
             ->actingAs($admin, 'admin')
@@ -277,16 +265,86 @@ class AdminTenantProductSubscriptionStripeSyncTest extends TestCase
                 'tenant_id' => $tenant->id,
                 'product_id' => $product->id,
             ]))
-            ->assertSessionHas('success', 'Bulk Stripe sync finished. Succeeded: 1, failed: 0, skipped: 0.');
+            ->assertSessionHas('success', 'Bulk Stripe sync queued. Queued: 1, skipped: 0.');
 
-        $this->assertDatabaseHas('tenant_product_subscriptions', [
-            'id' => $failed->id,
-            'last_sync_status' => 'success',
+        Queue::assertPushed(SyncTenantProductSubscriptionFromStripeJob::class, function ($job) use ($failed): bool {
+            return (int) $job->subscriptionId === (int) $failed->id;
+        });
+
+        Queue::assertNotPushed(SyncTenantProductSubscriptionFromStripeJob::class, function ($job) use ($alreadyOk): bool {
+            return (int) $job->subscriptionId === (int) $alreadyOk->id;
+        });
+    }
+
+    public function test_admin_can_queue_sync_all_filtered_product_subscriptions(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Central Admin',
+            'email' => 'admin-tps-bulk-filtered-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
         ]);
 
-        $this->assertDatabaseHas('tenant_product_subscriptions', [
-            'id' => $alreadyOk->id,
-            'last_sync_status' => 'success',
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-product-sub-bulk-filtered-' . uniqid(),
+            'data' => ['company_name' => 'Bulk Filtered Tenant'],
         ]);
+
+        $product = Product::query()->create([
+            'code' => 'bulk_filtered_suite',
+            'name' => 'Bulk Filtered Suite',
+            'slug' => 'bulk-filtered-suite',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Bulk Filtered Plan',
+            'slug' => 'bulk-filtered-plan-' . uniqid(),
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        $syncable = TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_filtered_one',
+            'gateway_subscription_id' => 'sub_filtered_one',
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => null,
+        ]);
+
+        Queue::fake();
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->post(route('admin.tenants.product-subscriptions.bulk-sync-stripe'), [
+                'bulk_sync_action' => 'filtered',
+                'tenant_id' => $tenant->id,
+                'product_id' => $product->id,
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.tenants.product-subscriptions.index', [
+                'tenant_id' => $tenant->id,
+                'product_id' => $product->id,
+            ]))
+            ->assertSessionHas('success', 'Bulk Stripe sync queued. Queued: 1, skipped: 1.');
+
+        Queue::assertPushed(SyncTenantProductSubscriptionFromStripeJob::class, 1);
+        Queue::assertPushed(SyncTenantProductSubscriptionFromStripeJob::class, function ($job) use ($syncable): bool {
+            return (int) $job->subscriptionId === (int) $syncable->id;
+        });
     }
 }

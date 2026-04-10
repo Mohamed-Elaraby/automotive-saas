@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\Admin\SyncTenantProductSubscriptionFromStripeJob;
 use App\Models\TenantProductSubscription;
 use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
@@ -283,6 +284,53 @@ public function bulkSyncProductSubscriptionsFromStripe(
         return redirect()
             ->route('admin.tenants.product-subscriptions.index', $this->productSubscriptionRouteFilters($filters))
             ->with('error', 'No product subscriptions matched the current bulk sync scope.');
+    }
+
+    if ($action !== 'selected') {
+        $queued = 0;
+        $skipped = 0;
+        $admin = $request->user('admin');
+
+        foreach ($subscriptions as $subscription) {
+            if (! $this->productSubscriptionCanSyncFromStripe($subscription)) {
+                $skipped++;
+                continue;
+            }
+
+            SyncTenantProductSubscriptionFromStripeJob::dispatch(
+                subscriptionId: (int) $subscription->id,
+                adminUserId: $admin?->id,
+                adminEmail: $admin?->email,
+            );
+
+            $queued++;
+        }
+
+        $this->activityLogger->log(
+            action: 'tenant.product_subscription.bulk_sync_queued_from_stripe',
+            subjectType: 'tenant_product_subscription',
+            subjectId: null,
+            tenantId: null,
+            contextPayload: [
+                'source' => 'admin.product_subscription.bulk_sync_from_stripe',
+                'bulk_sync_action' => $action,
+                'filters' => $this->productSubscriptionRouteFilters($filters),
+                'selected_ids' => $selectedIds->all(),
+                'summary' => [
+                    'total' => $subscriptions->count(),
+                    'queued' => $queued,
+                    'skipped' => $skipped,
+                ],
+            ]
+        );
+
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.index', $this->productSubscriptionRouteFilters($filters))
+            ->with('success', sprintf(
+                'Bulk Stripe sync queued. Queued: %d, skipped: %d.',
+                $queued,
+                $skipped
+            ));
     }
 
     $summary = [
