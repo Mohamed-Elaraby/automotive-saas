@@ -283,6 +283,28 @@ class AdminPlanFeatureStorageTest extends TestCase
         $response->assertSee(route('admin.subscriptions.show', $trialSubscription->id), false);
     }
 
+    public function test_empty_filtered_plans_index_does_not_boot_datatable(): void
+    {
+        $admin = $this->createAdmin();
+        $product = Product::query()->create([
+            'code' => 'empty_product',
+            'name' => 'Empty Product',
+            'slug' => 'empty-product',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.plans.index', [
+                'product_id' => $product->id,
+            ]));
+
+        $response->assertOk();
+        $response->assertSee('No plans match the current filters.');
+        $response->assertDontSee('table table-nowrap datatable', false);
+    }
+
     protected function createAdmin(): Admin
     {
         return Admin::query()->create([

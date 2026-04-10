@@ -88,7 +88,7 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-nowrap datatable">
+                <table class="table table-nowrap @if($plans->isNotEmpty()) datatable @endif">
                     <thead>
                     <tr>
                         <th>Product</th>
