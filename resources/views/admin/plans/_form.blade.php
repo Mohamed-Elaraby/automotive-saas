@@ -253,7 +253,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const form = document.querySelector('form');
+        const form = document.getElementById('admin-plan-form');
 
         if (!form) {
             return;

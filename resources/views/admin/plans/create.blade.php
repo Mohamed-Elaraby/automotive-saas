@@ -25,7 +25,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.plans.store') }}">
+            <form id="admin-plan-form" method="POST" action="{{ route('admin.plans.store') }}">
                 @csrf
 
                 @include('admin.plans._form')

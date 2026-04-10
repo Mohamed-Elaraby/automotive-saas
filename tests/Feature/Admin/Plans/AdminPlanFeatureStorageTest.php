@@ -106,6 +106,7 @@ class AdminPlanFeatureStorageTest extends TestCase
             ->get(route('admin.plans.create'));
 
         $response->assertOk();
+        $response->assertSee('id="admin-plan-form"', false);
         $response->assertSee('Product');
         $response->assertSee('Select a product');
         $response->assertSee('Limits Semantics');
