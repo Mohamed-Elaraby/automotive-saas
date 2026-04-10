@@ -250,6 +250,7 @@ This is the most recently expanded central admin area.
   - `Sync All Filtered` and `Retry Failed Only` are now queue-driven jobs
   - bulk sync returns a persisted summary via flash + activity log
   - the screen now surfaces recent bulk operations directly from `admin_activity_logs`
+  - CSV export of the current filtered result set
 - suspend latest subscription
 - activate latest subscription
 - extend trial

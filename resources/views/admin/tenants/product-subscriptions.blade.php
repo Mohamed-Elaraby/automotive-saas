@@ -190,6 +190,9 @@
 
                             <div class="col-12 d-flex gap-2">
                                 <button type="submit" class="btn btn-primary">Apply Filters</button>
+                                <button type="submit" formaction="{{ route('admin.tenants.product-subscriptions.export') }}" formmethod="GET" class="btn btn-outline-success">
+                                    Export CSV
+                                </button>
                                 <a href="{{ route('admin.tenants.product-subscriptions.index') }}" class="btn btn-outline-secondary">Reset</a>
                                 <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Back to Tenants</a>
                             </div>

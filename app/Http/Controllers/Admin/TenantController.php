@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Throwable;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TenantController extends Controller
@@ -398,6 +399,66 @@ public function showProductSubscription(int $subscriptionId): View
         'diagnostics' => $diagnostics,
         'latestInvoice' => $latestInvoice,
         'healthHints' => $healthHints,
+    ]);
+}
+
+public function exportProductSubscriptions(Request $request): StreamedResponse
+{
+    $filters = $this->productSubscriptionFilters($request);
+    $filename = 'product-subscriptions-' . now()->format('Ymd-His') . '.csv';
+
+    return response()->streamDownload(function () use ($filters) {
+        $handle = fopen('php://output', 'w');
+
+        fputcsv($handle, [
+            'record_id',
+            'tenant_id',
+            'product',
+            'product_code',
+            'plan',
+            'status',
+            'gateway',
+            'gateway_customer_id',
+            'gateway_subscription_id',
+            'last_sync_status',
+            'last_synced_from_stripe_at',
+            'last_sync_error',
+            'payment_failures_count',
+            'ends_at',
+            'updated_at',
+        ]);
+
+        if (Schema::connection($this->centralConnectionName())->hasTable('tenant_product_subscriptions')) {
+            $query = $this->productSubscriptionsBaseQuery();
+            $this->applyProductSubscriptionFilters($query, $filters, 'tenant_product_subscriptions');
+
+            $query->orderBy('tenant_product_subscriptions.id')
+                ->chunk(200, function ($rows) use ($handle) {
+                    foreach ($rows as $row) {
+                        fputcsv($handle, [
+                            $row->id,
+                            $row->tenant_id,
+                            $row->product_name ?? $row->product_slug ?? ('Product #' . ($row->product_id ?? '?')),
+                            $row->product_code ?? '',
+                            $row->plan_name ?? $row->plan_slug ?? ($row->plan_id ? ('Plan #' . $row->plan_id) : ''),
+                            $row->status ?? '',
+                            $row->gateway ?? '',
+                            $row->gateway_customer_id ?? '',
+                            $row->gateway_subscription_id ?? '',
+                            $row->last_sync_status ?? '',
+                            $row->last_synced_from_stripe_at ?? '',
+                            $row->last_sync_error ?? '',
+                            $row->payment_failures_count ?? 0,
+                            $row->ends_at ?? '',
+                            $row->updated_at ?? '',
+                        ]);
+                    }
+                });
+        }
+
+        fclose($handle);
+    }, $filename, [
+        'Content-Type' => 'text/csv; charset=UTF-8',
     ]);
 }
 

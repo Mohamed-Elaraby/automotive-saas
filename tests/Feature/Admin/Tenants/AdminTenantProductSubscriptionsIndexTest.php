@@ -135,4 +135,83 @@ class AdminTenantProductSubscriptionsIndexTest extends TestCase
         $response->assertDontSee('cus_other_tps', false);
         $response->assertDontSee('FAILED', false);
     }
+
+    public function test_index_can_export_filtered_product_subscriptions_to_csv(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Central Admin',
+            'email' => 'admin-tps-export-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'export_suite',
+            'name' => 'Export Suite',
+            'slug' => 'export-suite',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Export Plan',
+            'slug' => 'export-plan-' . uniqid(),
+            'price' => 129,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        $matchingTenant = Tenant::query()->create([
+            'id' => 'tenant-product-sub-export-' . uniqid(),
+            'data' => ['company_name' => 'Export Tenant'],
+        ]);
+
+        $otherTenant = Tenant::query()->create([
+            'id' => 'tenant-product-sub-export-other-' . uniqid(),
+            'data' => ['company_name' => 'Export Other Tenant'],
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $matchingTenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'past_due',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_export_match',
+            'gateway_subscription_id' => 'sub_export_match',
+            'last_sync_status' => 'failed',
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $otherTenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'manual',
+            'gateway_customer_id' => 'cus_export_other',
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.tenants.product-subscriptions.export', [
+                'tenant_id' => $matchingTenant->id,
+                'last_sync_status' => 'failed',
+            ]));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $streamedResponse = $response->baseResponse ?? $response;
+
+        ob_start();
+        $streamedResponse->sendContent();
+        $csv = (string) ob_get_clean();
+
+        $this->assertStringContainsString('record_id', $csv);
+        $this->assertStringContainsString($matchingTenant->id, $csv);
+        $this->assertStringContainsString('cus_export_match', $csv);
+        $this->assertStringNotContainsString($otherTenant->id, $csv);
+        $this->assertStringNotContainsString('cus_export_other', $csv);
+    }
 }
