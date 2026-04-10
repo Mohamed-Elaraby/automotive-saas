@@ -78,6 +78,38 @@ class ProductCrudTest extends TestCase
         $filterResponse->assertSee('Accounting Suite Plus');
     }
 
+    public function test_products_index_links_plan_counts_to_filtered_plans(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'accounting_suite',
+            'name' => 'Accounting Suite',
+            'slug' => 'accounting-suite',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Accounting Growth',
+            'slug' => 'accounting-growth',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.index'));
+
+        $response->assertOk();
+        $response->assertSee('1 Plans', false);
+        $response->assertSee(route('admin.plans.index', ['product_id' => $product->id]), false);
+    }
+
     public function test_admin_cannot_delete_product_when_it_is_used(): void
     {
         $admin = $this->createAdmin();

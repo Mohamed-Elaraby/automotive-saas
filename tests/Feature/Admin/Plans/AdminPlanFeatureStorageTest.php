@@ -159,8 +159,23 @@ class AdminPlanFeatureStorageTest extends TestCase
     public function test_plans_index_can_filter_by_search_period_status_and_stripe_linkage(): void
     {
         $admin = $this->createAdmin();
+        $matchingProduct = Product::query()->create([
+            'code' => 'accounting_suite',
+            'name' => 'Accounting Suite',
+            'slug' => 'accounting-suite',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+        $otherProduct = Product::query()->create([
+            'code' => 'spare_parts',
+            'name' => 'Spare Parts',
+            'slug' => 'spare-parts',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
 
         Plan::query()->create([
+            'product_id' => $matchingProduct->id,
             'name' => 'Growth Monthly',
             'slug' => 'growth-monthly',
             'price' => 399,
@@ -172,6 +187,7 @@ class AdminPlanFeatureStorageTest extends TestCase
         ]);
 
         Plan::query()->create([
+            'product_id' => $matchingProduct->id,
             'name' => 'Growth Yearly',
             'slug' => 'growth-yearly',
             'price' => 3999,
@@ -183,6 +199,7 @@ class AdminPlanFeatureStorageTest extends TestCase
         ]);
 
         Plan::query()->create([
+            'product_id' => $otherProduct->id,
             'name' => 'Starter Monthly',
             'slug' => 'starter-monthly',
             'price' => 99,
@@ -196,12 +213,14 @@ class AdminPlanFeatureStorageTest extends TestCase
             ->actingAs($admin, 'admin')
             ->get(route('admin.plans.index', [
                 'q' => 'growth',
+                'product_id' => $matchingProduct->id,
                 'billing_period' => 'monthly',
                 'status' => 'active',
                 'stripe' => 'linked',
             ]));
 
         $response->assertOk();
+        $response->assertSee('Accounting Suite');
         $response->assertSee('Growth Monthly');
         $response->assertDontSee('Growth Yearly');
         $response->assertDontSee('Starter Monthly');

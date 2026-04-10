@@ -86,7 +86,11 @@
                                                 {{ $product->is_active ? 'Active' : 'Inactive' }}
                                             </span>
                                         </td>
-                                        <td>{{ $product->plans_count }}</td>
+                                        <td>
+                                            <a href="{{ route('admin.plans.index', ['product_id' => $product->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                {{ $product->plans_count }} Plans
+                                            </a>
+                                        </td>
                                         <td>{{ $product->tenant_product_subscriptions_count }}</td>
                                         <td>{{ $product->sort_order }}</td>
                                         <td class="text-end">

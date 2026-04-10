@@ -19,6 +19,7 @@ class PlanController extends Controller
     {
         $filters = [
             'q' => trim((string) $request->string('q')),
+            'product_id' => (string) $request->string('product_id'),
             'billing_period' => (string) $request->string('billing_period'),
             'status' => (string) $request->string('status'),
             'stripe' => (string) $request->string('stripe'),
@@ -33,6 +34,9 @@ class PlanController extends Controller
                     $nested->where('name', 'like', "%{$search}%")
                         ->orWhere('slug', 'like', "%{$search}%");
                 });
+            })
+            ->when(ctype_digit($filters['product_id']) && (int) $filters['product_id'] > 0, function ($query) use ($filters) {
+                $query->where('product_id', (int) $filters['product_id']);
             })
             ->when(in_array($filters['billing_period'], ['trial', 'monthly', 'yearly', 'one_time'], true), function ($query) use ($filters) {
                 $query->where('billing_period', $filters['billing_period']);
@@ -67,7 +71,11 @@ class PlanController extends Controller
                 return $plan;
             });
 
-        return view('admin.plans.index', compact('plans', 'filters'));
+        return view('admin.plans.index', [
+            'plans' => $plans,
+            'filters' => $filters,
+            'availableProducts' => $this->availableProducts(),
+        ]);
     }
 
     public function create()

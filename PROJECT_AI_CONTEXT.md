@@ -1057,6 +1057,8 @@ Admin plan creation/edit is now operationally aligned with the multi-product mod
   - selected product
   - live description changes
 - plan index/show screens now surface the linked product explicitly
+- plan index now supports filtering by product
+- products index links each plan count directly to the filtered plans view
 
 Important operator note:
 - to create pricing for a non-automotive product such as accounting or spare parts, create the product first, then create plans attached to that product from the plans form

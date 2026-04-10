@@ -43,6 +43,17 @@
                             >
                         </div>
                         <div class="col-6 col-lg-2">
+                            <label for="plan-product" class="form-label">Product</label>
+                            <select id="plan-product" name="product_id" class="form-select">
+                                <option value="">All products</option>
+                                @foreach($availableProducts as $product)
+                                    <option value="{{ $product->id }}" @selected(($filters['product_id'] ?? '') === (string) $product->id)>
+                                        {{ $product->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6 col-lg-2">
                             <label for="plan-period" class="form-label">Billing</label>
                             <select id="plan-period" name="billing_period" class="form-select">
                                 <option value="">All periods</option>
@@ -52,7 +63,7 @@
                                 <option value="one_time" @selected(($filters['billing_period'] ?? '') === 'one_time')>One Time</option>
                             </select>
                         </div>
-                        <div class="col-6 col-lg-2">
+                        <div class="col-6 col-lg-1">
                             <label for="plan-status" class="form-label">Status</label>
                             <select id="plan-status" name="status" class="form-select">
                                 <option value="">All statuses</option>
@@ -60,7 +71,7 @@
                                 <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option>
                             </select>
                         </div>
-                        <div class="col-6 col-lg-2">
+                        <div class="col-6 col-lg-1">
                             <label for="plan-stripe" class="form-label">Stripe</label>
                             <select id="plan-stripe" name="stripe" class="form-select">
                                 <option value="">Any linkage</option>
@@ -68,7 +79,7 @@
                                 <option value="unlinked" @selected(($filters['stripe'] ?? '') === 'unlinked')>Unlinked</option>
                             </select>
                         </div>
-                        <div class="col-6 col-lg-2 d-flex gap-2">
+                        <div class="col-12 col-lg-2 d-flex gap-2">
                             <button type="submit" class="btn btn-primary flex-fill">Apply</button>
                             <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white flex-fill">Reset</a>
                         </div>
