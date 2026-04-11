@@ -1759,6 +1759,34 @@ Why this matters:
   - product runtime operations in tenant admin
 - this is the correct foundation before expanding the SaaS to more industries and product families
 
+## 18.40) Seeders Now Activate All Current Products and Create Plans for Each
+Status: completed
+
+What changed:
+- `ProductSeeder` no longer leaves `parts_inventory` and `accounting` inactive by default
+- all current seeded products are now active out of the box:
+  - `automotive_service`
+  - `parts_inventory`
+  - `accounting`
+- `PlanSeeder` now creates a full seeded catalog for every active product, not only automotive-style paid plans:
+  - trial
+  - starter monthly
+  - growth monthly
+  - pro yearly
+- this means every currently seeded product now has ready-to-test plans immediately after seeding
+
+Test coverage:
+- updated `PlanSeederTest` to assert:
+  - trial plans exist for all current products
+  - total seeded plans count reflects all products
+- updated `ProductPlanCatalogBootstrapTest` to assert:
+  - all current seeded products are active
+  - each current seeded product gets its own seeded trial plan
+
+Why this matters:
+- local/demo/test environments now match the intended multi-product SaaS behavior better
+- portal and billing flows can be tested across current systems without manually activating products or creating plans first
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

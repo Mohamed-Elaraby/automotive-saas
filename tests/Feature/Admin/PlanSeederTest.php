@@ -70,6 +70,14 @@ class PlanSeederTest extends TestCase
             'billing_period' => 'trial',
         ]);
         $this->assertDatabaseHas('plans', [
+            'slug' => 'parts-inventory-trial',
+            'billing_period' => 'trial',
+        ]);
+        $this->assertDatabaseHas('plans', [
+            'slug' => 'accounting-trial',
+            'billing_period' => 'trial',
+        ]);
+        $this->assertDatabaseHas('plans', [
             'slug' => 'parts-inventory-starter-monthly',
             'billing_period' => 'monthly',
         ]);
@@ -78,6 +86,6 @@ class PlanSeederTest extends TestCase
             'billing_period' => 'yearly',
         ]);
 
-        $this->assertSame(10, Plan::query()->count());
+        $this->assertSame(12, Plan::query()->count());
     }
 }

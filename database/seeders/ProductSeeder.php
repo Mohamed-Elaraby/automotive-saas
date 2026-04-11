@@ -23,7 +23,7 @@ class ProductSeeder extends Seeder
                 'name' => 'Parts Inventory Management',
                 'slug' => 'parts-inventory',
                 'description' => 'Manage spare parts inventory, warehouses, purchasing, sales, and stock operations.',
-                'is_active' => false,
+                'is_active' => true,
                 'sort_order' => 2,
             ],
             [
@@ -31,7 +31,7 @@ class ProductSeeder extends Seeder
                 'name' => 'Accounting System',
                 'slug' => 'accounting',
                 'description' => 'Manage journals, ledgers, vouchers, and financial operations.',
-                'is_active' => false,
+                'is_active' => true,
                 'sort_order' => 3,
             ],
         ];

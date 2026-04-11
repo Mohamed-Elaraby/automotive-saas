@@ -31,20 +31,18 @@ class PlanSeeder extends Seeder
 
         $definitions = [];
 
-        if ($code === 'automotive_service') {
-            $definitions[] = [
-                'name' => "{$namePrefix} Trial",
-                'slug' => "{$slugPrefix}-trial",
-                'price' => 0,
-                'billing_period' => 'trial',
-                'sort_order' => ($productOrder * 10) + 1,
-                'max_users' => 1,
-                'max_branches' => 1,
-                'max_products' => 200,
-                'max_storage_mb' => 512,
-                'description' => "Trial plan for {$namePrefix}.",
-            ];
-        }
+        $definitions[] = [
+            'name' => "{$namePrefix} Trial",
+            'slug' => "{$slugPrefix}-trial",
+            'price' => 0,
+            'billing_period' => 'trial',
+            'sort_order' => ($productOrder * 10) + 1,
+            'max_users' => 1,
+            'max_branches' => 1,
+            'max_products' => 200,
+            'max_storage_mb' => 512,
+            'description' => "Trial plan for {$namePrefix}.",
+        ];
 
         $definitions[] = [
             'name' => "{$namePrefix} Starter",
