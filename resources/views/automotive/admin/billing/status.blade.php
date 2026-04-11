@@ -510,6 +510,7 @@
                 const form = document.getElementById('payment-method-update-form');
                 const submitBtn = document.getElementById('payment-method-submit-btn');
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || @json(csrf_token());
+                const workspaceProduct = @json($focusedWorkspaceProduct['product_code'] ?? null);
 
                 let stripe = null;
                 let elements = null;
@@ -583,7 +584,9 @@
                                 'X-CSRF-TOKEN': csrfToken,
                                 'Accept': 'application/json',
                             },
-                            body: JSON.stringify({}),
+                            body: JSON.stringify({
+                                workspace_product: workspaceProduct,
+                            }),
                         });
 
                         const payload = await response.json();
@@ -659,6 +662,7 @@
                             },
                             body: JSON.stringify({
                                 payment_method_id: paymentMethodId,
+                                workspace_product: workspaceProduct,
                             }),
                         });
 

@@ -1639,6 +1639,27 @@ Why this matters:
 - tenant admins can now manage billing for additional subscribed products from inside the workspace instead of being forced back to the separate portal flow
 - this closes another major blocker in the move from “automotive-first workspace” to true multi-product tenant billing
 
+## 18.36) Product-Scoped Payment Method Management in Tenant Billing
+Status: completed
+
+What changed:
+- tenant admin billing payment-method endpoints now resolve the same focused billing context as the main billing page
+- `createSetupIntent` now creates the setup intent for the focused product subscription's Stripe customer, not just the primary subscription
+- `saveDefaultPaymentMethod` now saves the default payment method against:
+  - the primary legacy `subscriptions` row when the billing context is primary
+  - the focused `tenant_product_subscription` when the billing context is an attached product
+- the inline payment form now sends `workspace_product` in its AJAX payloads so the correct product billing context is used end-to-end
+- `StripePaymentMethodManagementService` was widened from `Subscription` only to a generic Stripe-linked subscription object so it can work with `TenantProductSubscription` too
+
+Test coverage:
+- added billing feature coverage proving an attached product can:
+  - create its own setup intent for the correct Stripe customer
+  - save its own default payment method through the focused billing context
+
+Why this matters:
+- attached products are now much closer to first-class billing citizens inside the tenant workspace
+- this removes another remaining primary-product-only assumption from tenant admin billing operations
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

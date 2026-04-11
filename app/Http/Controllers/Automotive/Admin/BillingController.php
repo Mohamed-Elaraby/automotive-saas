@@ -425,7 +425,12 @@ public function changePlan(Request $request): RedirectResponse
 public function createSetupIntent(Request $request): JsonResponse
 {
     $tenant = tenant();
-    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenant->id);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->input('workspace_product', $request->query('workspace_product'))
+    );
+    $subscriptionRow = $this->resolveBillingContext($tenant->id, $focusedWorkspaceProduct)['subscription'];
 
     if (! $subscriptionRow || ($subscriptionRow->gateway ?? null) !== 'stripe') {
         return response()->json([
@@ -444,7 +449,13 @@ public function createSetupIntent(Request $request): JsonResponse
 public function saveDefaultPaymentMethod(Request $request): JsonResponse
 {
     $tenant = tenant();
-    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenant->id);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->input('workspace_product', $request->query('workspace_product'))
+    );
+    $billingContext = $this->resolveBillingContext($tenant->id, $focusedWorkspaceProduct);
+    $subscriptionRow = $billingContext['subscription'];
 
     $validated = $request->validate([
         'payment_method_id' => ['required', 'string'],
@@ -457,7 +468,9 @@ public function saveDefaultPaymentMethod(Request $request): JsonResponse
         ], 422);
     }
 
-    $subscription = Subscription::query()->find($subscriptionRow->id);
+    $subscription = $billingContext['is_primary']
+        ? Subscription::query()->find($subscriptionRow->id)
+        : TenantProductSubscription::query()->find($subscriptionRow->id);
 
     if (! $subscription) {
         return response()->json([

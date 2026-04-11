@@ -2,7 +2,6 @@
 
 namespace App\Services\Billing;
 
-use App\Models\Subscription;
 use RuntimeException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -10,7 +9,7 @@ use Throwable;
 
 class StripePaymentMethodManagementService
 {
-    public function setDefaultPaymentMethod(Subscription $subscription, string $paymentMethodId): array
+    public function setDefaultPaymentMethod(object $subscription, string $paymentMethodId): array
     {
         $paymentMethodId = trim($paymentMethodId);
 

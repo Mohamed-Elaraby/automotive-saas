@@ -424,6 +424,127 @@ class BillingPageTest extends TestCase
         }
     }
 
+    public function test_attached_product_can_create_setup_intent_for_its_own_stripe_customer(): void
+    {
+        [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
+
+        $product = Product::query()->create([
+            'code' => 'accounting_pm_' . uniqid(),
+            'name' => 'Accounting Payment Method',
+            'slug' => 'accounting-payment-method-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createProductPlan($product->id, 'Accounting PM', 'accounting-pm', 199);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_attached_pm',
+            'gateway_subscription_id' => 'sub_attached_pm',
+            'gateway_price_id' => $plan->stripe_price_id,
+            'payment_failures_count' => 0,
+        ]);
+
+        $setupIntentService = Mockery::mock(\App\Services\Billing\StripeSetupIntentService::class);
+        $setupIntentService->shouldReceive('createForCustomer')
+            ->once()
+            ->with('cus_attached_pm')
+            ->andReturn([
+                'ok' => true,
+                'client_secret' => 'seti_secret_attached',
+                'setup_intent_id' => 'seti_attached',
+            ]);
+
+        $this->app->instance(\App\Services\Billing\StripeSetupIntentService::class, $setupIntentService);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->actingAs($user, 'automotive_admin');
+
+            $response = $this->postJson("http://{$domain}/automotive/admin/billing/payment-method/setup-intent", [
+                'workspace_product' => $product->code,
+            ]);
+
+            $response->assertOk();
+            $response->assertJson([
+                'ok' => true,
+                'client_secret' => 'seti_secret_attached',
+                'setup_intent_id' => 'seti_attached',
+            ]);
+        } finally {
+            tenancy()->end();
+            \Illuminate\Support\Facades\DB::purge('tenant');
+        }
+    }
+
+    public function test_attached_product_can_save_default_payment_method(): void
+    {
+        [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
+
+        $product = Product::query()->create([
+            'code' => 'accounting_default_pm_' . uniqid(),
+            'name' => 'Accounting Default PM',
+            'slug' => 'accounting-default-pm-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createProductPlan($product->id, 'Accounting PM Save', 'accounting-pm-save', 199);
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_attached_default_pm',
+            'gateway_subscription_id' => 'sub_attached_default_pm',
+            'gateway_price_id' => $plan->stripe_price_id,
+            'payment_failures_count' => 0,
+        ]);
+
+        $paymentMethodService = Mockery::mock(\App\Services\Billing\StripePaymentMethodManagementService::class);
+        $paymentMethodService->shouldReceive('setDefaultPaymentMethod')
+            ->once()
+            ->with(
+                Mockery::on(fn ($model) => (int) $model->id === (int) $productSubscription->id),
+                'pm_attached_default'
+            )
+            ->andReturn([
+                'ok' => true,
+                'message' => 'Default payment method updated successfully.',
+                'stripe_subscription_id' => 'sub_attached_default_pm',
+                'default_payment_method' => 'pm_attached_default',
+            ]);
+
+        $this->app->instance(\App\Services\Billing\StripePaymentMethodManagementService::class, $paymentMethodService);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->actingAs($user, 'automotive_admin');
+
+            $response = $this->postJson("http://{$domain}/automotive/admin/billing/payment-method/default", [
+                'workspace_product' => $product->code,
+                'payment_method_id' => 'pm_attached_default',
+            ]);
+
+            $response->assertOk();
+            $response->assertJson([
+                'ok' => true,
+                'message' => 'Default payment method updated successfully.',
+                'default_payment_method' => 'pm_attached_default',
+            ]);
+        } finally {
+            tenancy()->end();
+            \Illuminate\Support\Facades\DB::purge('tenant');
+        }
+    }
+
     protected function createSubscription(array $overrides = []): Subscription
     {
         return Subscription::query()->create(array_merge([
