@@ -15,6 +15,7 @@
 
         $previewData = ($planChangePreview['ok'] ?? false) ? ($planChangePreview['preview'] ?? null) : null;
         $invoiceRows = $invoiceHistory['invoices'] ?? [];
+        $productBillingLabel = $billingProductName ?: 'Workspace Product';
     @endphp
 
     <div class="page-wrapper">
@@ -23,7 +24,7 @@
             @include('automotive.admin.partials.page-header', [
                 'title' => ($billingProductName ?? 'Plans & Billing') . ' Billing',
                 'subtitle' => ($isAttachedBillingContext ?? false)
-                    ? 'Attached product billing with product-scoped checkout and Stripe lifecycle actions. Inline payment method updates still stay on the primary billing flow.'
+                    ? 'Attached product billing with product-scoped checkout, payment method management, invoice history, and Stripe lifecycle actions.'
                     : 'Trial, subscription, billing access state, and renewal actions.',
                 'breadcrumbs' => [
                     ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
@@ -54,7 +55,7 @@
 
                     @if($isAttachedBillingContext ?? false)
                         <div class="alert alert-info mt-4">
-                            This attached product now supports admin-side checkout, plan changes, and Stripe lifecycle actions in this screen. Inline payment method updates still stay on the primary billing flow.
+                            This attached product now supports admin-side checkout, plan changes, payment method management, invoice history, and Stripe lifecycle actions in this screen.
                         </div>
                     @endif
 
@@ -92,7 +93,7 @@
 
                                 @if($isSameCurrentPaidPlan ?? false)
                                     <div class="alert alert-info mt-3 mb-0">
-                                        You are already on this plan. Choose another plan to change it, or use Manage Billing for payment method and cancellation controls.
+                                        You are already on this plan. Choose another plan to change it, or use Manage {{ $productBillingLabel }} Billing for payment method and cancellation controls.
                                     </div>
                                 @elseif(empty($selectedPlanAudit['checks']['is_aligned']))
                                     <div class="alert alert-danger mt-3 mb-0">
@@ -267,6 +268,7 @@
                         <div class="card-body">
                             <h6 class="mb-3">Billing Summary</h6>
 
+                            <p class="mb-2"><strong>Billing Product:</strong> {{ $productBillingLabel }}</p>
                             <p class="mb-2"><strong>Tenant:</strong> {{ $tenant->id ?? '-' }}</p>
                             <p class="mb-2"><strong>Current Plan:</strong> {{ $plan->name ?? 'N/A' }}</p>
                             <p class="mb-2"><strong>Current Status:</strong> {{ ucfirst(str_replace('_', ' ', $billingState['status'] ?? 'unknown')) }}</p>
@@ -279,7 +281,7 @@
                                 <div class="d-grid gap-2">
                                     @if($canUpdatePaymentMethodInline ?? false)
                                         <button type="button" id="open-inline-payment-method" class="btn btn-light w-100">
-                                            Update Payment Method
+                                            Update {{ $productBillingLabel }} Payment Method
                                         </button>
                                     @else
                                         <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
@@ -288,7 +290,7 @@
                                                 <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
                                             @endif
                                             <button type="submit" class="btn btn-light w-100">
-                                                Update Payment Method
+                                                Update {{ $productBillingLabel }} Payment Method
                                             </button>
                                         </form>
                                     @endif
@@ -299,7 +301,7 @@
                                             <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
                                         @endif
                                         <button type="submit" class="btn btn-outline-primary w-100">
-                                            Manage Billing
+                                            Manage {{ $productBillingLabel }} Billing
                                         </button>
                                     </form>
 
@@ -334,7 +336,7 @@
                                                 <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
                                             @endif
                                             <button type="submit" class="btn btn-warning w-100">
-                                                Retry / Reactivate
+                                                Retry / Reactivate {{ $productBillingLabel }}
                                             </button>
                                         </form>
                                     @endif
@@ -342,7 +344,7 @@
                             @else
                                 <div class="alert alert-info mb-0">
                                     @if($isAttachedBillingContext ?? false)
-                                        This attached product can start checkout and plan changes here. Billing portal actions will appear after the first Stripe customer is linked to this product subscription.
+                                        {{ $productBillingLabel }} can start checkout and plan changes here. Billing portal actions will appear after the first Stripe customer is linked to this product subscription.
                                     @else
                                         Billing portal will become available after the first Stripe subscription is linked to this tenant.
                                     @endif
@@ -385,7 +387,7 @@
 
                     <div class="card mt-4">
                         <div class="card-body">
-                            <h6 class="mb-3">Invoice History</h6>
+                            <h6 class="mb-3">{{ $productBillingLabel }} Invoice History</h6>
 
                             @if(!($invoiceHistory['ok'] ?? true))
                                 <div class="alert alert-warning mb-0">
@@ -393,11 +395,11 @@
                                 </div>
                             @elseif(empty($subscription->gateway_customer_id))
                                 <div class="alert alert-info mb-0">
-                                    Invoice history will appear after the first Stripe customer is linked to this tenant.
+                                    Invoice history for {{ $productBillingLabel }} will appear after the first Stripe customer is linked to this billing context.
                                 </div>
                             @elseif(empty($invoiceRows))
                                 <div class="alert alert-light mb-0">
-                                    No Stripe invoices were found for this customer yet.
+                                    No Stripe invoices were found for {{ $productBillingLabel }} yet.
                                 </div>
                             @else
                                 <div class="d-flex flex-column gap-3">

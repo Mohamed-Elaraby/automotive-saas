@@ -12,6 +12,7 @@ use App\Models\TenantUser;
 use App\Models\User;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\CheckoutStripePlanRecoveryService;
+use App\Services\Billing\StripeCustomerPortalService;
 use App\Services\Billing\StripePriceInspectorService;
 use App\Services\Billing\StripeTenantProductSubscriptionPlanChangeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -189,10 +190,13 @@ class BillingPageTest extends TestCase
             $response->assertSee('Accounting Billing Billing', false);
             $response->assertSee('Choose Paid Plan', false);
             $response->assertSee('Accounting Pro', false);
-            $response->assertSee('Attached product billing with product-scoped checkout and Stripe lifecycle actions.', false);
-            $response->assertSee('This attached product now supports admin-side checkout, plan changes, and Stripe lifecycle actions in this screen.', false);
+            $response->assertSee('Attached product billing with product-scoped checkout, payment method management, invoice history, and Stripe lifecycle actions.', false);
+            $response->assertSee('This attached product now supports admin-side checkout, plan changes, payment method management, invoice history, and Stripe lifecycle actions in this screen.', false);
             $response->assertSee('Confirm Plan Change', false);
             $response->assertSee('Cancel at Period End', false);
+            $response->assertSee('Update Accounting Billing Payment Method', false);
+            $response->assertSee('Manage Accounting Billing Billing', false);
+            $response->assertSee('Accounting Billing Invoice History', false);
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');
@@ -539,6 +543,62 @@ class BillingPageTest extends TestCase
                 'message' => 'Default payment method updated successfully.',
                 'default_payment_method' => 'pm_attached_default',
             ]);
+        } finally {
+            tenancy()->end();
+            \Illuminate\Support\Facades\DB::purge('tenant');
+        }
+    }
+
+    public function test_attached_product_billing_portal_uses_product_customer_context(): void
+    {
+        [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
+
+        $product = Product::query()->create([
+            'code' => 'accounting_portal_' . uniqid(),
+            'name' => 'Accounting Portal',
+            'slug' => 'accounting-portal-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createProductPlan($product->id, 'Accounting Portal Plan', 'accounting-portal-plan', 199);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_attached_portal',
+            'gateway_subscription_id' => 'sub_attached_portal',
+            'gateway_price_id' => $plan->stripe_price_id,
+            'payment_failures_count' => 0,
+        ]);
+
+        $portalService = Mockery::mock(StripeCustomerPortalService::class);
+        $portalService->shouldReceive('createSession')
+            ->once()
+            ->with(
+                'cus_attached_portal',
+                Mockery::on(fn ($url) => str_contains((string) $url, '/automotive/admin/billing?workspace_product=' . $product->code))
+            )
+            ->andReturn([
+                'success' => true,
+                'url' => 'https://stripe.test/portal/attached',
+                'message' => 'Stripe billing portal session created successfully.',
+            ]);
+
+        $this->app->instance(StripeCustomerPortalService::class, $portalService);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->actingAs($user, 'automotive_admin');
+
+            $response = $this->post("http://{$domain}/automotive/admin/billing/portal", [
+                'workspace_product' => $product->code,
+            ]);
+
+            $response->assertRedirect('https://stripe.test/portal/attached');
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');

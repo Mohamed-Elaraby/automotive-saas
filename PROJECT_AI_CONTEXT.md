@@ -1660,6 +1660,30 @@ Why this matters:
 - attached products are now much closer to first-class billing citizens inside the tenant workspace
 - this removes another remaining primary-product-only assumption from tenant admin billing operations
 
+## 18.37) Product-Scoped Billing UX for Invoice History and Portal Controls
+Status: completed
+
+What changed:
+- tenant admin billing UI now labels actions and invoice sections using the focused billing product name
+- attached-product billing subtitle and guidance copy were updated to reflect that the screen now supports:
+  - checkout
+  - plan change
+  - payment method management
+  - invoice history
+  - Stripe lifecycle actions
+- inline payment-method updates are now enabled for any focused Stripe-linked product subscription, not only the primary billing product
+- billing portal actions now remain product-scoped in both behavior and visible labeling
+- invoice history headings and empty-state messages now clearly reference the focused billing product
+
+Test coverage:
+- extended billing page coverage proving:
+  - attached-product billing shows product-scoped payment-method and portal labels
+  - attached-product billing portal uses the attached product's Stripe customer context
+
+Why this matters:
+- tenant admins now see a much clearer multi-product billing experience instead of a page that still feels primary-product-centric
+- this reduces operational confusion once multiple products are attached to the same tenant workspace
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

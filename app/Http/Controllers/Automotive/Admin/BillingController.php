@@ -138,8 +138,6 @@ public function status(Request $request): View
 
     $stripePublishableKey = trim((string) config('billing.gateways.stripe.key'));
     $canUpdatePaymentMethodInline =
-        $isPrimaryBillingProduct
-        &&
         ($subscription->gateway ?? null) === 'stripe'
         && ! empty($subscription->gateway_customer_id)
         && ! empty($subscription->gateway_subscription_id)
