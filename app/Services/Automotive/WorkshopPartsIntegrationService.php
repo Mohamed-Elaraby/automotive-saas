@@ -15,7 +15,8 @@ class WorkshopPartsIntegrationService
 {
     public function __construct(
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
-        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver
+        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
+        protected WorkshopWorkOrderService $workshopWorkOrderService
     ) {
     }
 
@@ -115,7 +116,15 @@ class WorkshopPartsIntegrationService
                 ]);
             }
 
+            if ($workOrder->status === 'completed') {
+                throw ValidationException::withMessages([
+                    'work_order_id' => 'Completed work orders cannot consume additional stock.',
+                ]);
+            }
+
             $inventory->decrement('quantity', $requestedQuantity);
+
+            $this->workshopWorkOrderService->touchInProgress($workOrder);
 
             return StockMovement::query()->create([
                 'branch_id' => $data['branch_id'],

@@ -216,9 +216,16 @@
                                                 <div class="text-muted small">{{ $workOrder->title }}</div>
                                                 <div class="text-muted small">{{ $workOrder->branch?->name ?? '—' }} · {{ $workOrder->creator?->name ?? 'System user' }}</div>
                                             </div>
-                                            <span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">
-                                                {{ strtoupper($workOrder->status) }}
-                                            </span>
+                                            <div class="text-end">
+                                                <span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">
+                                                    {{ strtoupper(str_replace('_', ' ', $workOrder->status)) }}
+                                                </span>
+                                                <div class="mt-2">
+                                                    <a href="{{ route('automotive.admin.modules.workshop-operations.work-orders.show', ['workOrder' => $workOrder->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">
+                                                        Open Record
+                                                    </a>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 @empty

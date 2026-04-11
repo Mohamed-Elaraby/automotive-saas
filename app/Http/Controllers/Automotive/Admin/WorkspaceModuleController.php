@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\WorkOrder;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
 use App\Services\Automotive\WorkshopWorkOrderService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
@@ -106,6 +107,54 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.workshop-operations', ['workspace_product' => $validated['workspace_product'] ?: 'automotive_service'])
             ->with('success', 'Workshop stock consumption saved successfully.');
+    }
+
+    public function showWorkOrder(Request $request, WorkOrder $workOrder): View
+    {
+        $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) tenant()->id);
+        $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+            $workspaceProducts,
+            $request->query('workspace_product', 'automotive_service')
+        );
+        $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+        $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
+        $consumptions = $this->workshopWorkOrderService->getWorkOrderConsumptions($workOrder);
+
+        return view('automotive.admin.modules.work-order-show', compact(
+            'workOrder',
+            'workspaceProducts',
+            'focusedWorkspaceProduct',
+            'workspaceQuery',
+            'workspaceIntegrations',
+            'consumptions'
+        ));
+    }
+
+    public function updateWorkOrderStatus(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'status' => ['required', 'in:open,in_progress,completed'],
+        ]);
+
+        try {
+            $this->workshopWorkOrderService->updateStatus($workOrder, $validated['status']);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.workshop-operations.work-orders.show', [
+                    'workOrder' => $workOrder->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'automotive_service',
+                ])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.workshop-operations.work-orders.show', [
+                'workOrder' => $workOrder->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'automotive_service',
+            ])
+            ->with('success', 'Work order status updated successfully.');
     }
 
     public function supplierCatalog(Request $request): View

@@ -363,6 +363,9 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertNotNull($movement);
             $this->assertSame('adjustment_out', $movement->type);
             $this->assertSame('Used in brake service', $movement->notes);
+
+            $progressWorkOrder = DB::connection('tenant')->table('work_orders')->where('id', $workOrder->id)->first();
+            $this->assertSame('in_progress', $progressWorkOrder->status);
         } finally {
             tenancy()->end();
             DB::purge('tenant');
@@ -376,6 +379,35 @@ class TenantAdminAccessFlowTest extends TestCase
         $followupResponse->assertSee('Brake Pad', false);
         $followupResponse->assertSee('Used in brake service', false);
         $followupResponse->assertSee($workOrder->work_order_number, false);
+
+        $workOrderShowResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+        $workOrderShowResponse->assertOk();
+        $workOrderShowResponse->assertSee('Work Order Overview', false);
+        $workOrderShowResponse->assertSee('Consumed Spare Parts', false);
+        $workOrderShowResponse->assertSee('Brake Pad', false);
+        $workOrderShowResponse->assertSee('Used in brake service', false);
+
+        $statusResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/status?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'status' => 'completed',
+        ]);
+
+        $statusResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $completedWorkOrder = DB::connection('tenant')->table('work_orders')->where('id', $workOrder->id)->first();
+            $this->assertSame('completed', $completedWorkOrder->status);
+            $this->assertNotNull($completedWorkOrder->closed_at);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $completedShowResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+        $completedShowResponse->assertOk();
+        $completedShowResponse->assertSee('COMPLETED', false);
     }
 
     /**

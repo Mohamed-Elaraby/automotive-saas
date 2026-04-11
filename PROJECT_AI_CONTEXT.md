@@ -1240,6 +1240,30 @@ Implementation note:
   - parts usage history per job
   - future accounting handoff from workshop operations
 
+### 18.21 Work Order Lifecycle and Consumption History
+The workshop work-order layer now has a usable lifecycle instead of only creation plus stock consumption.
+
+What changed:
+- work orders now support operational status transitions:
+  - `open`
+  - `in_progress`
+  - `completed`
+- consuming spare parts on a work order automatically moves it from `open` to `in_progress`
+- completed work orders are now treated as closed business records and carry `closed_at`
+- the tenant workspace now has a dedicated work-order details screen
+- the details screen exposes:
+  - work-order overview
+  - status update action
+  - consumed spare-parts history tied to that exact work order
+
+Important scope note:
+- this is still a lightweight workshop lifecycle, not a full service-management engine yet
+- there is still no customer/vehicle/job-line model
+- but the system now has the correct business spine for:
+  - job-level parts usage
+  - job completion state
+  - later accounting and service-order expansion
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
