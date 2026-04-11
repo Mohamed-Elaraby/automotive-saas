@@ -182,11 +182,19 @@ class TenantAdminAccessFlowTest extends TestCase
         $focusedResponse->assertSee('Accounting Suite', false);
         $focusedResponse->assertSee('General Ledger', false);
         $focusedResponse->assertSee('Accounting Focus', false);
+        $focusedResponse->assertSee('Cross-Product Integrations', false);
+        $focusedResponse->assertSee('Accounting can receive service-side activity', false);
         $focusedResponse->assertSee("workspace_product={$accountingProduct->code}", false);
         $focusedResponse->assertSee('Shared Workspace', false);
         $focusedResponse->assertDontSee('Service Operations', false);
         $focusedResponse->assertDontSee('Inventory Adjustments', false);
-        $focusedResponse->assertDontSee('Open Workshop', false);
+        $focusedResponse->assertSee('Open Workshop', false);
+
+        $generalLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product={$accountingProduct->code}");
+        $generalLedgerResponse->assertOk();
+        $generalLedgerResponse->assertSee('General Ledger', false);
+        $generalLedgerResponse->assertSee('Connected Product Integrations', false);
+        $generalLedgerResponse->assertSee('Open Workshop', false);
     }
 
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
@@ -234,7 +242,9 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertSee('Stock Transfers', false);
         $dashboardResponse->assertSee('Inventory Report', false);
         $dashboardResponse->assertSee('Stock Movement Report', false);
-        $dashboardResponse->assertDontSee('Open Workshop', false);
+        $dashboardResponse->assertSee('Cross-Product Integrations', false);
+        $dashboardResponse->assertSee('Spare parts feed workshop operations', false);
+        $dashboardResponse->assertSee('Open Workshop', false);
 
         $productsResponse = $this->get("http://{$domain}/automotive/admin/products");
         $productsResponse->assertOk();

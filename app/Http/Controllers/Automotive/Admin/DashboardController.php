@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -20,7 +21,8 @@ class DashboardController extends Controller
     public function __construct(
         protected TenantPlanService $tenantPlanService,
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
-        protected WorkspaceModuleCatalogService $workspaceModuleCatalogService
+        protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
+        protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService
     ) {
     }
 
@@ -47,6 +49,7 @@ public function index(Request $request): View
     $focusedWorkspaceProductFamily = $this->workspaceModuleCatalogService->getFocusedProductFamily($focusedWorkspaceProduct);
     $dashboardActions = $this->workspaceModuleCatalogService->getDashboardActions($focusedWorkspaceProduct);
     $focusedExperience = $this->workspaceModuleCatalogService->getFocusedProductExperience($focusedWorkspaceProduct);
+    $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
 
     $inventoriesCount = 0;
     $stockTransfersCount = 0;
@@ -101,6 +104,7 @@ public function index(Request $request): View
         'workspaceQuery',
         'dashboardActions',
         'focusedExperience',
+        'workspaceIntegrations',
         'lowStockItems',
         'recentTransfers',
         'recentMovements'

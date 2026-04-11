@@ -2,13 +2,16 @@
 
 namespace App\Services\Tenancy;
 
-use Illuminate\Support\Collection;
-
 class WorkspaceModuleCatalogService
 {
+    public function __construct(
+        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver
+    ) {
+    }
+
     public function getFocusedProductFamily(?array $focusedProduct): string
     {
-        return $this->resolveProductFamily($focusedProduct);
+        return $this->workspaceProductFamilyResolver->resolveFromWorkspaceProduct($focusedProduct);
     }
 
     public function workspaceQuery(?array $focusedProduct): array
@@ -101,7 +104,7 @@ class WorkspaceModuleCatalogService
     {
         $query = $this->workspaceQuery($focusedProduct);
 
-        return $this->dedupeItems(match ($this->resolveProductFamily($focusedProduct)) {
+        return $this->dedupeItems(match ($this->getFocusedProductFamily($focusedProduct)) {
             'parts_inventory' => [
                 [
                     'key' => 'parts.add-stock-item',
@@ -177,7 +180,7 @@ class WorkspaceModuleCatalogService
 
     public function getFocusedProductExperience(?array $focusedProduct): array
     {
-        $productCode = $this->resolveProductFamily($focusedProduct);
+        $productCode = $this->getFocusedProductFamily($focusedProduct);
 
         return match ($productCode) {
             'parts_inventory' => [
@@ -203,7 +206,7 @@ class WorkspaceModuleCatalogService
 
     protected function productQuickActions(?array $focusedProduct, array $query): array
     {
-        return match ($this->resolveProductFamily($focusedProduct)) {
+        return match ($this->getFocusedProductFamily($focusedProduct)) {
             'parts_inventory' => [
                 [
                     'key' => 'parts.new-stock-item',
@@ -233,7 +236,7 @@ class WorkspaceModuleCatalogService
 
     protected function productSidebarSection(?array $focusedProduct, array $query): ?array
     {
-        return match ($this->resolveProductFamily($focusedProduct)) {
+        return match ($this->getFocusedProductFamily($focusedProduct)) {
             'automotive_service' => [
                 'key' => 'automotive-service',
                 'title' => 'Automotive Service',
@@ -329,42 +332,4 @@ class WorkspaceModuleCatalogService
             ->all();
     }
 
-    protected function resolveProductFamily(?array $focusedProduct): string
-    {
-        $values = [
-            trim((string) data_get($focusedProduct, 'product_code')),
-            trim((string) data_get($focusedProduct, 'product_slug')),
-            trim((string) data_get($focusedProduct, 'product_name')),
-        ];
-
-        $haystack = strtolower(implode(' ', array_filter($values)));
-
-        if ($haystack === '') {
-            return 'automotive_service';
-        }
-
-        if (str_contains($haystack, 'account')) {
-            return 'accounting';
-        }
-
-        if (
-            str_contains($haystack, 'spare') ||
-            str_contains($haystack, 'part') ||
-            str_contains($haystack, 'inventor') ||
-            str_contains($haystack, 'stock')
-        ) {
-            return 'parts_inventory';
-        }
-
-        if (
-            str_contains($haystack, 'automotive') ||
-            str_contains($haystack, 'service') ||
-            str_contains($haystack, 'workshop') ||
-            str_contains($haystack, 'maint')
-        ) {
-            return 'automotive_service';
-        }
-
-        return 'automotive_service';
-    }
 }

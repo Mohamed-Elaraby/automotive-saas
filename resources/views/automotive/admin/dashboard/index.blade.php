@@ -232,6 +232,33 @@
                 </div>
             </div>
 
+            @if(!empty($workspaceIntegrations))
+                <div class="row">
+                    <div class="col-xl-12 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Cross-Product Integrations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    @foreach($workspaceIntegrations as $integration)
+                                        <div class="col-xl-4 d-flex">
+                                            <div class="border rounded p-3 flex-fill mb-3">
+                                                <h6 class="mb-2">{{ $integration['title'] }}</h6>
+                                                <p class="text-muted mb-3">{{ $integration['description'] }}</p>
+                                                <a href="{{ route($integration['target_route'], $integration['target_params']) }}" class="btn btn-outline-light">
+                                                    {{ $integration['target_label'] }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @if ($focusedProductCode === 'parts_inventory')
                 <div class="row">
                     <div class="col-xxl-3 col-xl-4 col-md-6 d-flex">

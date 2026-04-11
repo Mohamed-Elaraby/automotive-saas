@@ -1181,6 +1181,30 @@ Important scope note:
   - one set of product modules per attached product family
   - future cross-product integrations can later be layered on top without duplicating shared navigation
 
+### 18.18 Cross-Product Integration Rules Foundation
+The tenant workspace now has an explicit integration layer between product families instead of only separate navigation.
+
+What changed:
+- introduced a dedicated product-family resolver service:
+  - family inference no longer lives only inside the module catalog
+  - route access and runtime behavior can now resolve from product code / slug / name consistently
+- introduced a workspace integration catalog service
+- dashboard and module landing pages now surface `Cross-Product Integrations` / `Connected Product Integrations`
+- current integration rules now communicate how product families work together:
+  - automotive service can consume spare-parts inventory
+  - automotive service can later hand off financial events to accounting
+  - spare parts can feed workshop operations
+  - spare parts can later hand valuation and purchasing into accounting
+  - accounting can later receive service-side and inventory-side events
+
+Important operator note:
+- this does not yet implement real business posting between the products
+- it establishes the runtime integration map and navigation flow first
+- this is the right intermediate step before building actual:
+  - workshop parts consumption
+  - accounting journal posting
+  - inventory valuation handoff
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

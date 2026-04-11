@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use Illuminate\Http\Request;
@@ -12,7 +13,8 @@ class WorkspaceModuleController extends Controller
 {
     public function __construct(
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
-        protected WorkspaceModuleCatalogService $workspaceModuleCatalogService
+        protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
+        protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService
     ) {
     }
 
@@ -79,6 +81,7 @@ class WorkspaceModuleController extends Controller
         );
 
         $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+        $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
 
         return view('automotive.admin.modules.show', compact(
             'page',
@@ -87,7 +90,8 @@ class WorkspaceModuleController extends Controller
             'links',
             'workspaceProducts',
             'focusedWorkspaceProduct',
-            'workspaceQuery'
+            'workspaceQuery',
+            'workspaceIntegrations'
         ));
     }
 }
