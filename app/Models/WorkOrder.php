@@ -9,6 +9,8 @@ class WorkOrder extends Model
 {
     protected $fillable = [
         'branch_id',
+        'customer_id',
+        'vehicle_id',
         'work_order_number',
         'title',
         'status',
@@ -31,6 +33,16 @@ class WorkOrder extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     public function stockMovements(): HasMany

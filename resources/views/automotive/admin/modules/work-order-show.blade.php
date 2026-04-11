@@ -43,6 +43,20 @@
                                     <div>{{ $workOrder->creator?->name ?? 'System user' }}</div>
                                 </div>
                                 <div class="col-md-6">
+                                    <div class="text-muted small mb-1">Customer</div>
+                                    <div>{{ $workOrder->customer?->name ?? '—' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-muted small mb-1">Vehicle</div>
+                                    <div>
+                                        @if($workOrder->vehicle)
+                                            {{ $workOrder->vehicle->make }} {{ $workOrder->vehicle->model }}{{ $workOrder->vehicle->plate_number ? ' · '.$workOrder->vehicle->plate_number : '' }}
+                                        @else
+                                            —
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
                                     <div class="text-muted small mb-1">Opened At</div>
                                     <div>{{ optional($workOrder->opened_at)->format('Y-m-d H:i') ?: '—' }}</div>
                                 </div>

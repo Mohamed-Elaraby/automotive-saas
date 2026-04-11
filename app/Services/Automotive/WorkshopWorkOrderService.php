@@ -3,7 +3,9 @@
 namespace App\Services\Automotive;
 
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\StockMovement;
+use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -22,7 +24,7 @@ class WorkshopWorkOrderService
     public function getRecentWorkOrders(int $limit = 8): Collection
     {
         return WorkOrder::query()
-            ->with(['branch', 'creator'])
+            ->with(['branch', 'creator', 'customer', 'vehicle'])
             ->latest('id')
             ->limit($limit)
             ->get();
@@ -31,16 +33,31 @@ class WorkshopWorkOrderService
     public function getOpenWorkOrders(): Collection
     {
         return WorkOrder::query()
-            ->with('branch')
+            ->with(['branch', 'customer', 'vehicle'])
             ->whereIn('status', ['open', 'in_progress'])
             ->latest('id')
+            ->get();
+    }
+
+    public function getCustomers(): Collection
+    {
+        return Customer::query()
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getVehicles(): Collection
+    {
+        return Vehicle::query()
+            ->with('customer')
+            ->orderByDesc('id')
             ->get();
     }
 
     public function getWorkOrderById(int $id): ?WorkOrder
     {
         return WorkOrder::query()
-            ->with(['branch', 'creator'])
+            ->with(['branch', 'creator', 'customer', 'vehicle'])
             ->find($id);
     }
 
@@ -70,6 +87,8 @@ class WorkshopWorkOrderService
     {
         return WorkOrder::query()->create([
             'branch_id' => $data['branch_id'],
+            'customer_id' => $data['customer_id'] ?? null,
+            'vehicle_id' => $data['vehicle_id'] ?? null,
             'work_order_number' => $this->generateWorkOrderNumber(),
             'title' => $data['title'],
             'status' => 'open',
@@ -77,6 +96,28 @@ class WorkshopWorkOrderService
             'closed_at' => null,
             'notes' => $data['notes'] ?? null,
             'created_by' => $data['created_by'] ?? null,
+        ]);
+    }
+
+    public function createCustomer(array $data): Customer
+    {
+        return Customer::query()->create([
+            'name' => $data['name'],
+            'phone' => $data['phone'] ?? null,
+            'email' => $data['email'] ?? null,
+        ]);
+    }
+
+    public function createVehicle(array $data): Vehicle
+    {
+        return Vehicle::query()->create([
+            'customer_id' => $data['customer_id'],
+            'make' => $data['make'],
+            'model' => $data['model'],
+            'year' => $data['year'] ?? null,
+            'plate_number' => $data['plate_number'] ?? null,
+            'vin' => $data['vin'] ?? null,
+            'notes' => $data['notes'] ?? null,
         ]);
     }
 

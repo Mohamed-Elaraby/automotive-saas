@@ -98,6 +98,92 @@
 
             @if(($page ?? '') === 'workshop-operations')
                 <div class="row">
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Create Customer</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.customers.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'automotive_service') }}">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Customer Name</label>
+                                        <input type="text" name="name" class="form-control" value="{{ old('name') }}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-outline-primary">Create Customer</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Create Vehicle</h5>
+                            </div>
+                            <div class="card-body">
+                                @if(($moduleData['customers'] ?? collect())->isEmpty())
+                                    <p class="text-muted mb-0">Create a customer first before registering a vehicle.</p>
+                                @else
+                                    <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.vehicles.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'automotive_service') }}">
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Customer</label>
+                                            <select name="customer_id" class="form-select">
+                                                @foreach(($moduleData['customers'] ?? collect()) as $customer)
+                                                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Make</label>
+                                            <input type="text" name="make" class="form-control" value="{{ old('make') }}">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Model</label>
+                                            <input type="text" name="model" class="form-control" value="{{ old('model') }}">
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Year</label>
+                                                <input type="number" name="year" class="form-control" value="{{ old('year') }}">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Plate Number</label>
+                                                <input type="text" name="plate_number" class="form-control" value="{{ old('plate_number') }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">VIN</label>
+                                            <input type="text" name="vin" class="form-control" value="{{ old('vin') }}">
+                                        </div>
+
+                                        <button type="submit" class="btn btn-outline-primary">Create Vehicle</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-xl-5 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
@@ -120,6 +206,30 @@
                                     </div>
 
                                     <div class="mb-3">
+                                        <label class="form-label">Customer</label>
+                                        <select name="customer_id" class="form-select">
+                                            <option value="">No customer linked yet</option>
+                                            @foreach(($moduleData['customers'] ?? collect()) as $customer)
+                                                <option value="{{ $customer->id }}" {{ (string) old('customer_id') === (string) $customer->id ? 'selected' : '' }}>
+                                                    {{ $customer->name }}{{ $customer->phone ? ' · '.$customer->phone : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Vehicle</label>
+                                        <select name="vehicle_id" class="form-select">
+                                            <option value="">No vehicle linked yet</option>
+                                            @foreach(($moduleData['vehicles'] ?? collect()) as $vehicle)
+                                                <option value="{{ $vehicle->id }}" {{ (string) old('vehicle_id') === (string) $vehicle->id ? 'selected' : '' }}>
+                                                    {{ $vehicle->make }} {{ $vehicle->model }}{{ $vehicle->plate_number ? ' · '.$vehicle->plate_number : '' }}{{ $vehicle->customer ? ' · '.$vehicle->customer->name : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
                                         <label class="form-label">Work Order Title</label>
                                         <input type="text" name="title" class="form-control" value="{{ old('title') }}" placeholder="Brake service, engine inspection, etc.">
                                     </div>
@@ -135,7 +245,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-5 d-flex">
+                    <div class="col-xl-4 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">Consume Spare Part In Workshop</h5>
@@ -215,6 +325,14 @@
                                                 <h6 class="mb-1">{{ $workOrder->work_order_number }}</h6>
                                                 <div class="text-muted small">{{ $workOrder->title }}</div>
                                                 <div class="text-muted small">{{ $workOrder->branch?->name ?? '—' }} · {{ $workOrder->creator?->name ?? 'System user' }}</div>
+                                                @if($workOrder->customer || $workOrder->vehicle)
+                                                    <div class="text-muted small">
+                                                        {{ $workOrder->customer?->name ?: 'No customer' }}
+                                                        @if($workOrder->vehicle)
+                                                            · {{ $workOrder->vehicle->make }} {{ $workOrder->vehicle->model }}{{ $workOrder->vehicle->plate_number ? ' · '.$workOrder->vehicle->plate_number : '' }}
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="text-end">
                                                 <span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">

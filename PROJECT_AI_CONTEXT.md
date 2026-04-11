@@ -1264,6 +1264,31 @@ Important scope note:
   - job completion state
   - later accounting and service-order expansion
 
+### 18.22 Workshop Customer and Vehicle Foundation
+Workshop operations now include the minimum service context needed before expanding into a full service engine.
+
+What changed:
+- added tenant-level `vehicles` table plus `Customer` / `Vehicle` models
+- work orders can now be linked to:
+  - `customer_id`
+  - `vehicle_id`
+- `Workshop Operations` now exposes lightweight creation forms for:
+  - workshop customers
+  - workshop vehicles
+  - work orders linked to those records
+- the work-order details screen now shows:
+  - linked customer
+  - linked vehicle
+  - parts consumption history for that specific service record
+
+Why this matters:
+- the workshop runtime is no longer a generic stock-consumption demo
+- it now has the minimum domain objects needed for future service workflows:
+  - customer history
+  - vehicle history
+  - service records
+  - later service lines / labor / accounting posting
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

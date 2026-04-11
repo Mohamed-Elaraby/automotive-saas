@@ -286,6 +286,8 @@ class TenantAdminAccessFlowTest extends TestCase
         $response = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
 
         $response->assertOk();
+        $response->assertSee('Create Customer', false);
+        $response->assertSee('Create Vehicle', false);
         $response->assertSee('Create Work Order', false);
         $response->assertSee('Consume Spare Part In Workshop', false);
         $response->assertSee('Available Spare Parts Stock', false);
@@ -311,9 +313,55 @@ class TenantAdminAccessFlowTest extends TestCase
             'password' => $password,
         ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
 
+        $createCustomerResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/customers?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'name' => 'Ahmed Ali',
+            'phone' => '0500000000',
+            'email' => 'ahmed@example.test',
+        ]);
+
+        $createCustomerResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $customer = DB::connection('tenant')->table('customers')->latest('id')->first();
+            $this->assertNotNull($customer);
+            $this->assertSame('Ahmed Ali', $customer->name);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $createVehicleResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/vehicles?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'customer_id' => $customer->id,
+            'make' => 'Toyota',
+            'model' => 'Corolla',
+            'year' => 2022,
+            'plate_number' => 'DUB-12345',
+            'vin' => 'VIN-123456',
+        ]);
+
+        $createVehicleResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $vehicle = DB::connection('tenant')->table('vehicles')->latest('id')->first();
+            $this->assertNotNull($vehicle);
+            $this->assertSame('Toyota', $vehicle->make);
+            $this->assertSame((int) $customer->id, (int) $vehicle->customer_id);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
         $createWorkOrderResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders?workspace_product=automotive_service", [
             'workspace_product' => 'automotive_service',
             'branch_id' => $branchId,
+            'customer_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
             'title' => 'Brake service work order',
             'notes' => 'Customer brake maintenance',
         ]);
@@ -326,6 +374,8 @@ class TenantAdminAccessFlowTest extends TestCase
             $workOrder = DB::connection('tenant')->table('work_orders')->latest('id')->first();
             $this->assertNotNull($workOrder);
             $this->assertSame('Brake service work order', $workOrder->title);
+            $this->assertSame((int) $customer->id, (int) $workOrder->customer_id);
+            $this->assertSame((int) $vehicle->id, (int) $workOrder->vehicle_id);
         } finally {
             tenancy()->end();
             DB::purge('tenant');
@@ -375,6 +425,8 @@ class TenantAdminAccessFlowTest extends TestCase
         $followupResponse->assertOk();
         $followupResponse->assertSee('Recent Work Orders', false);
         $followupResponse->assertSee('Brake service work order', false);
+        $followupResponse->assertSee('Ahmed Ali', false);
+        $followupResponse->assertSee('Toyota Corolla', false);
         $followupResponse->assertSee('Recent Workshop Consumptions', false);
         $followupResponse->assertSee('Brake Pad', false);
         $followupResponse->assertSee('Used in brake service', false);
@@ -383,6 +435,8 @@ class TenantAdminAccessFlowTest extends TestCase
         $workOrderShowResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
         $workOrderShowResponse->assertOk();
         $workOrderShowResponse->assertSee('Work Order Overview', false);
+        $workOrderShowResponse->assertSee('Ahmed Ali', false);
+        $workOrderShowResponse->assertSee('Toyota Corolla', false);
         $workOrderShowResponse->assertSee('Consumed Spare Parts', false);
         $workOrderShowResponse->assertSee('Brake Pad', false);
         $workOrderShowResponse->assertSee('Used in brake service', false);
