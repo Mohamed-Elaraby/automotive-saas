@@ -1459,6 +1459,36 @@ Current limitation:
 - route names and URL paths are still under the automotive namespace for compatibility
 - the shell is now product-neutral in behavior and copy, but not yet fully renamed at the route structure level
 
+### 18.30 Product Manifest / Module Manifest Foundation
+Workspace product families, modules, actions, and integrations are no longer defined only through hardcoded `match` blocks inside services.
+
+What changed:
+- added a dedicated manifest config:
+  - `config/workspace_products.php`
+- added `WorkspaceManifestService` as the access layer for:
+  - shared workspace modules
+  - family aliases
+  - product sidebar sections
+  - dashboard actions
+  - quick-create actions
+  - cross-product integration definitions
+- `WorkspaceProductFamilyResolver` now resolves product family from manifest aliases instead of fixed keyword logic only
+- `WorkspaceModuleCatalogService` now hydrates sidebar/actions/experience from the manifest
+- `WorkspaceIntegrationCatalogService` now hydrates integrations from the manifest and injects the connected target product automatically
+
+Why this matters:
+- adding a new product family now requires much less service-layer editing
+- new industries or verticals can define:
+  - aliases
+  - module navigation
+  - dashboard actions
+  - integration links
+  from one config location instead of touching multiple catalog services
+
+Test coverage:
+- added a dedicated manifest test proving that a new family such as `retail_commerce` can be added by config and immediately resolved/rendered by the workspace services
+- existing tenant admin access/runtime tests still pass after the refactor
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1508,6 +1538,9 @@ If a new session starts from this file only, the safest current summary is:
   - auth branding is workspace-oriented
   - customer copy no longer assumes automotive-only onboarding
   - tenant subscription read path can resolve non-automotive first-product subscriptions
+- Workspace product architecture is now more configurable:
+  - product-family aliases, modules, dashboard actions, and integrations can be declared through a manifest config
+  - adding a future product family now needs far less hardcoded service editing
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates
