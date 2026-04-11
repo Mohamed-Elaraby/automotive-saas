@@ -50,4 +50,9 @@ class WorkOrder extends Model
         return $this->hasMany(StockMovement::class, 'reference_id')
             ->where('reference_type', self::class);
     }
+
+    public function lines(): HasMany
+    {
+        return $this->hasMany(WorkOrderLine::class)->latest('id');
+    }
 }

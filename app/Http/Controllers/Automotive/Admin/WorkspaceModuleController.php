@@ -161,6 +161,8 @@ class WorkspaceModuleController extends Controller
         $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
         $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
         $consumptions = $this->workshopWorkOrderService->getWorkOrderConsumptions($workOrder);
+        $lines = $this->workshopWorkOrderService->getWorkOrderLines($workOrder);
+        $summary = $this->workshopWorkOrderService->summarize($workOrder);
 
         return view('automotive.admin.modules.work-order-show', compact(
             'workOrder',
@@ -168,8 +170,36 @@ class WorkspaceModuleController extends Controller
             'focusedWorkspaceProduct',
             'workspaceQuery',
             'workspaceIntegrations',
-            'consumptions'
+            'consumptions',
+            'lines',
+            'summary'
         ));
+    }
+
+    public function storeWorkOrderLaborLine(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:255'],
+            'quantity' => ['required', 'numeric', 'gt:0'],
+            'unit_price' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->workshopWorkOrderService->addLaborLine($workOrder, $validated + [
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        if ($workOrder->status === 'open') {
+            $this->workshopWorkOrderService->updateStatus($workOrder, 'in_progress');
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.workshop-operations.work-orders.show', [
+                'workOrder' => $workOrder->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'automotive_service',
+            ])
+            ->with('success', 'Labor line added successfully.');
     }
 
     public function updateWorkOrderStatus(Request $request, WorkOrder $workOrder): RedirectResponse

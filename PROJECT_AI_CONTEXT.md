@@ -1289,6 +1289,33 @@ Why this matters:
   - service records
   - later service lines / labor / accounting posting
 
+### 18.23 Work Order Service Lines and Financial Summary
+Work orders now include billable/service structure instead of only metadata plus parts consumption history.
+
+What changed:
+- added tenant-level `work_order_lines`
+- work-order lines now support at least two practical line types:
+  - `labor`
+  - `part`
+- labor lines can now be added manually from the work-order details page
+- part lines are now created automatically when workshop stock is consumed from Spare Parts
+- the work-order details page now exposes:
+  - labor/service line entry
+  - unified work-order lines list
+  - financial summary:
+    - labor subtotal
+    - parts subtotal
+    - grand total
+
+Important scope note:
+- this is still a lightweight pricing model
+- part lines are currently valued from tenant product `sale_price`
+- there is still no dedicated tax/discount/invoice model for workshop jobs yet
+- but the system now has the correct base for:
+  - service pricing
+  - job-level totals
+  - future accounting handoff when a work order is completed
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

@@ -126,7 +126,7 @@ class WorkshopPartsIntegrationService
 
             $this->workshopWorkOrderService->touchInProgress($workOrder);
 
-            return StockMovement::query()->create([
+            $movement = StockMovement::query()->create([
                 'branch_id' => $data['branch_id'],
                 'product_id' => $data['product_id'],
                 'type' => 'adjustment_out',
@@ -137,6 +137,10 @@ class WorkshopPartsIntegrationService
                 'created_by' => $data['created_by'] ?? null,
                 'movement_date' => now(),
             ]);
+
+            $this->workshopWorkOrderService->addPartLineFromMovement($workOrder, $movement);
+
+            return $movement;
         });
     }
 }

@@ -76,6 +76,8 @@ Route::prefix('automotive/admin')
                     ->name('modules.workshop-operations.work-orders.store');
                 Route::get('/workshop-operations/work-orders/{workOrder}', [WorkspaceModuleController::class, 'showWorkOrder'])
                     ->name('modules.workshop-operations.work-orders.show');
+                Route::post('/workshop-operations/work-orders/{workOrder}/labor-lines', [WorkspaceModuleController::class, 'storeWorkOrderLaborLine'])
+                    ->name('modules.workshop-operations.work-orders.labor-lines.store');
                 Route::post('/workshop-operations/work-orders/{workOrder}/status', [WorkspaceModuleController::class, 'updateWorkOrderStatus'])
                     ->name('modules.workshop-operations.work-orders.status');
                 Route::post('/workshop-operations/consume-part', [WorkspaceModuleController::class, 'consumeWorkshopPart'])

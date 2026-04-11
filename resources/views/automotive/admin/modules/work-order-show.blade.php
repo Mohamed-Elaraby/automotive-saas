@@ -76,6 +76,35 @@
                 <div class="col-xl-4 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
+                            <h5 class="card-title mb-0">Financial Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Labor Subtotal</span>
+                                <strong>{{ number_format($summary['labor_subtotal'] ?? 0, 2) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Parts Subtotal</span>
+                                <strong>{{ number_format($summary['parts_subtotal'] ?? 0, 2) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Lines Count</span>
+                                <strong>{{ $summary['lines_count'] ?? 0 }}</strong>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <span>Grand Total</span>
+                                <strong>{{ number_format($summary['grand_total'] ?? 0, 2) }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-4 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header">
                             <h5 class="card-title mb-0">Update Status</h5>
                         </div>
                         <div class="card-body">
@@ -95,6 +124,41 @@
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Save Status</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-8 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Add Labor / Service Line</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.work-orders.labor-lines.store', ['workOrder' => $workOrder->id] + $workspaceQuery) }}">
+                                @csrf
+                                <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? 'automotive_service' }}">
+
+                                <div class="row">
+                                    <div class="col-md-5 mb-3">
+                                        <label class="form-label">Description</label>
+                                        <input type="text" name="description" class="form-control" value="{{ old('description') }}" placeholder="Brake inspection, oil change labor, etc.">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">Qty</label>
+                                        <input type="number" step="0.001" min="0.001" name="quantity" class="form-control" value="{{ old('quantity', 1) }}">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">Unit Price</label>
+                                        <input type="number" step="0.01" min="0" name="unit_price" class="form-control" value="{{ old('unit_price', 0) }}">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Notes</label>
+                                        <input type="text" name="notes" class="form-control" value="{{ old('notes') }}">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-outline-primary">Add Labor Line</button>
                             </form>
                         </div>
                     </div>
@@ -127,6 +191,43 @@
                     </div>
                 </div>
             @endif
+
+            <div class="row">
+                <div class="col-xl-12 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Work Order Lines</h5>
+                        </div>
+                        <div class="card-body">
+                            @forelse($lines as $line)
+                                <div class="border-bottom pb-2 mb-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ $line->description }}</h6>
+                                            <div class="text-muted small">
+                                                {{ strtoupper($line->line_type) }}
+                                                @if(!empty($line->product_sku))
+                                                    · {{ $line->product_sku }}
+                                                @endif
+                                                · {{ $line->creator_name ?? 'System user' }}
+                                            </div>
+                                            @if($line->notes)
+                                                <div class="text-muted small">{{ $line->notes }}</div>
+                                            @endif
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="text-muted small">{{ rtrim(rtrim((string) $line->quantity, '0'), '.') }} × {{ number_format((float) $line->unit_price, 2) }}</div>
+                                            <strong>{{ number_format((float) $line->total_price, 2) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-muted mb-0">No work-order lines have been added yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-xl-12 d-flex">

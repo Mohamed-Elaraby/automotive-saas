@@ -437,9 +437,39 @@ class TenantAdminAccessFlowTest extends TestCase
         $workOrderShowResponse->assertSee('Work Order Overview', false);
         $workOrderShowResponse->assertSee('Ahmed Ali', false);
         $workOrderShowResponse->assertSee('Toyota Corolla', false);
+        $workOrderShowResponse->assertSee('Financial Summary', false);
+        $workOrderShowResponse->assertSee('Work Order Lines', false);
         $workOrderShowResponse->assertSee('Consumed Spare Parts', false);
         $workOrderShowResponse->assertSee('Brake Pad', false);
         $workOrderShowResponse->assertSee('Used in brake service', false);
+
+        $addLaborLineResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/labor-lines?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'description' => 'Brake inspection labor',
+            'quantity' => 1,
+            'unit_price' => 150,
+            'notes' => 'Initial workshop labor',
+        ]);
+
+        $addLaborLineResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $lines = DB::connection('tenant')->table('work_order_lines')
+                ->where('work_order_id', $workOrder->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertCount(2, $lines);
+            $this->assertSame('part', $lines[0]->line_type);
+            $this->assertSame('labor', $lines[1]->line_type);
+            $this->assertSame('Brake inspection labor', $lines[1]->description);
+            $this->assertSame(150.0, (float) $lines[1]->total_price);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
 
         $statusResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/status?workspace_product=automotive_service", [
             'workspace_product' => 'automotive_service',
@@ -462,6 +492,10 @@ class TenantAdminAccessFlowTest extends TestCase
         $completedShowResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
         $completedShowResponse->assertOk();
         $completedShowResponse->assertSee('COMPLETED', false);
+        $completedShowResponse->assertSee('Brake inspection labor', false);
+        $completedShowResponse->assertSee('40.00', false);
+        $completedShowResponse->assertSee('150.00', false);
+        $completedShowResponse->assertSee('190.00', false);
     }
 
     /**
