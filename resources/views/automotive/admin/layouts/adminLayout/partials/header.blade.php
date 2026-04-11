@@ -3,6 +3,7 @@
     $tenantAdminImpersonation = session('tenant_admin_impersonation', []);
     $isTenantAdminImpersonating = is_array($tenantAdminImpersonation) && ($tenantAdminImpersonation['active'] ?? false);
     $focusedWorkspaceProductCode = (string) request()->attributes->get('workspace_product_code', request()->query('workspace_product', 'automotive_service'));
+    $focusedWorkspaceProductFamily = $focusedWorkspaceProductFamily ?? 'automotive_service';
     $workspaceQuery = $focusedWorkspaceProductCode !== '' ? ['workspace_product' => $focusedWorkspaceProductCode] : [];
 
     $tenantAdminRouteLabels = [
@@ -20,7 +21,7 @@
         'automotive.admin.modules.general-ledger' => 'General Ledger',
     ];
 
-    $headerShortcut = match ($focusedWorkspaceProductCode) {
+    $headerShortcut = match ($focusedWorkspaceProductFamily) {
         'parts_inventory' => [
             'route' => 'automotive.admin.inventory-report.index',
             'label' => 'Inventory Report',

@@ -2,8 +2,15 @@
 
 namespace App\Services\Tenancy;
 
+use Illuminate\Support\Collection;
+
 class WorkspaceModuleCatalogService
 {
+    public function getFocusedProductFamily(?array $focusedProduct): string
+    {
+        return $this->resolveProductFamily($focusedProduct);
+    }
+
     public function workspaceQuery(?array $focusedProduct): array
     {
         $productCode = trim((string) data_get($focusedProduct, 'product_code'));
@@ -13,54 +20,40 @@ class WorkspaceModuleCatalogService
 
     public function getQuickCreateActions(?array $focusedProduct): array
     {
-        $actions = [
+        $query = $this->workspaceQuery($focusedProduct);
+        $sharedActions = [
             [
+                'key' => 'shared.new-user',
                 'label' => 'New User',
                 'icon' => 'isax-user-add',
                 'route' => 'automotive.admin.users.create',
-                'params' => $this->workspaceQuery($focusedProduct),
+                'params' => $query,
             ],
             [
+                'key' => 'shared.new-branch',
                 'label' => 'New Branch',
                 'icon' => 'isax-buildings',
                 'route' => 'automotive.admin.branches.create',
-                'params' => $this->workspaceQuery($focusedProduct),
+                'params' => $query,
             ],
         ];
 
-        if ($this->isFocusedProduct($focusedProduct, 'parts_inventory')) {
-            $actions[] = [
-                'label' => 'New Stock Item',
-                'icon' => 'isax-box-add',
-                'route' => 'automotive.admin.products.create',
-                'params' => $this->workspaceQuery($focusedProduct),
-            ];
-            $actions[] = [
-                'label' => 'Inventory Adjustment',
-                'icon' => 'isax-arrows-swap',
-                'route' => 'automotive.admin.inventory-adjustments.create',
-                'params' => $this->workspaceQuery($focusedProduct),
-            ];
-            $actions[] = [
-                'label' => 'Stock Transfer',
-                'icon' => 'isax-arrow-right-3',
-                'route' => 'automotive.admin.stock-transfers.create',
-                'params' => $this->workspaceQuery($focusedProduct),
-            ];
-        }
-
-        return $actions;
+        return $this->dedupeItems(array_merge(
+            $sharedActions,
+            $this->productQuickActions($focusedProduct, $query)
+        ));
     }
 
     public function getSidebarSections(?array $focusedProduct): array
     {
         $query = $this->workspaceQuery($focusedProduct);
-
         $sections = [
             [
-                'title' => 'Workspace',
-                'items' => [
+                'key' => 'shared-workspace',
+                'title' => 'Shared Workspace',
+                'items' => $this->dedupeItems([
                     [
+                        'key' => 'shared.dashboard',
                         'label' => 'Dashboard',
                         'icon' => 'isax-element-45',
                         'route' => 'automotive.admin.dashboard',
@@ -68,6 +61,7 @@ class WorkspaceModuleCatalogService
                         'pages' => ['dashboard'],
                     ],
                     [
+                        'key' => 'shared.users',
                         'label' => 'Users',
                         'icon' => 'isax-profile-2user5',
                         'route' => 'automotive.admin.users.index',
@@ -75,6 +69,7 @@ class WorkspaceModuleCatalogService
                         'pages' => ['users'],
                     ],
                     [
+                        'key' => 'shared.branches',
                         'label' => 'Branches',
                         'icon' => 'isax-buildings-25',
                         'route' => 'automotive.admin.branches.index',
@@ -82,94 +77,21 @@ class WorkspaceModuleCatalogService
                         'pages' => ['branches'],
                     ],
                     [
+                        'key' => 'shared.billing',
                         'label' => 'Plans & Billing',
                         'icon' => 'isax-crown5',
                         'route' => 'automotive.admin.billing.status',
                         'params' => $query,
                         'pages' => ['billing'],
                     ],
-                ],
+                ]),
             ],
         ];
 
-        if ($this->isFocusedProduct($focusedProduct, 'automotive_service')) {
-            $sections[] = [
-                'title' => 'Service Operations',
-                'items' => [
-                    [
-                        'label' => 'Workshop Operations',
-                        'icon' => 'isax-car',
-                        'route' => 'automotive.admin.modules.workshop-operations',
-                        'params' => $query,
-                        'pages' => ['workshop-operations'],
-                    ],
-                ],
-            ];
-        }
+        $productSection = $this->productSidebarSection($focusedProduct, $query);
 
-        if ($this->isFocusedProduct($focusedProduct, 'parts_inventory')) {
-            $sections[] = [
-                'title' => 'Spare Parts & Inventory',
-                'items' => [
-                    [
-                        'label' => 'Supplier Catalog',
-                        'icon' => 'isax-shop',
-                        'route' => 'automotive.admin.modules.supplier-catalog',
-                        'params' => $query,
-                        'pages' => ['supplier-catalog'],
-                    ],
-                    [
-                        'label' => 'Stock Items',
-                        'icon' => 'isax-box5',
-                        'route' => 'automotive.admin.products.index',
-                        'params' => $query,
-                        'pages' => ['products'],
-                    ],
-                    [
-                        'label' => 'Inventory Adjustments',
-                        'icon' => 'isax-arrow-right-3',
-                        'route' => 'automotive.admin.inventory-adjustments.index',
-                        'params' => $query,
-                        'pages' => ['inventory-adjustments'],
-                    ],
-                    [
-                        'label' => 'Stock Transfers',
-                        'icon' => 'isax-arrow-right-35',
-                        'route' => 'automotive.admin.stock-transfers.index',
-                        'params' => $query,
-                        'pages' => ['stock-transfers'],
-                    ],
-                    [
-                        'label' => 'Inventory Report',
-                        'icon' => 'isax-chart-35',
-                        'route' => 'automotive.admin.inventory-report.index',
-                        'params' => $query,
-                        'pages' => ['inventory-report'],
-                    ],
-                    [
-                        'label' => 'Stock Movement Report',
-                        'icon' => 'isax-arrow-3',
-                        'route' => 'automotive.admin.stock-movements.index',
-                        'params' => $query,
-                        'pages' => ['stock-movements'],
-                    ],
-                ],
-            ];
-        }
-
-        if ($this->isFocusedProduct($focusedProduct, 'accounting')) {
-            $sections[] = [
-                'title' => 'Accounting',
-                'items' => [
-                    [
-                        'label' => 'General Ledger',
-                        'icon' => 'isax-wallet-3',
-                        'route' => 'automotive.admin.modules.general-ledger',
-                        'params' => $query,
-                        'pages' => ['general-ledger'],
-                    ],
-                ],
-            ];
+        if ($productSection !== null) {
+            $sections[] = $productSection;
         }
 
         return $sections;
@@ -179,9 +101,10 @@ class WorkspaceModuleCatalogService
     {
         $query = $this->workspaceQuery($focusedProduct);
 
-        if ($this->isFocusedProduct($focusedProduct, 'parts_inventory')) {
-            return [
+        return $this->dedupeItems(match ($this->resolveProductFamily($focusedProduct)) {
+            'parts_inventory' => [
                 [
+                    'key' => 'parts.add-stock-item',
                     'label' => 'Add Stock Item',
                     'icon' => 'isax-box-add',
                     'route' => 'automotive.admin.products.create',
@@ -189,6 +112,7 @@ class WorkspaceModuleCatalogService
                     'variant' => 'primary',
                 ],
                 [
+                    'key' => 'parts.adjustment',
                     'label' => 'Adjustment',
                     'icon' => 'isax-arrows-swap',
                     'route' => 'automotive.admin.inventory-adjustments.create',
@@ -196,18 +120,17 @@ class WorkspaceModuleCatalogService
                     'variant' => 'outline-white',
                 ],
                 [
+                    'key' => 'parts.transfer',
                     'label' => 'Transfer',
                     'icon' => 'isax-arrow-right-3',
                     'route' => 'automotive.admin.stock-transfers.create',
                     'params' => $query,
                     'variant' => 'outline-white',
                 ],
-            ];
-        }
-
-        if ($this->isFocusedProduct($focusedProduct, 'accounting')) {
-            return [
+            ],
+            'accounting' => [
                 [
+                    'key' => 'accounting.general-ledger',
                     'label' => 'Open General Ledger',
                     'icon' => 'isax-wallet-3',
                     'route' => 'automotive.admin.modules.general-ledger',
@@ -215,68 +138,233 @@ class WorkspaceModuleCatalogService
                     'variant' => 'primary',
                 ],
                 [
+                    'key' => 'shared.billing',
                     'label' => 'Manage Billing',
                     'icon' => 'isax-crown5',
                     'route' => 'automotive.admin.billing.status',
                     'params' => $query,
                     'variant' => 'outline-white',
                 ],
-            ];
-        }
-
-        return [
-            [
-                'label' => 'Open Workshop',
-                'icon' => 'isax-car',
-                'route' => 'automotive.admin.modules.workshop-operations',
-                'params' => $query,
-                'variant' => 'primary',
             ],
-            [
-                'label' => 'Manage Users',
-                'icon' => 'isax-profile-2user',
-                'route' => 'automotive.admin.users.index',
-                'params' => $query,
-                'variant' => 'outline-white',
+            default => [
+                [
+                    'key' => 'service.workshop',
+                    'label' => 'Open Workshop',
+                    'icon' => 'isax-car',
+                    'route' => 'automotive.admin.modules.workshop-operations',
+                    'params' => $query,
+                    'variant' => 'primary',
+                ],
+                [
+                    'key' => 'shared.users',
+                    'label' => 'Manage Users',
+                    'icon' => 'isax-profile-2user',
+                    'route' => 'automotive.admin.users.index',
+                    'params' => $query,
+                    'variant' => 'outline-white',
+                ],
+                [
+                    'key' => 'shared.branches',
+                    'label' => 'Manage Branches',
+                    'icon' => 'isax-buildings',
+                    'route' => 'automotive.admin.branches.index',
+                    'params' => $query,
+                    'variant' => 'outline-white',
+                ],
             ],
-            [
-                'label' => 'Manage Branches',
-                'icon' => 'isax-buildings',
-                'route' => 'automotive.admin.branches.index',
-                'params' => $query,
-                'variant' => 'outline-white',
-            ],
-        ];
+        });
     }
 
     public function getFocusedProductExperience(?array $focusedProduct): array
     {
-        $productCode = trim((string) data_get($focusedProduct, 'product_code'));
+        $productCode = $this->resolveProductFamily($focusedProduct);
 
         return match ($productCode) {
             'parts_inventory' => [
                 'eyebrow' => 'Spare Parts Focus',
                 'title' => 'Inventory and stock movement workspace',
-                'description' => 'This area owns stock items, adjustments, transfers, and inventory reporting. These modules are no longer treated as part of automotive service itself.',
+                'description' => 'Shared modules such as users and branches stay global, while spare-parts-specific inventory modules live here once and only once.',
                 'accent' => 'warning',
             ],
             'accounting' => [
                 'eyebrow' => 'Accounting Focus',
                 'title' => 'Finance workspace foundation',
-                'description' => 'This area is reserved for accounting modules such as the general ledger and future financial flows tied to the same tenant workspace.',
+                'description' => 'Shared modules stay global across the tenant. Accounting contributes only its own finance modules, such as the general ledger.',
                 'accent' => 'info',
             ],
             default => [
                 'eyebrow' => 'Automotive Service Focus',
                 'title' => 'Core workshop and service operations',
-                'description' => 'This area should stay limited to maintenance-oriented modules. Inventory and transfer modules are now attached to Spare Parts instead.',
+                'description' => 'Shared modules are shown once at workspace level. Automotive contributes only service modules, while inventory stays under Spare Parts.',
                 'accent' => 'primary',
             ],
         };
     }
 
-    protected function isFocusedProduct(?array $focusedProduct, string $productCode): bool
+    protected function productQuickActions(?array $focusedProduct, array $query): array
     {
-        return trim((string) data_get($focusedProduct, 'product_code')) === $productCode;
+        return match ($this->resolveProductFamily($focusedProduct)) {
+            'parts_inventory' => [
+                [
+                    'key' => 'parts.new-stock-item',
+                    'label' => 'New Stock Item',
+                    'icon' => 'isax-box-add',
+                    'route' => 'automotive.admin.products.create',
+                    'params' => $query,
+                ],
+                [
+                    'key' => 'parts.inventory-adjustment',
+                    'label' => 'Inventory Adjustment',
+                    'icon' => 'isax-arrows-swap',
+                    'route' => 'automotive.admin.inventory-adjustments.create',
+                    'params' => $query,
+                ],
+                [
+                    'key' => 'parts.stock-transfer',
+                    'label' => 'Stock Transfer',
+                    'icon' => 'isax-arrow-right-3',
+                    'route' => 'automotive.admin.stock-transfers.create',
+                    'params' => $query,
+                ],
+            ],
+            default => [],
+        };
+    }
+
+    protected function productSidebarSection(?array $focusedProduct, array $query): ?array
+    {
+        return match ($this->resolveProductFamily($focusedProduct)) {
+            'automotive_service' => [
+                'key' => 'automotive-service',
+                'title' => 'Automotive Service',
+                'items' => $this->dedupeItems([
+                    [
+                        'key' => 'service.workshop',
+                        'label' => 'Workshop Operations',
+                        'icon' => 'isax-car',
+                        'route' => 'automotive.admin.modules.workshop-operations',
+                        'params' => $query,
+                        'pages' => ['workshop-operations'],
+                    ],
+                ]),
+            ],
+            'parts_inventory' => [
+                'key' => 'spare-parts',
+                'title' => 'Spare Parts',
+                'items' => $this->dedupeItems([
+                    [
+                        'key' => 'parts.supplier-catalog',
+                        'label' => 'Supplier Catalog',
+                        'icon' => 'isax-shop',
+                        'route' => 'automotive.admin.modules.supplier-catalog',
+                        'params' => $query,
+                        'pages' => ['supplier-catalog'],
+                    ],
+                    [
+                        'key' => 'parts.stock-items',
+                        'label' => 'Stock Items',
+                        'icon' => 'isax-box5',
+                        'route' => 'automotive.admin.products.index',
+                        'params' => $query,
+                        'pages' => ['products'],
+                    ],
+                    [
+                        'key' => 'parts.inventory-adjustments',
+                        'label' => 'Inventory Adjustments',
+                        'icon' => 'isax-arrow-right-3',
+                        'route' => 'automotive.admin.inventory-adjustments.index',
+                        'params' => $query,
+                        'pages' => ['inventory-adjustments'],
+                    ],
+                    [
+                        'key' => 'parts.stock-transfers',
+                        'label' => 'Stock Transfers',
+                        'icon' => 'isax-arrow-right-35',
+                        'route' => 'automotive.admin.stock-transfers.index',
+                        'params' => $query,
+                        'pages' => ['stock-transfers'],
+                    ],
+                    [
+                        'key' => 'parts.inventory-report',
+                        'label' => 'Inventory Report',
+                        'icon' => 'isax-chart-35',
+                        'route' => 'automotive.admin.inventory-report.index',
+                        'params' => $query,
+                        'pages' => ['inventory-report'],
+                    ],
+                    [
+                        'key' => 'parts.stock-movements',
+                        'label' => 'Stock Movement Report',
+                        'icon' => 'isax-arrow-3',
+                        'route' => 'automotive.admin.stock-movements.index',
+                        'params' => $query,
+                        'pages' => ['stock-movements'],
+                    ],
+                ]),
+            ],
+            'accounting' => [
+                'key' => 'accounting',
+                'title' => 'Accounting',
+                'items' => $this->dedupeItems([
+                    [
+                        'key' => 'accounting.general-ledger',
+                        'label' => 'General Ledger',
+                        'icon' => 'isax-wallet-3',
+                        'route' => 'automotive.admin.modules.general-ledger',
+                        'params' => $query,
+                        'pages' => ['general-ledger'],
+                    ],
+                ]),
+            ],
+            default => null,
+        };
+    }
+
+    protected function dedupeItems(array $items): array
+    {
+        return collect($items)
+            ->filter(fn (array $item) => trim((string) ($item['key'] ?? '')) !== '')
+            ->unique('key')
+            ->values()
+            ->all();
+    }
+
+    protected function resolveProductFamily(?array $focusedProduct): string
+    {
+        $values = [
+            trim((string) data_get($focusedProduct, 'product_code')),
+            trim((string) data_get($focusedProduct, 'product_slug')),
+            trim((string) data_get($focusedProduct, 'product_name')),
+        ];
+
+        $haystack = strtolower(implode(' ', array_filter($values)));
+
+        if ($haystack === '') {
+            return 'automotive_service';
+        }
+
+        if (str_contains($haystack, 'account')) {
+            return 'accounting';
+        }
+
+        if (
+            str_contains($haystack, 'spare') ||
+            str_contains($haystack, 'part') ||
+            str_contains($haystack, 'inventor') ||
+            str_contains($haystack, 'stock')
+        ) {
+            return 'parts_inventory';
+        }
+
+        if (
+            str_contains($haystack, 'automotive') ||
+            str_contains($haystack, 'service') ||
+            str_contains($haystack, 'workshop') ||
+            str_contains($haystack, 'maint')
+        ) {
+            return 'automotive_service';
+        }
+
+        return 'automotive_service';
     }
 }

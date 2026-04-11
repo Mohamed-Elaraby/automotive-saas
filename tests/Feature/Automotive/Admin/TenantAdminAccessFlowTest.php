@@ -181,7 +181,12 @@ class TenantAdminAccessFlowTest extends TestCase
         $focusedResponse->assertSee('Focused Workspace Product', false);
         $focusedResponse->assertSee('Accounting Suite', false);
         $focusedResponse->assertSee('General Ledger', false);
+        $focusedResponse->assertSee('Accounting Focus', false);
         $focusedResponse->assertSee("workspace_product={$accountingProduct->code}", false);
+        $focusedResponse->assertSee('Shared Workspace', false);
+        $focusedResponse->assertDontSee('Service Operations', false);
+        $focusedResponse->assertDontSee('Inventory Adjustments', false);
+        $focusedResponse->assertDontSee('Open Workshop', false);
     }
 
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void

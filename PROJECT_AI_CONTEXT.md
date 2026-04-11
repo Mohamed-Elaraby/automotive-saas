@@ -1152,6 +1152,35 @@ Important scope note:
 - the runtime entry pages for workshop, supplier catalog, and general ledger are currently operational module landing pages, not full business submodules yet
 - old inventory pages still exist, but they now belong to the `parts_inventory` product path conceptually and operationally
 
+### 18.17 Shared Workspace Modules and Product Family Inference
+The tenant workspace runtime is now explicitly split into:
+- shared/core workspace modules
+- product-specific modules
+
+What changed:
+- `Users`, `Branches`, and `Plans & Billing` are now treated as shared workspace modules
+- they are rendered once at workspace level, regardless of how many subscribed products the tenant has
+- product-specific sections now only render product-owned modules:
+  - automotive service -> `Workshop Operations`
+  - spare parts -> inventory-related modules
+  - accounting -> `General Ledger`
+- the module catalog now deduplicates by stable module key instead of relying on route text or product count
+
+Important architectural improvement:
+- runtime behavior no longer depends only on exact hardcoded product codes such as `accounting` or `parts_inventory`
+- a product-family inference layer now resolves the workspace behavior from product code / slug / name
+- this makes the shared workspace more resilient to future products such as:
+  - accounting suite
+  - spare parts pro
+  - verticalized products for other industries
+
+Important scope note:
+- this is the correct direction for a multi-product and multi-industry SaaS shell:
+  - one shared workspace
+  - one set of shared/core modules
+  - one set of product modules per attached product family
+  - future cross-product integrations can later be layered on top without duplicating shared navigation
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

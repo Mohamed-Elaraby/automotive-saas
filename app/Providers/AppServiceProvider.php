@@ -27,12 +27,16 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        View::composer('automotive.admin.layouts.adminLayout.partials.sidebar', function ($view) {
+        View::composer([
+            'automotive.admin.layouts.adminLayout.partials.sidebar',
+            'automotive.admin.layouts.adminLayout.partials.header',
+        ], function ($view) {
             $tenant = function_exists('tenant') ? tenant() : null;
 
             if (! $tenant) {
                 $view->with('tenantWorkspaceProducts', collect());
                 $view->with('focusedWorkspaceProduct', null);
+                $view->with('focusedWorkspaceProductFamily', 'automotive_service');
                 $view->with('workspaceSidebarSections', []);
                 $view->with('workspaceQuickCreateActions', []);
 
@@ -51,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('tenantWorkspaceProducts', $workspaceProducts);
             $view->with('focusedWorkspaceProduct', $focusedWorkspaceProduct);
+            $view->with('focusedWorkspaceProductFamily', $workspaceModuleCatalogService->getFocusedProductFamily($focusedWorkspaceProduct));
             $view->with('workspaceSidebarSections', $workspaceModuleCatalogService->getSidebarSections($focusedWorkspaceProduct));
             $view->with('workspaceQuickCreateActions', $workspaceModuleCatalogService->getQuickCreateActions($focusedWorkspaceProduct));
         });

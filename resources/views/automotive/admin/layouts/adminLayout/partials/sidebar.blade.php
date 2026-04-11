@@ -1,5 +1,6 @@
 <!-- Sidenav Menu Start -->
 @php($selectedWorkspaceProduct = trim((string) data_get($focusedWorkspaceProduct, 'product_code', request()->query('workspace_product'))))
+@php($selectedWorkspaceProductFamily = $focusedWorkspaceProductFamily ?? 'automotive_service')
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
         <!-- Add -->
@@ -150,9 +151,9 @@
                                 <i class="isax isax-element-45"></i>
                             </a>
                         </li>
-                        @if(($selectedWorkspaceProduct ?? '') === 'parts_inventory')
+                        @if($selectedWorkspaceProductFamily === 'parts_inventory')
                             <li>
-                                <a href="{{ route('automotive.admin.inventory-report.index', ['workspace_product' => 'parts_inventory']) }}"
+                                <a href="{{ route('automotive.admin.inventory-report.index', data_get($focusedWorkspaceProduct, 'product_code') ? ['workspace_product' => data_get($focusedWorkspaceProduct, 'product_code')] : []) }}"
                                    data-bs-toggle="tooltip"
                                    data-bs-placement="top"
                                    data-bs-title="Inventory Report">

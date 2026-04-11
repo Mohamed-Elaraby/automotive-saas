@@ -44,6 +44,7 @@ public function index(Request $request): View
         $request->query('workspace_product')
     );
     $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+    $focusedWorkspaceProductFamily = $this->workspaceModuleCatalogService->getFocusedProductFamily($focusedWorkspaceProduct);
     $dashboardActions = $this->workspaceModuleCatalogService->getDashboardActions($focusedWorkspaceProduct);
     $focusedExperience = $this->workspaceModuleCatalogService->getFocusedProductExperience($focusedWorkspaceProduct);
 
@@ -96,6 +97,7 @@ public function index(Request $request): View
         'plan',
         'workspaceProducts',
         'focusedWorkspaceProduct',
+        'focusedWorkspaceProductFamily',
         'workspaceQuery',
         'dashboardActions',
         'focusedExperience',

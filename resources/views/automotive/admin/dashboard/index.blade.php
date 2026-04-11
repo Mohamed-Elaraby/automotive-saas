@@ -3,7 +3,7 @@
 
 @section('content')
     @php
-        $focusedProductCode = (string) data_get($focusedWorkspaceProduct, 'product_code', 'automotive_service');
+        $focusedProductCode = $focusedWorkspaceProductFamily ?? 'automotive_service';
         $workspaceProductsCount = ($workspaceProducts ?? collect())->count();
     @endphp
 
