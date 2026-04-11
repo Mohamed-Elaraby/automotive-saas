@@ -1489,6 +1489,35 @@ Test coverage:
 - added a dedicated manifest test proving that a new family such as `retail_commerce` can be added by config and immediately resolved/rendered by the workspace services
 - existing tenant admin access/runtime tests still pass after the refactor
 
+### 18.31 Manifest-Driven Runtime Module Pages
+The runtime module pages themselves no longer depend on large hardcoded title/description/link blocks inside `WorkspaceModuleController`.
+
+What changed:
+- added `runtime_modules` definitions to the workspace manifest for:
+  - `workshop-operations`
+  - `workshop-customers`
+  - `workshop-vehicles`
+  - `workshop-work-orders`
+  - `supplier-catalog`
+  - `general-ledger`
+- `WorkspaceManifestService` can now resolve a runtime module by key
+- `WorkspaceModuleController` now loads page metadata from the manifest:
+  - focus family / focus code
+  - title
+  - description
+  - quick links
+
+Why this matters:
+- adding or reshaping a module page no longer requires a large controller edit for basic metadata
+- workspace runtime screens are now aligned with the same manifest that already drives:
+  - sidebar sections
+  - dashboard actions
+  - integrations
+
+Scope note:
+- the actual business data resolvers for each runtime module still live in code
+- this package moves navigation/page-definition metadata into the manifest, not the full business workflows
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1541,6 +1570,8 @@ If a new session starts from this file only, the safest current summary is:
 - Workspace product architecture is now more configurable:
   - product-family aliases, modules, dashboard actions, and integrations can be declared through a manifest config
   - adding a future product family now needs far less hardcoded service editing
+- Runtime module screens are now partially manifest-driven as well:
+  - page titles, descriptions, and quick links for major runtime modules are no longer controller-hardcoded
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates

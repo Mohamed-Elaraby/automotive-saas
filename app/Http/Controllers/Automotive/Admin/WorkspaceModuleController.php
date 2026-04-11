@@ -10,6 +10,7 @@ use App\Services\Automotive\WorkOrderAccountingHandoffService;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
 use App\Services\Automotive\WorkshopWorkOrderService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
+use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class WorkspaceModuleController extends Controller
     public function __construct(
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
+        protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
         protected WorkshopPartsIntegrationService $workshopPartsIntegrationService,
         protected WorkshopWorkOrderService $workshopWorkOrderService,
@@ -31,17 +33,9 @@ class WorkspaceModuleController extends Controller
 
     public function workshopOperations(Request $request): View
     {
-        return $this->showModule(
+        return $this->showManifestModule(
             $request,
-            'automotive_service',
             'workshop-operations',
-            'Workshop Operations',
-            'Core maintenance and workshop execution flows should live here. This keeps the automotive product limited to service operations only.',
-            [
-                ['label' => 'Manage Users', 'route' => 'automotive.admin.users.index', 'icon' => 'isax-profile-2user'],
-                ['label' => 'Manage Branches', 'route' => 'automotive.admin.branches.index', 'icon' => 'isax-buildings'],
-                ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
-            ],
             function () {
                 $tenantId = (string) tenant()->id;
 
@@ -62,15 +56,9 @@ class WorkspaceModuleController extends Controller
 
     public function workshopCustomers(Request $request): View
     {
-        return $this->showModule(
+        return $this->showManifestModule(
             $request,
-            'automotive_service',
             'workshop-customers',
-            'Workshop Customers',
-            'Customer records attached to service operations in this workspace.',
-            [
-                ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
-            ],
             fn () => [
                 'customers' => $this->workshopWorkOrderService->getCustomers(),
             ]
@@ -79,15 +67,9 @@ class WorkspaceModuleController extends Controller
 
     public function workshopVehicles(Request $request): View
     {
-        return $this->showModule(
+        return $this->showManifestModule(
             $request,
-            'automotive_service',
             'workshop-vehicles',
-            'Workshop Vehicles',
-            'Vehicle records linked to service history and work orders.',
-            [
-                ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
-            ],
             fn () => [
                 'vehicles' => $this->workshopWorkOrderService->getVehicles(),
             ]
@@ -96,15 +78,9 @@ class WorkspaceModuleController extends Controller
 
     public function workshopWorkOrders(Request $request): View
     {
-        return $this->showModule(
+        return $this->showManifestModule(
             $request,
-            'automotive_service',
             'workshop-work-orders',
-            'Work Orders',
-            'All workshop job records with lifecycle status and linked service context.',
-            [
-                ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
-            ],
             fn () => [
                 'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(25),
             ]
@@ -296,57 +272,45 @@ class WorkspaceModuleController extends Controller
 
     public function supplierCatalog(Request $request): View
     {
-        return $this->showModule(
-            $request,
-            'parts_inventory',
-            'supplier-catalog',
-            'Supplier Catalog',
-            'Spare parts purchasing, supplier references, inventory adjustments, and transfers belong to this product context.',
-            [
-                ['label' => 'Stock Items', 'route' => 'automotive.admin.products.index', 'icon' => 'isax-box'],
-                ['label' => 'Inventory Report', 'route' => 'automotive.admin.inventory-report.index', 'icon' => 'isax-chart-35'],
-                ['label' => 'Stock Transfers', 'route' => 'automotive.admin.stock-transfers.index', 'icon' => 'isax-arrow-right-3'],
-            ]
-        );
+        return $this->showManifestModule($request, 'supplier-catalog');
     }
 
     public function generalLedger(Request $request): View
     {
-        return $this->showModule(
+        return $this->showManifestModule(
             $request,
-            'accounting',
             'general-ledger',
-            'General Ledger',
-            'This is the accounting runtime entry point for ledgers, journals, and future finance modules inside the shared tenant workspace.',
-            [
-                ['label' => 'Dashboard', 'route' => 'automotive.admin.dashboard', 'icon' => 'isax-element-45'],
-                ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
-            ],
             fn () => [
                 'recent_accounting_events' => $this->workshopWorkOrderService->getRecentAccountingEvents(25),
             ]
         );
     }
 
-    protected function showModule(
+    protected function showManifestModule(
         Request $request,
-        string $productCode,
         string $page,
-        string $title,
-        string $description,
-        array $links,
         ?callable $dataResolver = null
     ): View {
+        $moduleDefinition = $this->workspaceManifestService->runtimeModule($page);
+
+        abort_unless($moduleDefinition, 404);
+
         $tenant = tenant();
         $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) $tenant->id);
         $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
             $workspaceProducts,
-            $request->query('workspace_product', $productCode)
+            $request->query('workspace_product', (string) ($moduleDefinition['focus_code'] ?? $moduleDefinition['family'] ?? ''))
         );
 
         $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
         $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
         $moduleData = $dataResolver ? $dataResolver() : [];
+        $title = (string) ($moduleDefinition['title'] ?? ucfirst(str_replace('-', ' ', $page)));
+        $description = (string) ($moduleDefinition['description'] ?? '');
+        $links = collect((array) ($moduleDefinition['links'] ?? []))
+            ->map(fn (array $link): array => $link + ['params' => $workspaceQuery])
+            ->values()
+            ->all();
 
         return view('automotive.admin.modules.show', compact(
             'page',

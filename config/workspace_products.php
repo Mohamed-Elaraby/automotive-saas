@@ -138,6 +138,46 @@ return [
                     'target_route' => 'automotive.admin.modules.general-ledger',
                 ],
             ],
+            'runtime_modules' => [
+                'workshop-operations' => [
+                    'family' => 'automotive_service',
+                    'focus_code' => 'automotive_service',
+                    'title' => 'Workshop Operations',
+                    'description' => 'Core maintenance and workshop execution flows should live here. This keeps the automotive product limited to service operations only.',
+                    'links' => [
+                        ['label' => 'Manage Users', 'route' => 'automotive.admin.users.index', 'icon' => 'isax-profile-2user'],
+                        ['label' => 'Manage Branches', 'route' => 'automotive.admin.branches.index', 'icon' => 'isax-buildings'],
+                        ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
+                    ],
+                ],
+                'workshop-customers' => [
+                    'family' => 'automotive_service',
+                    'focus_code' => 'automotive_service',
+                    'title' => 'Workshop Customers',
+                    'description' => 'Customer records attached to service operations in this workspace.',
+                    'links' => [
+                        ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
+                    ],
+                ],
+                'workshop-vehicles' => [
+                    'family' => 'automotive_service',
+                    'focus_code' => 'automotive_service',
+                    'title' => 'Workshop Vehicles',
+                    'description' => 'Vehicle records linked to service history and work orders.',
+                    'links' => [
+                        ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
+                    ],
+                ],
+                'workshop-work-orders' => [
+                    'family' => 'automotive_service',
+                    'focus_code' => 'automotive_service',
+                    'title' => 'Work Orders',
+                    'description' => 'All workshop job records with lifecycle status and linked service context.',
+                    'links' => [
+                        ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
+                    ],
+                ],
+            ],
         ],
         'parts_inventory' => [
             'aliases' => ['spare', 'part', 'inventor', 'stock'],
@@ -256,6 +296,19 @@ return [
                     'target_route' => 'automotive.admin.modules.general-ledger',
                 ],
             ],
+            'runtime_modules' => [
+                'supplier-catalog' => [
+                    'family' => 'parts_inventory',
+                    'focus_code' => 'parts_inventory',
+                    'title' => 'Supplier Catalog',
+                    'description' => 'Spare parts purchasing, supplier references, inventory adjustments, and transfers belong to this product context.',
+                    'links' => [
+                        ['label' => 'Stock Items', 'route' => 'automotive.admin.products.index', 'icon' => 'isax-box'],
+                        ['label' => 'Inventory Report', 'route' => 'automotive.admin.inventory-report.index', 'icon' => 'isax-chart-35'],
+                        ['label' => 'Stock Transfers', 'route' => 'automotive.admin.stock-transfers.index', 'icon' => 'isax-arrow-right-3'],
+                    ],
+                ],
+            ],
         ],
         'accounting' => [
             'aliases' => ['account'],
@@ -317,6 +370,18 @@ return [
                     'description' => 'Inventory purchases and stock valuation can be integrated from Spare Parts without forcing duplicate stock modules inside Accounting.',
                     'target_label' => 'Open Spare Parts',
                     'target_route' => 'automotive.admin.modules.supplier-catalog',
+                ],
+            ],
+            'runtime_modules' => [
+                'general-ledger' => [
+                    'family' => 'accounting',
+                    'focus_code' => 'accounting',
+                    'title' => 'General Ledger',
+                    'description' => 'This is the accounting runtime entry point for ledgers, journals, and future finance modules inside the shared tenant workspace.',
+                    'links' => [
+                        ['label' => 'Dashboard', 'route' => 'automotive.admin.dashboard', 'icon' => 'isax-element-45'],
+                        ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
+                    ],
                 ],
             ],
         ],

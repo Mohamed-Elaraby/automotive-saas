@@ -78,4 +78,17 @@ class WorkspaceManifestService
     {
         return (array) ($this->familyDefinition($family)['integrations'] ?? []);
     }
+
+    public function runtimeModule(string $moduleKey): ?array
+    {
+        foreach ($this->familyKeys() as $family) {
+            $module = data_get($this->familyDefinition($family), 'runtime_modules.' . $moduleKey);
+
+            if (is_array($module)) {
+                return $module + ['family' => $family];
+            }
+        }
+
+        return null;
+    }
 }
