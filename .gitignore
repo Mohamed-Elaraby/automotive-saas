@@ -71,3 +71,4 @@ Homestead.yaml
 *.log
 node_modules/
 vendor/
+database/tenant_*
