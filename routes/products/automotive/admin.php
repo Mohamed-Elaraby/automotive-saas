@@ -65,15 +65,21 @@ Route::prefix('automotive/admin')
             Route::post('/billing/cancel-subscription', [BillingController::class, 'cancelSubscription'])->name('billing.cancel-subscription');
             Route::post('/billing/resume-subscription', [BillingController::class, 'resumeSubscription'])->name('billing.resume-subscription');
 
-            Route::middleware('tenant.workspace.product:automotive_service')->group(function () {
+            Route::middleware('tenant.workspace.product:workshop-operations')->group(function () {
                 Route::get('/workshop-operations', [WorkspaceModuleController::class, 'workshopOperations'])
                     ->name('modules.workshop-operations');
+                Route::middleware('tenant.workspace.product:workshop-customers')->group(function () {
                 Route::get('/workshop-customers', [WorkspaceModuleController::class, 'workshopCustomers'])
                     ->name('modules.workshop-customers');
+                });
+                Route::middleware('tenant.workspace.product:workshop-vehicles')->group(function () {
                 Route::get('/workshop-vehicles', [WorkspaceModuleController::class, 'workshopVehicles'])
                     ->name('modules.workshop-vehicles');
+                });
+                Route::middleware('tenant.workspace.product:workshop-work-orders')->group(function () {
                 Route::get('/work-orders', [WorkspaceModuleController::class, 'workshopWorkOrders'])
                     ->name('modules.workshop-work-orders');
+                });
                 Route::post('/workshop-operations/customers', [WorkspaceModuleController::class, 'storeWorkshopCustomer'])
                     ->name('modules.workshop-operations.customers.store');
                 Route::post('/workshop-operations/vehicles', [WorkspaceModuleController::class, 'storeWorkshopVehicle'])
@@ -90,10 +96,12 @@ Route::prefix('automotive/admin')
                     ->name('modules.workshop-operations.consume-part');
             });
 
-            Route::middleware('tenant.workspace.product:parts_inventory')->group(function () {
+            Route::middleware('tenant.workspace.product:supplier-catalog')->group(function () {
                 Route::get('/supplier-catalog', [WorkspaceModuleController::class, 'supplierCatalog'])
                     ->name('modules.supplier-catalog');
+            });
 
+            Route::middleware('tenant.workspace.product:parts_inventory')->group(function () {
                 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
                 Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
                 Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -116,7 +124,7 @@ Route::prefix('automotive/admin')
                 Route::get('/stock-movements', [StockMovementReportController::class, 'index'])->name('stock-movements.index');
             });
 
-            Route::middleware('tenant.workspace.product:accounting')->group(function () {
+            Route::middleware('tenant.workspace.product:general-ledger')->group(function () {
                 Route::get('/general-ledger', [WorkspaceModuleController::class, 'generalLedger'])
                     ->name('modules.general-ledger');
             });

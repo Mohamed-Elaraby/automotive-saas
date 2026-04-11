@@ -5,12 +5,14 @@ namespace App\Services\Automotive;
 use App\Models\AccountingEvent;
 use App\Models\WorkOrder;
 use App\Services\Tenancy\TenantWorkspaceProductService;
+use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\WorkspaceProductFamilyResolver;
 
 class WorkOrderAccountingHandoffService
 {
     public function __construct(
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
+        protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
         protected WorkshopWorkOrderService $workshopWorkOrderService
     ) {
@@ -20,10 +22,7 @@ class WorkOrderAccountingHandoffService
     {
         $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
 
-        return $workspaceProducts->contains(function (array $workspaceProduct): bool {
-            return $this->workspaceProductFamilyResolver->resolveFromWorkspaceProduct($workspaceProduct) === 'accounting'
-                && ! empty($workspaceProduct['is_accessible']);
-        });
+        return $this->workspaceManifestService->hasAccessibleFamily($workspaceProducts, 'accounting');
     }
 
     public function postCompletedWorkOrder(WorkOrder $workOrder, ?int $createdBy = null): AccountingEvent

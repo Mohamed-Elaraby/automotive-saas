@@ -2,6 +2,8 @@
 
 namespace App\Services\Tenancy;
 
+use Illuminate\Support\Collection;
+
 class WorkspaceManifestService
 {
     public function defaultFamily(): string
@@ -90,5 +92,41 @@ class WorkspaceManifestService
         }
 
         return null;
+    }
+
+    public function resolveFamilyOrModuleOwner(string $key): string
+    {
+        $runtimeModule = $this->runtimeModule($key);
+
+        if ($runtimeModule && filled($runtimeModule['family'] ?? null)) {
+            return (string) $runtimeModule['family'];
+        }
+
+        return in_array($key, $this->familyKeys(), true)
+            ? $key
+            : $this->defaultFamily();
+    }
+
+    public function focusCodeFor(string $key): string
+    {
+        $runtimeModule = $this->runtimeModule($key);
+
+        if ($runtimeModule && filled($runtimeModule['focus_code'] ?? null)) {
+            return (string) $runtimeModule['focus_code'];
+        }
+
+        return $this->resolveFamilyOrModuleOwner($key);
+    }
+
+    public function hasAccessibleFamily(Collection $workspaceProducts, string $family): bool
+    {
+        return $workspaceProducts->contains(function (array $workspaceProduct) use ($family): bool {
+            return $this->resolveFamilyFromText(strtolower(implode(' ', array_filter([
+                (string) ($workspaceProduct['product_code'] ?? ''),
+                (string) ($workspaceProduct['product_slug'] ?? ''),
+                (string) ($workspaceProduct['product_name'] ?? ''),
+            ])))) === $family
+                && ! empty($workspaceProduct['is_accessible']);
+        });
     }
 }

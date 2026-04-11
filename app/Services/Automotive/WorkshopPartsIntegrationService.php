@@ -6,6 +6,7 @@ use App\Models\Inventory;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
 use App\Services\Tenancy\TenantWorkspaceProductService;
+use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\WorkspaceProductFamilyResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class WorkshopPartsIntegrationService
 {
     public function __construct(
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
+        protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
         protected WorkshopWorkOrderService $workshopWorkOrderService
     ) {
@@ -24,10 +26,7 @@ class WorkshopPartsIntegrationService
     {
         $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
 
-        return $workspaceProducts->contains(function (array $workspaceProduct) {
-            return $this->workspaceProductFamilyResolver->resolveFromWorkspaceProduct($workspaceProduct) === 'parts_inventory'
-                && ! empty($workspaceProduct['is_accessible']);
-        });
+        return $this->workspaceManifestService->hasAccessibleFamily($workspaceProducts, 'parts_inventory');
     }
 
     public function getAvailableStockSnapshot(int $limit = 12): Collection

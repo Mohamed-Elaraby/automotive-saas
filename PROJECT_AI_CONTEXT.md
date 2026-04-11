@@ -1518,6 +1518,40 @@ Scope note:
 - the actual business data resolvers for each runtime module still live in code
 - this package moves navigation/page-definition metadata into the manifest, not the full business workflows
 
+### 18.32 Manifest-Driven Module Access Alignment
+Route-level access for workspace modules is now better aligned with the same manifest layer that defines the modules themselves.
+
+What changed:
+- `EnsureTenantHasWorkspaceProduct` can now accept either:
+  - a product family key
+  - or a runtime module key
+- the middleware resolves the owning family from the manifest when a runtime module key is used
+- runtime module routes such as:
+  - `workshop-operations`
+  - `workshop-customers`
+  - `workshop-vehicles`
+  - `workshop-work-orders`
+  - `supplier-catalog`
+  - `general-ledger`
+  can now be guarded by their manifest module keys instead of family-only hardcoding
+- `WorkspaceManifestService` now exposes:
+  - owner-family resolution for module keys
+  - focus-code resolution for redirects
+  - accessible-family helper logic for tenant workspace products
+
+Service alignment:
+- `WorkshopPartsIntegrationService` now checks connected spare-parts availability through the manifest helper
+- `WorkOrderAccountingHandoffService` now checks accounting availability through the manifest helper
+
+Why this matters:
+- manifest ownership now influences:
+  - sidebar rendering
+  - dashboard actions
+  - integration cards
+  - runtime page metadata
+  - route access checks
+- this reduces the remaining places where module ownership is hardcoded separately from the manifest
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1572,6 +1606,8 @@ If a new session starts from this file only, the safest current summary is:
   - adding a future product family now needs far less hardcoded service editing
 - Runtime module screens are now partially manifest-driven as well:
   - page titles, descriptions, and quick links for major runtime modules are no longer controller-hardcoded
+- Route-level module access is now also closer to the manifest:
+  - middleware can guard by runtime module key and derive the owning family from the manifest
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates

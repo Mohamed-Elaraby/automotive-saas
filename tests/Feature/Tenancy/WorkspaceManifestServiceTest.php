@@ -94,4 +94,15 @@ class WorkspaceManifestServiceTest extends TestCase
         $this->assertSame('retail-accounting', $integrationItems[0]['key']);
         $this->assertSame('accounting_suite', $integrationItems[0]['target_params']['workspace_product']);
     }
+
+    public function test_manifest_can_resolve_module_owner_family_and_focus_code(): void
+    {
+        $manifest = app(\App\Services\Tenancy\WorkspaceManifestService::class);
+
+        $this->assertSame('automotive_service', $manifest->resolveFamilyOrModuleOwner('workshop-operations'));
+        $this->assertSame('accounting', $manifest->resolveFamilyOrModuleOwner('general-ledger'));
+        $this->assertSame('parts_inventory', $manifest->resolveFamilyOrModuleOwner('parts_inventory'));
+        $this->assertSame('accounting', $manifest->focusCodeFor('general-ledger'));
+        $this->assertSame('automotive_service', $manifest->focusCodeFor('workshop-operations'));
+    }
 }
