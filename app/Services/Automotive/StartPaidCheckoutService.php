@@ -3,6 +3,7 @@
 namespace App\Services\Automotive;
 
 use App\Models\CustomerOnboardingProfile;
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Billing\BillingPlanCatalogService;
@@ -14,8 +15,6 @@ use Illuminate\Support\Facades\DB;
 
 class StartPaidCheckoutService
 {
-    protected const PRODUCT_CODE = 'automotive_service';
-
     public function __construct(
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected CheckoutStripePlanRecoveryService $checkoutStripePlanRecoveryService,
@@ -24,9 +23,12 @@ class StartPaidCheckoutService
     ) {
     }
 
-    public function start(User $user, CustomerOnboardingProfile $profile, int $planId): array
+    public function start(User $user, CustomerOnboardingProfile $profile, int $planId, ?int $productId = null): array
     {
-        $plan = $this->checkoutStripePlanRecoveryService->recoverPaidPlan($planId, self::PRODUCT_CODE);
+        $product = $this->resolveCheckoutProduct($planId, $productId);
+        $plan = $product
+            ? $this->checkoutStripePlanRecoveryService->recoverPaidPlan($planId, (string) $product->code)
+            : null;
         $reservedTenantId = strtolower(trim((string) $profile->subdomain));
 
         if (! $plan) {
@@ -99,7 +101,7 @@ class StartPaidCheckoutService
         try {
             $session = $this->checkoutStripePlanRecoveryService->retryIfStripePriceNeedsRepair(
                 $plan,
-                self::PRODUCT_CODE,
+                (string) ($product->code ?? ''),
                 fn (object $checkoutPlan) => $this->paymentGatewayManager
                     ->driver('stripe')
                     ->createRenewalSession([
@@ -108,8 +110,9 @@ class StartPaidCheckoutService
                         'plan_id' => $checkoutPlan->id,
                         'stripe_price_id' => $checkoutPlan->stripe_price_id,
                         'customer_email' => $user->email,
-                        'success_url' => route('automotive.portal.checkout.success'),
-                        'cancel_url' => route('automotive.portal.checkout.cancel'),
+                        'success_url' => route('automotive.portal.checkout.success', ['product' => $product?->slug]),
+                        'cancel_url' => route('automotive.portal.checkout.cancel', ['product' => $product?->slug]),
+                        'product_scope' => (string) ($product->code ?? ''),
                         'plan_for_audit' => $this->planAuditPayload($checkoutPlan),
                     ])
             );
@@ -246,6 +249,29 @@ class StartPaidCheckoutService
     protected function centralConnectionName(): string
     {
         return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+    }
+
+    protected function resolveCheckoutProduct(int $planId, ?int $productId = null): ?Product
+    {
+        if ($productId && $productId > 0) {
+            return Product::query()
+                ->where('id', $productId)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        $plan = \App\Models\Plan::query()
+            ->where('id', $planId)
+            ->first();
+
+        if (! $plan || empty($plan->product_id)) {
+            return null;
+        }
+
+        return Product::query()
+            ->where('id', $plan->product_id)
+            ->where('is_active', true)
+            ->first();
     }
 
     protected function hasLiveStripeSubscription(?object $subscription): bool

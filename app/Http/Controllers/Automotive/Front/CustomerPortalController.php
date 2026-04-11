@@ -61,6 +61,7 @@ class CustomerPortalController extends Controller
         $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
         $selectedProductCapabilities = collect($selectedProduct['capabilities'] ?? []);
         $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);
+        $selectedProductHasTrialPlan = $this->selectedProductHasTrialPlan((int) ($selectedProduct['id'] ?? 0));
         $selectedProductEnablementRequest = $this->productEnablementRequestForUser(
             $user->id,
             (string) ($selectedProduct['tenant_id'] ?? ''),
@@ -88,12 +89,15 @@ class CustomerPortalController extends Controller
         $hasPendingPaidCheckout = $subscription
             && filled($subscription->gateway_checkout_session_id)
             && ! filled($subscription->gateway_subscription_id);
+        $hasAnyWorkspace = $tenantIds->isNotEmpty();
         $canStartPaidCheckout = ! $hasLiveStripeSubscription
             && (
                 (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE
                 || $isTrialWorkspace
             );
-        $selectedProductSupportsCheckout = $selectedProductCode === self::PRODUCT_CODE
+        $selectedProductSupportsCheckout = ! $hasAnyWorkspace
+            ? ((bool) ($selectedProduct['is_active'] ?? false) && ((bool) ($selectedProduct['has_paid_plans'] ?? false) || $selectedProductHasTrialPlan))
+            : $selectedProductCode === self::PRODUCT_CODE
             || (
                 (int) ($selectedProduct['id'] ?? 0) > 0
                 && (string) $selectedProductCode !== self::PRODUCT_CODE
@@ -129,6 +133,7 @@ class CustomerPortalController extends Controller
             'allowSystemAccess' => $allowSystemAccess,
             'freeTrialEnabled' => $this->settingsService->freeTrialEnabled(),
             'paidPlans' => $paidPlans,
+            'selectedProductHasTrialPlan' => $selectedProductHasTrialPlan,
             'canStartPaidCheckout' => $canStartPaidCheckout,
             'hasLiveStripeSubscription' => $hasLiveStripeSubscription,
             'hasPendingPaidCheckout' => $hasPendingPaidCheckout,
@@ -158,6 +163,10 @@ class CustomerPortalController extends Controller
                     'portal' => 'Free trial is currently unavailable.',
                 ]);
         }
+
+        $validated = request()->validate([
+            'product_id' => ['nullable', 'integer'],
+        ]);
 
         $profile = CustomerOnboardingProfile::query()
             ->where('user_id', $user->id)
@@ -204,6 +213,7 @@ class CustomerPortalController extends Controller
             'subdomain' => strtolower(trim((string) $profile->subdomain)),
             'coupon_code' => $this->displayableCouponCode($profile, $user) ?? '',
             'base_host' => $profile->base_host ?: request()->getHost(),
+            'product_id' => ! empty($validated['product_id']) ? (int) $validated['product_id'] : null,
         ];
 
         $result = $service->start($data);
@@ -260,7 +270,7 @@ class CustomerPortalController extends Controller
         $productId = (int) ($validated['product_id'] ?? 0);
         $result = $productId > 0 && $this->isAdditionalProductCheckout($productId)
             ? $startAdditionalProductCheckoutService->start($user, $profile, (int) $validated['plan_id'], $productId)
-            : $service->start($user, $profile, (int) $validated['plan_id']);
+            : $service->start($user, $profile, (int) $validated['plan_id'], $productId > 0 ? $productId : null);
 
         if (! ($result['ok'] ?? false)) {
             return redirect()
@@ -579,9 +589,34 @@ class CustomerPortalController extends Controller
 
     protected function isAdditionalProductCheckout(int $productId): bool
     {
+        $user = Auth::guard('web')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        $tenantIds = $this->tenantIdsForUser($user);
+
+        if ($tenantIds->isEmpty()) {
+            return false;
+        }
+
         $product = Product::query()->find($productId);
 
         return $product && (string) $product->code !== self::PRODUCT_CODE;
+    }
+
+    protected function selectedProductHasTrialPlan(int $productId): bool
+    {
+        if ($productId <= 0) {
+            return false;
+        }
+
+        return Plan::query()
+            ->where('product_id', $productId)
+            ->where('billing_period', 'trial')
+            ->where('is_active', true)
+            ->exists();
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription, bool $hasPaidPlans = false): string

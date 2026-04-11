@@ -263,11 +263,12 @@
 
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex flex-wrap gap-2">
-                                    @if(empty($subscription) && $freeTrialEnabled)
+                                    @if(empty($subscription) && $freeTrialEnabled && $selectedProductHasTrialPlan)
                                         <form method="POST" action="{{ route('automotive.portal.start-trial') }}" class="d-inline">
                                             @csrf
+                                            <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
                                             <button type="submit" class="btn btn-primary">
-                                                Start Free Trial
+                                                Start {{ $selectedProduct['name'] }} Free Trial
                                             </button>
                                         </form>
                                     @endif
@@ -417,7 +418,12 @@
                                 @endphp
                                 <div class="alert alert-info">
                                     {{ $selectedProductName }} is visible in the shared workspace catalog.
-                                    Submit or review enablement first. Billing checkout becomes available here after approval.
+                                    @if(empty($subscription))
+                                        This product is visible in the shared workspace catalog, but it does not have a direct trial or paid checkout configured yet.
+                                    @else
+                                        {{ $selectedProductName }} is visible in the shared workspace catalog.
+                                        Submit or review enablement first. Billing checkout becomes available here after approval.
+                                    @endif
                                 </div>
 
                                 @if($selectedProductEnablementStatus === 'rejected')

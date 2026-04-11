@@ -1403,6 +1403,34 @@ Operator note:
 - the workshop page is still a compact operator screen, not a polished final ERP workspace yet
 - but it is now significantly more readable and aligned with the real workflow than the earlier mixed form layout
 
+### 18.28 Product-Agnostic First Subscription Flow
+The customer portal no longer assumes that `automotive_service` must always be the first subscribed product.
+
+What changed:
+- the portal now passes the selected `product_id` into:
+  - `start trial`
+  - `start paid checkout`
+- `StartTrialService` now resolves the active trial plan for the selected product instead of using a global `slug = trial` lookup
+- `StartPaidCheckoutService` now resolves the selected product from:
+  - explicit `product_id`, or
+  - the chosen plan's `product_id`
+- first paid checkout can now start for a non-automotive product when no workspace exists yet
+- first free-trial provisioning can now also start for a non-automotive product when that product has an active trial plan
+- the portal trial button is now product-aware:
+  - it includes the selected product
+  - it only appears when the selected product actually has an active trial plan
+
+Behavioral impact:
+- a user can now begin from `Accounting`, `Spare Parts`, or any future product that has:
+  - an active product record
+  - an active trial plan or paid plan
+- the same reserved subdomain/tenant bootstrap path is reused
+- once the first product is provisioned, later products can still attach to the same tenant workspace
+
+Current limitation:
+- the public onboarding/auth shell is still branded and routed under the automotive portal namespace
+- this package removed the biggest billing/onboarding blocker, but it did not yet rename the workspace shell into a fully product-neutral portal
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1444,6 +1472,10 @@ If a new session starts from this file only, the safest current summary is:
   - portal checkout start for approved products
   - webhook sync for product subscriptions
   - product-scoped portal billing state messaging
+- First-product onboarding is now materially closer to product-neutral behavior:
+  - first paid checkout can start from a non-automotive product
+  - first free trial can start from a non-automotive product when a trial plan exists
+  - portal trial UI now respects the selected product instead of assuming automotive
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates

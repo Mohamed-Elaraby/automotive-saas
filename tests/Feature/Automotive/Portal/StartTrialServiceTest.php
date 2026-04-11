@@ -77,6 +77,7 @@ class StartTrialServiceTest extends TestCase
             'subdomain' => 'trial-company',
             'coupon_code' => '',
             'base_host' => 'example.test',
+            'product_id' => $automotiveProductId,
         ]);
 
         $this->assertFalse($result['ok']);
@@ -145,6 +146,7 @@ class StartTrialServiceTest extends TestCase
             'subdomain' => 'trial-success',
             'coupon_code' => '',
             'base_host' => 'example.test',
+            'product_id' => $automotiveProductId,
         ]);
 
         $this->assertTrue($result['ok']);
@@ -180,5 +182,76 @@ class StartTrialServiceTest extends TestCase
 
         $this->assertNotNull($productSubscription);
         $this->assertNotNull($productSubscription->legacy_subscription_id);
+    }
+
+    public function test_it_can_create_a_trial_for_a_non_automotive_first_product(): void
+    {
+        Event::fake([TenantCreated::class]);
+        Config::set('tenancy.bootstrappers', []);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_trial_' . uniqid(),
+            'name' => 'Accounting Suite',
+            'slug' => 'accounting-suite-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $trialPlan = Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Accounting Trial',
+            'slug' => 'accounting-trial-' . uniqid(),
+            'description' => 'Accounting trial plan',
+            'price' => 0,
+            'currency' => 'USD',
+            'billing_period' => 'trial',
+            'is_active' => true,
+            'stripe_product_id' => null,
+            'stripe_price_id' => null,
+        ]);
+
+        $couponService = Mockery::mock(TrialSignupCouponService::class);
+        $couponService->shouldReceive('validateForTrialSignup')
+            ->once()
+            ->withArgs(function (string $couponCode, string $tenantId, ?int $planId) use ($trialPlan): bool {
+                return $couponCode === '' && $planId === $trialPlan->id && $tenantId === 'accounting-first';
+            })
+            ->andReturn([
+                'ok' => true,
+                'coupon' => null,
+                'eligibility' => null,
+            ]);
+        $couponService->shouldNotReceive('attachCouponToSubscription');
+
+        $this->app->instance(TrialSignupCouponService::class, $couponService);
+
+        Artisan::shouldReceive('call')
+            ->once()
+            ->andReturn(0);
+
+        $service = app(StartTrialService::class);
+
+        $result = $service->start([
+            'name' => 'Accounting User',
+            'email' => 'accounting-trial@example.test',
+            'password' => 'secret-pass',
+            'company_name' => 'Accounting Company',
+            'subdomain' => 'accounting-first',
+            'coupon_code' => '',
+            'base_host' => 'example.test',
+            'product_id' => $product->id,
+        ]);
+
+        $this->assertTrue($result['ok']);
+        $this->assertDatabaseHas('subscriptions', [
+            'tenant_id' => 'accounting-first',
+            'plan_id' => $trialPlan->id,
+            'status' => 'trialing',
+        ]);
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => 'accounting-first',
+            'product_id' => $product->id,
+            'plan_id' => $trialPlan->id,
+            'status' => 'trialing',
+        ]);
     }
 }

@@ -271,7 +271,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee(strtoupper($email), false);
     }
 
-    public function test_portal_can_focus_a_non_automotive_product_enablement_panel(): void
+    public function test_portal_can_focus_a_non_automotive_product_as_a_first_subscription(): void
     {
         $user = User::query()->create([
             'name' => 'Portal Product Focus User',
@@ -298,7 +298,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'product_id' => $accountingProduct->id,
             'name' => 'Accounting Pro',
             'slug' => 'accounting-pro-' . uniqid(),
-            'description' => 'Accounting enablement plan',
+            'description' => 'Accounting direct plan',
             'price' => 299,
             'currency' => 'USD',
             'billing_period' => 'monthly',
@@ -316,16 +316,26 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'sort_order' => 1,
         ]);
 
+        Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Trial',
+            'slug' => 'accounting-trial-' . uniqid(),
+            'description' => 'Accounting trial plan',
+            'price' => 0,
+            'currency' => 'USD',
+            'billing_period' => 'trial',
+            'is_active' => true,
+        ]);
+
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $accountingProduct->slug]));
 
         $response->assertOk();
         $response->assertSee('Accounting Suite Plans &amp; Enablement', false);
         $response->assertSee('Included Product Capabilities', false);
         $response->assertSee('General Ledger', false);
-        $response->assertSee('Submit or review enablement first. Billing checkout becomes available here after approval.', false);
         $response->assertSee((string) $accountingPlan->name, false);
-        $response->assertSee('Approval Required Before Checkout', false);
-        $response->assertDontSee('Select &amp; Continue', false);
+        $response->assertSee('Select &amp; Continue', false);
+        $response->assertSee('Start Accounting Suite Free Trial', false);
     }
 
     public function test_non_automotive_product_card_links_to_product_specific_enablement_panel(): void
@@ -1114,7 +1124,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         ]);
     }
 
-    public function test_paid_checkout_rejects_plan_from_a_different_product(): void
+    public function test_paid_checkout_can_start_for_a_non_automotive_first_product(): void
     {
         $user = User::query()->create([
             'name' => 'Wrong Product Portal User',
@@ -1149,11 +1159,36 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'stripe_price_id' => 'price_' . uniqid(),
         ]);
 
-        $result = app(StartPaidCheckoutService::class)->start($user, $profile, $plan->id);
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('createRenewalSession')
+            ->once()
+            ->withArgs(function (array $payload) use ($plan, $profile, $user, $otherProduct): bool {
+                return ($payload['tenant_id'] ?? null) === $profile->subdomain
+                    && ($payload['subscription_row_id'] ?? null) === null
+                    && ($payload['plan_id'] ?? null) === $plan->id
+                    && ($payload['stripe_price_id'] ?? null) === $plan->stripe_price_id
+                    && ($payload['customer_email'] ?? null) === $user->email
+                    && ($payload['product_scope'] ?? null) === $otherProduct->code;
+            })
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://checkout.stripe.test/session/accounting-first',
+                'session_id' => 'cs_accounting_first',
+            ]);
 
-        $this->assertFalse($result['ok']);
-        $this->assertSame(422, $result['status']);
-        $this->assertSame('The selected paid plan was not found or is not active.', $result['message']);
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')
+            ->once()
+            ->with('stripe')
+            ->andReturn($gateway);
+
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $result = app(StartPaidCheckoutService::class)->start($user, $profile, $plan->id, $otherProduct->id);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame('https://checkout.stripe.test/session/accounting-first', $result['checkout_url']);
+        $this->assertSame($profile->subdomain, $result['tenant_id']);
     }
 
     public function test_paid_checkout_updates_tenant_product_subscription_when_legacy_subscription_is_created(): void

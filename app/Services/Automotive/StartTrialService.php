@@ -3,6 +3,7 @@
 namespace App\Services\Automotive;
 
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\TenantProductSubscriptionSyncService;
@@ -59,10 +60,17 @@ public function start(array $data): array
         ]
     );
 
-    $trialPlan = Plan::query()
-        ->where('slug', 'trial')
-        ->where('is_active', true)
-        ->first();
+    $trialProduct = $this->resolveTrialProduct(isset($data['product_id']) ? (int) $data['product_id'] : null);
+    $trialPlan = $this->resolveTrialPlan($trialProduct?->id);
+
+    if (! $trialProduct || ! $trialPlan) {
+        return [
+            'ok' => false,
+            'status' => 422,
+            'message' => 'No active free trial plan is configured for the selected product.',
+            'errors' => ['product_id' => ['No active free trial plan is configured for the selected product.']],
+        ];
+    }
 
     $couponValidation = $this->trialSignupCouponService->validateForTrialSignup(
         couponCode: $couponCode,
@@ -209,5 +217,35 @@ public function start(array $data): array
             'domain' => $fullDomain,
             'login_url' => "https://{$fullDomain}/automotive/admin/login",
         ];
+    }
+
+    protected function resolveTrialProduct(?int $productId = null): ?Product
+    {
+        if ($productId && $productId > 0) {
+            return Product::query()
+                ->where('id', $productId)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        return Product::query()
+            ->where('code', 'automotive_service')
+            ->where('is_active', true)
+            ->first();
+    }
+
+    protected function resolveTrialPlan(?int $productId = null): ?Plan
+    {
+        if (! $productId) {
+            return null;
+        }
+
+        return Plan::query()
+            ->where('product_id', $productId)
+            ->where('billing_period', 'trial')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
     }
 }
