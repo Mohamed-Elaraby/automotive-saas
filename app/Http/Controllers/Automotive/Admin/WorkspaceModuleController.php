@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Automotive\WorkshopPartsIntegrationService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class WorkspaceModuleController extends Controller
@@ -14,7 +17,8 @@ class WorkspaceModuleController extends Controller
     public function __construct(
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
-        protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService
+        protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
+        protected WorkshopPartsIntegrationService $workshopPartsIntegrationService
     ) {
     }
 
@@ -30,8 +34,51 @@ class WorkspaceModuleController extends Controller
                 ['label' => 'Manage Users', 'route' => 'automotive.admin.users.index', 'icon' => 'isax-profile-2user'],
                 ['label' => 'Manage Branches', 'route' => 'automotive.admin.branches.index', 'icon' => 'isax-buildings'],
                 ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
-            ]
+            ],
+            function () {
+                $tenantId = (string) tenant()->id;
+
+                return [
+                    'has_connected_parts_workspace' => $this->workshopPartsIntegrationService->hasConnectedPartsWorkspace($tenantId),
+                    'available_stock_items' => $this->workshopPartsIntegrationService->getAvailableStockSnapshot(),
+                    'recent_workshop_consumptions' => $this->workshopPartsIntegrationService->getRecentWorkshopConsumptions(),
+                ];
+            }
         );
+    }
+
+    public function consumeWorkshopPart(Request $request): RedirectResponse
+    {
+        $tenantId = (string) tenant()->id;
+
+        if (! $this->workshopPartsIntegrationService->hasConnectedPartsWorkspace($tenantId)) {
+            return redirect()
+                ->route('automotive.admin.modules.workshop-operations', ['workspace_product' => $request->input('workspace_product', 'automotive_service')])
+                ->with('error', 'Spare Parts must be connected before workshop stock can be consumed.');
+        }
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'quantity' => ['required', 'numeric', 'gt:0'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->workshopPartsIntegrationService->consumePart($validated + [
+                'created_by' => auth('automotive_admin')->id(),
+            ]);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.workshop-operations', ['workspace_product' => $validated['workspace_product'] ?: 'automotive_service'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.workshop-operations', ['workspace_product' => $validated['workspace_product'] ?: 'automotive_service'])
+            ->with('success', 'Workshop stock consumption saved successfully.');
     }
 
     public function supplierCatalog(Request $request): View
@@ -71,7 +118,8 @@ class WorkspaceModuleController extends Controller
         string $page,
         string $title,
         string $description,
-        array $links
+        array $links,
+        ?callable $dataResolver = null
     ): View {
         $tenant = tenant();
         $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) $tenant->id);
@@ -82,6 +130,7 @@ class WorkspaceModuleController extends Controller
 
         $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
         $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
+        $moduleData = $dataResolver ? $dataResolver() : [];
 
         return view('automotive.admin.modules.show', compact(
             'page',
@@ -91,7 +140,8 @@ class WorkspaceModuleController extends Controller
             'workspaceProducts',
             'focusedWorkspaceProduct',
             'workspaceQuery',
-            'workspaceIntegrations'
+            'workspaceIntegrations',
+            'moduleData'
         ));
     }
 }

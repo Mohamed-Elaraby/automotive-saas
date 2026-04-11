@@ -1205,6 +1205,24 @@ Important operator note:
   - accounting journal posting
   - inventory valuation handoff
 
+### 18.19 First Real Cross-Product Business Flow: Workshop Consumes Spare Parts
+The first real business integration between products now exists inside the tenant workspace.
+
+What changed:
+- `Workshop Operations` now shows live spare-parts stock when the tenant also has a connected spare-parts product
+- the workshop module now allows consuming a stock item directly from the connected spare-parts inventory
+- successful consumption:
+  - decrements tenant inventory
+  - records a stock movement
+  - tags the movement with `reference_type = workshop_operation`
+  - surfaces the result in a `Recent Workshop Consumptions` panel
+
+Implementation note:
+- to avoid a new enum migration immediately, the stock movement is currently stored as:
+  - `type = adjustment_out`
+  - `reference_type = workshop_operation`
+- this is sufficient as a first production-ready cross-product integration step and can later be normalized into a dedicated movement type if needed
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

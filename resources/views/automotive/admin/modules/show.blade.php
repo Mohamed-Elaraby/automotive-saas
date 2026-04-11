@@ -96,6 +96,118 @@
                 </div>
             @endif
 
+            @if(($page ?? '') === 'workshop-operations')
+                <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Consume Spare Part In Workshop</h5>
+                            </div>
+                            <div class="card-body">
+                                @if(empty($moduleData['has_connected_parts_workspace']))
+                                    <p class="text-muted mb-0">Connect a Spare Parts product to this tenant workspace before workshop operations can consume stock.</p>
+                                @elseif(($moduleData['available_stock_items'] ?? collect())->isEmpty())
+                                    <p class="text-muted mb-0">No available stock items were found yet in the connected Spare Parts workspace.</p>
+                                @else
+                                    <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.consume-part', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'automotive_service') }}">
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Stock Item</label>
+                                            <select name="product_id" class="form-select">
+                                                @foreach(($moduleData['available_stock_items'] ?? collect()) as $stockItem)
+                                                    <option value="{{ $stockItem->product_id }}" {{ (string) old('product_id') === (string) $stockItem->product_id ? 'selected' : '' }}>
+                                                        {{ $stockItem->product_name }} ({{ $stockItem->product_sku }}) - {{ rtrim(rtrim((string) $stockItem->quantity, '0'), '.') }} {{ $stockItem->product_unit }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Branch</label>
+                                            <select name="branch_id" class="form-select">
+                                                @foreach(($moduleData['available_stock_items'] ?? collect())->unique('branch_id') as $stockItem)
+                                                    <option value="{{ $stockItem->branch_id }}" {{ (string) old('branch_id') === (string) $stockItem->branch_id ? 'selected' : '' }}>
+                                                        {{ $stockItem->branch_name }} ({{ $stockItem->branch_code }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Quantity</label>
+                                            <input type="number" step="0.001" min="0.001" name="quantity" class="form-control" value="{{ old('quantity', 1) }}">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Notes</label>
+                                            <textarea name="notes" class="form-control" rows="3">{{ old('notes', 'Consumed by workshop operations') }}</textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary">Consume Stock</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Available Spare Parts Stock</h5>
+                            </div>
+                            <div class="card-body">
+                                @forelse(($moduleData['available_stock_items'] ?? collect()) as $stockItem)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ $stockItem->product_name }}</h6>
+                                                <div class="text-muted small">{{ $stockItem->product_sku }} · {{ $stockItem->branch_name }} ({{ $stockItem->branch_code }})</div>
+                                            </div>
+                                            <span class="badge bg-success">
+                                                {{ rtrim(rtrim((string) $stockItem->quantity, '0'), '.') }} {{ $stockItem->product_unit }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No stock snapshot is available yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Recent Workshop Consumptions</h5>
+                            </div>
+                            <div class="card-body">
+                                @forelse(($moduleData['recent_workshop_consumptions'] ?? collect()) as $movement)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ $movement->product_name }}</h6>
+                                                <div class="text-muted small">{{ $movement->product_sku }} · {{ $movement->branch_name }}</div>
+                                                <div class="text-muted small">{{ $movement->creator_name ?: 'System user' }} · {{ optional($movement->movement_date)->format('Y-m-d H:i') }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-warning text-dark">{{ rtrim(rtrim((string) $movement->quantity, '0'), '.') }}</span>
+                                                <div class="text-muted small mt-1">{{ $movement->notes ?: 'Workshop consumption' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No workshop stock consumption has been recorded yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @include('automotive.admin.components.page-footer')
         </div>
     </div>

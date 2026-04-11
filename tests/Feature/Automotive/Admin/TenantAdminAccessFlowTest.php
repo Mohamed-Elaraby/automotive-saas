@@ -265,6 +265,93 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertRedirect("http://{$domain}/automotive/admin/dashboard?workspace_product=parts_inventory");
     }
 
+    public function test_workshop_operations_show_connected_spare_parts_stock_snapshot(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        $this->seedTenantStock($tenant, [
+            [
+                'branch' => ['name' => 'Main Branch', 'code' => 'MAIN'],
+                'product' => ['name' => 'Oil Filter', 'sku' => 'OF-100'],
+                'quantity' => 6,
+            ],
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $response = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+
+        $response->assertOk();
+        $response->assertSee('Consume Spare Part In Workshop', false);
+        $response->assertSee('Available Spare Parts Stock', false);
+        $response->assertSee('Oil Filter', false);
+        $response->assertSee('OF-100', false);
+    }
+
+    public function test_workshop_operations_can_consume_spare_parts_stock(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        [$branchId, $productId] = $this->seedTenantStock($tenant, [
+            [
+                'branch' => ['name' => 'Main Branch', 'code' => 'MAIN'],
+                'product' => ['name' => 'Brake Pad', 'sku' => 'BP-200'],
+                'quantity' => 5,
+            ],
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $response = $this->post("http://{$domain}/automotive/admin/workshop-operations/consume-part?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'branch_id' => $branchId,
+            'product_id' => $productId,
+            'quantity' => 2,
+            'notes' => 'Used in brake service',
+        ]);
+
+        $response->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $remaining = DB::connection('tenant')->table('inventories')
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->value('quantity');
+
+            $this->assertSame('3', rtrim(rtrim((string) $remaining, '0'), '.'));
+
+            $movement = DB::connection('tenant')->table('stock_movements')
+                ->where('branch_id', $branchId)
+                ->where('product_id', $productId)
+                ->where('reference_type', 'workshop_operation')
+                ->latest('id')
+                ->first();
+
+            $this->assertNotNull($movement);
+            $this->assertSame('adjustment_out', $movement->type);
+            $this->assertSame('Used in brake service', $movement->notes);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $followupResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+        $followupResponse->assertOk();
+        $followupResponse->assertSee('Recent Workshop Consumptions', false);
+        $followupResponse->assertSee('Brake Pad', false);
+        $followupResponse->assertSee('Used in brake service', false);
+    }
+
     /**
      * @return array{0: Tenant, 1: string, 2: string, 3: string}
      */
@@ -350,5 +437,93 @@ class TenantAdminAccessFlowTest extends TestCase
         }
 
         return [$tenant, $domain, $email, $password];
+    }
+
+    protected function attachPartsWorkspaceToTenant(Tenant $tenant): void
+    {
+        $partsProduct = Product::query()->firstOrCreate(
+            ['code' => 'parts_inventory'],
+            [
+                'name' => 'Spare Parts Inventory',
+                'slug' => 'spare-parts-inventory',
+                'is_active' => true,
+                'sort_order' => 2,
+            ]
+        );
+
+        $partsPlan = Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Parts Pro',
+            'slug' => 'parts-pro-' . uniqid(),
+            'price' => 149,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'gateway' => null,
+        ]);
+    }
+
+    /**
+     * @param  array<int, array{branch: array{name:string, code:string}, product: array{name:string, sku:string}, quantity:int|float}>  $items
+     * @return array{0:int, 1:int}
+     */
+    protected function seedTenantStock(Tenant $tenant, array $items): array
+    {
+        tenancy()->initialize($tenant);
+
+        try {
+            $lastBranchId = 0;
+            $lastProductId = 0;
+
+            foreach ($items as $item) {
+                $branchId = DB::connection('tenant')->table('branches')->insertGetId([
+                    'name' => $item['branch']['name'],
+                    'code' => $item['branch']['code'],
+                    'phone' => null,
+                    'email' => null,
+                    'address' => null,
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $productId = DB::connection('tenant')->table('products')->insertGetId([
+                    'name' => $item['product']['name'],
+                    'sku' => $item['product']['sku'],
+                    'barcode' => null,
+                    'unit' => 'pcs',
+                    'cost_price' => 10,
+                    'sale_price' => 20,
+                    'min_stock_alert' => 1,
+                    'description' => null,
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                DB::connection('tenant')->table('inventories')->insert([
+                    'branch_id' => $branchId,
+                    'product_id' => $productId,
+                    'quantity' => $item['quantity'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $lastBranchId = $branchId;
+                $lastProductId = $productId;
+            }
+
+            return [$lastBranchId, $lastProductId];
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
     }
 }
