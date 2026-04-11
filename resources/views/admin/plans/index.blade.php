@@ -127,6 +127,9 @@
                                 <span class="badge badge-soft-info d-inline-flex align-items-center">
                                     {{ $plan->billing_period_label }}
                                 </span>
+                                @if($plan->billing_period === 'trial')
+                                    <small class="d-block text-muted mt-1">{{ (int) ($plan->trial_days ?? 14) }} days</small>
+                                @endif
                             </td>
                             <td>
                                 <p class="text-dark mb-0">{{ $plan->display_price }}</p>

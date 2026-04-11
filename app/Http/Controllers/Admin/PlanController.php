@@ -84,6 +84,7 @@ class PlanController extends Controller
             'plan' => new Plan([
                 'currency' => 'USD',
                 'billing_period' => 'monthly',
+                'trial_days' => 14,
                 'is_active' => true,
                 'sort_order' => 0,
             ]),
@@ -246,6 +247,7 @@ class PlanController extends Controller
                 'price' => ['required', 'numeric', 'min:0'],
                 'currency' => ['required', 'string', 'size:3'],
                 'billing_period' => ['required', 'string', Rule::in(['trial', 'monthly', 'yearly', 'one_time'])],
+                'trial_days' => ['nullable', 'integer', 'min:1', 'max:365'],
                 'stripe_price_id' => ['nullable', 'string', 'max:255'],
                 'is_active' => ['nullable', 'boolean'],
                 'sort_order' => ['required', 'integer', 'min:0'],
@@ -271,6 +273,9 @@ class PlanController extends Controller
         if ($data['billing_period'] === 'trial') {
             $data['price'] = 0;
             $data['stripe_price_id'] = null;
+            $data['trial_days'] = (int) ($data['trial_days'] ?? 14);
+        } else {
+            $data['trial_days'] = null;
         }
 
         return $data;

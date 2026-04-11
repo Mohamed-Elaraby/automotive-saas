@@ -80,10 +80,16 @@ class PlanSeederTest extends TestCase
         $this->assertDatabaseHas('plans', [
             'slug' => 'parts-inventory-starter-monthly',
             'billing_period' => 'monthly',
+            'price' => 129,
         ]);
         $this->assertDatabaseHas('plans', [
             'slug' => 'accounting-pro-yearly',
             'billing_period' => 'yearly',
+            'price' => 2899,
+        ]);
+        $this->assertDatabaseHas('plans', [
+            'slug' => 'automotive-service-starter-monthly',
+            'price' => 149,
         ]);
 
         $this->assertSame(12, Plan::query()->count());

@@ -13,6 +13,7 @@ class Plan extends Model
         'price',
         'currency',
         'billing_period',
+        'trial_days',
         'stripe_product_id',
         'stripe_price_id',
         'is_active',
@@ -27,6 +28,7 @@ class Plan extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'price' => 'decimal:2',
+        'trial_days' => 'integer',
     ];
 
     public function __construct(array $attributes = [])

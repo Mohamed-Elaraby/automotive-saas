@@ -42,6 +42,7 @@ class StartTrialServiceTest extends TestCase
             'price' => 0,
             'currency' => 'USD',
             'billing_period' => 'trial',
+            'trial_days' => 14,
             'is_active' => true,
             'stripe_product_id' => null,
             'stripe_price_id' => null,
@@ -111,6 +112,7 @@ class StartTrialServiceTest extends TestCase
             'price' => 0,
             'currency' => 'USD',
             'billing_period' => 'trial',
+            'trial_days' => 14,
             'is_active' => true,
             'stripe_product_id' => null,
             'stripe_price_id' => null,
@@ -204,6 +206,7 @@ class StartTrialServiceTest extends TestCase
             'price' => 0,
             'currency' => 'USD',
             'billing_period' => 'trial',
+            'trial_days' => 21,
             'is_active' => true,
             'stripe_product_id' => null,
             'stripe_price_id' => null,
@@ -253,5 +256,15 @@ class StartTrialServiceTest extends TestCase
             'plan_id' => $trialPlan->id,
             'status' => 'trialing',
         ]);
+
+        $subscription = DB::table('subscriptions')
+            ->where('tenant_id', 'accounting-first')
+            ->first();
+
+        $this->assertNotNull($subscription);
+        $this->assertSame(
+            now()->addDays(21)->format('Y-m-d'),
+            \Carbon\Carbon::parse($subscription->trial_ends_at)->format('Y-m-d')
+        );
     }
 }

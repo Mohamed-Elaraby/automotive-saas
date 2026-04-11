@@ -8,6 +8,7 @@
     $previewPrice = old('price', $plan->price);
     $previewCurrency = old('currency', $plan->currency ?: 'USD');
     $previewBillingPeriod = old('billing_period', $plan->billing_period ?: 'monthly');
+    $previewTrialDays = old('trial_days', $plan->trial_days ?: 14);
     $previewProductId = (int) old('product_id', $plan->product_id);
 @endphp
 
@@ -64,6 +65,12 @@
             <div class="col-md-3 mb-3">
                 <label class="form-label fw-semibold">Sort Order <span class="text-danger">*</span></label>
                 <input type="number" min="0" class="form-control" name="sort_order" value="{{ old('sort_order', $plan->sort_order ?? 0) }}" required>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label class="form-label fw-semibold">Trial Days</label>
+                <input type="number" min="1" max="365" class="form-control" name="trial_days" value="{{ $previewTrialDays }}" data-plan-preview="trial_days">
+                <small class="text-muted d-block mt-1">Used only when billing period is `trial`.</small>
             </div>
 
             <div class="col-md-6 mb-3">
@@ -239,7 +246,7 @@
                                         <li>Empty numeric limits are hidden from customers.</li>
                                         <li>Use empty fields when a cap is not part of the sales message, not when the value is zero.</li>
                                         <li>Checked features appear after the limits.</li>
-                                        <li>Trial plans force price to `0.00` when saved.</li>
+                                        <li>Trial plans force price to `0.00` when saved and use the configured trial days value.</li>
                                     </ul>
                                 </div>
                             </div>

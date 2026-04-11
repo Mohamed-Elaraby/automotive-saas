@@ -400,12 +400,12 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $accountingProduct->slug]));
 
         $response->assertOk();
-        $response->assertSee('Accounting Suite Plans &amp; Enablement', false);
+        $response->assertSee('Product Subscription Options', false);
         $response->assertSee('Included Product Capabilities', false);
         $response->assertSee('General Ledger', false);
         $response->assertSee((string) $accountingPlan->name, false);
         $response->assertSee('Select &amp; Continue', false);
-        $response->assertSee('Start Accounting Suite Trial', false);
+        $response->assertSee('Start Accounting Suite Free Trial', false);
     }
 
     public function test_non_automotive_product_card_links_to_product_specific_enablement_panel(): void

@@ -113,7 +113,7 @@ public function start(array $data): array
                     'tenant_id' => $tenant->id,
                     'plan_id' => $trialPlan?->id,
                     'status' => SubscriptionStatuses::TRIALING,
-                    'trial_ends_at' => Carbon::now()->addDays(14),
+                    'trial_ends_at' => Carbon::now()->addDays((int) ($trialPlan->trial_days ?: 14)),
                     'ends_at' => null,
                     'external_id' => null,
                     'created_at' => now(),

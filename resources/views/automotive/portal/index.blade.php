@@ -269,16 +269,6 @@
 
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex flex-wrap gap-2">
-                                    @if(empty($subscription) && $freeTrialEnabled && $selectedProductHasTrialPlan)
-                                        <form method="POST" action="{{ route('automotive.portal.start-trial') }}" class="d-inline">
-                                            @csrf
-                                            <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
-                                            <button type="submit" class="btn btn-primary">
-                                                Start {{ $selectedProduct['name'] }} Trial
-                                            </button>
-                                        </form>
-                                    @endif
-
                                     <a href="#paid-plans" class="btn btn-outline-white">
                                         View Paid Plans
                                     </a>
@@ -395,12 +385,16 @@
                             <div class="mb-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                     <div>
-                                        <h6 class="mb-1">{{ $selectedProductName }} Plans &amp; Enablement</h6>
+                                        <h6 class="mb-1">Product Subscription Options</h6>
                                         <p class="text-muted mb-0">
                                             @if($selectedProductSupportsCheckout)
-                                                Choose the perfect paid plan for your workspace, compare the real limits, then continue to Stripe checkout.
+                                                @if(empty($subscription) && empty($selectedProductWasExplicit))
+                                                    Choose a product from the catalog first, then review its trial and paid options here.
+                                                @else
+                                                    Review trial and paid options for <strong>{{ $selectedProductName }}</strong>, compare the real limits, then continue with the right subscription flow.
+                                                @endif
                                             @else
-                                                Review the product catalog direction and available plan structure for this module. Direct checkout for additional products is the next rollout step.
+                                                Review activation and enablement status for <strong>{{ $selectedProductName }}</strong>. Additional products that are not directly billable yet will ask for enablement first.
                                             @endif
                                         </p>
                                     </div>
@@ -420,6 +414,26 @@
                                         @foreach($selectedProductCapabilities as $capabilityName)
                                             <span class="badge bg-white text-dark border">{{ $capabilityName }}</span>
                                         @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if(empty($subscription) && $freeTrialEnabled && $selectedProductHasTrialPlan && !empty($selectedProductWasExplicit))
+                                <div class="alert alert-primary border mb-4">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                        <div>
+                                            <div class="fw-semibold mb-1">{{ $selectedProductName }} Free Trial</div>
+                                            <div class="text-muted">
+                                                Start a dedicated trial for this product. Current admin setting will provision <strong>{{ (int) ($selectedProductTrialDays ?? 14) }}</strong> day(s).
+                                            </div>
+                                        </div>
+                                        <form method="POST" action="{{ route('automotive.portal.start-trial') }}" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
+                                            <button type="submit" class="btn btn-primary">
+                                                Start {{ $selectedProductName }} Free Trial
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             @endif

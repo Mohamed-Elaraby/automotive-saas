@@ -1787,6 +1787,37 @@ Why this matters:
 - local/demo/test environments now match the intended multi-product SaaS behavior better
 - portal and billing flows can be tested across current systems without manually activating products or creating plans first
 
+## 18.41) Product-Specific Trial Control and Less Automotive-Biased Portal Entry
+Status: completed
+
+What changed:
+- added `trial_days` to `plans`
+- trial duration is now controlled from the admin plan form on each trial plan instead of being hardcoded to `14` days only
+- `StartTrialService` now provisions `trial_ends_at` from the selected trial plan's `trial_days`
+- `PlanSeeder` now differentiates seeded product pricing/limits instead of cloning the same numbers across all products:
+  - automotive service
+  - parts inventory
+  - accounting
+- each current product now gets:
+  - its own trial plan
+  - its own trial duration
+  - product-differentiated paid pricing and limits
+- customer portal copy was adjusted so the first view is less automotive-biased:
+  - the section title is now generic product subscription wording
+  - the standalone profile-level trial CTA was removed
+  - product trial CTA is now shown inside the selected product section
+  - trial CTA only appears once the user explicitly focuses a product in the catalog
+
+Test coverage:
+- extended admin plan form coverage to assert `Trial Days` is present
+- extended `StartTrialServiceTest` to prove non-automotive trials can use custom `trial_days`
+- updated portal UI expectations for the more neutral product subscription wording
+
+Why this matters:
+- trial behavior is now product-aware and administratively controllable
+- the public portal no longer feels as if automotive is the only real first-class product on first open
+- seeded plans now look more credible during demos and testing because pricing/limits differ by system
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

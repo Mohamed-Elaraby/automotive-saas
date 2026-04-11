@@ -58,10 +58,12 @@ class CustomerPortalController extends Controller
             (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''))
         );
         $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog);
+        $selectedProductWasExplicit = trim((string) $request->query('product')) !== '';
         $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
         $selectedProductCapabilities = collect($selectedProduct['capabilities'] ?? []);
         $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);
-        $selectedProductHasTrialPlan = $this->selectedProductHasTrialPlan((int) ($selectedProduct['id'] ?? 0));
+        $selectedProductTrialPlan = $this->selectedProductTrialPlan((int) ($selectedProduct['id'] ?? 0));
+        $selectedProductHasTrialPlan = $selectedProductTrialPlan !== null;
         $selectedProductEnablementRequest = $this->productEnablementRequestForUser(
             $user->id,
             (string) ($selectedProduct['tenant_id'] ?? ''),
@@ -137,12 +139,14 @@ class CustomerPortalController extends Controller
             'freeTrialEnabled' => $this->settingsService->freeTrialEnabled(),
             'paidPlans' => $paidPlans,
             'selectedProductHasTrialPlan' => $selectedProductHasTrialPlan,
+            'selectedProductTrialDays' => (int) ($selectedProductTrialPlan->trial_days ?? 14),
             'canStartPaidCheckout' => $canStartPaidCheckout,
             'hasLiveStripeSubscription' => $hasLiveStripeSubscription,
             'hasPendingPaidCheckout' => $hasPendingPaidCheckout,
             'isTrialWorkspace' => $isTrialWorkspace,
             'productCatalog' => $productCatalog,
             'selectedProduct' => $selectedProduct,
+            'selectedProductWasExplicit' => $selectedProductWasExplicit,
             'selectedProductCapabilities' => $selectedProductCapabilities,
             'selectedProductSupportsCheckout' => $selectedProductSupportsCheckout,
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
@@ -622,6 +626,21 @@ class CustomerPortalController extends Controller
             ->where('billing_period', 'trial')
             ->where('is_active', true)
             ->exists();
+    }
+
+    protected function selectedProductTrialPlan(int $productId): ?Plan
+    {
+        if ($productId <= 0) {
+            return null;
+        }
+
+        return Plan::query()
+            ->where('product_id', $productId)
+            ->where('billing_period', 'trial')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
     }
 
     protected function productStatusLabel(Product $product, ?object $subscription, bool $hasPaidPlans = false): string

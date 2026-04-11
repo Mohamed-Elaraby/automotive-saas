@@ -110,6 +110,7 @@ class AdminPlanFeatureStorageTest extends TestCase
         $response->assertSee('Product');
         $response->assertSee('Select a product');
         $response->assertSee('Limits Semantics');
+        $response->assertSee('Trial Days');
         $response->assertSee('Only filled limits appear in the portal preview and paid plan cards.');
         $response->assertSee('Empty does not mean zero.');
         $response->assertSee('Use empty fields when a cap is not part of the sales message');
