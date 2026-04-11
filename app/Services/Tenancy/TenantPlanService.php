@@ -3,6 +3,7 @@
 namespace App\Services\Tenancy;
 
 use App\Models\Plan;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -73,25 +74,41 @@ class TenantPlanService
             return null;
         }
 
-        $automotiveSubscription = DB::connection($connection)
+        $manifest = app(WorkspaceManifestService::class);
+        $preferredFamily = $manifest->defaultFamily();
+
+        $preferredSubscription = $this->productSubscriptionBaseQuery($connection, $tenantId)
+            ->get()
+            ->first(function (object $subscription) use ($manifest, $preferredFamily): bool {
+                return $manifest->resolveFamilyFromText(strtolower(implode(' ', array_filter([
+                    (string) ($subscription->product_code ?? ''),
+                    (string) ($subscription->product_slug ?? ''),
+                    (string) ($subscription->product_name ?? ''),
+                ])))) === $preferredFamily;
+            });
+
+        if ($preferredSubscription) {
+            return $preferredSubscription;
+        }
+
+        return $this->productSubscriptionBaseQuery($connection, $tenantId)
+            ->first();
+    }
+
+    protected function productSubscriptionBaseQuery(string $connection, string $tenantId): Builder
+    {
+        return DB::connection($connection)
             ->table('tenant_product_subscriptions')
             ->join('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
             ->where('tenant_product_subscriptions.tenant_id', $tenantId)
-            ->where('products.code', 'automotive_service')
+            ->whereIn('tenant_product_subscriptions.status', ['active', 'trialing', 'past_due', 'canceled'])
+            ->orderByRaw("CASE WHEN tenant_product_subscriptions.status = 'active' THEN 0 WHEN tenant_product_subscriptions.status = 'trialing' THEN 1 WHEN tenant_product_subscriptions.status = 'past_due' THEN 2 ELSE 3 END")
             ->orderByDesc('tenant_product_subscriptions.id')
-            ->select('tenant_product_subscriptions.*')
-            ->first();
-
-        if ($automotiveSubscription) {
-            return $automotiveSubscription;
-        }
-
-        return DB::connection($connection)
-            ->table('tenant_product_subscriptions')
-            ->where('tenant_id', $tenantId)
-            ->whereIn('status', ['active', 'trialing', 'past_due', 'canceled'])
-            ->orderByRaw("CASE WHEN status = 'active' THEN 0 WHEN status = 'trialing' THEN 1 WHEN status = 'past_due' THEN 2 ELSE 3 END")
-            ->orderByDesc('id')
-            ->first();
+            ->select(
+                'tenant_product_subscriptions.*',
+                'products.code as product_code',
+                'products.slug as product_slug',
+                'products.name as product_name'
+            );
     }
 }

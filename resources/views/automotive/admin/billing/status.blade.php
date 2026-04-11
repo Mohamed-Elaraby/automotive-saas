@@ -4,6 +4,7 @@
 @section('content')
     @php
         $canChangeCurrentSubscriptionPlan = $canChangeCurrentSubscriptionPlan ?? false;
+        $isReadOnlyBillingContext = $isReadOnlyBillingContext ?? false;
         $billingFormAction = $canChangeCurrentSubscriptionPlan
             ? route('automotive.admin.billing.change-plan')
             : route('automotive.admin.billing.renew');
@@ -20,8 +21,10 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Plans & Billing',
-                'subtitle' => 'Trial, subscription, billing access state, and renewal actions.',
+                'title' => ($billingProductName ?? 'Plans & Billing') . ' Billing',
+                'subtitle' => $isReadOnlyBillingContext
+                    ? 'Read-only billing view for this attached workspace product.'
+                    : 'Trial, subscription, billing access state, and renewal actions.',
                 'breadcrumbs' => [
                     ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
                     ['label' => 'Plans & Billing'],
@@ -39,11 +42,21 @@
                     ])
 
                     <form id="billing-plan-preview-form" method="GET" action="{{ route('automotive.admin.billing.status') }}" class="mt-4">
+                        @if(!empty($focusedWorkspaceProduct['product_code']))
+                            <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                        @endif
                         @include('automotive.admin.billing.partials.plan-selector', [
                             'availablePlans' => $availablePlans,
                             'selectedPlanId' => $selectedPlanId,
+                            'billingProductName' => $billingProductName ?? null,
                         ])
                     </form>
+
+                    @if($isReadOnlyBillingContext)
+                        <div class="alert alert-info mt-4">
+                            This product is attached to the same tenant workspace, but admin-side renewal and Stripe lifecycle actions still run through the primary billing flow. Use the shared product portal flow for direct checkout changes on this product.
+                        </div>
+                    @endif
 
                     @if(!empty($selectedPlan))
                         <div class="card mt-4">
@@ -221,8 +234,12 @@
                         </div>
                     @endif
 
+                    @if(!$isReadOnlyBillingContext)
                     <form method="POST" action="{{ $billingFormAction }}" class="mt-4">
                         @csrf
+                        @if(!empty($focusedWorkspaceProduct['product_code']))
+                            <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                        @endif
 
                         @if(!empty($selectedPlanId))
                             <input type="hidden" name="target_plan_id" value="{{ $selectedPlanId }}">
@@ -244,6 +261,7 @@
                             </div>
                         </div>
                     </form>
+                    @endif
                 </div>
 
                 <div class="col-lg-4">
@@ -259,7 +277,7 @@
                             <p class="mb-2"><strong>Gateway Subscription ID:</strong> {{ $subscription->gateway_subscription_id ?? '-' }}</p>
                             <p class="mb-4"><strong>Gateway Price ID:</strong> {{ $subscription->gateway_price_id ?? '-' }}</p>
 
-                            @if(!empty($subscription->gateway_customer_id))
+                            @if(!empty($subscription->gateway_customer_id) && !$isReadOnlyBillingContext)
                                 <div class="d-grid gap-2">
                                     @if($canUpdatePaymentMethodInline ?? false)
                                         <button type="button" id="open-inline-payment-method" class="btn btn-light w-100">
@@ -268,6 +286,9 @@
                                     @else
                                         <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
                                             @csrf
+                                            @if(!empty($focusedWorkspaceProduct['product_code']))
+                                                <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                                            @endif
                                             <button type="submit" class="btn btn-light w-100">
                                                 Update Payment Method
                                             </button>
@@ -276,6 +297,9 @@
 
                                     <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
                                         @csrf
+                                        @if(!empty($focusedWorkspaceProduct['product_code']))
+                                            <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                                        @endif
                                         <button type="submit" class="btn btn-outline-primary w-100">
                                             Manage Billing
                                         </button>
@@ -284,6 +308,9 @@
                                     @if(($billingState['status'] ?? '') === 'active')
                                         <form method="POST" action="{{ route('automotive.admin.billing.cancel-subscription') }}">
                                             @csrf
+                                            @if(!empty($focusedWorkspaceProduct['product_code']))
+                                                <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                                            @endif
                                             <button type="submit" class="btn btn-outline-danger w-100">
                                                 Cancel at Period End
                                             </button>
@@ -293,6 +320,9 @@
                                     @if(($billingState['status'] ?? '') === 'canceled')
                                         <form method="POST" action="{{ route('automotive.admin.billing.resume-subscription') }}">
                                             @csrf
+                                            @if(!empty($focusedWorkspaceProduct['product_code']))
+                                                <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                                            @endif
                                             <button type="submit" class="btn btn-success w-100">
                                                 Resume Subscription
                                             </button>
@@ -302,6 +332,9 @@
                                     @if(in_array($billingState['status'] ?? '', ['past_due', 'grace_period', 'suspended', 'expired'], true))
                                         <form method="POST" action="{{ route('automotive.admin.billing.portal') }}">
                                             @csrf
+                                            @if(!empty($focusedWorkspaceProduct['product_code']))
+                                                <input type="hidden" name="workspace_product" value="{{ $focusedWorkspaceProduct['product_code'] }}">
+                                            @endif
                                             <button type="submit" class="btn btn-warning w-100">
                                                 Retry / Reactivate
                                             </button>
@@ -310,7 +343,11 @@
                                 </div>
                             @else
                                 <div class="alert alert-info mb-0">
-                                    Billing portal will become available after the first Stripe subscription is linked to this tenant.
+                                    @if($isReadOnlyBillingContext)
+                                        Direct admin billing actions for this attached product are not enabled yet in this screen.
+                                    @else
+                                        Billing portal will become available after the first Stripe subscription is linked to this tenant.
+                                    @endif
                                 </div>
                             @endif
                         </div>

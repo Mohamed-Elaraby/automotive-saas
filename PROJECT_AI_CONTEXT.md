@@ -1572,6 +1572,41 @@ Why this matters:
 - future products do not need to reuse exact legacy codes like `parts_inventory` just to unlock the correct workspace behavior
 - this makes the manifest/family layer much more useful for new industries and renamed products
 
+## 18.34) Tenant Billing Read Path and Billing Screen Alignment
+Status: completed
+
+What changed:
+- `TenantPlanService` and `TenantSubscriptionService` no longer prefer `products.code = automotive_service` directly
+- both services now:
+  - inspect joined `products.code / slug / name`
+  - resolve the owning family through `WorkspaceManifestService`
+  - prefer the manifest default family first
+  - then fall back to the best active/trialing/past-due/canceled product subscription
+- `BillingController` now resolves the primary billing product identity from:
+  - the focused workspace product when present
+  - else the current plan's product
+  - else the current subscription's product
+  - else the manifest default family experience
+- tenant admin billing status now keeps `workspace_product` across billing action forms
+- inline payment-method management is now explicitly disabled for non-primary attached products in this screen
+
+UI effect:
+- if the tenant's primary accessible workspace product is not literally `automotive_service`, the billing page now loads:
+  - the correct product title
+  - the correct paid plan catalog
+  - the correct selected plan context
+- attached non-primary product billing remains read-only here, without exposing misleading inline billing controls
+
+Test coverage:
+- added read-path coverage proving manifest default family is preferred over unrelated attached product subscriptions
+- added billing page coverage proving:
+  - attached non-primary accounting billing stays read-only
+  - a primary alias product such as `Inventory Hub` loads its own billing plan catalog correctly
+
+Why this matters:
+- the workspace can now present a more accurate billing experience when the tenant starts from a non-legacy product code
+- this closes another remaining assumption that the default billable product must always be identified by the exact `automotive_service` code
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

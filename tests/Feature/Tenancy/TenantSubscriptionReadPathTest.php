@@ -93,6 +93,46 @@ class TenantSubscriptionReadPathTest extends TestCase
         $this->assertSame($productPlan->id, $currentSubscriptionPath->plan_id);
     }
 
+    public function test_tenant_services_prefer_manifest_default_family_before_other_product_subscriptions(): void
+    {
+        $partsProduct = Product::query()->create([
+            'code' => 'inventory_hub_' . uniqid(),
+            'name' => 'Inventory Hub',
+            'slug' => 'inventory-hub-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+
+        $partsPlan = $this->createPlan($partsProduct->id, 'parts-priority-plan');
+        $automotivePlan = $this->createPlan($automotiveProduct->id, 'automotive-priority-plan');
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-default-family-priority',
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-default-family-priority',
+            'product_id' => $automotiveProduct->id,
+            'plan_id' => $automotivePlan->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        $currentPlanPath = app(TenantPlanService::class)->getCurrentSubscription('tenant-default-family-priority');
+        $currentSubscriptionPath = app(TenantSubscriptionService::class)->getCurrentSubscription('tenant-default-family-priority');
+
+        $this->assertNotNull($currentPlanPath);
+        $this->assertSame($automotivePlan->id, $currentPlanPath->plan_id);
+
+        $this->assertNotNull($currentSubscriptionPath);
+        $this->assertSame($automotivePlan->id, $currentSubscriptionPath->plan_id);
+    }
+
     protected function createPlan(int $productId, string $slugPrefix): Plan
     {
         return Plan::query()->create([

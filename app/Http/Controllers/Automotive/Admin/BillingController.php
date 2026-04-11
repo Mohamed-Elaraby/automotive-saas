@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use App\Models\Product;
 use App\Models\Subscription;
+use App\Models\TenantProductSubscription;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\StripeCustomerPortalService;
@@ -17,6 +19,8 @@ use App\Services\Billing\StripeSubscriptionPlanChangeService;
 use App\Services\Billing\StripeSubscriptionPlanPreviewService;
 use App\Services\Billing\TenantBillingLifecycleService;
 use App\Services\Tenancy\TenantPlanService;
+use App\Services\Tenancy\TenantWorkspaceProductService;
+use App\Services\Tenancy\WorkspaceManifestService;
 use App\Support\Billing\BillingActionResolver;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Http\JsonResponse;
@@ -40,7 +44,9 @@ class BillingController extends Controller
         protected StripeSubscriptionPlanPreviewService $stripeSubscriptionPlanPreviewService,
         protected StripeInvoiceHistoryService $stripeInvoiceHistoryService,
         protected StripeSetupIntentService $stripeSetupIntentService,
-        protected StripePaymentMethodManagementService $stripePaymentMethodManagementService
+        protected StripePaymentMethodManagementService $stripePaymentMethodManagementService,
+        protected TenantWorkspaceProductService $tenantWorkspaceProductService,
+        protected WorkspaceManifestService $workspaceManifestService
     ) {
     }
 
@@ -48,13 +54,22 @@ public function status(Request $request): View
 {
     $tenant = tenant();
     $tenantId = $tenant->id;
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->query('workspace_product')
+    );
+    $billingContext = $this->resolveBillingContext($tenantId, $focusedWorkspaceProduct);
 
-    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
-    $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    $subscription = $billingContext['subscription'];
+    $plan = $billingContext['plan'];
+    $billingProductCode = $billingContext['product_code'];
+    $billingProductName = $billingContext['product_name'];
+    $isPrimaryBillingProduct = $billingContext['is_primary'];
 
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
     $billingActions = BillingActionResolver::resolve($billingState);
-    $availablePlans = $this->billingPlanCatalogService->getPaidPlans('automotive_service');
+    $availablePlans = $this->billingPlanCatalogService->getPaidPlans($billingProductCode);
 
     $selectedPlanId = old('target_plan_id')
         ?: $request->input('target_plan_id')
@@ -62,7 +77,7 @@ public function status(Request $request): View
                 ?: optional($availablePlans->first())->id;
 
     $selectedPlan = $selectedPlanId
-        ? $this->billingPlanCatalogService->findPaidPlanById($selectedPlanId, 'automotive_service')
+        ? $this->billingPlanCatalogService->findPaidPlanById($selectedPlanId, $billingProductCode)
         : null;
 
     $selectedPlanAudit = $selectedPlan
@@ -77,10 +92,11 @@ public function status(Request $request): View
             SubscriptionStatuses::CANCELLED,
         ], true);
 
-    $canChangeCurrentSubscriptionPlan = $this->canChangePlanOnExistingStripeSubscription(
+    $canChangeCurrentSubscriptionPlan = $isPrimaryBillingProduct && $this->canChangePlanOnExistingStripeSubscription(
         $subscription,
         $billingState
     );
+    $isReadOnlyBillingContext = ! $isPrimaryBillingProduct;
 
     $planChangePreview = null;
 
@@ -116,6 +132,8 @@ public function status(Request $request): View
 
     $stripePublishableKey = trim((string) config('billing.gateways.stripe.key'));
     $canUpdatePaymentMethodInline =
+        $isPrimaryBillingProduct
+        &&
         ($subscription->gateway ?? null) === 'stripe'
         && ! empty($subscription->gateway_customer_id)
         && ! empty($subscription->gateway_subscription_id)
@@ -125,6 +143,12 @@ public function status(Request $request): View
         'tenant',
         'subscription',
         'plan',
+        'workspaceProducts',
+        'focusedWorkspaceProduct',
+        'billingProductCode',
+        'billingProductName',
+        'isPrimaryBillingProduct',
+        'isReadOnlyBillingContext',
         'billingState',
         'billingActions',
         'availablePlans',
@@ -144,14 +168,26 @@ public function renew(Request $request): RedirectResponse
 {
     $tenant = tenant();
     $tenantId = $tenant->id;
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->input('workspace_product', $request->query('workspace_product'))
+    );
+    $billingContext = $this->resolveBillingContext($tenantId, $focusedWorkspaceProduct);
 
-    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
-    $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    if (! $billingContext['is_primary']) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
+            ->with('error', 'Billing changes for attached products are currently managed from the product portal flow.');
+    }
+
+    $subscription = $billingContext['subscription'];
+    $currentPlan = $billingContext['plan'];
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscription);
 
     if ($this->canChangePlanOnExistingStripeSubscription($subscription, $billingState)) {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'This tenant already has a live Stripe subscription eligible for in-place plan change. Use Change Plan instead of starting a new checkout.');
     }
 
@@ -159,11 +195,11 @@ public function renew(Request $request): RedirectResponse
         'target_plan_id' => ['required', 'integer'],
     ]);
 
-    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id'], 'automotive_service');
+    $targetPlan = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id'], $billingContext['product_code']);
 
     if (! $targetPlan) {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected paid plan was not found or is not active.');
     }
 
@@ -173,13 +209,13 @@ public function renew(Request $request): RedirectResponse
         && ($billingState['status'] ?? null) === SubscriptionStatuses::ACTIVE
     ) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'You are already subscribed to this active plan. Choose another plan or use Manage Billing.');
     }
 
     if (empty($targetPlan->stripe_price_id)) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
     }
 
@@ -187,7 +223,7 @@ public function renew(Request $request): RedirectResponse
 
     if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before checkout.');
     }
 
@@ -201,8 +237,8 @@ public function renew(Request $request): RedirectResponse
                 'stripe_price_id' => $targetPlan->stripe_price_id ?? null,
                 'billing_state' => $billingState['status'] ?? null,
                 'customer_email' => auth('automotive_admin')->user()?->email,
-                    'success_url' => route('automotive.admin.billing.success'),
-                    'cancel_url' => route('automotive.admin.billing.cancel'),
+                    'success_url' => route('automotive.admin.billing.success', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null]),
+                    'cancel_url' => route('automotive.admin.billing.cancel', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null]),
                     'plan_for_audit' => (array) $targetPlan,
                 ]);
         } catch (Throwable $e) {
@@ -215,7 +251,7 @@ public function renew(Request $request): RedirectResponse
         ]);
 
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'Billing configuration error. Please check Stripe settings.');
     }
 
@@ -228,7 +264,7 @@ public function renew(Request $request): RedirectResponse
 
         if (! $subscriptionModel) {
             return redirect()
-                ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+                ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
                 ->with('error', 'The local subscription record could not be loaded before redirecting to Stripe checkout.');
         }
 
@@ -244,7 +280,7 @@ public function renew(Request $request): RedirectResponse
     }
 
     return redirect()
-        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
         ->with('error', $session['message'] ?? 'Unable to start the renewal session.');
 }
 
@@ -252,14 +288,26 @@ public function changePlan(Request $request): RedirectResponse
 {
     $tenant = tenant();
     $tenantId = $tenant->id;
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->input('workspace_product', $request->query('workspace_product'))
+    );
+    $billingContext = $this->resolveBillingContext($tenantId, $focusedWorkspaceProduct);
 
-    $subscriptionRow = $this->tenantPlanService->getCurrentSubscription($tenantId);
-    $currentPlan = $this->tenantPlanService->getCurrentPlan($tenantId);
+    if (! $billingContext['is_primary']) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
+            ->with('error', 'Billing changes for attached products are currently managed from the product portal flow.');
+    }
+
+    $subscriptionRow = $billingContext['subscription'];
+    $currentPlan = $billingContext['plan'];
     $billingState = $this->tenantBillingLifecycleService->resolveState($subscriptionRow);
 
     if (! $this->canChangePlanOnExistingStripeSubscription($subscriptionRow, $billingState)) {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'This tenant is not eligible for in-place Stripe plan change right now. Start a checkout instead if billing setup is still needed.');
     }
 
@@ -268,23 +316,23 @@ public function changePlan(Request $request): RedirectResponse
         'preview_proration_date' => ['nullable', 'integer'],
     ]);
 
-    $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id'], 'automotive_service');
+    $targetPlanCatalogRow = $this->billingPlanCatalogService->findPaidPlanById($validated['target_plan_id'], $billingContext['product_code']);
 
     if (! $targetPlanCatalogRow) {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected paid plan was not found or is not active.');
     }
 
     if ((string) ($targetPlanCatalogRow->billing_period ?? '') === 'trial') {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'Trial plans cannot replace a live Stripe subscription.');
     }
 
     if (empty($targetPlanCatalogRow->stripe_price_id)) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected paid plan is not linked to a Stripe price yet.');
     }
 
@@ -292,7 +340,7 @@ public function changePlan(Request $request): RedirectResponse
 
     if (! ($targetPlanAudit['checks']['is_aligned'] ?? false)) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected plan price in Stripe does not match the local catalog. Fix the Stripe price mapping before changing the live subscription.');
     }
 
@@ -302,7 +350,7 @@ public function changePlan(Request $request): RedirectResponse
         && (string) ($subscriptionRow->gateway_price_id ?? '') === (string) $targetPlanCatalogRow->stripe_price_id
     ) {
         return redirect()
-            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id])
+            ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlanCatalogRow->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The subscription is already on this plan.');
     }
 
@@ -310,7 +358,7 @@ public function changePlan(Request $request): RedirectResponse
 
     if (! $subscription) {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The local subscription record could not be loaded for plan change.');
     }
 
@@ -318,7 +366,7 @@ public function changePlan(Request $request): RedirectResponse
 
     if (! $targetPlan) {
         return redirect()
-            ->route('automotive.admin.billing.status')
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
             ->with('error', 'The selected plan model could not be loaded.');
     }
 
@@ -329,7 +377,7 @@ public function changePlan(Request $request): RedirectResponse
     );
 
     return redirect()
-        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id])
+        ->route('automotive.admin.billing.status', ['target_plan_id' => $targetPlan->id, 'workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
         ->with($result['ok'] ? 'success' : 'error', $result['message']);
 }
 
@@ -389,13 +437,23 @@ public function portal(Request $request): RedirectResponse
 {
     $tenant = tenant();
     $tenantId = $tenant->id;
+    $focusedCode = $request->input('workspace_product', $request->query('workspace_product'));
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct($workspaceProducts, $focusedCode);
+    $billingContext = $this->resolveBillingContext($tenantId, $focusedWorkspaceProduct);
 
-    $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+    if (! $billingContext['is_primary']) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
+            ->with('error', 'Billing portal actions for attached products are currently managed from the product portal flow.');
+    }
+
+    $subscription = $billingContext['subscription'];
     $customerId = (string) ($subscription->gateway_customer_id ?? '');
 
     $portal = $this->stripeCustomerPortalService->createSession(
         $customerId,
-        route('automotive.admin.billing.status')
+        route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
     );
 
     if (! empty($portal['success']) && ! empty($portal['url'])) {
@@ -403,46 +461,117 @@ public function portal(Request $request): RedirectResponse
     }
 
     return redirect()
-        ->route('automotive.admin.billing.status')
+        ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
         ->with('error', $portal['message'] ?? 'Unable to open the billing portal.');
 }
 
 public function cancelSubscription(Request $request): RedirectResponse
 {
     $tenant = tenant();
-    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenant->id);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->input('workspace_product', $request->query('workspace_product'))
+    );
+    $billingContext = $this->resolveBillingContext($tenant->id, $focusedWorkspaceProduct);
+
+    if (! $billingContext['is_primary']) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
+            ->with('error', 'Cancel/resume actions for attached products are currently managed from the product portal flow.');
+    }
+
+    $subscription = $billingContext['subscription'];
 
     $result = $this->stripeSubscriptionManagementService->cancelAtPeriodEnd($subscription);
 
     return redirect()
-        ->route('automotive.admin.billing.status')
+        ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
         ->with($result['success'] ? 'success' : 'error', $result['message']);
 }
 
 public function resumeSubscription(Request $request): RedirectResponse
 {
     $tenant = tenant();
-    $subscription = $this->tenantPlanService->getCurrentSubscription($tenant->id);
+    $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenant->id);
+    $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+        $workspaceProducts,
+        $request->input('workspace_product', $request->query('workspace_product'))
+    );
+    $billingContext = $this->resolveBillingContext($tenant->id, $focusedWorkspaceProduct);
+
+    if (! $billingContext['is_primary']) {
+        return redirect()
+            ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
+            ->with('error', 'Cancel/resume actions for attached products are currently managed from the product portal flow.');
+    }
+
+    $subscription = $billingContext['subscription'];
 
     $result = $this->stripeSubscriptionManagementService->resume($subscription);
 
     return redirect()
-        ->route('automotive.admin.billing.status')
+        ->route('automotive.admin.billing.status', ['workspace_product' => $focusedWorkspaceProduct['product_code'] ?? null])
         ->with($result['success'] ? 'success' : 'error', $result['message']);
 }
 
 public function success(Request $request): RedirectResponse
 {
     return redirect()
-        ->route('automotive.admin.billing.status')
+        ->route('automotive.admin.billing.status', ['workspace_product' => $request->query('workspace_product')])
         ->with('success', 'Your checkout session was completed successfully. Subscription sync will finalize via webhook.');
 }
 
 public function cancel(Request $request): RedirectResponse
 {
     return redirect()
-        ->route('automotive.admin.billing.status')
+        ->route('automotive.admin.billing.status', ['workspace_product' => $request->query('workspace_product')])
         ->with('error', 'Checkout was cancelled before completion.');
+}
+
+protected function resolveBillingContext(string $tenantId, ?array $focusedWorkspaceProduct): array
+{
+    $defaultFamily = $this->workspaceManifestService->defaultFamily();
+    $focusedProductCode = (string) ($focusedWorkspaceProduct['product_code'] ?? '');
+    $focusedFamily = (string) ($focusedWorkspaceProduct['product_family'] ?? '');
+    $isPrimary = $focusedFamily === $defaultFamily || $focusedProductCode === '';
+
+    if ($isPrimary) {
+        $subscription = $this->tenantPlanService->getCurrentSubscription($tenantId);
+        $plan = $this->tenantPlanService->getCurrentPlan($tenantId);
+        [$resolvedProductCode, $resolvedProductName] = $this->resolvePrimaryBillingProductIdentity(
+            $focusedWorkspaceProduct,
+            $plan,
+            $subscription
+        );
+
+        return [
+            'subscription' => $subscription,
+            'plan' => $plan,
+            'product_code' => $resolvedProductCode,
+            'product_name' => $resolvedProductName,
+            'is_primary' => true,
+        ];
+    }
+
+    $subscription = TenantProductSubscription::query()
+        ->where('tenant_id', $tenantId)
+        ->where('product_id', (int) ($focusedWorkspaceProduct['product_id'] ?? 0))
+        ->orderByDesc('id')
+        ->first();
+
+    $plan = null;
+    if ($subscription?->plan_id) {
+        $plan = Plan::query()->find($subscription->plan_id);
+    }
+
+    return [
+        'subscription' => $subscription,
+        'plan' => $plan,
+        'product_code' => $focusedProductCode,
+        'product_name' => (string) ($focusedWorkspaceProduct['product_name'] ?? 'Workspace Product'),
+        'is_primary' => false,
+    ];
 }
 
 protected function canChangePlanOnExistingStripeSubscription(?object $subscription, array $billingState): bool
@@ -471,5 +600,39 @@ protected function canChangePlanOnExistingStripeSubscription(?object $subscripti
     }
 
     return false;
+}
+
+protected function resolvePrimaryBillingProductIdentity(?array $focusedWorkspaceProduct, ?Plan $plan, ?object $subscription): array
+{
+    if (! empty($focusedWorkspaceProduct['product_code'])) {
+        return [
+            (string) $focusedWorkspaceProduct['product_code'],
+            (string) ($focusedWorkspaceProduct['product_name'] ?? 'Primary Workspace Product'),
+        ];
+    }
+
+    if ($plan?->product_id) {
+        $product = Product::query()->find($plan->product_id);
+
+        if ($product) {
+            return [(string) $product->code, (string) $product->name];
+        }
+    }
+
+    if (! empty($subscription->product_id)) {
+        $product = Product::query()->find((int) $subscription->product_id);
+
+        if ($product) {
+            return [(string) $product->code, (string) $product->name];
+        }
+    }
+
+    $defaultFamily = $this->workspaceManifestService->defaultFamily();
+    $defaultExperience = $this->workspaceManifestService->experience($defaultFamily);
+
+    return [
+        $defaultFamily,
+        (string) ($defaultExperience['title'] ?? 'Primary Workspace Product'),
+    ];
 }
 }
