@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Schema;
 
 class TenantSubscriptionService
 {
-    protected const PRODUCT_CODE = 'automotive_service';
-
     public function getCurrentSubscription(string $tenantId): ?object
     {
         $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
@@ -23,13 +21,25 @@ class TenantSubscriptionService
                 ->table('tenant_product_subscriptions')
                 ->join('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
                 ->where('tenant_product_subscriptions.tenant_id', $tenantId)
-                ->where('products.code', self::PRODUCT_CODE)
+                ->where('products.code', 'automotive_service')
                 ->orderByDesc('tenant_product_subscriptions.id')
                 ->select('tenant_product_subscriptions.*')
                 ->first();
 
             if ($productSubscription) {
                 return $productSubscription;
+            }
+
+            $fallbackProductSubscription = DB::connection($centralConnection)
+                ->table('tenant_product_subscriptions')
+                ->where('tenant_id', $tenantId)
+                ->whereIn('status', ['active', 'trialing', 'past_due', 'canceled'])
+                ->orderByRaw("CASE WHEN status = 'active' THEN 0 WHEN status = 'trialing' THEN 1 WHEN status = 'past_due' THEN 2 ELSE 3 END")
+                ->orderByDesc('id')
+                ->first();
+
+            if ($fallbackProductSubscription) {
+                return $fallbackProductSubscription;
             }
         }
 

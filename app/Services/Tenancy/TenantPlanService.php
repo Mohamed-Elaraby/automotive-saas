@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Schema;
 
 class TenantPlanService
 {
-    protected const PRODUCT_CODE = 'automotive_service';
-
     protected function centralConnection(): string
     {
         return config('tenancy.database.central_connection') ?? config('database.default');
@@ -75,13 +73,25 @@ class TenantPlanService
             return null;
         }
 
-        return DB::connection($connection)
+        $automotiveSubscription = DB::connection($connection)
             ->table('tenant_product_subscriptions')
             ->join('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
             ->where('tenant_product_subscriptions.tenant_id', $tenantId)
-            ->where('products.code', self::PRODUCT_CODE)
+            ->where('products.code', 'automotive_service')
             ->orderByDesc('tenant_product_subscriptions.id')
             ->select('tenant_product_subscriptions.*')
+            ->first();
+
+        if ($automotiveSubscription) {
+            return $automotiveSubscription;
+        }
+
+        return DB::connection($connection)
+            ->table('tenant_product_subscriptions')
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', ['active', 'trialing', 'past_due', 'canceled'])
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 WHEN status = 'trialing' THEN 1 WHEN status = 'past_due' THEN 2 ELSE 3 END")
+            ->orderByDesc('id')
             ->first();
     }
 }

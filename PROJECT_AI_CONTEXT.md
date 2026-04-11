@@ -1431,6 +1431,34 @@ Current limitation:
 - the public onboarding/auth shell is still branded and routed under the automotive portal namespace
 - this package removed the biggest billing/onboarding blocker, but it did not yet rename the workspace shell into a fully product-neutral portal
 
+### 18.29 Product-Neutral Portal Shell
+The public portal shell is now significantly less automotive-specific even though the route namespace still remains under `automotive/*` for compatibility.
+
+What changed:
+- portal auth branding now says `Shared SaaS Portal` instead of `Automotive Customer Portal`
+- portal labels now prefer workspace-neutral wording such as:
+  - `Open My Workspace`
+  - `Go to My Workspace`
+  - `Open Workspace Login`
+  - `Open Product Workspace`
+- customer-facing success messaging was neutralized from:
+  - `Your free trial system is ready now`
+  - to `Your workspace trial is ready now`
+- the portal footer now uses `Shared Workspace SaaS`
+
+Service-layer impact:
+- `TenantPlanService` now still prefers the automotive product subscription when present for backward compatibility
+- but if no automotive product subscription exists, it can now fall back to another valid product subscription for the tenant
+- `TenantSubscriptionService` now follows the same fallback behavior
+
+Why this matters:
+- a tenant created from `Accounting` or `Spare Parts` no longer depends on having an automotive product subscription just to resolve current plan/subscription state
+- this is the necessary read-path complement to the earlier product-agnostic first-checkout work
+
+Current limitation:
+- route names and URL paths are still under the automotive namespace for compatibility
+- the shell is now product-neutral in behavior and copy, but not yet fully renamed at the route structure level
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1476,6 +1504,10 @@ If a new session starts from this file only, the safest current summary is:
   - first paid checkout can start from a non-automotive product
   - first free trial can start from a non-automotive product when a trial plan exists
   - portal trial UI now respects the selected product instead of assuming automotive
+- Public portal shell is now more product-neutral:
+  - auth branding is workspace-oriented
+  - customer copy no longer assumes automotive-only onboarding
+  - tenant subscription read path can resolve non-automotive first-product subscriptions
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates

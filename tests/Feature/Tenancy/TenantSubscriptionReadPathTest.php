@@ -62,6 +62,37 @@ class TenantSubscriptionReadPathTest extends TestCase
         $this->assertSame($legacyPlan->id, $current->plan_id);
     }
 
+    public function test_tenant_services_can_read_non_automotive_first_product_subscription(): void
+    {
+        $product = Product::query()->create([
+            'code' => 'accounting_' . uniqid(),
+            'name' => 'Accounting Suite',
+            'slug' => 'accounting-suite-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $productPlan = $this->createPlan($product->id, 'accounting-first-plan');
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-accounting-first',
+            'product_id' => $product->id,
+            'plan_id' => $productPlan->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
+        $currentPlanPath = app(TenantPlanService::class)->getCurrentSubscription('tenant-accounting-first');
+        $currentSubscriptionPath = app(TenantSubscriptionService::class)->getCurrentSubscription('tenant-accounting-first');
+
+        $this->assertNotNull($currentPlanPath);
+        $this->assertSame('active', $currentPlanPath->status);
+        $this->assertSame($productPlan->id, $currentPlanPath->plan_id);
+
+        $this->assertNotNull($currentSubscriptionPath);
+        $this->assertSame('active', $currentSubscriptionPath->status);
+        $this->assertSame($productPlan->id, $currentSubscriptionPath->plan_id);
+    }
+
     protected function createPlan(int $productId, string $slugPrefix): Plan
     {
         return Plan::query()->create([

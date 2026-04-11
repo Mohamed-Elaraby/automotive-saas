@@ -11,7 +11,7 @@
 
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pt-lg-4 pb-0 flex-fill">
                             <div class="mx-auto mb-5 text-center">
-                                Automotive Customer Portal
+                                Shared SaaS Portal
                             </div>
 
                             <div class="card border-0 p-lg-3 shadow-lg rounded-2">
@@ -69,7 +69,7 @@
                                             </span>
                                             <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" class="form-control border-start-0 ps-0" placeholder="Enter Preferred Subdomain" required>
                                         </div>
-                                        <small class="text-muted d-block mt-2">Example: mido -> mido.automotive.seven-scapital.com</small>
+                                        <small class="text-muted d-block mt-2">Example: mido -> mido.your-workspace-domain.com</small>
                                     </div>
 
                                     <div class="mb-3">

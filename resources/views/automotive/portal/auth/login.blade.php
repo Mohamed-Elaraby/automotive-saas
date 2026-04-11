@@ -11,14 +11,14 @@
 
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class="mx-auto mb-5 text-center">
-                                Automotive Customer Portal
+                                Shared SaaS Portal
                             </div>
 
                             <div class="card border-0 p-lg-3 shadow-lg">
                                 <div class="card-body">
                                     <div class="text-center mb-3">
                                         <h5 class="mb-2">Sign In</h5>
-                                        <p class="mb-0">Sign in to continue to your Automotive customer portal</p>
+                                        <p class="mb-0">Sign in to continue to your shared workspace portal</p>
                                     </div>
 
                                     @if(session('success'))

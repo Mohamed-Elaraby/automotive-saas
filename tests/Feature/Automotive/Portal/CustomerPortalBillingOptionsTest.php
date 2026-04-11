@@ -127,7 +127,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
             ]);
 
         $response->assertRedirect(route('automotive.portal'));
-        $response->assertSessionHas('success', 'Your free trial system is ready now.');
+        $response->assertSessionHas('success', 'Your workspace trial is ready now.');
     }
 
     public function test_portal_paid_plan_cards_show_real_plan_limits(): void
@@ -335,7 +335,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('General Ledger', false);
         $response->assertSee((string) $accountingPlan->name, false);
         $response->assertSee('Select &amp; Continue', false);
-        $response->assertSee('Start Accounting Suite Free Trial', false);
+        $response->assertSee('Start Accounting Suite Trial', false);
     }
 
     public function test_non_automotive_product_card_links_to_product_specific_enablement_panel(): void
@@ -470,7 +470,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertRedirect(route('automotive.portal', ['product' => $product->slug]));
         $response->assertSessionHasErrors([
-            'portal' => 'Start your primary workspace first before requesting additional product enablement.',
+            'portal' => 'Start your first workspace product before requesting additional product enablement.',
         ]);
 
         $this->assertDatabaseMissing('product_enablement_requests', [
@@ -1291,7 +1291,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Products Catalog', false);
-        $response->assertSee('Manage Automotive', false);
+        $response->assertSee('Open Product Workspace', false);
         $response->assertSee('ACTIVE', false);
         $response->assertSee('This product is already attached to your workspace.', false);
     }

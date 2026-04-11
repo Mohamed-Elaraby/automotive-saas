@@ -9,7 +9,7 @@
                     <div class="mb-3 border-bottom pb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div>
                             <h6 class="mb-1">Profile</h6>
-                            <p class="text-muted mb-0">Your front customer portal for onboarding, subscription status, and system access.</p>
+                            <p class="text-muted mb-0">Your shared customer portal for onboarding, subscription status, and workspace access.</p>
                         </div>
 
                         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -30,7 +30,7 @@
 
                             @if($allowSystemAccess && !empty($systemUrl))
                                 <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
-                                    Open My Trial System
+                                    Open My Workspace
                                 </a>
                             @endif
                         </div>
@@ -119,7 +119,7 @@
                                         </span>
                                         @if(!empty($visibleCouponCode))
                                             <span class="badge bg-soft-success text-success mt-2">
-                                                Coupon Reserved: {{ $visibleCouponCode }}
+                                                Reserved Coupon: {{ $visibleCouponCode }}
                                             </span>
                                         @endif
                                     </div>
@@ -246,7 +246,7 @@
 
                                                         @if($allowSystemAccess)
                                                             <a href="{{ $domain['admin_login_url'] }}" target="_blank" class="btn btn-sm btn-primary">
-                                                                Open Admin Login
+                                                            Open Workspace Login
                                                             </a>
                                                         @endif
                                                     </div>
@@ -268,7 +268,7 @@
                                             @csrf
                                             <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
                                             <button type="submit" class="btn btn-primary">
-                                                Start {{ $selectedProduct['name'] }} Free Trial
+                                                Start {{ $selectedProduct['name'] }} Trial
                                             </button>
                                         </form>
                                     @endif
@@ -279,7 +279,7 @@
 
                                     @if($allowSystemAccess && !empty($systemUrl))
                                         <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
-                                            Go to My System
+                                            Go to My Workspace
                                         </a>
 
                                         <a href="#paid-plans" class="btn btn-outline-white">
@@ -304,7 +304,7 @@
                                         <p class="text-muted mb-0">Start with one product today, then attach more modules to the same workspace later.</p>
                                     </div>
                                     <span class="badge bg-soft-info text-info">
-                                        One workspace, many products
+                                        One workspace, many connected products
                                     </span>
                                 </div>
                             </div>
@@ -341,7 +341,7 @@
                                                     @if($productRow['is_subscribed'])
                                                         <p class="mb-1 text-success">This product is already attached to your workspace.</p>
                                                     @elseif($productRow['is_automotive'])
-                                                        <p class="mb-1 text-muted">This is the current live onboarding product in the portal.</p>
+                                                        <p class="mb-1 text-muted">This product is currently active in your workspace catalog.</p>
                                                     @else
                                                         <p class="mb-1 text-muted">This product will connect to the same tenant workspace when enabled.</p>
                                                     @endif
@@ -354,7 +354,7 @@
 
                                                     @if($productRow['is_subscribed'] && $productRow['is_automotive'] && $allowSystemAccess && !empty($systemUrl))
                                                         <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
-                                                            Open Workspace
+                                                            Open Product Workspace
                                                         </a>
                                                     @endif
                                                 </div>

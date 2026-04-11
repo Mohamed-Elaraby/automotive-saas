@@ -238,7 +238,7 @@ class CustomerPortalController extends Controller
 
         return redirect()
             ->route('automotive.portal')
-            ->with('success', 'Your free trial system is ready now.');
+            ->with('success', 'Your workspace trial is ready now.');
     }
 
     public function startPaidCheckout(
@@ -321,7 +321,7 @@ class CustomerPortalController extends Controller
             return redirect()
                 ->route('automotive.portal', ['product' => $product->slug])
                 ->withErrors([
-                    'portal' => 'Automotive uses the direct paid checkout flow instead of enablement request.',
+                    'portal' => 'This product uses the direct checkout flow instead of enablement request.',
                 ]);
         }
 
@@ -331,7 +331,7 @@ class CustomerPortalController extends Controller
             return redirect()
                 ->route('automotive.portal', ['product' => $product->slug])
                 ->withErrors([
-                    'portal' => 'Start your primary workspace first before requesting additional product enablement.',
+                    'portal' => 'Start your first workspace product before requesting additional product enablement.',
                 ]);
         }
 
@@ -644,7 +644,7 @@ class CustomerPortalController extends Controller
 
         if ($isSubscribed) {
             return (string) $product->code === self::PRODUCT_CODE
-                ? 'Manage Automotive'
+                ? 'Open Product Workspace'
                 : 'Manage Product';
         }
 
