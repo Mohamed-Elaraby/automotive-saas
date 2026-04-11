@@ -251,6 +251,50 @@ class TenantAdminAccessFlowTest extends TestCase
         $productsResponse->assertSee('Stock Items', false);
     }
 
+    public function test_inventory_family_alias_product_can_drive_parts_workspace_focus(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $partsProduct = Product::query()->create([
+            'code' => 'stock_hub_' . uniqid(),
+            'name' => 'Inventory Hub',
+            'slug' => 'inventory-hub-' . uniqid(),
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $partsPlan = Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Inventory Hub Pro',
+            'slug' => 'inventory-hub-pro-' . uniqid(),
+            'price' => 149,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'gateway' => null,
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product={$partsProduct->code}");
+
+        $dashboardResponse->assertOk();
+        $dashboardResponse->assertSee('Inventory and stock movement workspace', false);
+        $dashboardResponse->assertSee('Supplier Catalog', false);
+        $dashboardResponse->assertSee('Inventory Report', false);
+        $dashboardResponse->assertSee("workspace_product={$partsProduct->code}", false);
+    }
+
     public function test_parts_inventory_routes_are_blocked_when_tenant_does_not_have_that_product(): void
     {
         [, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

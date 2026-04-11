@@ -1552,6 +1552,26 @@ Why this matters:
   - route access checks
 - this reduces the remaining places where module ownership is hardcoded separately from the manifest
 
+### 18.33 Manifest-Driven Workspace Focus and Family Metrics
+Default workspace focus and dashboard runtime decisions are now less dependent on hardcoded product codes.
+
+What changed:
+- `TenantWorkspaceProductService` now enriches workspace products with:
+  - `product_family`
+  - manifest-aware `is_primary_workspace_product`
+- primary workspace detection now follows the manifest default family instead of only checking `product_code === automotive_service`
+- when no primary-family product exists, focus now falls back to:
+  - first accessible product
+  - then first available product
+- `DashboardController` now decides whether to show parts/inventory runtime metrics by resolved family, not by an exact product code match
+
+Test coverage:
+- added coverage proving that an alias product such as `Inventory Hub` can still drive the Spare Parts dashboard experience through family resolution
+
+Why this matters:
+- future products do not need to reuse exact legacy codes like `parts_inventory` just to unlock the correct workspace behavior
+- this makes the manifest/family layer much more useful for new industries and renamed products
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
@@ -1608,6 +1628,8 @@ If a new session starts from this file only, the safest current summary is:
   - page titles, descriptions, and quick links for major runtime modules are no longer controller-hardcoded
 - Route-level module access is now also closer to the manifest:
   - middleware can guard by runtime module key and derive the owning family from the manifest
+- Default workspace focus and dashboard family behavior are now also less hardcoded:
+  - alias-based products can drive the correct runtime experience without exact legacy product codes
 - Stripe sync is now significantly safer:
   - missing subscription id recovery
   - product-subscription mirror updates

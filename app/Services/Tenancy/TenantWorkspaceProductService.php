@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Schema;
 
 class TenantWorkspaceProductService
 {
+    public function __construct(
+        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
+        protected WorkspaceManifestService $workspaceManifestService
+    ) {
+    }
+
     protected function centralConnection(): string
     {
         return config('tenancy.database.central_connection') ?? config('database.default');
@@ -69,20 +75,27 @@ class TenantWorkspaceProductService
             ->map(function (object $row) use ($capabilitiesByProductId): array {
                 $status = (string) ($row->status ?? '');
                 $isAccessible = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true);
+                $workspaceProduct = [
+                    'product_code' => (string) ($row->product_code ?? ''),
+                    'product_name' => (string) ($row->product_name ?? ('Product #' . $row->product_id)),
+                    'product_slug' => (string) ($row->product_slug ?? ''),
+                ];
+                $family = $this->workspaceProductFamilyResolver->resolveFromWorkspaceProduct($workspaceProduct);
 
                 return [
                     'subscription_id' => (int) $row->id,
                     'tenant_id' => (string) $row->tenant_id,
                     'product_id' => (int) $row->product_id,
-                    'product_code' => (string) ($row->product_code ?? ''),
-                    'product_name' => (string) ($row->product_name ?? ('Product #' . $row->product_id)),
-                    'product_slug' => (string) ($row->product_slug ?? ''),
+                    'product_code' => $workspaceProduct['product_code'],
+                    'product_name' => $workspaceProduct['product_name'],
+                    'product_slug' => $workspaceProduct['product_slug'],
+                    'product_family' => $family,
                     'plan_name' => (string) ($row->plan_name ?? ''),
                     'capabilities' => $capabilitiesByProductId->get($row->product_id, []),
                     'status' => $status,
                     'status_label' => strtoupper(str_replace('_', ' ', $status ?: 'unknown')),
                     'is_accessible' => $isAccessible,
-                    'is_primary_workspace_product' => (string) ($row->product_code ?? '') === 'automotive_service',
+                    'is_primary_workspace_product' => $family === $this->workspaceManifestService->defaultFamily(),
                 ];
             })
             ->values();
@@ -108,6 +121,12 @@ class TenantWorkspaceProductService
 
         if ($primary) {
             return $primary;
+        }
+
+        $accessible = $workspaceProducts->firstWhere('is_accessible', true);
+
+        if ($accessible) {
+            return $accessible;
         }
 
         return $workspaceProducts->first();

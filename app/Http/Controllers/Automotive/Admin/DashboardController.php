@@ -10,6 +10,7 @@ use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
+use App\Services\Tenancy\WorkspaceProductFamilyResolver;
 use App\Services\Tenancy\TenantPlanService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -22,7 +23,8 @@ class DashboardController extends Controller
         protected TenantPlanService $tenantPlanService,
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
-        protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService
+        protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
+        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver
     ) {
     }
 
@@ -58,7 +60,7 @@ public function index(Request $request): View
     $recentTransfers = collect();
     $recentMovements = collect();
 
-    if (($focusedWorkspaceProduct['product_code'] ?? null) === 'parts_inventory') {
+    if ($focusedWorkspaceProductFamily === 'parts_inventory') {
         $inventoriesCount = Inventory::query()->count();
         $stockTransfersCount = StockTransfer::query()->count();
         $stockMovementsCount = StockMovement::query()->count();
