@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Automotive\Admin;
 
+use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Subscription;
@@ -9,14 +10,33 @@ use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Services\Billing\PaymentGatewayManager;
+use App\Services\Billing\CheckoutStripePlanRecoveryService;
+use App\Services\Billing\StripePriceInspectorService;
+use App\Services\Billing\StripeTenantProductSubscriptionPlanChangeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Stancl\Tenancy\Database\Models\Domain;
+use Mockery;
 use Tests\TestCase;
 
 class BillingPageTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutMiddleware(VerifyCsrfToken::class);
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+
+        parent::tearDown();
+    }
 
     public function test_billing_related_models_can_be_prepared_for_ui_state_rendering(): void
     {
@@ -169,11 +189,10 @@ class BillingPageTest extends TestCase
             $response->assertSee('Accounting Billing Billing', false);
             $response->assertSee('Choose Paid Plan', false);
             $response->assertSee('Accounting Pro', false);
-            $response->assertSee('Read-only billing view for this attached workspace product.', false);
-            $response->assertSee('shared product portal flow', false);
-            $response->assertDontSee('Confirm Plan Change', false);
-            $response->assertDontSee('Cancel at Period End', false);
-            $response->assertDontSee('Resume Subscription', false);
+            $response->assertSee('Attached product billing with product-scoped checkout and Stripe lifecycle actions.', false);
+            $response->assertSee('This attached product now supports admin-side checkout, plan changes, and Stripe lifecycle actions in this screen.', false);
+            $response->assertSee('Confirm Plan Change', false);
+            $response->assertSee('Cancel at Period End', false);
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');
@@ -250,6 +269,161 @@ class BillingPageTest extends TestCase
         }
     }
 
+    public function test_attached_product_change_plan_uses_product_subscription_plan_change_service(): void
+    {
+        [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
+
+        $product = Product::query()->create([
+            'code' => 'accounting_change_' . uniqid(),
+            'name' => 'Accounting Change',
+            'slug' => 'accounting-change-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $currentPlan = $this->createProductPlan($product->id, 'Accounting Current', 'accounting-current', 299);
+        $targetPlan = $this->createProductPlan($product->id, 'Accounting Growth', 'accounting-growth', 399);
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $currentPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_attached_change',
+            'gateway_subscription_id' => 'sub_attached_change',
+            'gateway_price_id' => $currentPlan->stripe_price_id,
+            'payment_failures_count' => 0,
+        ]);
+
+        $service = Mockery::mock(StripeTenantProductSubscriptionPlanChangeService::class);
+        $service->shouldReceive('changePlan')
+            ->once()
+            ->with(
+                Mockery::on(fn ($model) => (int) $model->id === (int) $productSubscription->id),
+                Mockery::on(fn ($plan) => (int) $plan->id === (int) $targetPlan->id),
+                null
+            )
+            ->andReturn([
+                'ok' => true,
+                'message' => 'Product subscription plan changed successfully.',
+            ]);
+
+        $this->app->instance(StripeTenantProductSubscriptionPlanChangeService::class, $service);
+
+        $priceInspector = Mockery::mock(StripePriceInspectorService::class);
+        $priceInspector->shouldReceive('auditPlan')
+            ->atLeast()
+            ->once()
+            ->andReturn([
+                'checks' => ['is_aligned' => true],
+                'stripe' => [
+                    'unit_amount_decimal' => 399,
+                    'currency' => 'USD',
+                    'interval' => 'month',
+                    'product_name' => 'Accounting Change',
+                ],
+            ]);
+
+        $this->app->instance(StripePriceInspectorService::class, $priceInspector);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->actingAs($user, 'automotive_admin');
+
+            $response = $this->post("http://{$domain}/automotive/admin/billing/change-plan", [
+                'workspace_product' => $product->code,
+                'target_plan_id' => $targetPlan->id,
+            ]);
+
+            $response->assertRedirect("http://{$domain}/automotive/admin/billing?target_plan_id={$targetPlan->id}&workspace_product={$product->code}");
+        } finally {
+            tenancy()->end();
+            \Illuminate\Support\Facades\DB::purge('tenant');
+        }
+    }
+
+    public function test_attached_product_renew_starts_checkout_on_product_subscription(): void
+    {
+        [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
+
+        $product = Product::query()->create([
+            'code' => 'accounting_checkout_' . uniqid(),
+            'name' => 'Accounting Checkout',
+            'slug' => 'accounting-checkout-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createProductPlan($product->id, 'Accounting Pro', 'accounting-pro', 299);
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => null,
+            'status' => 'past_due',
+            'gateway' => null,
+            'payment_failures_count' => 0,
+        ]);
+
+        $recoveryService = Mockery::mock(CheckoutStripePlanRecoveryService::class);
+        $recoveryService->shouldReceive('recoverPaidPlan')
+            ->once()
+            ->with($plan->id, $product->code)
+            ->andReturn($plan);
+
+        $recoveryService->shouldReceive('retryIfStripePriceNeedsRepair')
+            ->once()
+            ->with(
+                Mockery::on(fn ($checkoutPlan) => (int) $checkoutPlan->id === (int) $plan->id),
+                $product->code,
+                Mockery::type('callable')
+            )
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://stripe.test/checkout/session_attached',
+                'session_id' => 'cs_attached_product_checkout',
+            ]);
+
+        $this->app->instance(CheckoutStripePlanRecoveryService::class, $recoveryService);
+
+        $priceInspector = Mockery::mock(StripePriceInspectorService::class);
+        $priceInspector->shouldReceive('auditPlan')
+            ->once()
+            ->andReturn([
+                'checks' => ['is_aligned' => true],
+                'stripe' => [
+                    'unit_amount_decimal' => 299,
+                    'currency' => 'USD',
+                    'interval' => 'month',
+                    'product_name' => 'Accounting Checkout',
+                ],
+            ]);
+
+        $this->app->instance(StripePriceInspectorService::class, $priceInspector);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->actingAs($user, 'automotive_admin');
+
+            $response = $this->post("http://{$domain}/automotive/admin/billing/renew", [
+                'workspace_product' => $product->code,
+                'target_plan_id' => $plan->id,
+            ]);
+
+            $response->assertRedirect('https://stripe.test/checkout/session_attached');
+
+            $this->assertNotNull($productSubscription->fresh());
+            $this->assertSame($plan->id, $productSubscription->fresh()->plan_id);
+            $this->assertSame('stripe', $productSubscription->fresh()->gateway);
+            $this->assertSame('cs_attached_product_checkout', $productSubscription->fresh()->gateway_checkout_session_id);
+            $this->assertSame($plan->stripe_price_id, $productSubscription->fresh()->gateway_price_id);
+        } finally {
+            tenancy()->end();
+            \Illuminate\Support\Facades\DB::purge('tenant');
+        }
+    }
+
     protected function createSubscription(array $overrides = []): Subscription
     {
         return Subscription::query()->create(array_merge([
@@ -301,5 +475,43 @@ class BillingPageTest extends TestCase
         ]);
 
         return $domain;
+    }
+
+    protected function prepareTenantBillingWorkspace(): array
+    {
+        $tenant = Tenant::query()->create([
+            'id' => 'billing-attached-action-' . uniqid(),
+            'data' => ['company_name' => 'Billing Attached Action'],
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'Billing Attached Admin',
+            'email' => 'billing-attached-admin-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        TenantUser::query()->create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+        ]);
+
+        return [$tenant, $this->createTenantDomain($tenant), $user];
+    }
+
+    protected function createProductPlan(int $productId, string $name, string $slug, int|float $price): Plan
+    {
+        return Plan::query()->create([
+            'product_id' => $productId,
+            'name' => $name,
+            'slug' => $slug . '-' . uniqid(),
+            'description' => $name . ' description',
+            'price' => $price,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
     }
 }

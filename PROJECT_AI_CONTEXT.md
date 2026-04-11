@@ -1607,6 +1607,38 @@ Why this matters:
 - the workspace can now present a more accurate billing experience when the tenant starts from a non-legacy product code
 - this closes another remaining assumption that the default billable product must always be identified by the exact `automotive_service` code
 
+## 18.35) Non-Primary Product Billing Write Path in Tenant Admin
+Status: completed
+
+What changed:
+- tenant admin billing is no longer read-only for attached non-primary products
+- attached product billing now supports:
+  - renewal checkout start from the tenant admin billing screen
+  - in-place Stripe plan changes on `tenant_product_subscriptions`
+  - Stripe customer portal access
+  - cancel at period end
+  - resume subscription
+- inline payment-method update remains intentionally limited to the primary billing flow for now
+
+Implementation details:
+- added `StripeTenantProductSubscriptionPlanChangeService`
+- `BillingController` now:
+  - routes attached-product renewals through `tenant_product_subscription_id`
+  - updates `tenant_product_subscriptions.gateway_checkout_session_id` for new checkout sessions
+  - uses the new product-subscription Stripe plan-change service for attached products
+  - no longer blocks portal/cancel/resume actions just because the product is non-primary
+- tenant admin billing UI copy now reflects that attached-product billing actions are supported in this screen
+
+Test coverage:
+- added billing feature coverage proving:
+  - attached product billing page now shows actionable product-scoped billing controls
+  - attached product plan change uses the product-subscription plan-change service
+  - attached product renew starts checkout on the correct `tenant_product_subscription`
+
+Why this matters:
+- tenant admins can now manage billing for additional subscribed products from inside the workspace instead of being forced back to the separate portal flow
+- this closes another major blocker in the move from “automotive-first workspace” to true multi-product tenant billing
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
