@@ -1316,6 +1316,27 @@ Important scope note:
   - job-level totals
   - future accounting handoff when a work order is completed
 
+### 18.24 Product-Aware Plan Seeding and Checkout Stripe Price Recovery
+Paid plan setup and checkout resilience have been improved for the current multi-product phase.
+
+What changed:
+- the old static automotive-only plan seeder with hardcoded Stripe price ids was replaced
+- the plan seeder now creates product-aware default plans for every active product:
+  - automotive gets a trial plus paid plans
+  - all active products get paid plans
+- seeded paid plans attempt Stripe sync automatically when Stripe is configured
+- checkout now attempts automatic Stripe plan recovery before failing when:
+  - a paid plan has no `stripe_price_id`
+  - the linked Stripe price is inactive
+  - the linked Stripe price no longer matches the local plan
+- this recovery is now used in both:
+  - primary automotive checkout
+  - additional product checkout
+
+Important operator note:
+- if the runtime environment has working Stripe credentials, checkout can now self-heal stale plan mappings in many cases
+- if the central database connection is unavailable, the seeder cannot be executed from that environment until DB connectivity is restored
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

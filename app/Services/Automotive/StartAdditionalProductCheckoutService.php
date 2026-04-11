@@ -9,6 +9,7 @@ use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
 use App\Models\User;
 use App\Services\Billing\BillingPlanCatalogService;
+use App\Services\Billing\CheckoutStripePlanRecoveryService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class StartAdditionalProductCheckoutService
 
     public function __construct(
         protected BillingPlanCatalogService $billingPlanCatalogService,
+        protected CheckoutStripePlanRecoveryService $checkoutStripePlanRecoveryService,
         protected PaymentGatewayManager $paymentGatewayManager
     ) {
     }
@@ -36,7 +38,7 @@ class StartAdditionalProductCheckoutService
             return $this->validationError('Automotive should use the primary checkout flow.');
         }
 
-        $paidPlan = $this->billingPlanCatalogService->findPaidPlanById($planId, (string) $product->code);
+        $paidPlan = $this->checkoutStripePlanRecoveryService->recoverPaidPlan($planId, (string) $product->code);
         if (! $paidPlan) {
             return $this->validationError('The selected product plan was not found or is not active.');
         }
@@ -101,26 +103,30 @@ class StartAdditionalProductCheckoutService
         }
 
         try {
-            $session = $this->paymentGatewayManager
-                ->driver('stripe')
-                ->createRenewalSession([
-                    'tenant_id' => $tenantId,
-                    'tenant_product_subscription_id' => $productSubscription->id,
-                    'plan_id' => $paidPlan->id,
-                    'stripe_price_id' => $paidPlan->stripe_price_id,
-                    'customer_email' => $user->email,
-                    'success_url' => route('automotive.portal.checkout.success', ['product' => $product->slug]),
-                    'cancel_url' => route('automotive.portal.checkout.cancel', ['product' => $product->slug]),
-                    'product_scope' => (string) $product->code,
-                    'plan_for_audit' => [
-                        'id' => $paidPlan->id,
-                        'name' => $paidPlan->name,
-                        'price' => isset($paidPlan->price) ? (float) $paidPlan->price : null,
-                        'currency' => $paidPlan->currency ?? null,
-                        'billing_period' => $paidPlan->billing_period ?? null,
-                        'stripe_price_id' => $paidPlan->stripe_price_id ?? null,
-                    ],
-                ]);
+            $session = $this->checkoutStripePlanRecoveryService->retryIfStripePriceNeedsRepair(
+                $paidPlan,
+                (string) $product->code,
+                fn (object $checkoutPlan) => $this->paymentGatewayManager
+                    ->driver('stripe')
+                    ->createRenewalSession([
+                        'tenant_id' => $tenantId,
+                        'tenant_product_subscription_id' => $productSubscription->id,
+                        'plan_id' => $checkoutPlan->id,
+                        'stripe_price_id' => $checkoutPlan->stripe_price_id,
+                        'customer_email' => $user->email,
+                        'success_url' => route('automotive.portal.checkout.success', ['product' => $product->slug]),
+                        'cancel_url' => route('automotive.portal.checkout.cancel', ['product' => $product->slug]),
+                        'product_scope' => (string) $product->code,
+                        'plan_for_audit' => [
+                            'id' => $checkoutPlan->id,
+                            'name' => $checkoutPlan->name,
+                            'price' => isset($checkoutPlan->price) ? (float) $checkoutPlan->price : null,
+                            'currency' => $checkoutPlan->currency ?? null,
+                            'billing_period' => $checkoutPlan->billing_period ?? null,
+                            'stripe_price_id' => $checkoutPlan->stripe_price_id ?? null,
+                        ],
+                    ])
+            );
         } catch (\Throwable $e) {
             report($e);
 

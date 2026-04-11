@@ -6,6 +6,7 @@ use App\Models\CustomerOnboardingProfile;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Billing\BillingPlanCatalogService;
+use App\Services\Billing\CheckoutStripePlanRecoveryService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\TenantProductSubscriptionSyncService;
 use App\Support\Billing\SubscriptionStatuses;
@@ -17,6 +18,7 @@ class StartPaidCheckoutService
 
     public function __construct(
         protected BillingPlanCatalogService $billingPlanCatalogService,
+        protected CheckoutStripePlanRecoveryService $checkoutStripePlanRecoveryService,
         protected PaymentGatewayManager $paymentGatewayManager,
         protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
     ) {
@@ -24,7 +26,7 @@ class StartPaidCheckoutService
 
     public function start(User $user, CustomerOnboardingProfile $profile, int $planId): array
     {
-        $plan = $this->billingPlanCatalogService->findPaidPlanById($planId, self::PRODUCT_CODE);
+        $plan = $this->checkoutStripePlanRecoveryService->recoverPaidPlan($planId, self::PRODUCT_CODE);
         $reservedTenantId = strtolower(trim((string) $profile->subdomain));
 
         if (! $plan) {
@@ -95,18 +97,22 @@ class StartPaidCheckoutService
         }
 
         try {
-            $session = $this->paymentGatewayManager
-                ->driver('stripe')
-                ->createRenewalSession([
-                    'tenant_id' => $tenantId,
-                    'subscription_row_id' => $subscription->id ?? null,
-                    'plan_id' => $plan->id,
-                    'stripe_price_id' => $plan->stripe_price_id,
-                    'customer_email' => $user->email,
-                    'success_url' => route('automotive.portal.checkout.success'),
-                    'cancel_url' => route('automotive.portal.checkout.cancel'),
-                    'plan_for_audit' => $this->planAuditPayload($plan),
-                ]);
+            $session = $this->checkoutStripePlanRecoveryService->retryIfStripePriceNeedsRepair(
+                $plan,
+                self::PRODUCT_CODE,
+                fn (object $checkoutPlan) => $this->paymentGatewayManager
+                    ->driver('stripe')
+                    ->createRenewalSession([
+                        'tenant_id' => $tenantId,
+                        'subscription_row_id' => $subscription->id ?? null,
+                        'plan_id' => $checkoutPlan->id,
+                        'stripe_price_id' => $checkoutPlan->stripe_price_id,
+                        'customer_email' => $user->email,
+                        'success_url' => route('automotive.portal.checkout.success'),
+                        'cancel_url' => route('automotive.portal.checkout.cancel'),
+                        'plan_for_audit' => $this->planAuditPayload($checkoutPlan),
+                    ])
+            );
         } catch (\Throwable $e) {
             report($e);
 
