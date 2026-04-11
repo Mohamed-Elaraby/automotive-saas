@@ -101,6 +101,43 @@
                     <div class="col-xl-5 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
+                                <h5 class="card-title mb-0">Create Work Order</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.work-orders.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'automotive_service') }}">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Branch</label>
+                                        <select name="branch_id" class="form-select">
+                                            @foreach(($moduleData['active_branches'] ?? collect()) as $branch)
+                                                <option value="{{ $branch->id }}" {{ (string) old('branch_id') === (string) $branch->id ? 'selected' : '' }}>
+                                                    {{ $branch->name }} ({{ $branch->code }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Work Order Title</label>
+                                        <input type="text" name="title" class="form-control" value="{{ old('title') }}" placeholder="Brake service, engine inspection, etc.">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Notes</label>
+                                        <textarea name="notes" class="form-control" rows="3">{{ old('notes') }}</textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">Create Work Order</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
                                 <h5 class="card-title mb-0">Consume Spare Part In Workshop</h5>
                             </div>
                             <div class="card-body">
@@ -108,10 +145,23 @@
                                     <p class="text-muted mb-0">Connect a Spare Parts product to this tenant workspace before workshop operations can consume stock.</p>
                                 @elseif(($moduleData['available_stock_items'] ?? collect())->isEmpty())
                                     <p class="text-muted mb-0">No available stock items were found yet in the connected Spare Parts workspace.</p>
+                                @elseif(($moduleData['open_work_orders'] ?? collect())->isEmpty())
+                                    <p class="text-muted mb-0">Create a work order first before consuming spare parts in workshop operations.</p>
                                 @else
                                     <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.consume-part', $workspaceQuery) }}">
                                         @csrf
                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'automotive_service') }}">
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Work Order</label>
+                                            <select name="work_order_id" class="form-select">
+                                                @foreach(($moduleData['open_work_orders'] ?? collect()) as $workOrder)
+                                                    <option value="{{ $workOrder->id }}" {{ (string) old('work_order_id') === (string) $workOrder->id ? 'selected' : '' }}>
+                                                        {{ $workOrder->work_order_number }} - {{ $workOrder->title }} ({{ $workOrder->branch?->name }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
 
                                         <div class="mb-3">
                                             <label class="form-label">Stock Item</label>
@@ -155,6 +205,34 @@
                     <div class="col-xl-7 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
+                                <h5 class="card-title mb-0">Recent Work Orders</h5>
+                            </div>
+                            <div class="card-body">
+                                @forelse(($moduleData['recent_work_orders'] ?? collect()) as $workOrder)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ $workOrder->work_order_number }}</h6>
+                                                <div class="text-muted small">{{ $workOrder->title }}</div>
+                                                <div class="text-muted small">{{ $workOrder->branch?->name ?? '—' }} · {{ $workOrder->creator?->name ?? 'System user' }}</div>
+                                            </div>
+                                            <span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ strtoupper($workOrder->status) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No work orders have been created yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header">
                                 <h5 class="card-title mb-0">Available Spare Parts Stock</h5>
                             </div>
                             <div class="card-body">
@@ -165,9 +243,7 @@
                                                 <h6 class="mb-1">{{ $stockItem->product_name }}</h6>
                                                 <div class="text-muted small">{{ $stockItem->product_sku }} · {{ $stockItem->branch_name }} ({{ $stockItem->branch_code }})</div>
                                             </div>
-                                            <span class="badge bg-success">
-                                                {{ rtrim(rtrim((string) $stockItem->quantity, '0'), '.') }} {{ $stockItem->product_unit }}
-                                            </span>
+                                            <span class="badge bg-success">{{ rtrim(rtrim((string) $stockItem->quantity, '0'), '.') }} {{ $stockItem->product_unit }}</span>
                                         </div>
                                     </div>
                                 @empty
@@ -191,6 +267,12 @@
                                             <div>
                                                 <h6 class="mb-1">{{ $movement->product_name }}</h6>
                                                 <div class="text-muted small">{{ $movement->product_sku }} · {{ $movement->branch_name }}</div>
+                                                <div class="text-muted small">
+                                                    {{ $movement->work_order_number ?: 'No work order' }}
+                                                    @if(!empty($movement->work_order_title))
+                                                        · {{ $movement->work_order_title }}
+                                                    @endif
+                                                </div>
                                                 <div class="text-muted small">{{ $movement->creator_name ?: 'System user' }} · {{ optional($movement->movement_date)->format('Y-m-d H:i') }}</div>
                                             </div>
                                             <div class="text-end">

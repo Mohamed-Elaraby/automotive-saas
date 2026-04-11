@@ -68,6 +68,8 @@ Route::prefix('automotive/admin')
             Route::middleware('tenant.workspace.product:automotive_service')->group(function () {
                 Route::get('/workshop-operations', [WorkspaceModuleController::class, 'workshopOperations'])
                     ->name('modules.workshop-operations');
+                Route::post('/workshop-operations/work-orders', [WorkspaceModuleController::class, 'storeWorkOrder'])
+                    ->name('modules.workshop-operations.work-orders.store');
                 Route::post('/workshop-operations/consume-part', [WorkspaceModuleController::class, 'consumeWorkshopPart'])
                     ->name('modules.workshop-operations.consume-part');
             });

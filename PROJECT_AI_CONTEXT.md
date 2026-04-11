@@ -1214,14 +1214,31 @@ What changed:
 - successful consumption:
   - decrements tenant inventory
   - records a stock movement
-  - tags the movement with `reference_type = workshop_operation`
+  - tags the movement with a typed reference
   - surfaces the result in a `Recent Workshop Consumptions` panel
 
+### 18.20 Workshop Work Orders Foundation
+The workshop integration is no longer only a generic stock-consumption action. It now has a basic work-order layer.
+
+What changed:
+- added a tenant-level `work_orders` table and `WorkOrder` model
+- `Workshop Operations` now allows creating real work orders inside the tenant workspace
+- spare-parts consumption from workshop operations now requires selecting a valid work order first
+- stock movements created by workshop consumption are now linked to:
+  - `reference_type = App\\Models\\WorkOrder`
+  - `reference_id = work_order.id`
+- the module page now shows:
+  - `Create Work Order`
+  - `Recent Work Orders`
+  - `Recent Workshop Consumptions` linked to work-order context
+
 Implementation note:
-- to avoid a new enum migration immediately, the stock movement is currently stored as:
-  - `type = adjustment_out`
-  - `reference_type = workshop_operation`
-- this is sufficient as a first production-ready cross-product integration step and can later be normalized into a dedicated movement type if needed
+- stock movement type is still stored as `adjustment_out` for speed and backward compatibility
+- the important improvement is that the movement is now tied to a real workshop business record instead of a generic string reference
+- this creates the correct base for later:
+  - service/job lifecycle
+  - parts usage history per job
+  - future accounting handoff from workshop operations
 
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:

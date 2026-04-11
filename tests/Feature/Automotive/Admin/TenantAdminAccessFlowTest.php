@@ -286,13 +286,14 @@ class TenantAdminAccessFlowTest extends TestCase
         $response = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
 
         $response->assertOk();
+        $response->assertSee('Create Work Order', false);
         $response->assertSee('Consume Spare Part In Workshop', false);
         $response->assertSee('Available Spare Parts Stock', false);
         $response->assertSee('Oil Filter', false);
         $response->assertSee('OF-100', false);
     }
 
-    public function test_workshop_operations_can_consume_spare_parts_stock(): void
+    public function test_workshop_operations_can_create_work_order_and_consume_spare_parts_stock(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
         $this->attachPartsWorkspaceToTenant($tenant);
@@ -310,8 +311,29 @@ class TenantAdminAccessFlowTest extends TestCase
             'password' => $password,
         ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
 
+        $createWorkOrderResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'branch_id' => $branchId,
+            'title' => 'Brake service work order',
+            'notes' => 'Customer brake maintenance',
+        ]);
+
+        $createWorkOrderResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $workOrder = DB::connection('tenant')->table('work_orders')->latest('id')->first();
+            $this->assertNotNull($workOrder);
+            $this->assertSame('Brake service work order', $workOrder->title);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
         $response = $this->post("http://{$domain}/automotive/admin/workshop-operations/consume-part?workspace_product=automotive_service", [
             'workspace_product' => 'automotive_service',
+            'work_order_id' => $workOrder->id,
             'branch_id' => $branchId,
             'product_id' => $productId,
             'quantity' => 2,
@@ -333,7 +355,8 @@ class TenantAdminAccessFlowTest extends TestCase
             $movement = DB::connection('tenant')->table('stock_movements')
                 ->where('branch_id', $branchId)
                 ->where('product_id', $productId)
-                ->where('reference_type', 'workshop_operation')
+                ->where('reference_type', \App\Models\WorkOrder::class)
+                ->where('reference_id', $workOrder->id)
                 ->latest('id')
                 ->first();
 
@@ -347,9 +370,12 @@ class TenantAdminAccessFlowTest extends TestCase
 
         $followupResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
         $followupResponse->assertOk();
+        $followupResponse->assertSee('Recent Work Orders', false);
+        $followupResponse->assertSee('Brake service work order', false);
         $followupResponse->assertSee('Recent Workshop Consumptions', false);
         $followupResponse->assertSee('Brake Pad', false);
         $followupResponse->assertSee('Used in brake service', false);
+        $followupResponse->assertSee($workOrder->work_order_number, false);
     }
 
     /**

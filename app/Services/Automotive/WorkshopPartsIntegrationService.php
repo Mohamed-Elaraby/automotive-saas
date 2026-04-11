@@ -4,6 +4,7 @@ namespace App\Services\Automotive;
 
 use App\Models\Inventory;
 use App\Models\StockMovement;
+use App\Models\WorkOrder;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceProductFamilyResolver;
 use Illuminate\Support\Collection;
@@ -53,11 +54,18 @@ class WorkshopPartsIntegrationService
     public function getRecentWorkshopConsumptions(int $limit = 8): Collection
     {
         return StockMovement::query()
+            ->leftJoin('work_orders', function ($join) {
+                $join->on('work_orders.id', '=', 'stock_movements.reference_id')
+                    ->where('stock_movements.reference_type', '=', WorkOrder::class);
+            })
             ->join('products', 'products.id', '=', 'stock_movements.product_id')
             ->join('branches', 'branches.id', '=', 'stock_movements.branch_id')
             ->leftJoin('users', 'users.id', '=', 'stock_movements.created_by')
             ->where('stock_movements.type', 'adjustment_out')
-            ->where('stock_movements.reference_type', 'workshop_operation')
+            ->where(function ($query) {
+                $query->where('stock_movements.reference_type', WorkOrder::class)
+                    ->orWhere('stock_movements.reference_type', 'workshop_operation');
+            })
             ->select([
                 'stock_movements.id',
                 'stock_movements.quantity',
@@ -67,6 +75,8 @@ class WorkshopPartsIntegrationService
                 'products.sku as product_sku',
                 'branches.name as branch_name',
                 'users.name as creator_name',
+                'work_orders.work_order_number',
+                'work_orders.title as work_order_title',
             ])
             ->latest('stock_movements.id')
             ->limit($limit)
@@ -97,6 +107,14 @@ class WorkshopPartsIntegrationService
                 ]);
             }
 
+            $workOrder = WorkOrder::query()->find($data['work_order_id'] ?? null);
+
+            if (! $workOrder) {
+                throw ValidationException::withMessages([
+                    'work_order_id' => 'A valid work order is required before consuming workshop stock.',
+                ]);
+            }
+
             $inventory->decrement('quantity', $requestedQuantity);
 
             return StockMovement::query()->create([
@@ -104,8 +122,8 @@ class WorkshopPartsIntegrationService
                 'product_id' => $data['product_id'],
                 'type' => 'adjustment_out',
                 'quantity' => $requestedQuantity,
-                'reference_type' => 'workshop_operation',
-                'reference_id' => null,
+                'reference_type' => WorkOrder::class,
+                'reference_id' => $workOrder->id,
                 'notes' => $data['notes'] ?? 'Consumed by workshop operations',
                 'created_by' => $data['created_by'] ?? null,
                 'movement_date' => now(),

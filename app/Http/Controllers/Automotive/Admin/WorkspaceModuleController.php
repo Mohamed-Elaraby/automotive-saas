@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
+use App\Services\Automotive\WorkshopWorkOrderService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -18,7 +19,8 @@ class WorkspaceModuleController extends Controller
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
-        protected WorkshopPartsIntegrationService $workshopPartsIntegrationService
+        protected WorkshopPartsIntegrationService $workshopPartsIntegrationService,
+        protected WorkshopWorkOrderService $workshopWorkOrderService
     ) {
     }
 
@@ -40,11 +42,35 @@ class WorkspaceModuleController extends Controller
 
                 return [
                     'has_connected_parts_workspace' => $this->workshopPartsIntegrationService->hasConnectedPartsWorkspace($tenantId),
+                    'active_branches' => $this->workshopWorkOrderService->getActiveBranches(),
+                    'open_work_orders' => $this->workshopWorkOrderService->getOpenWorkOrders(),
+                    'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(),
                     'available_stock_items' => $this->workshopPartsIntegrationService->getAvailableStockSnapshot(),
                     'recent_workshop_consumptions' => $this->workshopPartsIntegrationService->getRecentWorkshopConsumptions(),
                 ];
             }
         );
+    }
+
+    public function storeWorkOrder(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'branch_id' => ['required', 'integer', 'exists:branches,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->workshopWorkOrderService->createWorkOrder([
+            'branch_id' => $validated['branch_id'],
+            'title' => $validated['title'],
+            'notes' => $validated['notes'] ?? null,
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return redirect()
+            ->route('automotive.admin.modules.workshop-operations', ['workspace_product' => $validated['workspace_product'] ?: 'automotive_service'])
+            ->with('success', 'Work order created successfully.');
     }
 
     public function consumeWorkshopPart(Request $request): RedirectResponse
@@ -59,6 +85,7 @@ class WorkspaceModuleController extends Controller
 
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
+            'work_order_id' => ['required', 'integer', 'exists:work_orders,id'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'quantity' => ['required', 'numeric', 'gt:0'],
