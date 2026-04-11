@@ -1061,9 +1061,14 @@ Admin plan creation/edit is now operationally aligned with the multi-product mod
 - the plan preview in admin continues to be live and now also reflects:
   - selected product
   - live description changes
+- the portal preview binding bug was fixed:
+  - the preview now targets the actual plan form by explicit form id
+  - it no longer accidentally binds to another form in the admin layout
 - plan index/show screens now surface the linked product explicitly
 - plan index now supports filtering by product
 - products index links each plan count directly to the filtered plans view
+- the empty filtered-plans state no longer boots DataTables incorrectly:
+  - this fixed the `Incorrect column count` warning when opening a product with zero linked plans
 
 ### 18.13 Tenant Workspace Product Context
 The tenant workspace foundation is no longer treated purely as a single-product automotive shell.
@@ -1087,6 +1092,12 @@ What exists now:
 - central admin CRUD per product
 - product index shows capability counts and links into capability management
 - tenant workspace dashboard now surfaces active capabilities for attached products
+- a dedicated seeder now creates one default capability per product code:
+  - `automotive_service` -> `Workshop Operations`
+  - `parts_inventory` -> `Supplier Catalog`
+  - `accounting` -> `General Ledger`
+  - unknown products receive a fallback core capability
+- the customer portal also now surfaces included product capabilities for the currently selected product
 
 Important architectural note:
 - capabilities are currently metadata and visibility signals
