@@ -10,6 +10,7 @@ use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
 use App\Http\Controllers\Automotive\Admin\StockTransferController;
 use App\Http\Controllers\Automotive\Admin\UserController;
+use App\Http\Controllers\Automotive\Admin\WorkspaceModuleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('automotive/admin')
@@ -53,27 +54,6 @@ Route::prefix('automotive/admin')
             Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('branches.update');
             Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy');
 
-            Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-            Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
-            Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-            Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-            Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-            Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-
-            Route::get('/inventory-adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory-adjustments.index');
-            Route::get('/inventory-adjustments/create', [InventoryAdjustmentController::class, 'create'])->name('inventory-adjustments.create');
-            Route::post('/inventory-adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory-adjustments.store');
-
-            Route::get('/inventory-report', [InventoryReportController::class, 'index'])->name('inventory-report.index');
-
-            Route::get('/stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
-            Route::get('/stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
-            Route::post('/stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
-            Route::get('/stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
-            Route::post('/stock-transfers/{stockTransfer}/post', [StockTransferController::class, 'post'])->name('stock-transfers.post');
-
-            Route::get('/stock-movements', [StockMovementReportController::class, 'index'])->name('stock-movements.index');
-
             Route::get('/billing', [BillingController::class, 'status'])->name('billing.status');
             Route::post('/billing/renew', [BillingController::class, 'renew'])->name('billing.renew');
             Route::post('/billing/change-plan', [BillingController::class, 'changePlan'])->name('billing.change-plan');
@@ -84,5 +64,41 @@ Route::prefix('automotive/admin')
             Route::post('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
             Route::post('/billing/cancel-subscription', [BillingController::class, 'cancelSubscription'])->name('billing.cancel-subscription');
             Route::post('/billing/resume-subscription', [BillingController::class, 'resumeSubscription'])->name('billing.resume-subscription');
+
+            Route::middleware('tenant.workspace.product:automotive_service')->group(function () {
+                Route::get('/workshop-operations', [WorkspaceModuleController::class, 'workshopOperations'])
+                    ->name('modules.workshop-operations');
+            });
+
+            Route::middleware('tenant.workspace.product:parts_inventory')->group(function () {
+                Route::get('/supplier-catalog', [WorkspaceModuleController::class, 'supplierCatalog'])
+                    ->name('modules.supplier-catalog');
+
+                Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+                Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+                Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+                Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+                Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+                Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+                Route::get('/inventory-adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory-adjustments.index');
+                Route::get('/inventory-adjustments/create', [InventoryAdjustmentController::class, 'create'])->name('inventory-adjustments.create');
+                Route::post('/inventory-adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory-adjustments.store');
+
+                Route::get('/inventory-report', [InventoryReportController::class, 'index'])->name('inventory-report.index');
+
+                Route::get('/stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
+                Route::get('/stock-transfers/create', [StockTransferController::class, 'create'])->name('stock-transfers.create');
+                Route::post('/stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+                Route::get('/stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->name('stock-transfers.show');
+                Route::post('/stock-transfers/{stockTransfer}/post', [StockTransferController::class, 'post'])->name('stock-transfers.post');
+
+                Route::get('/stock-movements', [StockMovementReportController::class, 'index'])->name('stock-movements.index');
+            });
+
+            Route::middleware('tenant.workspace.product:accounting')->group(function () {
+                Route::get('/general-ledger', [WorkspaceModuleController::class, 'generalLedger'])
+                    ->name('modules.general-ledger');
+            });
         });
     });

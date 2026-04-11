@@ -2,6 +2,7 @@
 @extends('automotive.admin.layouts.adminLayout.mainlayout')
 
 @section('content')
+    @php($workspaceQuery = request()->attributes->get('workspace_product_code') ? ['workspace_product' => request()->attributes->get('workspace_product_code')] : [])
     <div class="page-wrapper">
         <div class="content">
             <div class="row">
@@ -9,8 +10,8 @@
                     <div>
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <h6>
-                                <a href="{{ route('automotive.admin.products.index') }}">
-                                    <i class="isax isax-arrow-left me-2"></i>Products
+                                <a href="{{ route('automotive.admin.products.index', $workspaceQuery) }}">
+                                    <i class="isax isax-arrow-left me-2"></i>Stock Items
                                 </a>
                             </h6>
                         </div>
@@ -95,14 +96,14 @@
 
                                         <div class="col-lg-12">
                                             <div class="mb-3">
-                                                <label class="form-label">Product Description</label>
+                                                <label class="form-label">Item Description</label>
                                                 <textarea name="description" class="form-control" rows="4">{{ old('description', $product->description) }}</textarea>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="d-flex align-items-center justify-content-between">
-                                        <a href="{{ route('automotive.admin.products.index') }}" class="btn btn-outline-white">Cancel</a>
+                                        <a href="{{ route('automotive.admin.products.index', $workspaceQuery) }}" class="btn btn-outline-white">Cancel</a>
                                         <button type="submit" class="btn btn-primary">Save Changes</button>
                                     </div>
                                 </form>

@@ -2,18 +2,41 @@
     $tenantAdminUser = auth('automotive_admin')->user();
     $tenantAdminImpersonation = session('tenant_admin_impersonation', []);
     $isTenantAdminImpersonating = is_array($tenantAdminImpersonation) && ($tenantAdminImpersonation['active'] ?? false);
+    $focusedWorkspaceProductCode = (string) request()->attributes->get('workspace_product_code', request()->query('workspace_product', 'automotive_service'));
+    $workspaceQuery = $focusedWorkspaceProductCode !== '' ? ['workspace_product' => $focusedWorkspaceProductCode] : [];
 
     $tenantAdminRouteLabels = [
         'automotive.admin.dashboard' => 'Dashboard',
         'automotive.admin.users.*' => 'Users',
         'automotive.admin.branches.*' => 'Branches',
-        'automotive.admin.products.*' => 'Products',
+        'automotive.admin.products.*' => 'Stock Items',
         'automotive.admin.inventory-adjustments.*' => 'Inventory Adjustments',
         'automotive.admin.stock-transfers.*' => 'Stock Transfers',
         'automotive.admin.inventory-report.*' => 'Inventory Report',
-        'automotive.admin.stock-movements.*' => 'Stock Movements',
+        'automotive.admin.stock-movements.*' => 'Stock Movement Report',
         'automotive.admin.billing.*' => 'Plans & Billing',
+        'automotive.admin.modules.workshop-operations' => 'Workshop Operations',
+        'automotive.admin.modules.supplier-catalog' => 'Supplier Catalog',
+        'automotive.admin.modules.general-ledger' => 'General Ledger',
     ];
+
+    $headerShortcut = match ($focusedWorkspaceProductCode) {
+        'parts_inventory' => [
+            'route' => 'automotive.admin.inventory-report.index',
+            'label' => 'Inventory Report',
+            'icon' => 'isax-chart-35',
+        ],
+        'accounting' => [
+            'route' => 'automotive.admin.modules.general-ledger',
+            'label' => 'General Ledger',
+            'icon' => 'isax-wallet-3',
+        ],
+        default => [
+            'route' => 'automotive.admin.modules.workshop-operations',
+            'label' => 'Workshop Operations',
+            'icon' => 'isax-car',
+        ],
+    };
 
     $currentTenantAdminSection = 'Workspace';
 
@@ -29,10 +52,10 @@
 <div class="header">
     <div class="main-header">
         <div class="header-left">
-            <a href="{{ route('automotive.admin.dashboard') }}" class="logo">
+            <a href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}" class="logo">
                 <img src="{{ url('theme/img/logo.svg') }}" alt="Logo">
             </a>
-            <a href="{{ route('automotive.admin.dashboard') }}" class="dark-logo">
+            <a href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}" class="dark-logo">
                 <img src="{{ url('theme/img/logo-white.svg') }}" alt="Logo">
             </a>
         </div>
@@ -51,7 +74,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb breadcrumb-divide mb-0">
                             <li class="breadcrumb-item d-flex align-items-center">
-                                <a href="{{ route('automotive.admin.dashboard') }}">
+                                <a href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
                                     <i class="isax isax-home-2 me-1"></i>Tenant Admin
                                 </a>
                             </li>
@@ -111,14 +134,14 @@
                                 </div>
                             </div>
 
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard') }}">
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
                                 <i class="isax isax-element-45 me-2"></i>Dashboard
                             </a>
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.billing.status') }}">
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.billing.status', $workspaceQuery) }}">
                                 <i class="isax isax-crown5 me-2"></i>Plans & Billing
                             </a>
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.inventory-report.index') }}">
-                                <i class="isax isax-chart-35 me-2"></i>Inventory Report
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
+                                <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
                             </a>
 
                             <hr class="dropdown-divider my-2">
@@ -145,14 +168,14 @@
             </span>
         </a>
         <div class="dropdown-menu p-2 mt-0">
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard') }}">
+            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
                 <i class="isax isax-element-45 me-2"></i>Dashboard
             </a>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.billing.status') }}">
+            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.billing.status', $workspaceQuery) }}">
                 <i class="isax isax-crown5 me-2"></i>Plans & Billing
             </a>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.inventory-report.index') }}">
-                <i class="isax isax-chart-35 me-2"></i>Inventory Report
+            <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
+                <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
             </a>
             <form method="POST" action="{{ route('automotive.admin.logout') }}">
                 @csrf

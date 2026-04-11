@@ -70,6 +70,10 @@ class TenantAdminAccessFlowTest extends TestCase
 
         $dashboardResponse->assertOk();
         $dashboardResponse->assertSee('Dashboard', false);
+        $dashboardResponse->assertSee('Workshop Operations', false);
+        $dashboardResponse->assertDontSee('Inventory Adjustments', false);
+        $dashboardResponse->assertDontSee('Stock Transfers', false);
+        $dashboardResponse->assertDontSee('Inventory Report', false);
 
         $this->assertAuthenticated('automotive_admin');
     }
@@ -169,7 +173,6 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertSee('Focused Workspace Product', false);
         $dashboardResponse->assertSee('Accounting Suite', false);
         $dashboardResponse->assertSee('Spare Parts', false);
-        $dashboardResponse->assertSee('General Ledger', false);
         $dashboardResponse->assertSee('Connected', false);
 
         $focusedResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product={$accountingProduct->code}");
@@ -179,6 +182,72 @@ class TenantAdminAccessFlowTest extends TestCase
         $focusedResponse->assertSee('Accounting Suite', false);
         $focusedResponse->assertSee('General Ledger', false);
         $focusedResponse->assertSee("workspace_product={$accountingProduct->code}", false);
+    }
+
+    public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $partsProduct = Product::query()->firstOrCreate(
+            ['code' => 'parts_inventory'],
+            [
+                'name' => 'Spare Parts Inventory',
+                'slug' => 'spare-parts-inventory',
+                'is_active' => true,
+                'sort_order' => 2,
+            ]
+        );
+
+        $partsPlan = Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Parts Pro',
+            'slug' => 'parts-pro-' . uniqid(),
+            'price' => 149,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'gateway' => null,
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product=parts_inventory");
+
+        $dashboardResponse->assertOk();
+        $dashboardResponse->assertSee('Supplier Catalog', false);
+        $dashboardResponse->assertSee('Inventory Adjustments', false);
+        $dashboardResponse->assertSee('Stock Transfers', false);
+        $dashboardResponse->assertSee('Inventory Report', false);
+        $dashboardResponse->assertSee('Stock Movement Report', false);
+        $dashboardResponse->assertDontSee('Open Workshop', false);
+
+        $productsResponse = $this->get("http://{$domain}/automotive/admin/products");
+        $productsResponse->assertOk();
+        $productsResponse->assertSee('Stock Items', false);
+    }
+
+    public function test_parts_inventory_routes_are_blocked_when_tenant_does_not_have_that_product(): void
+    {
+        [, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $response = $this->get("http://{$domain}/automotive/admin/products");
+
+        $response->assertRedirect("http://{$domain}/automotive/admin/dashboard?workspace_product=parts_inventory");
     }
 
     /**

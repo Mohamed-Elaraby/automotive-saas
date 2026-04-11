@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'refresh.route.lookups' => \App\Http\Middleware\RefreshRouteLookups::class,
         'tenant.subscription.active' => \App\Http\Middleware\EnsureTenantSubscriptionIsActive::class,
         'tenant.user.limit' => \App\Http\Middleware\EnsureTenantUserLimitNotReached::class,
+        'tenant.workspace.product' => \App\Http\Middleware\EnsureTenantHasWorkspaceProduct::class,
     ];
 }

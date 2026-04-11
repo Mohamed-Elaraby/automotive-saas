@@ -2,15 +2,16 @@
 @extends('automotive.admin.layouts.adminLayout.mainlayout')
 
 @section('content')
+    @php($workspaceQuery = request()->attributes->get('workspace_product_code') ? ['workspace_product' => request()->attributes->get('workspace_product_code')] : [])
     <div class="page-wrapper">
         <div class="content content-two">
 
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
                 <div>
-                    <h6>Products</h6>
+                    <h6>Stock Items</h6>
                     @if ($limitInfo)
                         <p class="mb-0 text-muted">
-                            Current products: {{ $limitInfo['current'] }}
+                            Current stock items: {{ $limitInfo['current'] }}
                             @if (!is_null($limitInfo['limit']))
                                 / {{ $limitInfo['limit'] }} — Remaining: {{ $limitInfo['remaining'] }}
                             @else
@@ -20,8 +21,8 @@
                     @endif
                 </div>
                 <div>
-                    <a href="{{ route('automotive.admin.products.create') }}" class="btn btn-primary d-flex align-items-center">
-                        <i class="isax isax-add-circle5 me-1"></i>New Product
+                    <a href="{{ route('automotive.admin.products.create', $workspaceQuery) }}" class="btn btn-primary d-flex align-items-center">
+                        <i class="isax isax-add-circle5 me-1"></i>New Stock Item
                     </a>
                 </div>
             </div>

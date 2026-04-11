@@ -1115,6 +1115,32 @@ Important scope note:
 - this is still a context/navigation layer, not full module runtime routing
 - it is the correct step before implementing product-specific module pages/controllers under the shared workspace
 
+### 18.16 Product-Aligned Tenant Runtime Reorganization
+The tenant admin workspace has now been reorganized so the automotive product no longer implicitly owns inventory and transfer modules.
+
+What changed:
+- introduced a central workspace module catalog service to define which tenant-admin modules belong to each product focus
+- automotive focus now shows only service-oriented runtime entry:
+  - `Workshop Operations`
+- spare parts focus now owns inventory-related runtime modules:
+  - `Supplier Catalog`
+  - `Stock Items`
+  - `Inventory Adjustments`
+  - `Stock Transfers`
+  - `Inventory Report`
+  - `Stock Movement Report`
+- accounting focus now has its own runtime entry:
+  - `General Ledger`
+- added product-aware tenant middleware so product-owned routes are blocked when the tenant does not actually have that product attached
+- tenant admin sidebar, header shortcuts, and dashboard are now product-focus aware
+- tenant inventory product UI has been relabeled from generic `Products` to `Stock Items`
+- fixed a pre-existing bug in `StockTransferController` where `ValidationException` was caught without being imported
+
+Important scope note:
+- this is the first real runtime separation step between products inside the shared tenant workspace
+- the runtime entry pages for workshop, supplier catalog, and general ledger are currently operational module landing pages, not full business submodules yet
+- old inventory pages still exist, but they now belong to the `parts_inventory` product path conceptually and operationally
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

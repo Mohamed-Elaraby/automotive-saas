@@ -11,6 +11,7 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Tenancy\TenantPlanService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
+use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -18,7 +19,8 @@ class DashboardController extends Controller
 {
     public function __construct(
         protected TenantPlanService $tenantPlanService,
-        protected TenantWorkspaceProductService $tenantWorkspaceProductService
+        protected TenantWorkspaceProductService $tenantWorkspaceProductService,
+        protected WorkspaceModuleCatalogService $workspaceModuleCatalogService
     ) {
     }
 
@@ -30,10 +32,6 @@ public function index(Request $request): View
     $usersCount = User::query()->count();
     $branchesCount = Branch::query()->count();
     $productsCount = Product::query()->count();
-    $inventoriesCount = Inventory::query()->count();
-    $stockTransfersCount = StockTransfer::query()->count();
-    $stockMovementsCount = StockMovement::query()->count();
-
     $userLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_users', $usersCount);
     $branchLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_branches', $branchesCount);
     $productLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_products', $productsCount);
@@ -45,27 +43,43 @@ public function index(Request $request): View
         $workspaceProducts,
         $request->query('workspace_product')
     );
+    $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+    $dashboardActions = $this->workspaceModuleCatalogService->getDashboardActions($focusedWorkspaceProduct);
+    $focusedExperience = $this->workspaceModuleCatalogService->getFocusedProductExperience($focusedWorkspaceProduct);
 
-    $lowStockItems = Inventory::query()
-        ->with(['product', 'branch'])
-        ->whereHas('product', function ($query) {
-            $query->whereColumn('inventories.quantity', '<=', 'products.min_stock_alert');
-        })
-        ->orderBy('quantity')
-        ->limit(5)
-        ->get();
+    $inventoriesCount = 0;
+    $stockTransfersCount = 0;
+    $stockMovementsCount = 0;
+    $lowStockItems = collect();
+    $recentTransfers = collect();
+    $recentMovements = collect();
 
-    $recentTransfers = StockTransfer::query()
-        ->with(['fromBranch', 'toBranch'])
-        ->latest()
-        ->limit(5)
-        ->get();
+    if (($focusedWorkspaceProduct['product_code'] ?? null) === 'parts_inventory') {
+        $inventoriesCount = Inventory::query()->count();
+        $stockTransfersCount = StockTransfer::query()->count();
+        $stockMovementsCount = StockMovement::query()->count();
 
-    $recentMovements = StockMovement::query()
-        ->with(['branch', 'product'])
-        ->latest()
-        ->limit(6)
-        ->get();
+        $lowStockItems = Inventory::query()
+            ->with(['product', 'branch'])
+            ->whereHas('product', function ($query) {
+                $query->whereColumn('inventories.quantity', '<=', 'products.min_stock_alert');
+            })
+            ->orderBy('quantity')
+            ->limit(5)
+            ->get();
+
+        $recentTransfers = StockTransfer::query()
+            ->with(['fromBranch', 'toBranch'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $recentMovements = StockMovement::query()
+            ->with(['branch', 'product'])
+            ->latest()
+            ->limit(6)
+            ->get();
+    }
 
     return view('automotive.admin.dashboard.index', compact(
         'tenant',
@@ -82,6 +96,9 @@ public function index(Request $request): View
         'plan',
         'workspaceProducts',
         'focusedWorkspaceProduct',
+        'workspaceQuery',
+        'dashboardActions',
+        'focusedExperience',
         'lowStockItems',
         'recentTransfers',
         'recentMovements'
