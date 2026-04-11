@@ -1712,6 +1712,53 @@ Why this matters:
   - future industrial/trading modules
   - additional product families declared through the workspace manifest
 
+## 18.39) Tenant Billing Control Moved Into Customer Portal
+Status: completed
+
+What changed:
+- introduced a dedicated portal-side billing controller:
+  - `App\Http\Controllers\Automotive\Front\PortalBillingController`
+- added portal billing routes under:
+  - `/automotive/portal/billing`
+  - renew
+  - change-plan
+  - payment-method setup/default
+  - Stripe customer portal
+  - cancel/resume
+  - success/cancel return handlers
+- added a dedicated portal billing screen:
+  - `resources/views/automotive/portal/billing/status.blade.php`
+- portal overview and portal topbar now link to the new workspace billing screen
+- tenant admin navigation was cleaned so billing is no longer presented as a normal workspace module entry:
+  - removed `Plans & Billing` from shared workspace sidebar manifest
+  - removed the upgrade CTA card from tenant admin sidebar
+  - removed billing shortcuts from tenant admin profile dropdown
+- kept tenant admin billing route as a compatibility/fallback path for existing access/redirect behavior, but normal tenant-facing billing control is now portal-first
+
+Behavior now:
+- tenant owners manage subscription changes, payment method, invoices, cancellation, resume, and Stripe portal access from the customer portal
+- tenant admin area is now visually focused on subscribed runtime systems/modules instead of tenant profile/billing management
+- portal billing is product-scoped:
+  - switch between subscribed workspace products
+  - inspect selected plan audit
+  - renew
+  - change plan
+  - update default payment method
+  - open Stripe portal
+  - cancel/resume
+  - inspect invoice history
+
+Test coverage:
+- extended portal feature coverage proving the new billing page renders and manages an attached product subscription
+- extended tenant admin access flow coverage proving `Plans & Billing` no longer appears in the main tenant admin dashboard navigation
+
+Why this matters:
+- this is the first concrete step toward making the customer portal the tenant's real account/profile control surface
+- it separates:
+  - tenant profile and billing control in the portal
+  - product runtime operations in tenant admin
+- this is the correct foundation before expanding the SaaS to more industries and product families
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

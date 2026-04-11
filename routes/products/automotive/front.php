@@ -4,6 +4,7 @@ use App\Http\Controllers\Automotive\Front\Auth\LoginController;
 use App\Http\Controllers\Automotive\Front\Auth\ForgotPasswordController;
 use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
 use App\Http\Controllers\Automotive\Front\Auth\ResetPasswordController;
+use App\Http\Controllers\Automotive\Front\PortalBillingController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalNotificationController;
 use App\Http\Controllers\Automotive\Webhooks\StripeWebhookController;
@@ -30,6 +31,16 @@ Route::prefix('automotive')
             Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
             Route::get('/portal', [CustomerPortalController::class, 'index'])->name('portal');
+            Route::get('/portal/billing', [PortalBillingController::class, 'status'])->name('portal.billing.status');
+            Route::post('/portal/billing/renew', [PortalBillingController::class, 'renew'])->name('portal.billing.renew');
+            Route::post('/portal/billing/change-plan', [PortalBillingController::class, 'changePlan'])->name('portal.billing.change-plan');
+            Route::post('/portal/billing/payment-method/setup-intent', [PortalBillingController::class, 'createSetupIntent'])->name('portal.billing.payment-method.setup-intent');
+            Route::post('/portal/billing/payment-method/default', [PortalBillingController::class, 'saveDefaultPaymentMethod'])->name('portal.billing.payment-method.default');
+            Route::post('/portal/billing/portal', [PortalBillingController::class, 'portal'])->name('portal.billing.portal');
+            Route::post('/portal/billing/cancel-subscription', [PortalBillingController::class, 'cancelSubscription'])->name('portal.billing.cancel-subscription');
+            Route::post('/portal/billing/resume-subscription', [PortalBillingController::class, 'resumeSubscription'])->name('portal.billing.resume-subscription');
+            Route::get('/portal/billing/success', [PortalBillingController::class, 'success'])->name('portal.billing.success');
+            Route::get('/portal/billing/cancel', [PortalBillingController::class, 'cancel'])->name('portal.billing.cancel');
             Route::post('/portal/start-trial', [CustomerPortalController::class, 'startTrial'])->name('portal.start-trial');
             Route::post('/portal/subscribe', [CustomerPortalController::class, 'startPaidCheckout'])->name('portal.subscribe');
             Route::post('/portal/products/request-enable', [CustomerPortalController::class, 'requestProductEnablement'])->name('portal.products.request-enable');

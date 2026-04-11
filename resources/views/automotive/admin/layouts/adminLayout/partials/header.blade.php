@@ -138,9 +138,6 @@
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
                                 <i class="isax isax-element-45 me-2"></i>Dashboard
                             </a>
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.billing.status', $workspaceQuery) }}">
-                                <i class="isax isax-crown5 me-2"></i>Plans & Billing
-                            </a>
                             <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
                                 <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
                             </a>
@@ -171,9 +168,6 @@
         <div class="dropdown-menu p-2 mt-0">
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
                 <i class="isax isax-element-45 me-2"></i>Dashboard
-            </a>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.billing.status', $workspaceQuery) }}">
-                <i class="isax isax-crown5 me-2"></i>Plans & Billing
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
                 <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}

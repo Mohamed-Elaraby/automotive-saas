@@ -117,6 +117,9 @@ class CustomerPortalController extends Controller
                 && filled($selectedProductSubscription->gateway_checkout_session_id ?? null)
                 && ! filled($selectedProductSubscription->gateway_subscription_id ?? null)
             );
+        $selectedPortalBillingUrl = $hasAnyWorkspace
+            ? route('automotive.portal.billing.status', ['workspace_product' => $selectedProductCode])
+            : null;
 
         return view('automotive.portal.index', [
             'user' => $user,
@@ -147,6 +150,8 @@ class CustomerPortalController extends Controller
             'selectedProductHasLiveBilling' => $selectedProductHasLiveBilling,
             'selectedProductStatus' => $selectedProductStatus,
             'selectedProductHasPendingCheckout' => $selectedProductHasPendingCheckout,
+            'hasAnyWorkspace' => $hasAnyWorkspace,
+            'selectedPortalBillingUrl' => $selectedPortalBillingUrl,
         ]);
     }
 

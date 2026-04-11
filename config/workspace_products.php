@@ -29,13 +29,6 @@ return [
                     'route' => 'automotive.admin.branches.index',
                     'pages' => ['branches'],
                 ],
-                [
-                    'key' => 'shared.billing',
-                    'label' => 'Plans & Billing',
-                    'icon' => 'isax-crown5',
-                    'route' => 'automotive.admin.billing.status',
-                    'pages' => ['billing'],
-                ],
             ],
         ],
         'quick_create_actions' => [
@@ -147,7 +140,6 @@ return [
                     'links' => [
                         ['label' => 'Manage Users', 'route' => 'automotive.admin.users.index', 'icon' => 'isax-profile-2user'],
                         ['label' => 'Manage Branches', 'route' => 'automotive.admin.branches.index', 'icon' => 'isax-buildings'],
-                        ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
                     ],
                 ],
                 'workshop-customers' => [
@@ -346,13 +338,6 @@ return [
                     'route' => 'automotive.admin.modules.general-ledger',
                     'variant' => 'primary',
                 ],
-                [
-                    'key' => 'shared.billing',
-                    'label' => 'Manage Billing',
-                    'icon' => 'isax-crown5',
-                    'route' => 'automotive.admin.billing.status',
-                    'variant' => 'outline-white',
-                ],
             ],
             'integrations' => [
                 [
@@ -380,7 +365,6 @@ return [
                     'description' => 'This is the accounting runtime entry point for ledgers, journals, and future finance modules inside the shared tenant workspace.',
                     'links' => [
                         ['label' => 'Dashboard', 'route' => 'automotive.admin.dashboard', 'icon' => 'isax-element-45'],
-                        ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
                     ],
                 ],
             ],

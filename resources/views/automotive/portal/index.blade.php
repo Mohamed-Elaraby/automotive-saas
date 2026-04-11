@@ -20,9 +20,15 @@
                                 </button>
                             </form>
 
-                            <a href="#paid-plans" class="btn btn-outline-white">
-                                View Plans &amp; Subscribe
-                            </a>
+                            @if(!empty($selectedPortalBillingUrl))
+                                <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
+                                    Manage Workspace Billing
+                                </a>
+                            @else
+                                <a href="#paid-plans" class="btn btn-outline-white">
+                                    View Plans &amp; Subscribe
+                                </a>
+                            @endif
 
                             <a href="#products-catalog" class="btn btn-outline-white">
                                 View Products
@@ -276,6 +282,12 @@
                                     <a href="#paid-plans" class="btn btn-outline-white">
                                         View Paid Plans
                                     </a>
+
+                                    @if(!empty($selectedPortalBillingUrl))
+                                        <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
+                                            Open Billing Control
+                                        </a>
+                                    @endif
 
                                     @if($allowSystemAccess && !empty($systemUrl))
                                         <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">

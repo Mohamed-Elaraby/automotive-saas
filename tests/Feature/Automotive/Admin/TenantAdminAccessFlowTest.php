@@ -71,6 +71,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertOk();
         $dashboardResponse->assertSee('Dashboard', false);
         $dashboardResponse->assertSee('Workshop Operations', false);
+        $dashboardResponse->assertDontSee('Plans & Billing', false);
         $dashboardResponse->assertDontSee('Inventory Adjustments', false);
         $dashboardResponse->assertDontSee('Stock Transfers', false);
         $dashboardResponse->assertDontSee('Inventory Report', false);

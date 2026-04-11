@@ -145,8 +145,8 @@ $portalSeverityClassMap = [
                                 <i class="isax isax-home-2 me-2"></i>Portal Overview
                             </a>
 
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal') }}#paid-plans">
-                                <i class="isax isax-crown me-2"></i>Plans & Billing
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.billing.status') }}">
+                                <i class="isax isax-crown me-2"></i>Workspace Billing
                             </a>
 
                             @if(!empty($systemUrl) && $allowSystemAccess)
@@ -182,8 +182,8 @@ $portalSeverityClassMap = [
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal') }}">
                 <i class="isax isax-home-2 me-2"></i>Portal Overview
             </a>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal') }}#paid-plans">
-                <i class="isax isax-crown me-2"></i>Plans & Billing
+            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.billing.status') }}">
+                <i class="isax isax-crown me-2"></i>Workspace Billing
             </a>
             @if(!empty($systemUrl) && $allowSystemAccess)
                 <a class="dropdown-item d-flex align-items-center" href="{{ $systemUrl }}" target="_blank">

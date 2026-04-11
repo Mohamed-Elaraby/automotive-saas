@@ -198,6 +198,76 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee(strtoupper((string) $plan->slug), false);
     }
 
+    public function test_portal_billing_page_can_manage_attached_product_subscription(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Billing User',
+            'email' => 'portal-billing-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Billing Co',
+            'subdomain' => 'portal-billing-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-portal-billing-' . uniqid(),
+            'data' => ['company_name' => 'Portal Billing Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_portal_' . uniqid(),
+            'name' => 'Accounting Portal',
+            'slug' => 'accounting-portal-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'description' => 'Accounting portal plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_portal_billing_' . uniqid(),
+            'gateway_subscription_id' => 'sub_portal_billing_' . uniqid(),
+            'gateway_price_id' => $plan->stripe_price_id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal.billing.status', [
+            'workspace_product' => $accountingProduct->code,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Accounting Portal Billing', false);
+        $response->assertSee('Workspace Products', false);
+        $response->assertSee('Accounting Portal', false);
+        $response->assertSee('Manage Accounting Portal Billing', false);
+        $response->assertSee('Accounting Portal Invoice History', false);
+    }
+
     public function test_portal_only_shows_plans_for_the_automotive_product(): void
     {
         $user = User::query()->create([
