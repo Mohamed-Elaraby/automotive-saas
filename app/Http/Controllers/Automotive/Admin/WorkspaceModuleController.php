@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Services\Automotive\SupplierCatalogService;
 use App\Services\Automotive\WorkOrderAccountingHandoffService;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
 use App\Services\Automotive\WorkshopWorkOrderService;
@@ -26,6 +27,7 @@ class WorkspaceModuleController extends Controller
         protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
         protected WorkshopPartsIntegrationService $workshopPartsIntegrationService,
+        protected SupplierCatalogService $supplierCatalogService,
         protected WorkshopWorkOrderService $workshopWorkOrderService,
         protected WorkOrderAccountingHandoffService $workOrderAccountingHandoffService
     ) {
@@ -272,7 +274,36 @@ class WorkspaceModuleController extends Controller
 
     public function supplierCatalog(Request $request): View
     {
-        return $this->showManifestModule($request, 'supplier-catalog');
+        return $this->showManifestModule(
+            $request,
+            'supplier-catalog',
+            fn () => [
+                'suppliers' => $this->supplierCatalogService->getSuppliers(),
+                'active_suppliers_count' => $this->supplierCatalogService->getActiveSuppliersCount(),
+            ]
+        );
+    }
+
+    public function storeSupplier(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'contact_name' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'address' => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $this->supplierCatalogService->createSupplier($validated);
+
+        return redirect()
+            ->route('automotive.admin.modules.supplier-catalog', [
+                'workspace_product' => $validated['workspace_product'] ?: 'parts_inventory',
+            ])
+            ->with('success', 'Supplier created successfully.');
     }
 
     public function generalLedger(Request $request): View

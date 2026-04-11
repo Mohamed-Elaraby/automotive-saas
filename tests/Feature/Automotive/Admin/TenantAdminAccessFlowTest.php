@@ -295,6 +295,52 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertSee("workspace_product={$partsProduct->code}", false);
     }
 
+    public function test_supplier_catalog_can_create_supplier_inside_parts_workspace(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+
+        $catalogResponse = $this->get("http://{$domain}/automotive/admin/supplier-catalog?workspace_product=parts_inventory");
+        $catalogResponse->assertOk();
+        $catalogResponse->assertSee('Create Supplier', false);
+        $catalogResponse->assertSee('Supplier Table', false);
+
+        $storeResponse = $this->post("http://{$domain}/automotive/admin/supplier-catalog?workspace_product=parts_inventory", [
+            'workspace_product' => 'parts_inventory',
+            'name' => 'Prime Parts Vendor',
+            'contact_name' => 'Salem',
+            'phone' => '0501111111',
+            'email' => 'vendor@example.test',
+            'address' => 'Dubai Industrial Area',
+            'notes' => 'Preferred source for quick deliveries',
+            'is_active' => '1',
+        ]);
+
+        $storeResponse->assertRedirect("http://{$domain}/automotive/admin/supplier-catalog?workspace_product=parts_inventory");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $supplier = DB::connection('tenant')->table('suppliers')->latest('id')->first();
+            $this->assertNotNull($supplier);
+            $this->assertSame('Prime Parts Vendor', $supplier->name);
+            $this->assertSame('Salem', $supplier->contact_name);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $catalogRefresh = $this->get("http://{$domain}/automotive/admin/supplier-catalog?workspace_product=parts_inventory");
+        $catalogRefresh->assertOk();
+        $catalogRefresh->assertSee('Prime Parts Vendor', false);
+        $catalogRefresh->assertSee('ACTIVE', false);
+    }
+
     public function test_parts_inventory_routes_are_blocked_when_tenant_does_not_have_that_product(): void
     {
         [, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

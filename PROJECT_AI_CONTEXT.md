@@ -1684,6 +1684,34 @@ Why this matters:
 - tenant admins now see a much clearer multi-product billing experience instead of a page that still feels primary-product-centric
 - this reduces operational confusion once multiple products are attached to the same tenant workspace
 
+## 18.38) First Runtime Module Outside Automotive: Supplier Catalog
+Status: completed
+
+What changed:
+- `Spare Parts` now has its first true runtime module beyond inventory reports and stock tables:
+  - `Supplier Catalog`
+- added tenant-side `suppliers` table
+- added `Supplier` model and `SupplierCatalogService`
+- `WorkspaceModuleController::supplierCatalog()` now loads real supplier data instead of rendering a shell only
+- added `storeSupplier()` endpoint and route under the tenant workspace
+- `supplier-catalog` module UI now includes:
+  - supplier summary cards
+  - create supplier form
+  - supplier table with active/inactive state
+
+Test coverage:
+- extended `TenantAdminAccessFlowTest` to prove:
+  - supplier catalog page renders inside the Spare Parts workspace
+  - a supplier can be created from the tenant workspace
+  - the created supplier appears back in the runtime module UI
+
+Why this matters:
+- the project now has its first non-automotive runtime module with actual CRUD-like behavior inside the shared workspace
+- this provides the concrete pattern to repeat for:
+  - accounting modules
+  - future industrial/trading modules
+  - additional product families declared through the workspace manifest
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

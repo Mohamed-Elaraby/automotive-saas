@@ -99,6 +99,8 @@ Route::prefix('automotive/admin')
             Route::middleware('tenant.workspace.product:supplier-catalog')->group(function () {
                 Route::get('/supplier-catalog', [WorkspaceModuleController::class, 'supplierCatalog'])
                     ->name('modules.supplier-catalog');
+                Route::post('/supplier-catalog', [WorkspaceModuleController::class, 'storeSupplier'])
+                    ->name('modules.supplier-catalog.store');
             });
 
             Route::middleware('tenant.workspace.product:parts_inventory')->group(function () {

@@ -156,6 +156,87 @@
                 <div class="card"><div class="card-header"><h5 class="card-title mb-0">Work Orders Table</h5></div><div class="card-body">@forelse(($moduleData['recent_work_orders'] ?? collect()) as $workOrder)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ $workOrder->work_order_number }}</h6><div class="text-muted small">{{ $workOrder->title }}</div><div class="text-muted small">{{ $workOrder->customer?->name ?: 'No customer' }}{{ $workOrder->vehicle ? ' · '.$workOrder->vehicle->make.' '.$workOrder->vehicle->model : '' }}</div></div><div class="text-end"><span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper(str_replace('_', ' ', $workOrder->status)) }}</span><div class="mt-2"><a href="{{ route('automotive.admin.modules.workshop-operations.work-orders.show', ['workOrder' => $workOrder->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Record</a></div></div></div></div>@empty<p class="text-muted mb-0">No work orders have been created yet.</p>@endforelse</div></div>
             @elseif(($page ?? '') === 'general-ledger')
                 <div class="card"><div class="card-header"><h5 class="card-title mb-0">Accounting Events Ledger</h5></div><div class="card-body">@forelse(($moduleData['recent_accounting_events'] ?? collect()) as $event)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }}</h6><div class="text-muted small">{{ data_get($event->payload, 'title', $event->event_type) }}</div><div class="text-muted small">{{ data_get($event->payload, 'customer_name', 'No customer') }}{{ data_get($event->payload, 'vehicle') ? ' · '.data_get($event->payload, 'vehicle') : '' }}</div></div><div class="text-end"><div class="fw-semibold">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div><div class="text-muted small">Labor {{ number_format((float) $event->labor_amount, 2) }} · Parts {{ number_format((float) $event->parts_amount, 2) }}</div><span class="badge bg-info mt-1">{{ strtoupper($event->status) }}</span></div></div></div>@empty<p class="text-muted mb-0">No local accounting events have been posted yet.</p>@endforelse</div></div>
+            @elseif(($page ?? '') === 'supplier-catalog')
+                <div class="row">
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body">
+                                <div class="text-muted small mb-1">Suppliers</div>
+                                <h4 class="mb-1">{{ ($moduleData['suppliers'] ?? collect())->count() }}</h4>
+                                <p class="mb-0 text-muted">Recent vendor records visible in this spare-parts workspace.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body">
+                                <div class="text-muted small mb-1">Active Suppliers</div>
+                                <h4 class="mb-1">{{ $moduleData['active_suppliers_count'] ?? 0 }}</h4>
+                                <p class="mb-0 text-muted">Suppliers currently enabled for purchasing and stock sourcing.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body">
+                                <div class="text-muted small mb-1">Product Focus</div>
+                                <h4 class="mb-1">{{ $focusedWorkspaceProduct['product_name'] ?? 'Spare Parts' }}</h4>
+                                <p class="mb-0 text-muted">Supplier records now live under the Spare Parts runtime instead of automotive service.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Create Supplier</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.supplier-catalog.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'parts_inventory') }}">
+                                    <div class="mb-3"><label class="form-label">Supplier Name</label><input type="text" name="name" class="form-control" value="{{ old('name') }}"></div>
+                                    <div class="mb-3"><label class="form-label">Contact Name</label><input type="text" name="contact_name" class="form-control" value="{{ old('contact_name') }}"></div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control" value="{{ old('phone') }}"></div>
+                                        <div class="col-md-6 mb-3"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ old('email') }}"></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Address</label><textarea name="address" class="form-control" rows="2">{{ old('address') }}</textarea></div>
+                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="3">{{ old('notes') }}</textarea></div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="supplier_is_active" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="supplier_is_active">Active supplier</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Create Supplier</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Supplier Table</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['suppliers'] ?? collect()) as $supplier)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ $supplier->name }}</h6>
+                                                <div class="text-muted small">{{ $supplier->contact_name ?: 'No contact name' }}</div>
+                                                <div class="text-muted small">{{ $supplier->phone ?: 'No phone' }}{{ $supplier->email ? ' · '.$supplier->email : '' }}</div>
+                                                @if(!empty($supplier->address))
+                                                    <div class="text-muted small">{{ $supplier->address }}</div>
+                                                @endif
+                                            </div>
+                                            <span class="badge {{ $supplier->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $supplier->is_active ? 'ACTIVE' : 'INACTIVE' }}</span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No suppliers have been created yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
             @endif
 
             @include('automotive.admin.components.page-footer')
