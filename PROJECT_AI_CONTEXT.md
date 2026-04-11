@@ -1337,6 +1337,72 @@ Important operator note:
 - if the runtime environment has working Stripe credentials, checkout can now self-heal stale plan mappings in many cases
 - if the central database connection is unavailable, the seeder cannot be executed from that environment until DB connectivity is restored
 
+### 18.25 Local Accounting Handoff for Completed Work Orders
+Completed workshop jobs can now create a local accounting handoff record instead of leaving pricing totals as display-only information.
+
+What changed:
+- added tenant-level `accounting_events`
+- when a `work_order` is moved to `completed` and the tenant has an active accounting product attached:
+  - a local accounting event is posted automatically
+  - the event stores:
+    - labor subtotal
+    - parts subtotal
+    - grand total
+    - lightweight payload with work-order/customer/vehicle context
+- the work-order details screen now shows `Accounting Handoff`
+- the accounting runtime entry now shows an `Accounting Events Ledger` list
+
+Important scope note:
+- this is still a local posting/event layer, not a full double-entry accounting engine
+- no journal accounts, no debit/credit balancing, and no invoice integration yet
+- this is the correct intermediate stage before implementing deeper accounting posting
+
+### 18.26 Tenant Admin Sidebar Cleanup and Automotive Runtime Restructure
+The tenant admin navigation is now more operational and less ambiguous.
+
+What changed:
+- the automotive service section now exposes separate sidebar/table entries for:
+  - `Workshop Operations`
+  - `Work Orders`
+  - `Customers`
+  - `Vehicles`
+- the accounting section now surfaces ledger/event visibility more clearly
+- the work-order details page now activates the work-order section properly in sidebar state
+
+Why this matters:
+- the tenant admin no longer relies on one oversized workshop page for every service action
+- key runtime tables can now be reached directly from navigation
+- this is closer to how future products and industries should plug into the shared workspace shell
+
+### 18.27 Workshop Operations UI Reorganized Around Real Workflow
+The workshop runtime screen has been restructured around the actual sequence of work.
+
+What changed:
+- `Workshop Operations` now highlights the flow as:
+  - create customer
+  - register vehicle
+  - create work order
+  - consume spare parts
+- the page now exposes quick table links for:
+  - customers
+  - vehicles
+  - work orders
+  - accounting events
+- the page now surfaces operational counters for:
+  - customers
+  - vehicles
+  - open work orders
+  - accounting handoffs
+- the screen also shows:
+  - recent work orders
+  - available spare-parts stock
+  - recent accounting handoffs
+  - recent workshop consumptions
+
+Operator note:
+- the workshop page is still a compact operator screen, not a polished final ERP workspace yet
+- but it is now significantly more readable and aligned with the real workflow than the earlier mixed form layout
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

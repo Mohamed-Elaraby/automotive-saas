@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Services\Automotive\WorkOrderAccountingHandoffService;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
 use App\Services\Automotive\WorkshopWorkOrderService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
@@ -21,7 +24,8 @@ class WorkspaceModuleController extends Controller
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
         protected WorkshopPartsIntegrationService $workshopPartsIntegrationService,
-        protected WorkshopWorkOrderService $workshopWorkOrderService
+        protected WorkshopWorkOrderService $workshopWorkOrderService,
+        protected WorkOrderAccountingHandoffService $workOrderAccountingHandoffService
     ) {
     }
 
@@ -50,8 +54,60 @@ class WorkspaceModuleController extends Controller
                     'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(),
                     'available_stock_items' => $this->workshopPartsIntegrationService->getAvailableStockSnapshot(),
                     'recent_workshop_consumptions' => $this->workshopPartsIntegrationService->getRecentWorkshopConsumptions(),
+                    'recent_accounting_events' => $this->workshopWorkOrderService->getRecentAccountingEvents(6),
                 ];
             }
+        );
+    }
+
+    public function workshopCustomers(Request $request): View
+    {
+        return $this->showModule(
+            $request,
+            'automotive_service',
+            'workshop-customers',
+            'Workshop Customers',
+            'Customer records attached to service operations in this workspace.',
+            [
+                ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
+            ],
+            fn () => [
+                'customers' => $this->workshopWorkOrderService->getCustomers(),
+            ]
+        );
+    }
+
+    public function workshopVehicles(Request $request): View
+    {
+        return $this->showModule(
+            $request,
+            'automotive_service',
+            'workshop-vehicles',
+            'Workshop Vehicles',
+            'Vehicle records linked to service history and work orders.',
+            [
+                ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
+            ],
+            fn () => [
+                'vehicles' => $this->workshopWorkOrderService->getVehicles(),
+            ]
+        );
+    }
+
+    public function workshopWorkOrders(Request $request): View
+    {
+        return $this->showModule(
+            $request,
+            'automotive_service',
+            'workshop-work-orders',
+            'Work Orders',
+            'All workshop job records with lifecycle status and linked service context.',
+            [
+                ['label' => 'Open Workshop', 'route' => 'automotive.admin.modules.workshop-operations', 'icon' => 'isax-car'],
+            ],
+            fn () => [
+                'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(25),
+            ]
         );
     }
 
@@ -163,6 +219,7 @@ class WorkspaceModuleController extends Controller
         $consumptions = $this->workshopWorkOrderService->getWorkOrderConsumptions($workOrder);
         $lines = $this->workshopWorkOrderService->getWorkOrderLines($workOrder);
         $summary = $this->workshopWorkOrderService->summarize($workOrder);
+        $accountingEvent = $this->workshopWorkOrderService->getWorkOrderAccountingEvent($workOrder);
 
         return view('automotive.admin.modules.work-order-show', compact(
             'workOrder',
@@ -172,7 +229,8 @@ class WorkspaceModuleController extends Controller
             'workspaceIntegrations',
             'consumptions',
             'lines',
-            'summary'
+            'summary',
+            'accountingEvent'
         ));
     }
 
@@ -210,7 +268,14 @@ class WorkspaceModuleController extends Controller
         ]);
 
         try {
-            $this->workshopWorkOrderService->updateStatus($workOrder, $validated['status']);
+            $updatedWorkOrder = $this->workshopWorkOrderService->updateStatus($workOrder, $validated['status']);
+
+            if (
+                $validated['status'] === 'completed'
+                && $this->workOrderAccountingHandoffService->shouldPostForTenant((string) tenant()->id)
+            ) {
+                $this->workOrderAccountingHandoffService->postCompletedWorkOrder($updatedWorkOrder, auth('automotive_admin')->id());
+            }
         } catch (ValidationException $exception) {
             return redirect()
                 ->route('automotive.admin.modules.workshop-operations.work-orders.show', [
@@ -256,6 +321,9 @@ class WorkspaceModuleController extends Controller
             [
                 ['label' => 'Dashboard', 'route' => 'automotive.admin.dashboard', 'icon' => 'isax-element-45'],
                 ['label' => 'Plans & Billing', 'route' => 'automotive.admin.billing.status', 'icon' => 'isax-crown5'],
+            ],
+            fn () => [
+                'recent_accounting_events' => $this->workshopWorkOrderService->getRecentAccountingEvents(25),
             ]
         );
     }

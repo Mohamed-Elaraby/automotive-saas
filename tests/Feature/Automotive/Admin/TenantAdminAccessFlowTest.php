@@ -287,9 +287,9 @@ class TenantAdminAccessFlowTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Create Customer', false);
-        $response->assertSee('Create Vehicle', false);
-        $response->assertSee('Create Work Order', false);
-        $response->assertSee('Consume Spare Part In Workshop', false);
+        $response->assertSee('Register Vehicle', false);
+        $response->assertSee('Step 3: Create Work Order', false);
+        $response->assertSee('Step 4: Consume Spare Parts', false);
         $response->assertSee('Available Spare Parts Stock', false);
         $response->assertSee('Oil Filter', false);
         $response->assertSee('OF-100', false);
@@ -299,6 +299,7 @@ class TenantAdminAccessFlowTest extends TestCase
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
         $this->attachPartsWorkspaceToTenant($tenant);
+        $this->attachAccountingWorkspaceToTenant($tenant);
 
         [$branchId, $productId] = $this->seedTenantStock($tenant, [
             [
@@ -484,6 +485,17 @@ class TenantAdminAccessFlowTest extends TestCase
             $completedWorkOrder = DB::connection('tenant')->table('work_orders')->where('id', $workOrder->id)->first();
             $this->assertSame('completed', $completedWorkOrder->status);
             $this->assertNotNull($completedWorkOrder->closed_at);
+
+            $accountingEvent = DB::connection('tenant')->table('accounting_events')
+                ->where('reference_type', \App\Models\WorkOrder::class)
+                ->where('reference_id', $workOrder->id)
+                ->where('event_type', 'work_order_completed')
+                ->latest('id')
+                ->first();
+
+            $this->assertNotNull($accountingEvent);
+            $this->assertSame('posted', $accountingEvent->status);
+            $this->assertSame(190.0, (float) $accountingEvent->total_amount);
         } finally {
             tenancy()->end();
             DB::purge('tenant');
@@ -492,10 +504,18 @@ class TenantAdminAccessFlowTest extends TestCase
         $completedShowResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
         $completedShowResponse->assertOk();
         $completedShowResponse->assertSee('COMPLETED', false);
+        $completedShowResponse->assertSee('Accounting Handoff', false);
+        $completedShowResponse->assertSee('work_order_completed', false);
         $completedShowResponse->assertSee('Brake inspection labor', false);
         $completedShowResponse->assertSee('40.00', false);
         $completedShowResponse->assertSee('150.00', false);
         $completedShowResponse->assertSee('190.00', false);
+
+        $generalLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $generalLedgerResponse->assertOk();
+        $generalLedgerResponse->assertSee('Accounting Events Ledger', false);
+        $generalLedgerResponse->assertSee($workOrder->work_order_number, false);
+        $generalLedgerResponse->assertSee('190.00', false);
     }
 
     /**
@@ -611,6 +631,37 @@ class TenantAdminAccessFlowTest extends TestCase
             'tenant_id' => $tenant->id,
             'product_id' => $partsProduct->id,
             'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'gateway' => null,
+        ]);
+    }
+
+    protected function attachAccountingWorkspaceToTenant(Tenant $tenant): void
+    {
+        $accountingProduct = Product::query()->firstOrCreate(
+            ['code' => 'accounting'],
+            [
+                'name' => 'Accounting System',
+                'slug' => 'accounting-system',
+                'is_active' => true,
+                'sort_order' => 3,
+            ]
+        );
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'price' => 199,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
             'status' => 'active',
             'gateway' => null,
         ]);

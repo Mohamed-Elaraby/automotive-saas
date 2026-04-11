@@ -2,6 +2,7 @@
 
 namespace App\Services\Automotive;
 
+use App\Models\AccountingEvent;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\StockMovement;
@@ -227,5 +228,28 @@ class WorkshopWorkOrderService
     protected function generateWorkOrderNumber(): string
     {
         return 'WO-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
+    }
+
+    public function getRecentAccountingEvents(int $limit = 12): Collection
+    {
+        return AccountingEvent::query()
+            ->leftJoin('users', 'users.id', '=', 'accounting_events.created_by')
+            ->select([
+                'accounting_events.*',
+                'users.name as creator_name',
+            ])
+            ->latest('accounting_events.id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function getWorkOrderAccountingEvent(WorkOrder $workOrder): ?AccountingEvent
+    {
+        return AccountingEvent::query()
+            ->where('event_type', 'work_order_completed')
+            ->where('reference_type', WorkOrder::class)
+            ->where('reference_id', $workOrder->id)
+            ->latest('id')
+            ->first();
     }
 }

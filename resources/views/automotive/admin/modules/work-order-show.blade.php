@@ -1,3 +1,4 @@
+@php($page = 'work-order-show')
 @extends('automotive.admin.layouts.adminLayout.mainlayout')
 
 @section('content')
@@ -96,6 +97,32 @@
                                 <span>Grand Total</span>
                                 <strong>{{ number_format($summary['grand_total'] ?? 0, 2) }}</strong>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-12 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Accounting Handoff</h5>
+                        </div>
+                        <div class="card-body">
+                            @if($accountingEvent)
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ $accountingEvent->event_type }}</h6>
+                                        <div class="text-muted small">{{ optional($accountingEvent->event_date)->format('Y-m-d H:i') ?: '—' }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-info">{{ strtoupper($accountingEvent->status) }}</span>
+                                        <div class="text-muted small mt-1">{{ number_format((float) $accountingEvent->total_amount, 2) }} {{ $accountingEvent->currency }}</div>
+                                    </div>
+                                </div>
+                            @else
+                                <p class="text-muted mb-0">No local accounting event has been posted for this work order yet.</p>
+                            @endif
                         </div>
                     </div>
                 </div>
