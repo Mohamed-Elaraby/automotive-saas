@@ -37,6 +37,7 @@ class ProductManifestSyncController extends Controller
             'workflow' => $workflow,
             'latestSnapshot' => $latestSnapshot,
             'writebackPlan' => $this->writebackPlan($product, $manifestData, $workflow),
+            'applyQueueRoute' => route('admin.products.manifest-apply-queue.show', $product),
         ]);
     }
 

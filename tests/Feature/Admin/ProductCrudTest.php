@@ -561,6 +561,92 @@ class ProductCrudTest extends TestCase
         $familyResponse->assertSee('perfume_retail', false);
     }
 
+    public function test_admin_can_open_and_update_manifest_apply_queue(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.manifest_sync_workflow.perfume_retail',
+            'value' => json_encode([
+                'status' => 'approved',
+                'notes' => 'Approved for writeback.',
+                'reviewed_at' => now()->toDateTimeString(),
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.manifest_sync_snapshot.perfume_retail',
+            'value' => json_encode([
+                'status' => 'approved',
+                'family_key' => 'perfume_retail',
+                'payload' => ['aliases' => ['perfume']],
+                'captured_at' => now()->toDateTimeString(),
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $showResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-apply-queue.show', $product));
+
+        $showResponse->assertOk();
+        $showResponse->assertSee('Manifest Apply Queue', false);
+        $showResponse->assertSee('Execution Readiness', false);
+        $showResponse->assertSee('Approved for writeback.', false);
+
+        $updateResponse = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.manifest-apply-queue.update', $product), [
+                'status' => 'in_progress',
+                'owner_name' => 'Platform Team',
+                'owner_contact' => 'platform@example.test',
+                'blocking_reason' => '',
+                'implementation_notes' => 'Update workspace manifest and runtime sidebar wiring.',
+                'deployment_notes' => 'Run workspace smoke checks after merge.',
+            ]);
+
+        $updateResponse
+            ->assertRedirect(route('admin.products.manifest-apply-queue.show', $product))
+            ->assertSessionHas('success', 'Manifest apply queue updated successfully.');
+
+        $setting = AppSetting::query()
+            ->where('key', 'workspace_products.manifest_apply_queue.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($setting);
+
+        $payload = json_decode((string) $setting->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('in_progress', $payload['status']);
+        $this->assertSame('Platform Team', $payload['owner_name']);
+        $this->assertSame('platform@example.test', $payload['owner_contact']);
+        $this->assertSame('Update workspace manifest and runtime sidebar wiring.', $payload['implementation_notes']);
+        $this->assertSame('Run workspace smoke checks after merge.', $payload['deployment_notes']);
+        $this->assertNotEmpty($payload['queued_at']);
+        $this->assertNotEmpty($payload['started_at']);
+        $this->assertNull($payload['completed_at']);
+
+        $builderResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.show', $product));
+
+        $builderResponse->assertOk();
+        $builderResponse->assertSee('Manifest Apply Queue', false);
+        $builderResponse->assertSee(route('admin.products.manifest-apply-queue.show', $product), false);
+        $builderResponse->assertSee('IN_PROGRESS', false);
+    }
+
     public function test_admin_cannot_delete_product_when_it_is_used(): void
     {
         $admin = $this->createAdmin();

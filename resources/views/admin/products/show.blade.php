@@ -104,6 +104,14 @@
                                 <span class="fw-semibold">{{ count($integrationDraft) }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Manifest Workflow</span>
+                                <span class="fw-semibold">{{ strtoupper((string) ($manifestWorkflow['status'] ?? 'draft')) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Apply Queue</span>
+                                <span class="fw-semibold">{{ strtoupper((string) ($manifestApplyQueue['status'] ?? 'queued')) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Subscriptions</span>
                                 <span class="fw-semibold">{{ $product->tenant_product_subscriptions_count }}</span>
                             </div>
@@ -208,7 +216,16 @@
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
-                                            <div class="fw-semibold">7. Integration Builder</div>
+                                            <div class="fw-semibold">7. Manifest Apply Queue</div>
+                                            <div class="text-muted small">Track ownership, blockers, and actual code/runtime execution after manifest approval.</div>
+                                        </div>
+                                        <a href="{{ route('admin.products.manifest-apply-queue.show', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <div class="fw-semibold">8. Integration Builder</div>
                                             <div class="text-muted small">Define cross-product links before wiring them into runtime integration catalogs.</div>
                                         </div>
                                         <a href="{{ route('admin.products.integrations.edit', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>
@@ -217,7 +234,7 @@
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
-                                            <div class="fw-semibold">8. Portal Publication</div>
+                                            <div class="fw-semibold">9. Portal Publication</div>
                                             <div class="text-muted small">When active + capabilities + plans are ready, the product can appear logically in the customer portal.</div>
                                         </div>
                                         <a href="{{ route('admin.products.portal-publication.show', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>

@@ -140,6 +140,10 @@
                                 <label class="form-label fw-semibold">Suggested Git Commands</label>
                                 <textarea class="form-control font-monospace" rows="4" readonly>{{ implode("\n", $writebackPlan['git_commands']) }}</textarea>
                             </div>
+
+                            <div class="mt-3">
+                                <a href="{{ $applyQueueRoute }}" class="btn btn-primary">Open Manifest Apply Queue</a>
+                            </div>
                         </div>
                     </div>
                 </div>

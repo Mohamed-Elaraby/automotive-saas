@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCapabilityController;
 use App\Http\Controllers\Admin\ProductExperienceController;
 use App\Http\Controllers\Admin\ProductIntegrationController;
+use App\Http\Controllers\Admin\ProductManifestApplyQueueController;
 use App\Http\Controllers\Admin\ProductManifestSyncController;
 use App\Http\Controllers\Admin\ProductEnablementRequestController;
 use App\Http\Controllers\Admin\ProductPortalPublicationController;
@@ -121,6 +122,8 @@ Route::prefix('admin')
                 Route::get('/{product}/manifest-sync', [ProductManifestSyncController::class, 'show'])->name('manifest-sync.show');
                 Route::put('/{product}/manifest-sync', [ProductManifestSyncController::class, 'update'])->name('manifest-sync.update');
                 Route::get('/{product}/manifest-sync/export/{format}', [ProductManifestSyncController::class, 'export'])->name('manifest-sync.export');
+                Route::get('/{product}/manifest-apply-queue', [ProductManifestApplyQueueController::class, 'show'])->name('manifest-apply-queue.show');
+                Route::put('/{product}/manifest-apply-queue', [ProductManifestApplyQueueController::class, 'update'])->name('manifest-apply-queue.update');
                 Route::get('/{product}/portal-publication', [ProductPortalPublicationController::class, 'show'])->name('portal-publication.show');
                 Route::put('/{product}/portal-publication/publish', [ProductPortalPublicationController::class, 'publish'])->name('portal-publication.publish');
                 Route::put('/{product}/portal-publication/hide', [ProductPortalPublicationController::class, 'hide'])->name('portal-publication.hide');

@@ -849,3 +849,39 @@ Important files:
 - `routes/web.php`
 - `resources/views/admin/products/show.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 24) Manifest Apply Queue UI
+Status:
+- started
+- approved manifest payloads can now move into a tracked execution queue from the central admin UI
+
+Current behavior:
+- `Product Builder` now links to a dedicated `Manifest Apply Queue`
+- the queue is stored centrally in `app_settings` as JSON under `workspace_products.manifest_apply_queue.{product_code}`
+- the queue currently tracks:
+  - status
+    - `queued`
+    - `in_progress`
+    - `blocked`
+    - `done`
+  - owner name
+  - owner contact
+  - blocking reason
+  - implementation notes
+  - deployment notes
+  - queued/start/completed timestamps
+- the queue screen also surfaces:
+  - manifest workflow status
+  - latest approved snapshot
+  - readiness checks before code/runtime execution
+- `Manifest Sync Preview` now links directly into this queue once review is complete
+
+Important files:
+- `app/Http/Controllers/Admin/ProductManifestApplyQueueController.php`
+- `resources/views/admin/products/manifest-apply-queue.blade.php`
+- `app/Http/Controllers/Admin/ProductController.php`
+- `app/Http/Controllers/Admin/ProductManifestSyncController.php`
+- `resources/views/admin/products/show.blade.php`
+- `resources/views/admin/products/manifest-sync.blade.php`
+- `routes/web.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

@@ -76,11 +76,21 @@ class ProductController extends Controller
         $experienceDraft = $this->productExperienceDraft($product);
         $runtimeModulesDraft = $this->productRuntimeModulesDraft($product);
         $integrationDraft = $this->productIntegrationDraft($product);
+        $manifestWorkflow = $this->productManifestWorkflow($product);
+        $manifestApplyQueue = $this->productManifestApplyQueue($product);
         $manifestFamily = $this->resolveManifestFamily($product);
         $familyDefinition = $manifestFamily !== null
             ? $this->workspaceManifestService->familyDefinition($manifestFamily)
             : [];
-        $builderChecklist = $this->builderChecklist($product, $manifestFamily, $experienceDraft, $runtimeModulesDraft, $integrationDraft);
+        $builderChecklist = $this->builderChecklist(
+            $product,
+            $manifestFamily,
+            $experienceDraft,
+            $runtimeModulesDraft,
+            $integrationDraft,
+            $manifestWorkflow,
+            $manifestApplyQueue
+        );
 
         return view('admin.products.show', [
             'product' => $product,
@@ -90,6 +100,8 @@ class ProductController extends Controller
             'experienceDraft' => $experienceDraft,
             'runtimeModulesDraft' => $runtimeModulesDraft,
             'integrationDraft' => $integrationDraft,
+            'manifestWorkflow' => $manifestWorkflow,
+            'manifestApplyQueue' => $manifestApplyQueue,
             'builderChecklist' => $builderChecklist,
             'builderCompletionPercent' => $this->builderCompletionPercent($builderChecklist),
         ]);
@@ -201,7 +213,15 @@ class ProductController extends Controller
         return null;
     }
 
-    protected function builderChecklist(Product $product, ?string $manifestFamily, array $experienceDraft, array $runtimeModulesDraft, array $integrationDraft): array
+    protected function builderChecklist(
+        Product $product,
+        ?string $manifestFamily,
+        array $experienceDraft,
+        array $runtimeModulesDraft,
+        array $integrationDraft,
+        array $manifestWorkflow,
+        array $manifestApplyQueue
+    ): array
     {
         return [
             [
@@ -238,6 +258,16 @@ class ProductController extends Controller
                 'label' => 'Integration draft',
                 'description' => 'Cross-product integration links are defined from the UI before final manifest/runtime wiring.',
                 'completed' => ! empty($integrationDraft),
+            ],
+            [
+                'label' => 'Manifest sync approval',
+                'description' => 'The derived payload has been reviewed and approved before code/runtime execution begins.',
+                'completed' => in_array((string) ($manifestWorkflow['status'] ?? 'draft'), ['approved', 'applied'], true),
+            ],
+            [
+                'label' => 'Manifest apply execution',
+                'description' => 'Writeback and runtime wiring work is queued, tracked, and completed from the admin workflow.',
+                'completed' => (string) ($manifestApplyQueue['status'] ?? 'queued') === 'done',
             ],
             [
                 'label' => 'Portal publication status',
@@ -277,6 +307,16 @@ class ProductController extends Controller
     protected function integrationSettingKey(Product $product): string
     {
         return 'workspace_products.integrations.' . $product->code;
+    }
+
+    protected function productManifestWorkflow(Product $product): array
+    {
+        return (array) $this->settingsService->get('workspace_products.manifest_sync_workflow.' . $product->code, []);
+    }
+
+    protected function productManifestApplyQueue(Product $product): array
+    {
+        return (array) $this->settingsService->get('workspace_products.manifest_apply_queue.' . $product->code, []);
     }
 
     protected function builderCompletionPercent(array $builderChecklist): int
