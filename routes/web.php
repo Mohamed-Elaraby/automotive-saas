@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCapabilityController;
 use App\Http\Controllers\Admin\ProductExperienceController;
+use App\Http\Controllers\Admin\ProductIntegrationController;
 use App\Http\Controllers\Admin\ProductEnablementRequestController;
 use App\Http\Controllers\Admin\ProductPortalPublicationController;
 use App\Http\Controllers\Admin\ProductRuntimeModuleController;
@@ -112,6 +113,8 @@ Route::prefix('admin')
                 Route::get('/{product}', [ProductController::class, 'show'])->name('show');
                 Route::get('/{product}/experience', [ProductExperienceController::class, 'edit'])->name('experience.edit');
                 Route::put('/{product}/experience', [ProductExperienceController::class, 'update'])->name('experience.update');
+                Route::get('/{product}/integrations', [ProductIntegrationController::class, 'edit'])->name('integrations.edit');
+                Route::put('/{product}/integrations', [ProductIntegrationController::class, 'update'])->name('integrations.update');
                 Route::get('/{product}/runtime-modules', [ProductRuntimeModuleController::class, 'edit'])->name('runtime-modules.edit');
                 Route::put('/{product}/runtime-modules', [ProductRuntimeModuleController::class, 'update'])->name('runtime-modules.update');
                 Route::get('/{product}/portal-publication', [ProductPortalPublicationController::class, 'show'])->name('portal-publication.show');

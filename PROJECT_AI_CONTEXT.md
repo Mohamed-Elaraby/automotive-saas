@@ -787,3 +787,27 @@ Important files:
 - `app/Http/Controllers/Admin/ProductController.php`
 - `resources/views/admin/products/show.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 22) Integration Builder UI
+Status:
+- started
+- each product can now store structured cross-product integration drafts from the central admin UI
+
+Current behavior:
+- `Product Builder` now links to a dedicated `Integration Builder`
+- integrations are stored centrally in `app_settings` as JSON under `workspace_products.integrations.{product_code}`
+- each integration draft currently captures:
+  - key
+  - target product code
+  - title
+  - description
+  - target label
+  - target route slug
+- `Product Builder` reflects the current integration draft count
+
+Important files:
+- `app/Http/Controllers/Admin/ProductIntegrationController.php`
+- `resources/views/admin/products/integrations.blade.php`
+- `app/Http/Controllers/Admin/ProductController.php`
+- `resources/views/admin/products/show.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

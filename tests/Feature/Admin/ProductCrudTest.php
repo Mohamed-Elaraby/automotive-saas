@@ -335,6 +335,67 @@ class ProductCrudTest extends TestCase
         $builderResponse->assertSee(route('admin.products.runtime-modules.edit', $product), false);
     }
 
+    public function test_admin_can_save_integration_draft_from_ui(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $accounting = Product::query()->create([
+            'code' => 'accounting',
+            'name' => 'Accounting System',
+            'slug' => 'accounting',
+            'is_active' => true,
+            'sort_order' => 3,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.integrations.update', $product), [
+                'integrations' => [
+                    [
+                        'key' => 'perfume-accounting',
+                        'target_product_code' => $accounting->code,
+                        'title' => 'Sales can post into accounting',
+                        'description' => 'Retail invoices and revenue events flow into accounting.',
+                        'target_label' => 'Open Accounting',
+                        'target_route_slug' => 'general-ledger',
+                    ],
+                ],
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.show', $product))
+            ->assertSessionHas('success', 'Integration draft saved successfully.');
+
+        $setting = AppSetting::query()
+            ->where('key', 'workspace_products.integrations.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($setting);
+
+        $payload = json_decode((string) $setting->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertCount(1, $payload);
+        $this->assertSame('accounting', $payload[0]['target_product_code']);
+        $this->assertSame('Open Accounting', $payload[0]['target_label']);
+
+        $builderResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.show', $product));
+
+        $builderResponse->assertOk();
+        $builderResponse->assertSee('Integrations Draft', false);
+        $builderResponse->assertSee('1', false);
+        $builderResponse->assertSee(route('admin.products.integrations.edit', $product), false);
+    }
+
     public function test_admin_cannot_delete_product_when_it_is_used(): void
     {
         $admin = $this->createAdmin();

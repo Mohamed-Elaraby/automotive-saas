@@ -75,11 +75,12 @@ class ProductController extends Controller
 
         $experienceDraft = $this->productExperienceDraft($product);
         $runtimeModulesDraft = $this->productRuntimeModulesDraft($product);
+        $integrationDraft = $this->productIntegrationDraft($product);
         $manifestFamily = $this->resolveManifestFamily($product);
         $familyDefinition = $manifestFamily !== null
             ? $this->workspaceManifestService->familyDefinition($manifestFamily)
             : [];
-        $builderChecklist = $this->builderChecklist($product, $manifestFamily, $experienceDraft, $runtimeModulesDraft);
+        $builderChecklist = $this->builderChecklist($product, $manifestFamily, $experienceDraft, $runtimeModulesDraft, $integrationDraft);
 
         return view('admin.products.show', [
             'product' => $product,
@@ -88,6 +89,7 @@ class ProductController extends Controller
             'familyDefinition' => $familyDefinition,
             'experienceDraft' => $experienceDraft,
             'runtimeModulesDraft' => $runtimeModulesDraft,
+            'integrationDraft' => $integrationDraft,
             'builderChecklist' => $builderChecklist,
             'builderCompletionPercent' => $this->builderCompletionPercent($builderChecklist),
         ]);
@@ -199,7 +201,7 @@ class ProductController extends Controller
         return null;
     }
 
-    protected function builderChecklist(Product $product, ?string $manifestFamily, array $experienceDraft, array $runtimeModulesDraft): array
+    protected function builderChecklist(Product $product, ?string $manifestFamily, array $experienceDraft, array $runtimeModulesDraft, array $integrationDraft): array
     {
         return [
             [
@@ -233,6 +235,11 @@ class ProductController extends Controller
                 'completed' => ! empty($runtimeModulesDraft),
             ],
             [
+                'label' => 'Integration draft',
+                'description' => 'Cross-product integration links are defined from the UI before final manifest/runtime wiring.',
+                'completed' => ! empty($integrationDraft),
+            ],
+            [
                 'label' => 'Portal publication status',
                 'description' => 'The product is active and has enough setup to appear logically inside the customer portal.',
                 'completed' => $product->is_active
@@ -260,6 +267,16 @@ class ProductController extends Controller
     protected function runtimeModulesSettingKey(Product $product): string
     {
         return 'workspace_products.runtime_modules.' . $product->code;
+    }
+
+    protected function productIntegrationDraft(Product $product): array
+    {
+        return (array) $this->settingsService->get($this->integrationSettingKey($product), []);
+    }
+
+    protected function integrationSettingKey(Product $product): string
+    {
+        return 'workspace_products.integrations.' . $product->code;
     }
 
     protected function builderCompletionPercent(array $builderChecklist): int
