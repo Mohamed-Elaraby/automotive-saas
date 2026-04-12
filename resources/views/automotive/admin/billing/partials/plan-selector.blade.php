@@ -1,6 +1,7 @@
 @php
     $plans = $availablePlans ?? collect();
     $selectedPlanId = (string) ($selectedPlanId ?? '');
+    $billingProductName = $billingProductName ?? null;
 @endphp
 
 <div class="card">
@@ -9,7 +10,7 @@
             <div>
                 <h5 class="mb-1">Choose Paid Plan</h5>
                 <p class="text-muted mb-0">
-                    Select a subscription plan. The page will refresh automatically to load pricing verification and Stripe preview for the selected plan.
+                    Select a subscription plan for {{ $billingProductName ?: 'the focused workspace product' }}. The page will refresh automatically to load pricing verification and Stripe preview for the selected plan.
                 </p>
             </div>
         </div>
