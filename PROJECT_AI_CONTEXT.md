@@ -832,6 +832,11 @@ Current behavior:
   - `approved`
   - `applied`
 - workflow notes and last reviewed timestamp are stored centrally in `app_settings`
+- approved/applied workflow changes now also capture a payload snapshot in `app_settings`
+- export routes are now available for:
+  - JSON payload
+  - PHP payload
+  - family snippet payload
 - this is still a review/sync-prep screen, not a write-back editor for `config/workspace_products.php`
 
 Important files:

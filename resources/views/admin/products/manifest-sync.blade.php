@@ -70,6 +70,15 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100">Save Workflow State</button>
                             </form>
+
+                            @if($latestSnapshot !== [])
+                                <hr>
+                                <h6 class="mb-2">Latest Snapshot</h6>
+                                <div class="small text-muted mb-1">Status: <strong>{{ strtoupper((string) ($latestSnapshot['status'] ?? 'draft')) }}</strong></div>
+                                <div class="small text-muted mb-1">Family: <strong>{{ $latestSnapshot['family_key'] ?? '-' }}</strong></div>
+                                <div class="small text-muted mb-1">Captured At: <strong>{{ $latestSnapshot['captured_at'] ?? '-' }}</strong></div>
+                                <div class="small text-muted">Notes: {{ $latestSnapshot['notes'] ?? '-' }}</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -77,8 +86,29 @@
                 <div class="col-xl-8">
                     <div class="card">
                         <div class="card-body">
-                            <h6 class="mb-3">Derived Manifest Payload</h6>
-                            <pre class="bg-light border rounded p-3 small mb-0" style="white-space: pre-wrap;">{{ $payloadExport }}</pre>
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                <h6 class="mb-0">Derived Manifest Payload</h6>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="{{ route('admin.products.manifest-sync.export', [$product, 'json']) }}" class="btn btn-sm btn-outline-primary">Open JSON</a>
+                                    <a href="{{ route('admin.products.manifest-sync.export', [$product, 'php']) }}" class="btn btn-sm btn-outline-primary">Open PHP</a>
+                                    <a href="{{ route('admin.products.manifest-sync.export', [$product, 'family']) }}" class="btn btn-sm btn-outline-primary">Open Family Snippet</a>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">PHP Payload</label>
+                                <textarea class="form-control font-monospace" rows="14" readonly>{{ $payloadExport }}</textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">JSON Payload</label>
+                                <textarea class="form-control font-monospace" rows="14" readonly>{{ $payloadJson }}</textarea>
+                            </div>
+
+                            <div>
+                                <label class="form-label fw-semibold">Family Snippet</label>
+                                <textarea class="form-control font-monospace" rows="16" readonly>{{ $familyExport }}</textarea>
+                            </div>
                         </div>
                     </div>
                 </div>

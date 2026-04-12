@@ -497,6 +497,66 @@ class ProductCrudTest extends TestCase
         $this->assertSame('approved', $payload['status']);
         $this->assertSame('Ready for config/workspace_products.php write-back.', $payload['notes']);
         $this->assertNotEmpty($payload['reviewed_at']);
+
+        $snapshot = AppSetting::query()
+            ->where('key', 'workspace_products.manifest_sync_snapshot.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($snapshot);
+
+        $snapshotPayload = json_decode((string) $snapshot->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('approved', $snapshotPayload['status']);
+        $this->assertSame('perfume_retail', $snapshotPayload['family_key']);
+        $this->assertArrayHasKey('payload', $snapshotPayload);
+    }
+
+    public function test_admin_can_export_manifest_sync_payload_in_multiple_formats(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode([
+                'family_key' => 'perfume_retail',
+                'aliases' => ['perfume', 'fragrance'],
+                'portal' => ['title' => 'Retail and showroom operations'],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $jsonResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.export', [$product, 'json']));
+
+        $jsonResponse->assertOk();
+        $jsonResponse->assertSee('"aliases"', false);
+        $jsonResponse->assertSee('"perfume"', false);
+
+        $phpResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.export', [$product, 'php']));
+
+        $phpResponse->assertOk();
+        $phpResponse->assertSee('$familyDefinition', false);
+        $phpResponse->assertSee('perfume_retail', false);
+
+        $familyResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.export', [$product, 'family']));
+
+        $familyResponse->assertOk();
+        $familyResponse->assertSee('return array', false);
+        $familyResponse->assertSee('perfume_retail', false);
     }
 
     public function test_admin_cannot_delete_product_when_it_is_used(): void
