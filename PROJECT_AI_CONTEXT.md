@@ -558,6 +558,11 @@ Frequently used tests during recent work:
 - portal billing gates are now product-scoped:
   - a live Stripe subscription on one product must not block paid plans for a different product
   - example: active `Accounting` billing must not block `Automotive` plan selection
+- portal base route is now intentionally neutral:
+  - opening `/automotive/portal` without an explicit `?product=...` must not auto-focus any product
+  - the portal must not remember a previous product selection on the base route
+  - `Product Subscription Options` stays hidden until the customer explicitly chooses a product
+  - generic portal CTAs now point to `Products Catalog` first when no product is selected
 - tenant admin billing surface is now decommissioned into a transition page:
   - `automotive/admin/billing` remains only as a runtime-access landing page
   - it no longer presents billing/account ownership as a tenant-admin responsibility

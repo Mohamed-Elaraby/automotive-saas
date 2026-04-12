@@ -2,6 +2,9 @@
 @extends('automotive.portal.layouts.portalLayout.mainlayout')
 
 @section('content')
+    @php
+        $hasExplicitProductSelection = $hasExplicitProductSelection ?? (!empty($selectedProductWasExplicit) && !empty($selectedProduct));
+    @endphp
     <div class="page-wrapper">
         <div class="content content-two">
             <div class="row justify-content-center">
@@ -20,13 +23,13 @@
                                 </button>
                             </form>
 
-                            @if(!empty($selectedPortalBillingUrl))
+                            @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
                                 <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
                                     Manage Workspace Billing
                                 </a>
                             @else
-                                <a href="#paid-plans" class="btn btn-outline-white">
-                                    View Plans &amp; Subscribe
+                                <a href="#products-catalog" class="btn btn-outline-white">
+                                    Choose Product
                                 </a>
                             @endif
 
@@ -273,11 +276,11 @@
 
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex flex-wrap gap-2">
-                                    <a href="#paid-plans" class="btn btn-outline-white">
-                                        View Paid Plans
+                                    <a href="{{ $hasExplicitProductSelection ? '#paid-plans' : '#products-catalog' }}" class="btn btn-outline-white">
+                                        {{ $hasExplicitProductSelection ? 'View Paid Plans' : 'Choose Product First' }}
                                     </a>
 
-                                    @if(!empty($selectedPortalBillingUrl))
+                                    @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
                                         <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
                                             Open Billing Control
                                         </a>
@@ -372,8 +375,9 @@
                         </div>
                     </div>
 
-                    <div class="card mt-4" id="paid-plans">
-                        <div class="card-body">
+                    @if($hasExplicitProductSelection)
+                        <div class="card mt-4" id="paid-plans">
+                            <div class="card-body">
                             @php
                                 $plansByPeriod = collect($paidPlans ?? [])->groupBy(fn ($plan) => (string) ($plan->billing_period ?? 'monthly'));
                                 $periodTabs = collect([
@@ -413,11 +417,7 @@
                                 </div>
                             </div>
 
-                            @if(empty($selectedProduct))
-                                <div class="alert alert-light border mb-0">
-                                    No product is focused yet. Use the product catalog above to choose the system you want to trial or subscribe to.
-                                </div>
-                            @elseif(($selectedProductCapabilities ?? collect())->isNotEmpty())
+                            @if(($selectedProductCapabilities ?? collect())->isNotEmpty())
                                 <div class="alert alert-light border mb-4">
                                     <div class="fw-semibold mb-2">Included Product Capabilities</div>
                                     <div class="d-flex flex-wrap gap-2">
@@ -707,8 +707,9 @@
                                     @endforeach
                                 </div>
                             @endif
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
 

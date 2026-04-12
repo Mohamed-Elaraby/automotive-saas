@@ -12,6 +12,9 @@ $portalSeverityClassMap = [
     'error' => 'bg-danger',
 ];
 $portalBreadcrumb = $portalBreadcrumb ?? (request()->routeIs('automotive.portal.settings') ? 'Account & Settings' : 'Overview');
+$portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExplicitProductSelection)
+    ? $selectedPortalBillingUrl
+    : route('automotive.portal') . '#products-catalog';
 ?>
 
 <!-- Topbar Start -->
@@ -150,8 +153,8 @@ $portalBreadcrumb = $portalBreadcrumb ?? (request()->routeIs('automotive.portal.
                                 <i class="isax isax-setting-2 me-2"></i>Account &amp; Settings
                             </a>
 
-                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.billing.status') }}">
-                                <i class="isax isax-crown me-2"></i>Workspace Billing
+                            <a class="dropdown-item d-flex align-items-center" href="{{ $portalWorkspaceBillingUrl }}">
+                                <i class="isax isax-crown me-2"></i>{{ !empty($hasExplicitProductSelection) ? 'Workspace Billing' : 'Choose Product' }}
                             </a>
 
                             @if(!empty($systemUrl) && $allowSystemAccess)
@@ -190,8 +193,8 @@ $portalBreadcrumb = $portalBreadcrumb ?? (request()->routeIs('automotive.portal.
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.settings') }}">
                 <i class="isax isax-setting-2 me-2"></i>Account &amp; Settings
             </a>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.billing.status') }}">
-                <i class="isax isax-crown me-2"></i>Workspace Billing
+            <a class="dropdown-item d-flex align-items-center" href="{{ $portalWorkspaceBillingUrl }}">
+                <i class="isax isax-crown me-2"></i>{{ !empty($hasExplicitProductSelection) ? 'Workspace Billing' : 'Choose Product' }}
             </a>
             @if(!empty($systemUrl) && $allowSystemAccess)
                 <a class="dropdown-item d-flex align-items-center" href="{{ $systemUrl }}" target="_blank">

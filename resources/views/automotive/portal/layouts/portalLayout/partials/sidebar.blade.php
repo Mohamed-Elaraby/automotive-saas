@@ -1,5 +1,11 @@
 <!-- Sidenav Menu Start -->
-@php($portalActiveNav = $portalActiveNav ?? (request()->routeIs('automotive.portal.settings') ? 'settings' : 'overview'))
+@php
+    $portalActiveNav = $portalActiveNav ?? (request()->routeIs('automotive.portal.settings') ? 'settings' : 'overview');
+    $portalPlansTarget = !empty($hasExplicitProductSelection)
+        ? route('automotive.portal', ['product' => $selectedProduct['slug'] ?? request()->query('product')]) . '#paid-plans'
+        : route('automotive.portal') . '#products-catalog';
+    $portalPlansLabel = !empty($hasExplicitProductSelection) ? 'Plans & Billing' : 'Choose Product';
+@endphp
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
         <div class="dropdown">
@@ -30,10 +36,10 @@
                 </a>
             </li>
             <li>
-                <a href="{{ route('automotive.portal') }}#paid-plans"
+                <a href="{{ $portalPlansTarget }}"
                    data-bs-toggle="tooltip"
                    data-bs-placement="right"
-                   data-bs-title="Plans & Billing">
+                   data-bs-title="{{ $portalPlansLabel }}">
                     <i class="isax isax-crown"></i>
                 </a>
             </li>
@@ -109,13 +115,13 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('automotive.portal') }}#paid-plans">
-                                    <i class="isax isax-crown"></i><span>Plans & Billing</span>
+                                <a href="{{ $portalPlansTarget }}">
+                                    <i class="isax isax-crown"></i><span>{{ $portalPlansLabel }}</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('automotive.portal') }}#paid-plans">
-                                    <i class="isax isax-card"></i><span>Checkout Options</span>
+                                <a href="{{ $portalPlansTarget }}">
+                                    <i class="isax isax-card"></i><span>{{ !empty($hasExplicitProductSelection) ? 'Checkout Options' : 'Browse Products' }}</span>
                                 </a>
                             </li>
                             @if(!empty($systemUrl) && $allowSystemAccess)
@@ -155,9 +161,9 @@
                         </div>
                         <div class="p-2">
                             <h6 class="fs-14 fw-semibold mb-1">Next Step</h6>
-                            <p class="fs-13 mb-2">Start your trial or pick a paid plan from the portal.</p>
-                            <a href="{{ route('automotive.portal') }}#paid-plans" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center">
-                                <i class="isax isax-arrow-right-3 me-1"></i>Continue
+                            <p class="fs-13 mb-2">{{ !empty($hasExplicitProductSelection) ? 'Start your trial or pick a paid plan from the portal.' : 'Choose a product first before any plans or checkout options appear.' }}</p>
+                            <a href="{{ $portalPlansTarget }}" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center">
+                                <i class="isax isax-arrow-right-3 me-1"></i>{{ !empty($hasExplicitProductSelection) ? 'Continue' : 'Choose Product' }}
                             </a>
                         </div>
                     </div>
@@ -180,10 +186,10 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('automotive.portal') }}#paid-plans"
+                            <a href="{{ $portalPlansTarget }}"
                                data-bs-toggle="tooltip"
                                data-bs-placement="top"
-                               data-bs-title="Plans & Billing">
+                               data-bs-title="{{ $portalPlansLabel }}">
                                 <i class="isax isax-crown"></i>
                             </a>
                         </li>

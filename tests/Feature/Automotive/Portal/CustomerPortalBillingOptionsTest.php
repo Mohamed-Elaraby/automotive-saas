@@ -321,11 +321,12 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Accounting System', false);
         $response->assertSee('AVAILABLE NOW', false);
         $response->assertSee('Browse Product Plans', false);
-        $response->assertSee('No product is focused yet.', false);
-        $response->assertSee('Choose a product from the catalog above first.', false);
+        $response->assertDontSee('Product Subscription Options', false);
+        $response->assertDontSee('No product is focused yet.', false);
+        $response->assertSee('Choose Product', false);
     }
 
-    public function test_portal_remembers_the_last_explicitly_selected_product_after_refresh(): void
+    public function test_portal_returns_to_neutral_state_after_opening_base_route_without_explicit_product(): void
     {
         $user = User::query()->create([
             'name' => 'Portal Remembered Product User',
@@ -370,8 +371,9 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $refreshResponse = $this->actingAs($user, 'web')->get(route('automotive.portal'));
 
         $refreshResponse->assertOk();
-        $refreshResponse->assertSee($accountingPlan->name, false);
-        $refreshResponse->assertDontSee('No product is focused yet.', false);
+        $refreshResponse->assertDontSee($accountingPlan->name, false);
+        $refreshResponse->assertDontSee('Product Subscription Options', false);
+        $refreshResponse->assertSee('Choose Product', false);
     }
 
     public function test_portal_hides_coupon_badge_when_coupon_value_is_an_email(): void

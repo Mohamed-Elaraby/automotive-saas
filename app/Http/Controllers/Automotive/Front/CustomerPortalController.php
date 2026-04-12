@@ -63,6 +63,7 @@ class CustomerPortalController extends Controller
         );
         $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog, $subscription);
         $selectedProductWasExplicit = trim((string) $request->query('product')) !== '';
+        $hasExplicitProductSelection = $selectedProductWasExplicit && $selectedProduct !== null;
         $selectedProductCode = (string) ($selectedProduct['code'] ?? '');
         $selectedProductCapabilities = collect($selectedProduct['capabilities'] ?? []);
         $paidPlans = $selectedProductCode !== ''
@@ -163,6 +164,7 @@ class CustomerPortalController extends Controller
             'productCatalog' => $productCatalog,
             'selectedProduct' => $selectedProduct,
             'selectedProductWasExplicit' => $selectedProductWasExplicit,
+            'hasExplicitProductSelection' => $hasExplicitProductSelection,
             'selectedProductCapabilities' => $selectedProductCapabilities,
             'selectedProductSupportsCheckout' => $selectedProductSupportsCheckout,
             'selectedProductEnablementRequest' => $selectedProductEnablementRequest,
@@ -684,57 +686,14 @@ class CustomerPortalController extends Controller
     {
         $selected = trim((string) $request->query('product'));
 
-        if ($selected !== '') {
-            $matched = $productCatalog->first(function (array $productRow) use ($selected) {
-                return (string) $productRow['slug'] === $selected
-                    || (string) $productRow['code'] === $selected;
-            });
-
-            if ($matched) {
-                $request->session()->put('portal_selected_product', (string) ($matched['code'] ?? $selected));
-
-                return $matched;
-            }
+        if ($selected === '') {
+            return null;
         }
 
-        $remembered = trim((string) $request->session()->get('portal_selected_product', ''));
-
-        if ($remembered !== '') {
-            $matched = $productCatalog->first(function (array $productRow) use ($remembered) {
-                return (string) $productRow['code'] === $remembered
-                    || (string) $productRow['slug'] === $remembered;
-            });
-
-            if ($matched) {
-                return $matched;
-            }
-
-            $request->session()->forget('portal_selected_product');
-        }
-
-        if (! empty($subscription?->product_id)) {
-            $matched = $productCatalog->firstWhere('id', (int) $subscription->product_id);
-
-            if ($matched) {
-                return $matched;
-            }
-        }
-
-        if (! empty($subscription?->product_code)) {
-            $matched = $productCatalog->firstWhere('code', (string) $subscription->product_code);
-
-            if ($matched) {
-                return $matched;
-            }
-        }
-
-        $subscribedProducts = $productCatalog->where('is_subscribed', true)->values();
-
-        if ($subscribedProducts->count() === 1) {
-            return $subscribedProducts->first();
-        }
-
-        return null;
+        return $productCatalog->first(function (array $productRow) use ($selected) {
+            return (string) $productRow['slug'] === $selected
+                || (string) $productRow['code'] === $selected;
+        });
     }
 
     protected function productEnablementRequestForUser(int $userId, string $tenantId, int $productId): ?ProductEnablementRequest
