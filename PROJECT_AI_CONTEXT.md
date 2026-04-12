@@ -710,3 +710,29 @@ Important files:
 - `resources/views/admin/products/index.blade.php`
 - `routes/web.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 19) Workspace Experience Builder UI
+Status:
+- started
+- each central product can now store a workspace experience draft from the admin UI
+
+Current behavior:
+- `Product Builder` links to a dedicated `Workspace Experience Builder`
+- the experience draft is stored centrally in `app_settings` as JSON under `workspace_products.experience.{product_code}`
+- the draft currently captures:
+  - family key
+  - aliases
+  - portal copy
+  - sidebar title
+  - dashboard action ideas
+  - runtime module ideas
+  - integration ideas
+  - implementation notes
+- `Product Builder` now reflects whether an experience draft exists
+
+Important files:
+- `app/Http/Controllers/Admin/ProductExperienceController.php`
+- `resources/views/admin/products/experience.blade.php`
+- `app/Http/Controllers/Admin/ProductController.php`
+- `resources/views/admin/products/show.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

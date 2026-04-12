@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
+use App\Services\Admin\AppSettingsService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ use Illuminate\View\View;
 class ProductController extends Controller
 {
     public function __construct(
+        protected AppSettingsService $settingsService,
         protected WorkspaceManifestService $workspaceManifestService
     ) {
     }
@@ -71,17 +73,19 @@ class ProductController extends Controller
             ->limit(5)
             ->get();
 
+        $experienceDraft = $this->productExperienceDraft($product);
         $manifestFamily = $this->resolveManifestFamily($product);
         $familyDefinition = $manifestFamily !== null
             ? $this->workspaceManifestService->familyDefinition($manifestFamily)
             : [];
-        $builderChecklist = $this->builderChecklist($product, $manifestFamily);
+        $builderChecklist = $this->builderChecklist($product, $manifestFamily, $experienceDraft);
 
         return view('admin.products.show', [
             'product' => $product,
             'latestPlans' => $latestPlans,
             'manifestFamily' => $manifestFamily,
             'familyDefinition' => $familyDefinition,
+            'experienceDraft' => $experienceDraft,
             'builderChecklist' => $builderChecklist,
             'builderCompletionPercent' => $this->builderCompletionPercent($builderChecklist),
         ]);
@@ -193,7 +197,7 @@ class ProductController extends Controller
         return null;
     }
 
-    protected function builderChecklist(Product $product, ?string $manifestFamily): array
+    protected function builderChecklist(Product $product, ?string $manifestFamily, array $experienceDraft): array
     {
         return [
             [
@@ -212,6 +216,11 @@ class ProductController extends Controller
                 'completed' => (int) $product->active_plans_count > 0,
             ],
             [
+                'label' => 'Workspace experience draft',
+                'description' => 'Portal copy, family key, runtime modules, and integration notes are captured in the builder UI.',
+                'completed' => ! empty($experienceDraft),
+            ],
+            [
                 'label' => 'Workspace family mapping',
                 'description' => 'The product is represented in workspace manifest config so runtime/sidebar behavior can be resolved.',
                 'completed' => $manifestFamily !== null,
@@ -224,6 +233,16 @@ class ProductController extends Controller
                     && (int) $product->active_plans_count > 0,
             ],
         ];
+    }
+
+    protected function productExperienceDraft(Product $product): array
+    {
+        return (array) $this->settingsService->get($this->experienceSettingKey($product), []);
+    }
+
+    protected function experienceSettingKey(Product $product): string
+    {
+        return 'workspace_products.experience.' . $product->code;
     }
 
     protected function builderCompletionPercent(array $builderChecklist): int

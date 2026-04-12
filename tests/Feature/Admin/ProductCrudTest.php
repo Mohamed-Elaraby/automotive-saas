@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Admin;
+use App\Models\AppSetting;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
@@ -149,6 +150,60 @@ class ProductCrudTest extends TestCase
         $response->assertSee('Billing Plans', false);
         $response->assertSee(route('admin.plans.create', ['product_id' => $product->id]), false);
         $response->assertSee(route('admin.products.capabilities.index', $product), false);
+    }
+
+    public function test_admin_can_save_workspace_experience_draft_from_ui(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.experience.update', $product), [
+                'family_key' => 'perfume_retail',
+                'aliases' => "perfume\nfragrance\nshowroom",
+                'portal_eyebrow' => 'Perfume Retail Focus',
+                'portal_title' => 'Retail and showroom operations',
+                'portal_description' => 'Manage branches, sales, and fragrance catalog workflows.',
+                'portal_accent' => 'success',
+                'sidebar_title' => 'Perfume Retail',
+                'dashboard_actions' => "Open POS\nManage Catalog",
+                'runtime_modules' => "catalog-management\nsales-pos",
+                'integrations' => "accounting\ninventory",
+                'notes' => 'Needs POS and inventory runtime.',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.show', $product))
+            ->assertSessionHas('success', 'Workspace experience draft saved successfully.');
+
+        $setting = AppSetting::query()
+            ->where('key', 'workspace_products.experience.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($setting);
+
+        $payload = json_decode((string) $setting->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('perfume_retail', $payload['family_key']);
+        $this->assertSame(['perfume', 'fragrance', 'showroom'], $payload['aliases']);
+        $this->assertSame(['catalog-management', 'sales-pos'], $payload['runtime_modules']);
+
+        $builderResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.show', $product));
+
+        $builderResponse->assertOk();
+        $builderResponse->assertSee('Experience Draft', false);
+        $builderResponse->assertSee('Yes', false);
+        $builderResponse->assertSee(route('admin.products.experience.edit', $product), false);
     }
 
     public function test_admin_cannot_delete_product_when_it_is_used(): void

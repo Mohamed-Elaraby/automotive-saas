@@ -92,6 +92,10 @@
                                 <span class="fw-semibold">{{ $product->capabilities_count }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Experience Draft</span>
+                                <span class="fw-semibold">{{ empty($experienceDraft) ? 'No' : 'Yes' }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Subscriptions</span>
                                 <span class="fw-semibold">{{ $product->tenant_product_subscriptions_count }}</span>
                             </div>
@@ -169,7 +173,16 @@
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
-                                            <div class="fw-semibold">4. Workspace Runtime Mapping</div>
+                                            <div class="fw-semibold">4. Workspace Experience Builder</div>
+                                            <div class="text-muted small">Capture portal copy, aliases, runtime modules, and planned integrations from the UI.</div>
+                                        </div>
+                                        <a href="{{ route('admin.products.experience.edit', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <div class="fw-semibold">5. Workspace Runtime Mapping</div>
                                             <div class="text-muted small">Link the product to a workspace family, runtime modules, and sidebar behavior.</div>
                                         </div>
                                         <span class="badge {{ $manifestFamily ? 'bg-success' : 'bg-warning text-dark' }}">
@@ -180,7 +193,7 @@
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
-                                            <div class="fw-semibold">5. Portal Publication</div>
+                                            <div class="fw-semibold">6. Portal Publication</div>
                                             <div class="text-muted small">When active + capabilities + plans are ready, the product can appear logically in the customer portal.</div>
                                         </div>
                                         <span class="badge {{ ($product->is_active && $product->active_plans_count > 0 && $product->capabilities_count > 0) ? 'bg-success' : 'bg-secondary' }}">

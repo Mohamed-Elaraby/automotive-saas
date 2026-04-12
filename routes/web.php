@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCapabilityController;
+use App\Http\Controllers\Admin\ProductExperienceController;
 use App\Http\Controllers\Admin\ProductEnablementRequestController;
 use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
@@ -107,6 +108,8 @@ Route::prefix('admin')
                 Route::get('/create', [ProductController::class, 'create'])->name('create');
                 Route::post('/', [ProductController::class, 'store'])->name('store');
                 Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+                Route::get('/{product}/experience', [ProductExperienceController::class, 'edit'])->name('experience.edit');
+                Route::put('/{product}/experience', [ProductExperienceController::class, 'update'])->name('experience.update');
                 Route::prefix('/{product}/capabilities')
                     ->name('capabilities.')
                     ->group(function () {
