@@ -274,6 +274,67 @@ class ProductCrudTest extends TestCase
         $this->assertFalse($product->fresh()->is_active);
     }
 
+    public function test_admin_can_save_runtime_module_draft_from_ui(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.runtime-modules.update', $product), [
+                'modules' => [
+                    [
+                        'key' => 'sales-pos',
+                        'title' => 'Sales POS',
+                        'focus_code' => 'perfume_retail',
+                        'route_slug' => 'sales-pos',
+                        'icon' => 'isax-shop',
+                        'description' => 'Retail checkout and in-store sales.',
+                    ],
+                    [
+                        'key' => 'catalog-management',
+                        'title' => 'Catalog Management',
+                        'focus_code' => 'perfume_retail',
+                        'route_slug' => 'catalog-management',
+                        'icon' => 'isax-box',
+                        'description' => 'Manage perfume catalog and SKUs.',
+                    ],
+                ],
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.show', $product))
+            ->assertSessionHas('success', 'Runtime module draft saved successfully.');
+
+        $setting = AppSetting::query()
+            ->where('key', 'workspace_products.runtime_modules.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($setting);
+
+        $payload = json_decode((string) $setting->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertCount(2, $payload);
+        $this->assertSame('sales-pos', $payload[0]['key']);
+        $this->assertSame('catalog-management', $payload[1]['route_slug']);
+
+        $builderResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.show', $product));
+
+        $builderResponse->assertOk();
+        $builderResponse->assertSee('Runtime Modules Draft', false);
+        $builderResponse->assertSee('2', false);
+        $builderResponse->assertSee(route('admin.products.runtime-modules.edit', $product), false);
+    }
+
     public function test_admin_cannot_delete_product_when_it_is_used(): void
     {
         $admin = $this->createAdmin();

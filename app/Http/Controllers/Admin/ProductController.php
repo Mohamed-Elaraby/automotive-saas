@@ -74,11 +74,12 @@ class ProductController extends Controller
             ->get();
 
         $experienceDraft = $this->productExperienceDraft($product);
+        $runtimeModulesDraft = $this->productRuntimeModulesDraft($product);
         $manifestFamily = $this->resolveManifestFamily($product);
         $familyDefinition = $manifestFamily !== null
             ? $this->workspaceManifestService->familyDefinition($manifestFamily)
             : [];
-        $builderChecklist = $this->builderChecklist($product, $manifestFamily, $experienceDraft);
+        $builderChecklist = $this->builderChecklist($product, $manifestFamily, $experienceDraft, $runtimeModulesDraft);
 
         return view('admin.products.show', [
             'product' => $product,
@@ -86,6 +87,7 @@ class ProductController extends Controller
             'manifestFamily' => $manifestFamily,
             'familyDefinition' => $familyDefinition,
             'experienceDraft' => $experienceDraft,
+            'runtimeModulesDraft' => $runtimeModulesDraft,
             'builderChecklist' => $builderChecklist,
             'builderCompletionPercent' => $this->builderCompletionPercent($builderChecklist),
         ]);
@@ -197,7 +199,7 @@ class ProductController extends Controller
         return null;
     }
 
-    protected function builderChecklist(Product $product, ?string $manifestFamily, array $experienceDraft): array
+    protected function builderChecklist(Product $product, ?string $manifestFamily, array $experienceDraft, array $runtimeModulesDraft): array
     {
         return [
             [
@@ -226,6 +228,11 @@ class ProductController extends Controller
                 'completed' => $manifestFamily !== null,
             ],
             [
+                'label' => 'Runtime module draft',
+                'description' => 'Structured runtime modules are captured from the UI and ready for future runtime wiring.',
+                'completed' => ! empty($runtimeModulesDraft),
+            ],
+            [
                 'label' => 'Portal publication status',
                 'description' => 'The product is active and has enough setup to appear logically inside the customer portal.',
                 'completed' => $product->is_active
@@ -240,9 +247,19 @@ class ProductController extends Controller
         return (array) $this->settingsService->get($this->experienceSettingKey($product), []);
     }
 
+    protected function productRuntimeModulesDraft(Product $product): array
+    {
+        return (array) $this->settingsService->get($this->runtimeModulesSettingKey($product), []);
+    }
+
     protected function experienceSettingKey(Product $product): string
     {
         return 'workspace_products.experience.' . $product->code;
+    }
+
+    protected function runtimeModulesSettingKey(Product $product): string
+    {
+        return 'workspace_products.runtime_modules.' . $product->code;
     }
 
     protected function builderCompletionPercent(array $builderChecklist): int

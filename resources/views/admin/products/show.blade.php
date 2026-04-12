@@ -96,6 +96,10 @@
                                 <span class="fw-semibold">{{ empty($experienceDraft) ? 'No' : 'Yes' }}</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Runtime Modules Draft</span>
+                                <span class="fw-semibold">{{ count($runtimeModulesDraft) }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Subscriptions</span>
                                 <span class="fw-semibold">{{ $product->tenant_product_subscriptions_count }}</span>
                             </div>
@@ -183,7 +187,16 @@
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
                                             <div class="fw-semibold">5. Workspace Runtime Mapping</div>
-                                            <div class="text-muted small">Link the product to a workspace family, runtime modules, and sidebar behavior.</div>
+                                            <div class="text-muted small">Capture structured runtime modules before wiring them into workspace manifest and tenant routes.</div>
+                                        </div>
+                                        <a href="{{ route('admin.products.runtime-modules.edit', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <div class="fw-semibold">6. Workspace Manifest Wiring</div>
+                                            <div class="text-muted small">Link the product to a workspace family, sidebar behavior, and final runtime resolution in code.</div>
                                         </div>
                                         <span class="badge {{ $manifestFamily ? 'bg-success' : 'bg-warning text-dark' }}">
                                             {{ $manifestFamily ? 'Configured In Manifest' : 'Code Setup Needed' }}
@@ -193,7 +206,7 @@
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-start gap-3">
                                         <div>
-                                            <div class="fw-semibold">6. Portal Publication</div>
+                                            <div class="fw-semibold">7. Portal Publication</div>
                                             <div class="text-muted small">When active + capabilities + plans are ready, the product can appear logically in the customer portal.</div>
                                         </div>
                                         <a href="{{ route('admin.products.portal-publication.show', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>

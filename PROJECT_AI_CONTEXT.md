@@ -763,3 +763,27 @@ Important files:
 - `routes/web.php`
 - `resources/views/admin/products/show.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 21) Runtime Module Builder UI
+Status:
+- started
+- each product can now store structured runtime module drafts from the central admin UI
+
+Current behavior:
+- `Product Builder` now links to a dedicated `Runtime Module Builder`
+- runtime modules are stored centrally in `app_settings` as JSON under `workspace_products.runtime_modules.{product_code}`
+- each module draft currently captures:
+  - key
+  - title
+  - focus code
+  - route slug
+  - icon
+  - description
+- `Product Builder` reflects the current runtime module draft count
+
+Important files:
+- `app/Http/Controllers/Admin/ProductRuntimeModuleController.php`
+- `resources/views/admin/products/runtime-modules.blade.php`
+- `app/Http/Controllers/Admin/ProductController.php`
+- `resources/views/admin/products/show.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`
