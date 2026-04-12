@@ -94,6 +94,16 @@
                                 <div class="small text-muted mb-1">Captured At: <strong>{{ $latestSnapshot['captured_at'] ?? '-' }}</strong></div>
                                 <div class="small text-muted">Notes: {{ $latestSnapshot['notes'] ?? '-' }}</div>
                             @endif
+
+                            @if($latestWritebackPackage !== [])
+                                <hr>
+                                <h6 class="mb-2">Latest Writeback Package</h6>
+                                <div class="small text-muted mb-1">Mode: <strong>{{ strtoupper((string) ($latestWritebackPackage['mode'] ?? 'add')) }}</strong></div>
+                                <div class="small text-muted mb-1">Target File: <strong>{{ $latestWritebackPackage['target_file'] ?? '-' }}</strong></div>
+                                <div class="small text-muted mb-1">Config Path: <strong>{{ $latestWritebackPackage['config_path'] ?? '-' }}</strong></div>
+                                <div class="small text-muted mb-1">Captured At: <strong>{{ $latestWritebackPackage['captured_at'] ?? '-' }}</strong></div>
+                                <div class="small text-muted">Sections: {{ implode(', ', (array) ($latestWritebackPackage['sections'] ?? [])) ?: '-' }}</div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -107,6 +117,8 @@
                                     <a href="{{ route('admin.products.manifest-sync.export', [$product, 'json']) }}" class="btn btn-sm btn-outline-primary">Open JSON</a>
                                     <a href="{{ route('admin.products.manifest-sync.export', [$product, 'php']) }}" class="btn btn-sm btn-outline-primary">Open PHP</a>
                                     <a href="{{ route('admin.products.manifest-sync.export', [$product, 'family']) }}" class="btn btn-sm btn-outline-primary">Open Family Snippet</a>
+                                    <a href="{{ route('admin.products.manifest-sync.export', [$product, 'execution-json']) }}" class="btn btn-sm btn-outline-primary">Open Execution JSON</a>
+                                    <a href="{{ route('admin.products.manifest-sync.export', [$product, 'execution-php']) }}" class="btn btn-sm btn-outline-primary">Open Execution PHP</a>
                                 </div>
                             </div>
 
@@ -123,6 +135,16 @@
                             <div>
                                 <label class="form-label fw-semibold">Family Snippet</label>
                                 <textarea class="form-control font-monospace" rows="16" readonly>{{ $familyExport }}</textarea>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="form-label fw-semibold">Execution Package JSON</label>
+                                <textarea class="form-control font-monospace" rows="16" readonly>{{ $executionPackageJson }}</textarea>
+                            </div>
+
+                            <div class="mt-4">
+                                <label class="form-label fw-semibold">Execution Package PHP</label>
+                                <textarea class="form-control font-monospace" rows="16" readonly>{{ $executionPackagePhp }}</textarea>
                             </div>
                         </div>
                     </div>

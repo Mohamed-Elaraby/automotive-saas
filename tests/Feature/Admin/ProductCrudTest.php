@@ -588,6 +588,18 @@ class ProductCrudTest extends TestCase
         $this->assertSame('approved', $snapshotPayload['status']);
         $this->assertSame('perfume_retail', $snapshotPayload['family_key']);
         $this->assertArrayHasKey('payload', $snapshotPayload);
+
+        $writebackPackage = AppSetting::query()
+            ->where('key', 'workspace_products.manifest_writeback_package.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($writebackPackage);
+
+        $writebackPayload = json_decode((string) $writebackPackage->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('config/workspace_products.php', $writebackPayload['target_file']);
+        $this->assertSame('workspace_products.families.perfume_retail', $writebackPayload['config_path']);
+        $this->assertSame('perfume_retail', $writebackPayload['family_key']);
     }
 
     public function test_manifest_sync_approval_is_blocked_when_structured_drafts_are_missing(): void
@@ -675,6 +687,22 @@ class ProductCrudTest extends TestCase
         $familyResponse->assertOk();
         $familyResponse->assertSee('return array', false);
         $familyResponse->assertSee('perfume_retail', false);
+
+        $executionJsonResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.export', [$product, 'execution-json']));
+
+        $executionJsonResponse->assertOk();
+        $executionJsonResponse->assertSee('"target_file"', false);
+        $executionJsonResponse->assertSee('"config/workspace_products.php"', false);
+
+        $executionPhpResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.export', [$product, 'execution-php']));
+
+        $executionPhpResponse->assertOk();
+        $executionPhpResponse->assertSee('workspace_products.families.perfume_retail', false);
+        $executionPhpResponse->assertSee('config/workspace_products.php', false);
     }
 
     public function test_admin_can_open_and_update_manifest_apply_queue(): void

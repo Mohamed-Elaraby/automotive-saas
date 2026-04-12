@@ -927,3 +927,31 @@ Important files:
 - `resources/views/admin/products/manifest-sync.blade.php`
 - `resources/views/admin/products/manifest-apply-queue.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 26) Manifest Writeback Execution Package
+Status:
+- started
+- approved manifest payloads now produce a saved writeback package for real code handoff
+
+Current behavior:
+- when manifest workflow moves to `approved` or `applied`, the system now stores:
+  - `workspace_products.manifest_writeback_package.{product_code}`
+- the writeback package includes:
+  - target file
+  - config path
+  - family key
+  - add/update mode
+  - active payload sections
+  - family payload
+  - family snippet
+  - verification commands
+  - git commands
+- `Manifest Sync Preview` now exposes two new exports:
+  - `Execution JSON`
+  - `Execution PHP`
+- the screen now also shows the latest saved writeback package summary
+
+Important files:
+- `app/Http/Controllers/Admin/ProductManifestSyncController.php`
+- `resources/views/admin/products/manifest-sync.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

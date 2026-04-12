@@ -38,9 +38,12 @@ class ProductManifestSyncController extends Controller
             'syncChecklist' => $manifestData['sync_checklist'],
             'workflow' => $workflow,
             'latestSnapshot' => $latestSnapshot,
+            'latestWritebackPackage' => $this->latestWritebackPackage($product),
             'writebackPlan' => $this->writebackPlan($product, $manifestData, $workflow),
             'applyQueueRoute' => route('admin.products.manifest-apply-queue.show', $product),
             'validationBlockers' => $this->lifecycleService->manifestSyncBlockers($product),
+            'executionPackageJson' => json_encode($this->writebackExecutionPackage($product, $manifestData), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            'executionPackagePhp' => "<?php\n\nreturn " . var_export($this->writebackExecutionPackage($product, $manifestData), true) . ";\n",
         ]);
     }
 
@@ -83,6 +86,13 @@ class ProductManifestSyncController extends Controller
                 valueType: 'json',
                 groupKey: 'workspace_products'
             );
+
+            $this->settingsService->set(
+                key: $this->writebackPackageSettingKey($product),
+                value: $this->writebackExecutionPackage($product, $manifestData),
+                valueType: 'json',
+                groupKey: 'workspace_products'
+            );
         }
 
         $this->settingsService->set(
@@ -106,13 +116,23 @@ class ProductManifestSyncController extends Controller
     {
         $manifestData = $this->manifestDraftData($product);
 
-        abort_unless(in_array($format, ['json', 'php', 'family'], true), 404);
+        abort_unless(in_array($format, ['json', 'php', 'family', 'execution-json', 'execution-php'], true), 404);
 
         return match ($format) {
             'json' => response(
                 json_encode($manifestData['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
                 200,
                 ['Content-Type' => 'application/json; charset=UTF-8']
+            ),
+            'execution-json' => response(
+                json_encode($this->writebackExecutionPackage($product, $manifestData), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+                200,
+                ['Content-Type' => 'application/json; charset=UTF-8']
+            ),
+            'execution-php' => response(
+                "<?php\n\nreturn " . var_export($this->writebackExecutionPackage($product, $manifestData), true) . ";\n",
+                200,
+                ['Content-Type' => 'text/plain; charset=UTF-8']
             ),
             'family' => response(
                 "<?php\n\nreturn " . var_export([$manifestData['draft_family_key'] => $manifestData['payload']], true) . ";\n",
@@ -164,6 +184,16 @@ class ProductManifestSyncController extends Controller
     protected function latestSnapshot(Product $product): array
     {
         return (array) $this->settingsService->get($this->snapshotSettingKey($product), []);
+    }
+
+    protected function writebackPackageSettingKey(Product $product): string
+    {
+        return 'workspace_products.manifest_writeback_package.' . $product->code;
+    }
+
+    protected function latestWritebackPackage(Product $product): array
+    {
+        return (array) $this->settingsService->get($this->writebackPackageSettingKey($product), []);
     }
 
     protected function manifestDraftData(Product $product): array
@@ -311,6 +341,36 @@ class ProductManifestSyncController extends Controller
                 'git commit -m "Sync workspace manifest for ' . $product->code . '"',
                 'git push origin main',
             ],
+        ];
+    }
+
+    protected function writebackExecutionPackage(Product $product, array $manifestData): array
+    {
+        $familyKey = (string) $manifestData['draft_family_key'];
+        $currentFamilyDefinition = (array) ($manifestData['current_family_definition'] ?? []);
+        $payload = (array) ($manifestData['payload'] ?? []);
+
+        return [
+            'product_code' => $product->code,
+            'product_name' => $product->name,
+            'target_file' => 'config/workspace_products.php',
+            'config_path' => 'workspace_products.families.' . $familyKey,
+            'family_key' => $familyKey,
+            'mode' => $currentFamilyDefinition === [] ? 'add' : 'update',
+            'current_family_exists' => $currentFamilyDefinition !== [],
+            'sections' => array_values(array_keys(array_filter($payload, fn ($value) => ! empty($value)))),
+            'family_payload' => $payload,
+            'family_snippet' => [$familyKey => $payload],
+            'verification_commands' => [
+                'php -l config/workspace_products.php',
+                "php artisan test --filter='TenantAdminAccessFlowTest|CustomerPortalBillingOptionsTest'",
+            ],
+            'git_commands' => [
+                'git add config/workspace_products.php PROJECT_AI_CONTEXT.md',
+                'git commit -m "Sync workspace manifest for ' . $product->code . '"',
+                'git push origin main',
+            ],
+            'captured_at' => now()->toDateTimeString(),
         ];
     }
 }
