@@ -8,6 +8,7 @@ use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductEnablementRequest;
+use App\Models\Tenant;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Automotive\StartAdditionalProductCheckoutService;
 use App\Services\Automotive\StartPaidCheckoutService;
@@ -24,7 +25,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CustomerPortalController extends Controller
 {
@@ -308,6 +312,126 @@ class CustomerPortalController extends Controller
             ]);
     }
 
+    public function settings(): View
+    {
+        $user = Auth::guard('web')->user();
+
+        abort_unless($user, 403);
+
+        $profile = CustomerOnboardingProfile::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        $tenantIds = $this->tenantIdsForUser($user);
+        $subscription = $this->latestSubscriptionForUser($user);
+        $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
+        $workspaceTenantId = (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''));
+        $domains = $workspaceTenantId !== '' ? $this->domainsForTenant($workspaceTenantId) : collect();
+        $primaryDomain = $domains->first();
+        $primaryDomainValue = $primaryDomain['domain'] ?? null;
+        $systemUrl = $primaryDomain['admin_login_url'] ?? null;
+        $status = (string) ($subscription->status ?? '');
+        $allowSystemAccess = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true) && filled($systemUrl);
+
+        $workspaceSnapshots = $tenantIds->isEmpty()
+            ? collect()
+            : Tenant::query()
+                ->whereIn('id', $tenantIds->all())
+                ->get()
+                ->map(function (Tenant $tenant): array {
+                    return [
+                        'tenant_id' => (string) $tenant->id,
+                        'company_name' => (string) ($tenant->company_name ?? $tenant->business_name ?? $tenant->id),
+                        'owner_email' => (string) ($tenant->owner_email ?? ''),
+                    ];
+                })
+                ->values();
+
+        return view('automotive.portal.settings', [
+            'user' => $user,
+            'profile' => $profile,
+            'subscription' => $subscription,
+            'plan' => $plan,
+            'status' => $status,
+            'domains' => $domains,
+            'primaryDomainValue' => $primaryDomainValue,
+            'systemUrl' => $systemUrl,
+            'allowSystemAccess' => $allowSystemAccess,
+            'workspaceSnapshots' => $workspaceSnapshots,
+            'workspaceTenantId' => $workspaceTenantId,
+            'portalBreadcrumb' => 'Account & Settings',
+            'portalActiveNav' => 'settings',
+        ]);
+    }
+
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $user = Auth::guard('web')->user();
+
+        abort_unless($user, 403);
+
+        $profile = CustomerOnboardingProfile::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $profile) {
+            return redirect()
+                ->route('automotive.portal.settings')
+                ->withErrors([
+                    'portal' => 'Your portal onboarding profile is missing. Contact support before editing workspace settings.',
+                ]);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'company_name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $emailChanged = strcasecmp((string) $user->email, (string) $validated['email']) !== 0;
+
+        $user->forceFill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
+        ])->save();
+
+        $profile->update([
+            'company_name' => $validated['company_name'],
+        ]);
+
+        $this->syncTenantAccountSnapshot(
+            $this->tenantIdsForUser($user),
+            (string) $validated['company_name'],
+            (string) $validated['email']
+        );
+
+        return redirect()
+            ->route('automotive.portal.settings')
+            ->with('success', 'Your portal profile and workspace information were updated.');
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $user = Auth::guard('web')->user();
+
+        abort_unless($user, 403);
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password:web'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ]);
+
+        $user->forceFill([
+            'password' => Hash::make((string) $validated['password']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        return redirect()
+            ->route('automotive.portal.settings')
+            ->with('success', 'Your portal password was updated.');
+    }
+
     public function requestProductEnablement(Request $request): RedirectResponse
     {
         $user = Auth::guard('web')->user();
@@ -453,6 +577,22 @@ class CustomerPortalController extends Controller
             ->pluck('tenant_id')
             ->filter()
             ->values();
+    }
+
+    protected function syncTenantAccountSnapshot(Collection $tenantIds, string $companyName, string $ownerEmail): void
+    {
+        if ($tenantIds->isEmpty()) {
+            return;
+        }
+
+        Tenant::query()
+            ->whereIn('id', $tenantIds->all())
+            ->get()
+            ->each(function (Tenant $tenant) use ($companyName, $ownerEmail): void {
+                $tenant->company_name = $companyName;
+                $tenant->owner_email = $ownerEmail;
+                $tenant->save();
+            });
     }
 
     protected function productCatalogForTenantIds(Collection $tenantIds, string $currentTenantId = ''): Collection

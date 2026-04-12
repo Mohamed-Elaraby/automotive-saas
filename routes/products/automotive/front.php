@@ -31,6 +31,9 @@ Route::prefix('automotive')
             Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
             Route::get('/portal', [CustomerPortalController::class, 'index'])->name('portal');
+            Route::get('/portal/settings', [CustomerPortalController::class, 'settings'])->name('portal.settings');
+            Route::put('/portal/settings/profile', [CustomerPortalController::class, 'updateProfile'])->name('portal.settings.profile.update');
+            Route::put('/portal/settings/security', [CustomerPortalController::class, 'updatePassword'])->name('portal.settings.security.update');
             Route::get('/portal/billing', [PortalBillingController::class, 'status'])->name('portal.billing.status');
             Route::post('/portal/billing/renew', [PortalBillingController::class, 'renew'])->name('portal.billing.renew');
             Route::post('/portal/billing/change-plan', [PortalBillingController::class, 'changePlan'])->name('portal.billing.change-plan');

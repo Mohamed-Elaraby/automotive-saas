@@ -1,4 +1,5 @@
 <!-- Sidenav Menu Start -->
+@php($portalActiveNav = $portalActiveNav ?? (request()->routeIs('automotive.portal.settings') ? 'settings' : 'overview'))
 <div class="two-col-sidebar" id="two-col-sidebar">
     <div class="twocol-mini">
         <div class="dropdown">
@@ -18,6 +19,14 @@
                    data-bs-placement="right"
                    data-bs-title="Overview">
                     <i class="isax isax-home-2"></i>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('automotive.portal.settings') }}"
+                   data-bs-toggle="tooltip"
+                   data-bs-placement="right"
+                   data-bs-title="Account & Settings">
+                    <i class="isax isax-setting-2"></i>
                 </a>
             </li>
             <li>
@@ -94,6 +103,11 @@
                                     <i class="isax isax-home-2"></i><span>Overview</span>
                                 </a>
                             </li>
+                            <li class="{{ $portalActiveNav === 'settings' ? 'active' : '' }}">
+                                <a href="{{ route('automotive.portal.settings') }}">
+                                    <i class="isax isax-setting-2"></i><span>Account &amp; Settings</span>
+                                </a>
+                            </li>
                             <li>
                                 <a href="{{ route('automotive.portal') }}#paid-plans">
                                     <i class="isax isax-crown"></i><span>Plans & Billing</span>
@@ -155,6 +169,14 @@
                                data-bs-placement="top"
                                data-bs-title="Overview">
                                 <i class="isax isax-home-2"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('automotive.portal.settings') }}"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               data-bs-title="Account & Settings">
+                                <i class="isax isax-setting-2"></i>
                             </a>
                         </li>
                         <li>

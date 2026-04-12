@@ -34,6 +34,10 @@
                                 View Products
                             </a>
 
+                            <a href="{{ route('automotive.portal.settings') }}" class="btn btn-outline-white">
+                                Account &amp; Settings
+                            </a>
+
                             @if($allowSystemAccess && !empty($systemUrl))
                                 <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
                                     Open My Workspace

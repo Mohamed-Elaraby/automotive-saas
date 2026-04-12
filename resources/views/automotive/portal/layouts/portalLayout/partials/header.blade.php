@@ -11,6 +11,7 @@ $portalSeverityClassMap = [
     'warning' => 'bg-warning',
     'error' => 'bg-danger',
 ];
+$portalBreadcrumb = $portalBreadcrumb ?? (request()->routeIs('automotive.portal.settings') ? 'Account & Settings' : 'Overview');
 ?>
 
 <!-- Topbar Start -->
@@ -44,7 +45,7 @@ $portalSeverityClassMap = [
                                     <i class="isax isax-home-2 me-1"></i>Customer Portal
                                 </a>
                             </li>
-                            <li class="breadcrumb-item active" aria-current="page">Overview</li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ $portalBreadcrumb }}</li>
                         </ol>
                     </nav>
                 </div>
@@ -145,6 +146,10 @@ $portalSeverityClassMap = [
                                 <i class="isax isax-home-2 me-2"></i>Portal Overview
                             </a>
 
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.settings') }}">
+                                <i class="isax isax-setting-2 me-2"></i>Account &amp; Settings
+                            </a>
+
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.billing.status') }}">
                                 <i class="isax isax-crown me-2"></i>Workspace Billing
                             </a>
@@ -181,6 +186,9 @@ $portalSeverityClassMap = [
         <div class="dropdown-menu p-2 mt-0">
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal') }}">
                 <i class="isax isax-home-2 me-2"></i>Portal Overview
+            </a>
+            <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.settings') }}">
+                <i class="isax isax-setting-2 me-2"></i>Account &amp; Settings
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.billing.status') }}">
                 <i class="isax isax-crown me-2"></i>Workspace Billing

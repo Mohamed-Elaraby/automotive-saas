@@ -514,6 +514,7 @@ Important active test areas:
 
 Frequently used tests during recent work:
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+- `tests/Feature/Automotive/Portal/CustomerPortalSettingsTest.php`
 - `tests/Feature/Automotive/Portal/StartTrialServiceTest.php`
 - `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
 - `tests/Feature/Automotive/Admin/BillingPageTest.php`
@@ -537,6 +538,20 @@ Frequently used tests during recent work:
 - trial CTA belongs to the explicitly selected product
 - plans are no longer seeded with identical pricing across all products
 - seeded products are all active by default
+- portal now owns tenant-facing profile/settings management via:
+  - `GET /automotive/portal/settings`
+  - `PUT /automotive/portal/settings/profile`
+  - `PUT /automotive/portal/settings/security`
+- portal settings now centralize:
+  - tenant account profile editing
+  - company/workspace name editing
+  - portal password change
+  - domain/subdomain snapshot visibility
+  - linked workspace directory snapshot
+- portal profile changes now sync linked tenant snapshot fields:
+  - `company_name`
+  - `owner_email`
+- portal navigation/header now expose `Account & Settings` directly
 
 ## 14) Current Strong Summary
 If a new session starts and reads only this section, the safe understanding is:
@@ -555,29 +570,25 @@ If a new session starts and reads only this section, the safe understanding is:
 ## 15) Recommended Next Package
 The next package should be:
 
-### Portal-Owned Tenant Profile And Settings
+### Tenant Admin Billing Surface Decommission
 Scope:
-- move tenant-facing profile/settings management fully into the customer portal
-- keep tenant admin focused only on subscribed product runtime
-- make the portal the single home for:
-  - tenant account profile
-  - company/workspace info
-  - credential-related tenant-facing controls
-  - domain/subdomain snapshot
-  - workspace-level settings appropriate for the tenant
+- remove or demote remaining tenant-admin billing/account surfaces that conflict with the portal boundary
+- keep middleware/runtime protection intact while reducing tenant confusion
+- ensure tenant admin UI does not present billing/account ownership as if it lives inside runtime
 
 Why this is next:
-- billing already moved into the portal
-- product subscription entry is now product-aware
-- this finishes the UX boundary:
+- portal-owned account/settings now exists
+- billing already exists in the portal too
+- the remaining gap is legacy tenant-admin billing exposure
+- this hardens the UX boundary:
   - `Portal = account and subscription control`
   - `Tenant Admin = systems and operations`
 
 Suggested start files:
-- `app/Http/Controllers/Automotive/Front/*`
-- `resources/views/automotive/portal/*`
-- `routes/products/automotive/front.php`
-- tenant admin sidebar/header files to remove any remaining account-facing items
+- `app/Http/Controllers/Automotive/Admin/BillingController.php`
+- `resources/views/automotive/admin/billing/*`
+- `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
+- tenant admin header/breadcrumb files where billing/account language still appears
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
