@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,7 +13,8 @@ use Illuminate\View\View;
 class ProductManifestApplyQueueController extends Controller
 {
     public function __construct(
-        protected AppSettingsService $settingsService
+        protected AppSettingsService $settingsService,
+        protected ProductLifecycleService $lifecycleService
     ) {
     }
 
@@ -33,6 +35,7 @@ class ProductManifestApplyQueueController extends Controller
                 'owner_assigned' => filled($queue['owner_name'] ?? null),
                 'status_started' => in_array((string) ($queue['status'] ?? 'queued'), ['in_progress', 'done'], true),
             ],
+            'validationBlockers' => $this->lifecycleService->applyQueueBlockers($product),
         ]);
     }
 
@@ -46,6 +49,16 @@ class ProductManifestApplyQueueController extends Controller
             'implementation_notes' => ['nullable', 'string'],
             'deployment_notes' => ['nullable', 'string'],
         ]);
+
+        if (in_array((string) $validated['status'], ['in_progress', 'done'], true)) {
+            $blockers = $this->lifecycleService->applyQueueBlockers($product);
+
+            if ($blockers !== [] || blank((string) ($validated['owner_name'] ?? ''))) {
+                return redirect()
+                    ->route('admin.products.manifest-apply-queue.show', $product)
+                    ->with('error', 'Manifest apply execution cannot start until workflow and ownership blockers are cleared.');
+            }
+        }
 
         $existing = $this->queueState($product);
         $now = now()->toDateTimeString();
@@ -94,6 +107,12 @@ class ProductManifestApplyQueueController extends Controller
             valueType: 'json',
             groupKey: 'workspace_products'
         );
+
+        $this->lifecycleService->appendAudit($product, 'manifest_apply_queue.updated', [
+            'status' => $payload['status'],
+            'owner_name' => $payload['owner_name'],
+            'has_blocking_reason' => filled($payload['blocking_reason']),
+        ]);
 
         return redirect()
             ->route('admin.products.manifest-apply-queue.show', $product)

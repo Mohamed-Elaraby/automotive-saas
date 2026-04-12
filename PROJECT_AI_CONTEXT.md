@@ -885,3 +885,45 @@ Important files:
 - `resources/views/admin/products/manifest-sync.blade.php`
 - `routes/web.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 25) Lifecycle Validation And Audit
+Status:
+- started
+- product lifecycle decisions now use shared validation rules and record audit entries for key setup actions
+
+Current behavior:
+- shared lifecycle validation now checks:
+  - portal publication readiness
+  - manifest sync approval readiness
+  - manifest apply execution readiness
+- validation is now enforced before:
+  - `Publish To Portal`
+  - moving manifest sync to `approved` or `applied`
+  - moving manifest apply queue to `in_progress` or `done`
+- a product lifecycle audit trail is now stored centrally in `app_settings` under:
+  - `workspace_products.audit_trail.{product_code}`
+- audit entries are currently recorded for:
+  - product create/update
+  - workspace experience save
+  - runtime modules save
+  - integrations save
+  - portal publish/hide
+  - manifest sync workflow updates
+  - manifest apply queue updates
+- `Product Builder` now shows:
+  - lifecycle validation summary
+  - lifecycle audit trail
+
+Important files:
+- `app/Services/Admin/ProductLifecycleService.php`
+- `app/Http/Controllers/Admin/ProductController.php`
+- `app/Http/Controllers/Admin/ProductExperienceController.php`
+- `app/Http/Controllers/Admin/ProductRuntimeModuleController.php`
+- `app/Http/Controllers/Admin/ProductIntegrationController.php`
+- `app/Http/Controllers/Admin/ProductPortalPublicationController.php`
+- `app/Http/Controllers/Admin/ProductManifestSyncController.php`
+- `app/Http/Controllers/Admin/ProductManifestApplyQueueController.php`
+- `resources/views/admin/products/show.blade.php`
+- `resources/views/admin/products/manifest-sync.blade.php`
+- `resources/views/admin/products/manifest-apply-queue.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

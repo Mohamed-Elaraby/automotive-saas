@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,7 +14,8 @@ use Illuminate\View\View;
 class ProductRuntimeModuleController extends Controller
 {
     public function __construct(
-        protected AppSettingsService $settingsService
+        protected AppSettingsService $settingsService,
+        protected ProductLifecycleService $lifecycleService
     ) {
     }
 
@@ -74,6 +76,11 @@ class ProductRuntimeModuleController extends Controller
             valueType: 'json',
             groupKey: 'workspace_products'
         );
+
+        $this->lifecycleService->appendAudit($product, 'runtime_modules.saved', [
+            'modules_count' => count($modules),
+            'module_keys' => collect($modules)->pluck('key')->values()->all(),
+        ]);
 
         return redirect()
             ->route('admin.products.show', $product)

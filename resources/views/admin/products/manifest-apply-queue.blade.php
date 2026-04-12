@@ -19,6 +19,9 @@
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
+            @if(session('error'))
+                <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
 
             <div class="row g-4">
                 <div class="col-xl-4">
@@ -43,6 +46,16 @@
                                     <span class="badge {{ $readiness['status_started'] ? 'bg-success' : 'bg-secondary' }}">{{ $readiness['status_started'] ? 'Yes' : 'Not Yet' }}</span>
                                 </div>
                             </div>
+
+                            @if($validationBlockers !== [])
+                                <div class="alert alert-warning">
+                                    <ul class="mb-0 ps-3">
+                                        @foreach($validationBlockers as $blocker)
+                                            <li>{{ $blocker }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
 
                             <h6 class="mb-2">Manifest Workflow</h6>
                             <div class="small text-muted mb-1">Status: <strong>{{ strtoupper((string) ($workflow['status'] ?? 'draft')) }}</strong></div>

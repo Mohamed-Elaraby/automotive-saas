@@ -11,6 +11,7 @@ use App\Models\ProductCapability;
 use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
 use App\Models\User;
+use App\Services\Admin\ProductLifecycleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -274,6 +275,73 @@ class ProductCrudTest extends TestCase
         $this->assertFalse($product->fresh()->is_active);
     }
 
+    public function test_portal_publication_is_blocked_without_family_key_and_audit_is_recorded_after_publish(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => false,
+            'sort_order' => 2,
+        ]);
+
+        ProductCapability::query()->create([
+            'product_id' => $product->id,
+            'code' => 'catalog_management',
+            'name' => 'Catalog Management',
+            'slug' => 'catalog-management',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Perfume Growth',
+            'slug' => 'perfume-growth-ready',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode(['family_key' => ''], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $blockedResponse = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.portal-publication.publish', $product));
+
+        $blockedResponse
+            ->assertRedirect(route('admin.products.portal-publication.show', $product))
+            ->assertSessionHas('error', 'This product is not ready for portal publication yet.');
+
+        AppSetting::query()
+            ->where('key', 'workspace_products.experience.perfume_retail')
+            ->update([
+                'value' => json_encode(['family_key' => 'perfume_retail'], JSON_UNESCAPED_SLASHES),
+            ]);
+
+        $publishedResponse = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.portal-publication.publish', $product));
+
+        $publishedResponse
+            ->assertRedirect(route('admin.products.portal-publication.show', $product))
+            ->assertSessionHas('success', 'Product is now live in the customer portal.');
+
+        $audit = app(ProductLifecycleService::class)->auditEntries($product, 20);
+
+        $this->assertNotEmpty($audit);
+        $this->assertSame('portal.published', $audit[0]['action']);
+    }
+
     public function test_admin_can_save_runtime_module_draft_from_ui(): void
     {
         $admin = $this->createAdmin();
@@ -477,6 +545,15 @@ class ProductCrudTest extends TestCase
             'sort_order' => 2,
         ]);
 
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode([
+                'family_key' => 'perfume_retail',
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
         $response = $this
             ->actingAs($admin, 'admin')
             ->put(route('admin.products.manifest-sync.update', $product), [
@@ -511,6 +588,45 @@ class ProductCrudTest extends TestCase
         $this->assertSame('approved', $snapshotPayload['status']);
         $this->assertSame('perfume_retail', $snapshotPayload['family_key']);
         $this->assertArrayHasKey('payload', $snapshotPayload);
+    }
+
+    public function test_manifest_sync_approval_is_blocked_when_structured_drafts_are_missing(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode([
+                'family_key' => 'perfume_retail',
+                'runtime_modules' => ['sales-pos'],
+                'integrations' => ['accounting'],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.manifest-sync.update', $product), [
+                'status' => 'approved',
+                'notes' => 'Try to approve early.',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.manifest-sync.show', $product))
+            ->assertSessionHas('error', 'Manifest sync cannot move to an approved state until all blockers are cleared.');
+
+        $this->assertDatabaseMissing('app_settings', [
+            'key' => 'workspace_products.manifest_sync_workflow.perfume_retail',
+        ]);
     }
 
     public function test_admin_can_export_manifest_sync_payload_in_multiple_formats(): void
@@ -645,6 +761,61 @@ class ProductCrudTest extends TestCase
         $builderResponse->assertSee('Manifest Apply Queue', false);
         $builderResponse->assertSee(route('admin.products.manifest-apply-queue.show', $product), false);
         $builderResponse->assertSee('IN_PROGRESS', false);
+    }
+
+    public function test_manifest_apply_queue_cannot_start_without_owner_assignment(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.manifest_sync_workflow.perfume_retail',
+            'value' => json_encode([
+                'status' => 'approved',
+                'notes' => 'Approved for writeback.',
+                'reviewed_at' => now()->toDateTimeString(),
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.manifest_sync_snapshot.perfume_retail',
+            'value' => json_encode([
+                'status' => 'approved',
+                'family_key' => 'perfume_retail',
+                'payload' => ['aliases' => ['perfume']],
+                'captured_at' => now()->toDateTimeString(),
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.manifest-apply-queue.update', $product), [
+                'status' => 'in_progress',
+                'owner_name' => '',
+                'owner_contact' => '',
+                'blocking_reason' => '',
+                'implementation_notes' => 'Start coding.',
+                'deployment_notes' => '',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.manifest-apply-queue.show', $product))
+            ->assertSessionHas('error', 'Manifest apply execution cannot start until workflow and ownership blockers are cleared.');
+
+        $this->assertDatabaseMissing('app_settings', [
+            'key' => 'workspace_products.manifest_apply_queue.perfume_retail',
+        ]);
     }
 
     public function test_admin_cannot_delete_product_when_it_is_used(): void

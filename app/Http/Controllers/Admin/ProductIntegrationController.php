@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,7 +13,8 @@ use Illuminate\View\View;
 class ProductIntegrationController extends Controller
 {
     public function __construct(
-        protected AppSettingsService $settingsService
+        protected AppSettingsService $settingsService,
+        protected ProductLifecycleService $lifecycleService
     ) {
     }
 
@@ -75,6 +77,11 @@ class ProductIntegrationController extends Controller
             valueType: 'json',
             groupKey: 'workspace_products'
         );
+
+        $this->lifecycleService->appendAudit($product, 'integrations.saved', [
+            'integrations_count' => count($integrations),
+            'target_product_codes' => collect($integrations)->pluck('target_product_code')->filter()->values()->all(),
+        ]);
 
         return redirect()
             ->route('admin.products.show', $product)

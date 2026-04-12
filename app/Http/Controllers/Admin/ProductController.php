@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductLifecycleService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,8 @@ class ProductController extends Controller
 {
     public function __construct(
         protected AppSettingsService $settingsService,
-        protected WorkspaceManifestService $workspaceManifestService
+        protected WorkspaceManifestService $workspaceManifestService,
+        protected ProductLifecycleService $lifecycleService
     ) {
     }
 
@@ -82,6 +84,7 @@ class ProductController extends Controller
         $familyDefinition = $manifestFamily !== null
             ? $this->workspaceManifestService->familyDefinition($manifestFamily)
             : [];
+        $validationSummary = $this->lifecycleService->validationSummary($product);
         $builderChecklist = $this->builderChecklist(
             $product,
             $manifestFamily,
@@ -102,6 +105,8 @@ class ProductController extends Controller
             'integrationDraft' => $integrationDraft,
             'manifestWorkflow' => $manifestWorkflow,
             'manifestApplyQueue' => $manifestApplyQueue,
+            'validationSummary' => $validationSummary,
+            'auditEntries' => $this->lifecycleService->auditEntries($product),
             'builderChecklist' => $builderChecklist,
             'builderCompletionPercent' => $this->builderCompletionPercent($builderChecklist),
         ]);
@@ -120,6 +125,10 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $product = Product::query()->create($this->validatedData($request));
+        $this->lifecycleService->appendAudit($product, 'product.created', [
+            'name' => $product->name,
+            'code' => $product->code,
+        ]);
 
         return redirect()
             ->route('admin.products.show', $product)
@@ -136,6 +145,10 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $product->update($this->validatedData($request, $product->id));
+        $this->lifecycleService->appendAudit($product, 'product.updated', [
+            'name' => $product->name,
+            'code' => $product->code,
+        ]);
 
         return redirect()
             ->route('admin.products.show', $product)

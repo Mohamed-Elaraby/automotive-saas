@@ -20,6 +20,9 @@
                             @if(session('success'))
                                 <div class="alert alert-success">{{ session('success') }}</div>
                             @endif
+                            @if(session('error'))
+                                <div class="alert alert-danger">{{ session('error') }}</div>
+                            @endif
 
                             <h6 class="mb-3">Sync Checklist</h6>
                             <div class="list-group">
@@ -38,6 +41,18 @@
                             </div>
 
                             <hr>
+
+                            @if($validationBlockers !== [])
+                                <h6 class="mb-3">Approval Blockers</h6>
+                                <div class="alert alert-warning">
+                                    <ul class="mb-0 ps-3">
+                                        @foreach($validationBlockers as $blocker)
+                                            <li>{{ $blocker }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                <hr>
+                            @endif
 
                             <h6 class="mb-2">Target Family</h6>
                             <div class="fw-semibold">{{ $draftFamilyKey }}</div>

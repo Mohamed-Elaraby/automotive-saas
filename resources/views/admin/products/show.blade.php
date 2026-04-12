@@ -246,6 +246,29 @@
                 </div>
 
                 <div class="col-xl-5">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="mb-3">Lifecycle Validation</h6>
+                            <div class="list-group mb-3">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Portal Publication</span>
+                                    <span class="badge {{ $validationSummary['publication']['ready'] ? 'bg-success' : 'bg-warning text-dark' }}">{{ $validationSummary['publication']['ready'] ? 'Ready' : count($validationSummary['publication']['blockers']) . ' blockers' }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Manifest Sync Approval</span>
+                                    <span class="badge {{ $validationSummary['manifest_sync']['ready'] ? 'bg-success' : 'bg-warning text-dark' }}">{{ $validationSummary['manifest_sync']['ready'] ? 'Ready' : count($validationSummary['manifest_sync']['blockers']) . ' blockers' }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Manifest Apply Execution</span>
+                                    <span class="badge {{ $validationSummary['apply_queue']['ready'] ? 'bg-success' : 'bg-warning text-dark' }}">{{ $validationSummary['apply_queue']['ready'] ? 'Ready' : count($validationSummary['apply_queue']['blockers']) . ' blockers' }}</span>
+                                </div>
+                            </div>
+                            <div class="small text-muted">
+                                Shared lifecycle rules now gate publication, manifest approval, and apply execution.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <div class="card-body">
                             <h6 class="mb-3">Recent Product Plans</h6>
@@ -285,6 +308,29 @@
                     </div>
 
                     <div class="card mt-4">
+                        <div class="card-body border-bottom">
+                            <h6 class="mb-3">Lifecycle Audit Trail</h6>
+                            @if($auditEntries === [])
+                                <div class="alert alert-light mb-0">No lifecycle actions have been recorded for this product yet.</div>
+                            @else
+                                <div class="list-group">
+                                    @foreach($auditEntries as $entry)
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                                <div>
+                                                    <div class="fw-semibold">{{ $entry['action'] ?? 'unknown' }}</div>
+                                                    <div class="small text-muted">Actor: {{ $entry['actor'] ?? 'system' }}</div>
+                                                    @if(!empty($entry['details']))
+                                                        <div class="small text-muted">Details: {{ json_encode($entry['details'], JSON_UNESCAPED_SLASHES) }}</div>
+                                                    @endif
+                                                </div>
+                                                <div class="small text-muted text-end">{{ $entry['recorded_at'] ?? '-' }}</div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                         <div class="card-body">
                             <h6 class="mb-3">Portal Outcome</h6>
                             <ul class="mb-0 text-muted ps-3">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductLifecycleService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ class ProductManifestSyncController extends Controller
 {
     public function __construct(
         protected AppSettingsService $settingsService,
-        protected WorkspaceManifestService $workspaceManifestService
+        protected WorkspaceManifestService $workspaceManifestService,
+        protected ProductLifecycleService $lifecycleService
     ) {
     }
 
@@ -38,6 +40,7 @@ class ProductManifestSyncController extends Controller
             'latestSnapshot' => $latestSnapshot,
             'writebackPlan' => $this->writebackPlan($product, $manifestData, $workflow),
             'applyQueueRoute' => route('admin.products.manifest-apply-queue.show', $product),
+            'validationBlockers' => $this->lifecycleService->manifestSyncBlockers($product),
         ]);
     }
 
@@ -47,6 +50,16 @@ class ProductManifestSyncController extends Controller
             'status' => ['required', 'string', 'in:draft,approved,applied'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        if (in_array((string) $validated['status'], ['approved', 'applied'], true)) {
+            $blockers = $this->lifecycleService->manifestSyncBlockers($product);
+
+            if ($blockers !== []) {
+                return redirect()
+                    ->route('admin.products.manifest-sync.show', $product)
+                    ->with('error', 'Manifest sync cannot move to an approved state until all blockers are cleared.');
+            }
+        }
 
         $payload = [
             'status' => (string) $validated['status'],
@@ -78,6 +91,11 @@ class ProductManifestSyncController extends Controller
             valueType: 'json',
             groupKey: 'workspace_products'
         );
+
+        $this->lifecycleService->appendAudit($product, 'manifest_sync.updated', [
+            'status' => $payload['status'],
+            'snapshot_captured' => in_array($payload['status'], ['approved', 'applied'], true),
+        ]);
 
         return redirect()
             ->route('admin.products.manifest-sync.show', $product)
