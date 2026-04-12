@@ -568,6 +568,9 @@ Frequently used tests during recent work:
   - it must not make `Automotive Service Management` appear live-billed
   - it must not hide paid plans for other products
   - it must not re-enable first-workspace trial UI once a workspace already exists
+- `StartPaidCheckoutService` must scope its “live paid subscription already exists” guard to the primary/default product only:
+  - a live non-automotive legacy subscription must not block starting automotive checkout later
+  - when automotive checkout starts after another product was first, it should create its own primary legacy subscription row for the same tenant and continue to Stripe
 - portal billing gates are now product-scoped:
   - a live Stripe subscription on one product must not block paid plans for a different product
   - example: active `Accounting` billing must not block `Automotive` plan selection

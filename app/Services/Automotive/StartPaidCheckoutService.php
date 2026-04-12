@@ -12,6 +12,7 @@ use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\TenantProductSubscriptionSyncService;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StartPaidCheckoutService
 {
@@ -205,11 +206,7 @@ class StartPaidCheckoutService
             ];
         }
 
-        $subscription = DB::connection($connection)
-            ->table('subscriptions')
-            ->where('tenant_id', $tenantLink->tenant_id)
-            ->orderByDesc('id')
-            ->first();
+        $subscription = $this->primaryLegacySubscriptionForTenant((string) $tenantLink->tenant_id, $connection);
 
         return [
             'tenant_id' => (string) $tenantLink->tenant_id,
@@ -249,6 +246,30 @@ class StartPaidCheckoutService
     protected function centralConnectionName(): string
     {
         return (string) (config('tenancy.database.central_connection') ?? config('database.default'));
+    }
+
+    protected function primaryLegacySubscriptionForTenant(string $tenantId, string $connection): ?object
+    {
+        if (
+            $tenantId === ''
+            || ! Schema::connection($connection)->hasTable('subscriptions')
+            || ! Schema::connection($connection)->hasTable('plans')
+        ) {
+            return null;
+        }
+
+        return DB::connection($connection)
+            ->table('subscriptions')
+            ->leftJoin('plans', 'plans.id', '=', 'subscriptions.plan_id')
+            ->leftJoin('products', 'products.id', '=', 'plans.product_id')
+            ->where('subscriptions.tenant_id', $tenantId)
+            ->where(function ($query) {
+                $query->where('products.code', 'automotive_service')
+                    ->orWhereNull('plans.product_id');
+            })
+            ->orderByDesc('subscriptions.id')
+            ->select('subscriptions.*')
+            ->first();
     }
 
     protected function resolveCheckoutProduct(int $planId, ?int $productId = null): ?Product

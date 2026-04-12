@@ -1851,6 +1851,131 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee('Start Automotive Service Management Free Trial', false);
     }
 
+    public function test_automotive_paid_checkout_can_start_after_another_product_has_the_first_live_subscription(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Automotive Followup Checkout User',
+            'email' => 'portal-automotive-followup-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $profile = CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Automotive Followup Co',
+            'subdomain' => 'portal-automotive-followup-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-automotive-followup-' . uniqid(),
+            'data' => ['company_name' => 'Portal Automotive Followup Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_followup_' . uniqid(),
+            'name' => 'Accounting Followup',
+            'slug' => 'accounting-followup-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Followup Growth',
+            'slug' => 'accounting-followup-growth-' . uniqid(),
+            'description' => 'Accounting paid plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $legacySubscription = Subscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_followup_scope',
+            'gateway_subscription_id' => 'sub_followup_scope',
+            'gateway_checkout_session_id' => 'cs_followup_scope',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'legacy_subscription_id' => $legacySubscription->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_followup_scope',
+            'gateway_subscription_id' => 'sub_followup_scope',
+            'gateway_checkout_session_id' => 'cs_followup_scope',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+        $automotivePlan = Plan::query()->create([
+            'product_id' => $automotiveProduct->id,
+            'name' => 'Automotive Followup Growth',
+            'slug' => 'automotive-followup-growth-' . uniqid(),
+            'description' => 'Automotive paid plan',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('createRenewalSession')
+            ->once()
+            ->withArgs(function (array $payload) use ($tenant, $user, $automotivePlan, $automotiveProduct): bool {
+                return ($payload['tenant_id'] ?? null) === $tenant->id
+                    && ! empty($payload['subscription_row_id'])
+                    && ($payload['plan_id'] ?? null) === $automotivePlan->id
+                    && ($payload['stripe_price_id'] ?? null) === $automotivePlan->stripe_price_id
+                    && ($payload['customer_email'] ?? null) === $user->email
+                    && ($payload['product_scope'] ?? null) === $automotiveProduct->code;
+            })
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://checkout.stripe.test/session/automotive-followup',
+                'session_id' => 'cs_automotive_followup',
+            ]);
+
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')
+            ->once()
+            ->with('stripe')
+            ->andReturn($gateway);
+
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $result = app(StartPaidCheckoutService::class)->start($user, $profile, $automotivePlan->id, $automotiveProduct->id);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame('https://checkout.stripe.test/session/automotive-followup', $result['checkout_url']);
+        $this->assertSame($tenant->id, $result['tenant_id']);
+        $this->assertNotNull($result['subscription_id']);
+        $this->assertDatabaseHas('subscriptions', [
+            'id' => $result['subscription_id'],
+            'tenant_id' => $tenant->id,
+            'plan_id' => $automotivePlan->id,
+            'gateway_checkout_session_id' => 'cs_automotive_followup',
+            'gateway_price_id' => $automotivePlan->stripe_price_id,
+        ]);
+    }
+
     public function test_paid_checkout_updates_tenant_product_subscription_when_legacy_subscription_is_created(): void
     {
         $user = User::query()->create([
