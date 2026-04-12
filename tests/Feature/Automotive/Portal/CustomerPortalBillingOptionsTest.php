@@ -1976,6 +1976,75 @@ class CustomerPortalBillingOptionsTest extends TestCase
         ]);
     }
 
+    public function test_portal_shows_workspace_login_url_when_active_workspace_exists_without_domains_row(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Workspace Login User',
+            'email' => 'portal-workspace-login-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Workspace Login Co',
+            'subdomain' => 'portal-workspace-login-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-workspace-login-' . uniqid(),
+            'data' => ['company_name' => 'Portal Workspace Login Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $partsProduct = Product::query()->create([
+            'code' => 'parts_inventory',
+            'name' => 'Parts Inventory Management',
+            'slug' => 'parts-inventory',
+            'is_active' => true,
+        ]);
+
+        $partsPlan = Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Parts Login Plan',
+            'slug' => 'parts-login-plan-' . uniqid(),
+            'description' => 'Parts paid plan',
+            'price' => 199,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_workspace_login',
+            'gateway_subscription_id' => 'sub_workspace_login',
+            'gateway_price_id' => $partsPlan->stripe_price_id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('System Access', false);
+        $response->assertSee('Available', false);
+        $response->assertSee('Open My Workspace', false);
+        $response->assertSee('portal-workspace-login', false);
+        $response->assertSee('.example.test', false);
+        $response->assertSee('/automotive/admin/login', false);
+    }
+
     public function test_paid_checkout_updates_tenant_product_subscription_when_legacy_subscription_is_created(): void
     {
         $user = User::query()->create([

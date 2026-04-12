@@ -54,13 +54,11 @@ class CustomerPortalController extends Controller
         $tenantIds = $this->tenantIdsForUser($user);
         $subscription = $this->latestPrimarySubscriptionForUser($user);
         $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
-        $domains = $subscription && ! empty($subscription->tenant_id)
-            ? $this->domainsForTenant((string) $subscription->tenant_id)
+        $workspaceTenantId = (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''));
+        $domains = $workspaceTenantId !== ''
+            ? $this->domainsForTenant($workspaceTenantId, $profile)
             : collect();
-        $productCatalog = $this->productCatalogForTenantIds(
-            $tenantIds,
-            (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''))
-        );
+        $productCatalog = $this->productCatalogForTenantIds($tenantIds, $workspaceTenantId);
         $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog, $subscription);
         $selectedProductWasExplicit = trim((string) $request->query('product')) !== '';
         $hasExplicitProductSelection = $selectedProductWasExplicit && $selectedProduct !== null;
@@ -93,7 +91,7 @@ class CustomerPortalController extends Controller
             $trialDaysRemaining = now()->diffInDays($trialEndsAt, false);
         }
 
-        $allowSystemAccess = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true) && filled($systemUrl);
+        $allowSystemAccess = $this->workspaceHasAccessibleProduct($productCatalog, $subscription) && filled($systemUrl);
         $hasLiveStripeSubscription = $this->hasLiveStripeSubscription($subscription);
         $hasPendingPaidCheckout = $subscription
             && filled($subscription->gateway_checkout_session_id)
@@ -342,12 +340,15 @@ class CustomerPortalController extends Controller
         $subscription = $this->latestPrimarySubscriptionForUser($user);
         $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
         $workspaceTenantId = (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''));
-        $domains = $workspaceTenantId !== '' ? $this->domainsForTenant($workspaceTenantId) : collect();
+        $domains = $workspaceTenantId !== '' ? $this->domainsForTenant($workspaceTenantId, $profile) : collect();
         $primaryDomain = $domains->first();
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
         $systemUrl = $primaryDomain['admin_login_url'] ?? null;
         $status = (string) ($subscription->status ?? '');
-        $allowSystemAccess = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true) && filled($systemUrl);
+        $allowSystemAccess = $this->workspaceHasAccessibleProduct(
+            $this->productCatalogForTenantIds($tenantIds, $workspaceTenantId),
+            $subscription
+        ) && filled($systemUrl);
 
         $workspaceSnapshots = $tenantIds->isEmpty()
             ? collect()
@@ -941,15 +942,15 @@ class CustomerPortalController extends Controller
             ->first();
     }
 
-    protected function domainsForTenant(string $tenantId): Collection
+    protected function domainsForTenant(string $tenantId, ?CustomerOnboardingProfile $profile = null): Collection
     {
         $connection = $this->centralConnectionName();
 
         if (! Schema::connection($connection)->hasTable('domains')) {
-            return collect();
+            return $this->fallbackDomainsForTenant($tenantId, $profile);
         }
 
-        return DB::connection($connection)
+        $domains = DB::connection($connection)
             ->table('domains')
             ->where('tenant_id', $tenantId)
             ->orderBy('domain')
@@ -968,6 +969,12 @@ class CustomerPortalController extends Controller
                 ];
             })
             ->values();
+
+        if ($domains->isNotEmpty()) {
+            return $domains;
+        }
+
+        return $this->fallbackDomainsForTenant($tenantId, $profile);
     }
 
     protected function nullableCarbon(mixed $value): ?Carbon
@@ -1026,5 +1033,35 @@ class CustomerPortalController extends Controller
         }
 
         return Carbon::parse((string) $subscription->ends_at)->isFuture();
+    }
+
+    protected function fallbackDomainsForTenant(string $tenantId, ?CustomerOnboardingProfile $profile = null): Collection
+    {
+        $baseHost = strtolower(trim((string) ($profile?->base_host ?? '')));
+
+        if ($tenantId === '' || $baseHost === '') {
+            return collect();
+        }
+
+        $domain = strtolower($tenantId . '.' . $baseHost);
+        $baseUrl = 'https://' . $domain;
+
+        return collect([[
+            'tenant_id' => $tenantId,
+            'domain' => $domain,
+            'url' => $baseUrl,
+            'admin_login_url' => rtrim($baseUrl, '/') . '/automotive/admin/login',
+        ]]);
+    }
+
+    protected function workspaceHasAccessibleProduct(Collection $productCatalog, ?object $subscription = null): bool
+    {
+        if ($productCatalog->contains(function (array $productRow): bool {
+            return in_array((string) ($productRow['subscription_status'] ?? ''), SubscriptionStatuses::accessAllowedStatuses(), true);
+        })) {
+            return true;
+        }
+
+        return in_array((string) ($subscription->status ?? ''), SubscriptionStatuses::accessAllowedStatuses(), true);
     }
 }
