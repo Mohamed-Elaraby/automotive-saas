@@ -681,6 +681,7 @@ Current rules:
 - legacy `/automotive/portal`, `/automotive/login`, and `/automotive/admin/*` paths still resolve
 - legacy tenant-admin billing path redirects to canonical `/workspace/admin/billing`
 - trial bootstrap API is canonical at `/api/workspace/start-trial` with legacy `/api/automotive/start-trial` preserved
+- product cards in the shared portal must render one primary CTA only; subscribed automotive uses `Open Product Workspace`, subscribed attached products use `Manage Product`
 
 Guardrail:
 - any new controller redirect, builder, or Blade link should use named routes or the workspace URL builder

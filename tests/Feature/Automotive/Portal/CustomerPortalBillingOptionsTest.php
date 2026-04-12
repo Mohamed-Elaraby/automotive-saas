@@ -21,6 +21,7 @@ use App\Services\Billing\PaymentGatewayManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Mockery;
+use Stancl\Tenancy\Database\Models\Domain;
 use Tests\TestCase;
 
 class CustomerPortalBillingOptionsTest extends TestCase
@@ -2160,6 +2161,11 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        Domain::query()->create([
+            'tenant_id' => $tenant->id,
+            'domain' => 'subscribed-product-' . uniqid() . '.example.test',
+        ]);
+
         \App\Models\TenantProductSubscription::query()->create([
             'tenant_id' => $tenant->id,
             'product_id' => Product::query()->where('code', 'automotive_service')->value('id'),
@@ -2173,6 +2179,8 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Products Catalog', false);
         $response->assertSee('Open Product Workspace', false);
+        $this->assertSame(1, substr_count($response->getContent(), 'Open Product Workspace'));
+        $response->assertDontSee('Manage Product', false);
         $response->assertSee('ACTIVE', false);
         $response->assertSee('This product is already attached to your workspace.', false);
     }

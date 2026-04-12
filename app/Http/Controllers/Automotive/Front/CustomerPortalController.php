@@ -92,6 +92,7 @@ class CustomerPortalController extends Controller
         }
 
         $allowSystemAccess = $this->workspaceHasAccessibleProduct($productCatalog, $subscription) && filled($systemUrl);
+        $productCatalog = $this->decorateProductCatalogActions($productCatalog, $systemUrl, $allowSystemAccess);
         $hasLiveStripeSubscription = $this->hasLiveStripeSubscription($subscription);
         $hasPendingPaidCheckout = $subscription
             && filled($subscription->gateway_checkout_session_id)
@@ -345,8 +346,9 @@ class CustomerPortalController extends Controller
         $primaryDomainValue = $primaryDomain['domain'] ?? null;
         $systemUrl = $primaryDomain['admin_login_url'] ?? null;
         $status = (string) ($subscription->status ?? '');
+        $productCatalog = $this->productCatalogForTenantIds($tenantIds, $workspaceTenantId);
         $allowSystemAccess = $this->workspaceHasAccessibleProduct(
-            $this->productCatalogForTenantIds($tenantIds, $workspaceTenantId),
+            $productCatalog,
             $subscription
         ) && filled($systemUrl);
 
@@ -746,6 +748,24 @@ class CustomerPortalController extends Controller
             ->values();
     }
 
+    protected function decorateProductCatalogActions(Collection $productCatalog, ?string $systemUrl, bool $allowSystemAccess): Collection
+    {
+        return $productCatalog
+            ->map(function (array $productRow) use ($systemUrl, $allowSystemAccess): array {
+                $productRow['action_url'] = $this->productActionUrl(
+                    (string) ($productRow['code'] ?? ''),
+                    (string) ($productRow['slug'] ?? ''),
+                    (bool) ($productRow['is_subscribed'] ?? false),
+                    (bool) ($productRow['is_automotive'] ?? false),
+                    $systemUrl,
+                    $allowSystemAccess
+                );
+
+                return $productRow;
+            })
+            ->values();
+    }
+
     protected function resolveSelectedProduct(Request $request, Collection $productCatalog, ?object $subscription = null): ?array
     {
         $selected = trim((string) $request->query('product'));
@@ -895,6 +915,25 @@ class CustomerPortalController extends Controller
         }
 
         return 'Explore Enablement';
+    }
+
+    protected function productActionUrl(
+        string $productCode,
+        string $productSlug,
+        bool $isSubscribed,
+        bool $isAutomotive,
+        ?string $systemUrl,
+        bool $allowSystemAccess
+    ): string {
+        if ($isSubscribed) {
+            if ($isAutomotive && $allowSystemAccess && filled($systemUrl)) {
+                return (string) $systemUrl;
+            }
+
+            return route('automotive.portal.billing.status', ['workspace_product' => $productCode]);
+        }
+
+        return route('automotive.portal', ['product' => $productSlug]) . '#paid-plans';
     }
 
     protected function productHasPaidPlans(string $productCode): bool
