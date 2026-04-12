@@ -36,6 +36,7 @@ class ProductManifestSyncController extends Controller
             'syncChecklist' => $manifestData['sync_checklist'],
             'workflow' => $workflow,
             'latestSnapshot' => $latestSnapshot,
+            'writebackPlan' => $this->writebackPlan($product, $manifestData, $workflow),
         ]);
     }
 
@@ -208,6 +209,88 @@ class ProductManifestSyncController extends Controller
                 'experience_draft' => $experienceDraft !== [],
                 'runtime_modules' => $runtimeModulesDraft !== [],
                 'integrations' => $integrationDraft !== [],
+            ],
+        ];
+    }
+
+    protected function writebackPlan(Product $product, array $manifestData, array $workflow): array
+    {
+        $familyKey = (string) $manifestData['draft_family_key'];
+        $hasExistingFamily = $manifestData['current_family_definition'] !== [];
+        $hasRuntimeModules = ! empty($manifestData['payload']['runtime_modules'] ?? []);
+        $hasIntegrations = ! empty($manifestData['payload']['integrations'] ?? []);
+        $hasDashboardActions = ! empty($manifestData['payload']['dashboard_actions'] ?? []);
+        $approved = (string) ($workflow['status'] ?? 'draft') === 'approved';
+
+        $steps = [
+            [
+                'label' => 'Open config/workspace_products.php',
+                'completed' => true,
+                'details' => 'This family is written under the `families` array in the workspace manifest config.',
+            ],
+            [
+                'label' => $hasExistingFamily ? 'Update existing family block' : 'Add new family block',
+                'completed' => $hasExistingFamily,
+                'details' => $hasExistingFamily
+                    ? "Family `{$familyKey}` already exists in code and should be updated in place."
+                    : "Family `{$familyKey}` does not exist yet and needs a new config block.",
+            ],
+            [
+                'label' => 'Write experience and sidebar data',
+                'completed' => ! empty($manifestData['payload']['experience'] ?? []),
+                'details' => 'Apply aliases, experience copy, and sidebar section from the approved payload.',
+            ],
+            [
+                'label' => 'Write runtime modules',
+                'completed' => $hasRuntimeModules,
+                'details' => $hasRuntimeModules
+                    ? 'Runtime module definitions are ready to be written into `runtime_modules`.'
+                    : 'No runtime modules are currently drafted.',
+            ],
+            [
+                'label' => 'Write integrations',
+                'completed' => $hasIntegrations,
+                'details' => $hasIntegrations
+                    ? 'Integration definitions are ready to be written into `integrations`.'
+                    : 'No integrations are currently drafted.',
+            ],
+            [
+                'label' => 'Review dashboard actions',
+                'completed' => $hasDashboardActions,
+                'details' => $hasDashboardActions
+                    ? 'Dashboard actions exist and can be mapped to final route names.'
+                    : 'No dashboard actions are currently drafted.',
+            ],
+            [
+                'label' => 'Mark workflow as applied after code merge',
+                'completed' => (string) ($workflow['status'] ?? '') === 'applied',
+                'details' => $approved
+                    ? 'After code writeback lands, return هنا and change status to `Applied In Code`.'
+                    : 'Approve the payload first before treating it as code-ready.',
+            ],
+        ];
+
+        $patchOutline = [
+            'file' => 'config/workspace_products.php',
+            'family_key' => $familyKey,
+            'mode' => $hasExistingFamily ? 'update' : 'add',
+            'sections' => array_values(array_filter([
+                ! empty($manifestData['payload']['aliases'] ?? []) ? 'aliases' : null,
+                ! empty($manifestData['payload']['experience'] ?? []) ? 'experience' : null,
+                ! empty($manifestData['payload']['sidebar_section'] ?? []) ? 'sidebar_section' : null,
+                $hasDashboardActions ? 'dashboard_actions' : null,
+                $hasRuntimeModules ? 'runtime_modules' : null,
+                $hasIntegrations ? 'integrations' : null,
+            ])),
+        ];
+
+        return [
+            'steps' => $steps,
+            'patch_outline' => $patchOutline,
+            'git_commands' => [
+                'git add config/workspace_products.php PROJECT_AI_CONTEXT.md',
+                'git commit -m "Sync workspace manifest for ' . $product->code . '"',
+                'git push origin main',
             ],
         ];
     }

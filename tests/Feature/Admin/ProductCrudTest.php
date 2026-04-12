@@ -461,6 +461,8 @@ class ProductCrudTest extends TestCase
         $response->assertSee('sales-pos', false);
         $response->assertSee('perfume-accounting', false);
         $response->assertSee('automotive.admin.modules.general-ledger', false);
+        $response->assertSee('Code Writeback Assistant', false);
+        $response->assertSee('config/workspace_products.php', false);
     }
 
     public function test_admin_can_update_manifest_sync_workflow_state(): void

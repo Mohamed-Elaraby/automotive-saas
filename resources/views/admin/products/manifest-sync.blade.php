@@ -111,6 +111,37 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <h6 class="mb-3">Code Writeback Assistant</h6>
+                            <div class="list-group mb-4">
+                                @foreach($writebackPlan['steps'] as $step)
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start gap-3">
+                                            <div>
+                                                <div class="fw-semibold">{{ $step['label'] }}</div>
+                                                <div class="small text-muted">{{ $step['details'] }}</div>
+                                            </div>
+                                            <span class="badge {{ $step['completed'] ? 'bg-success' : 'bg-warning text-dark' }}">
+                                                {{ $step['completed'] ? 'Ready' : 'Pending' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Patch Outline</label>
+                                <textarea class="form-control font-monospace" rows="10" readonly>{{ var_export($writebackPlan['patch_outline'], true) }}</textarea>
+                            </div>
+
+                            <div>
+                                <label class="form-label fw-semibold">Suggested Git Commands</label>
+                                <textarea class="form-control font-monospace" rows="4" readonly>{{ implode("\n", $writebackPlan['git_commands']) }}</textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

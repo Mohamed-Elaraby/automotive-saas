@@ -837,6 +837,10 @@ Current behavior:
   - JSON payload
   - PHP payload
   - family snippet payload
+- the manifest screen now also includes a `Code Writeback Assistant` section with:
+  - writeback checklist
+  - patch outline
+  - suggested git commands
 - this is still a review/sync-prep screen, not a write-back editor for `config/workspace_products.php`
 
 Important files:
