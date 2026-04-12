@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\AppSetting;
+use Illuminate\Support\Collection;
 
 class AppSettingsService
 {
@@ -48,6 +49,22 @@ class AppSettingsService
             valueType: 'boolean',
             groupKey: 'onboarding'
         );
+    }
+
+    public function getByPrefix(string $prefix, ?string $groupKey = null): Collection
+    {
+        return AppSetting::query()
+            ->when($groupKey !== null, fn ($query) => $query->where('group_key', $groupKey))
+            ->where('key', 'like', $prefix . '%')
+            ->get()
+            ->map(function (AppSetting $setting) {
+                return [
+                    'key' => $setting->key,
+                    'group_key' => $setting->group_key,
+                    'value_type' => $setting->value_type,
+                    'value' => $this->castValue($setting->value, $setting->value_type),
+                ];
+            });
     }
 
     protected function castValue(?string $value, string $valueType, mixed $default = null): mixed

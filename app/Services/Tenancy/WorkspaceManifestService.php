@@ -2,10 +2,17 @@
 
 namespace App\Services\Tenancy;
 
+use App\Services\Admin\AppSettingsService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class WorkspaceManifestService
 {
+    public function __construct(
+        protected AppSettingsService $settingsService
+    ) {
+    }
+
     public function defaultFamily(): string
     {
         return (string) config('workspace_products.default_family', 'automotive_service');
@@ -23,12 +30,26 @@ class WorkspaceManifestService
 
     public function familyDefinition(string $family): array
     {
-        return (array) config("workspace_products.families.{$family}", []);
+        $configDefinition = (array) config("workspace_products.families.{$family}", []);
+        $dynamicDefinition = (array) ($this->dynamicFamilies()[$family] ?? []);
+
+        if ($configDefinition === []) {
+            return $dynamicDefinition;
+        }
+
+        if ($dynamicDefinition === []) {
+            return $configDefinition;
+        }
+
+        return array_replace_recursive($configDefinition, $dynamicDefinition);
     }
 
     public function familyKeys(): array
     {
-        return array_keys((array) config('workspace_products.families', []));
+        return array_values(array_unique(array_merge(
+            array_keys((array) config('workspace_products.families', [])),
+            array_keys($this->dynamicFamilies())
+        )));
     }
 
     public function resolveFamilyFromText(string $haystack): string
@@ -128,5 +149,25 @@ class WorkspaceManifestService
             ])))) === $family
                 && ! empty($workspaceProduct['is_accessible']);
         });
+    }
+
+    protected function dynamicFamilies(): array
+    {
+        if (! Schema::hasTable('app_settings')) {
+            return [];
+        }
+
+        return $this->settingsService
+            ->getByPrefix('workspace_products.manifest_writeback_package.', 'workspace_products')
+            ->mapWithKeys(function (array $setting): array {
+                $payload = (array) ($setting['value'] ?? []);
+                $familyKey = (string) ($payload['family_key'] ?? '');
+                $familyPayload = (array) ($payload['family_payload'] ?? []);
+
+                return $familyKey !== ''
+                    ? [$familyKey => $familyPayload]
+                    : [];
+            })
+            ->all();
     }
 }

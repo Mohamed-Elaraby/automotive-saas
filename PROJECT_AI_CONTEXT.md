@@ -955,3 +955,28 @@ Important files:
 - `app/Http/Controllers/Admin/ProductManifestSyncController.php`
 - `resources/views/admin/products/manifest-sync.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 27) Runtime Wiring Consumption
+Status:
+- started
+- tenancy runtime can now consume approved writeback packages even before manual config writeback lands
+
+Current behavior:
+- `WorkspaceManifestService` now overlays runtime family definitions from:
+  - `workspace_products.manifest_writeback_package.{product_code}`
+- this means approved writeback packages can supply:
+  - family aliases
+  - experience
+  - sidebar section
+  - dashboard actions
+  - integrations
+  - runtime modules
+- the module and integration catalog services now benefit automatically because they already consume `WorkspaceManifestService`
+- this provides a real runtime-consumption bridge between:
+  - central admin product lifecycle UI
+  - tenant workspace runtime behavior
+
+Important files:
+- `app/Services/Admin/AppSettingsService.php`
+- `app/Services/Tenancy/WorkspaceManifestService.php`
+- `tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php`
