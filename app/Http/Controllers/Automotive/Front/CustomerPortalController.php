@@ -752,14 +752,15 @@ class CustomerPortalController extends Controller
     {
         return $productCatalog
             ->map(function (array $productRow) use ($systemUrl, $allowSystemAccess): array {
-                $productRow['action_url'] = $this->productActionUrl(
+                $resolvedAction = $this->resolveProductAction(
                     (string) ($productRow['code'] ?? ''),
                     (string) ($productRow['slug'] ?? ''),
                     (bool) ($productRow['is_subscribed'] ?? false),
-                    (bool) ($productRow['is_automotive'] ?? false),
                     $systemUrl,
                     $allowSystemAccess
                 );
+                $productRow['action_label'] = $resolvedAction['label'];
+                $productRow['action_url'] = $resolvedAction['url'];
 
                 return $productRow;
             })
@@ -901,9 +902,7 @@ class CustomerPortalController extends Controller
         }
 
         if ($isSubscribed) {
-            return (string) $product->code === self::PRODUCT_CODE
-                ? 'Open Product Workspace'
-                : 'Manage Product';
+            return 'Manage Product';
         }
 
         if ($hasPaidPlans) {
@@ -917,23 +916,50 @@ class CustomerPortalController extends Controller
         return 'Explore Enablement';
     }
 
-    protected function productActionUrl(
+    protected function resolveProductAction(
         string $productCode,
         string $productSlug,
         bool $isSubscribed,
-        bool $isAutomotive,
         ?string $systemUrl,
         bool $allowSystemAccess
-    ): string {
+    ): array {
         if ($isSubscribed) {
-            if ($isAutomotive && $allowSystemAccess && filled($systemUrl)) {
-                return (string) $systemUrl;
+            if ($allowSystemAccess && filled($systemUrl)) {
+                return [
+                    'label' => 'Open Product Workspace',
+                    'url' => (string) $systemUrl,
+                ];
             }
 
-            return route('automotive.portal.billing.status', ['workspace_product' => $productCode]);
+            return [
+                'label' => 'Manage Product',
+                'url' => route('automotive.portal.billing.status', ['workspace_product' => $productCode]),
+            ];
         }
 
-        return route('automotive.portal', ['product' => $productSlug]) . '#paid-plans';
+        return [
+            'label' => (string) $this->productCatalogActionLabelForUnsubscribed($productCode, $productSlug),
+            'url' => route('automotive.portal', ['product' => $productSlug]) . '#paid-plans',
+        ];
+    }
+
+    protected function productCatalogActionLabelForUnsubscribed(string $productCode, string $productSlug): string
+    {
+        $product = Product::query()
+            ->where('code', $productCode)
+            ->orWhere('slug', $productSlug)
+            ->first();
+
+        if (! $product) {
+            return 'Explore Enablement';
+        }
+
+        return $this->productActionLabel(
+            $product,
+            false,
+            $this->productHasPaidPlans($productCode),
+            Auth::guard('web')->check() && $this->tenantIdsForUser(Auth::guard('web')->user())->isNotEmpty()
+        );
     }
 
     protected function productHasPaidPlans(string $productCode): bool

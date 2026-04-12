@@ -357,7 +357,7 @@
                                                 </div>
 
                                                 <div class="mt-auto d-flex flex-wrap gap-2">
-                                                    <a href="{{ $productRow['action_url'] }}" class="btn btn-outline-white" @if($productRow['is_subscribed'] && $productRow['is_automotive'] && $allowSystemAccess) target="_blank" @endif>
+                                                    <a href="{{ $productRow['action_url'] }}" class="btn btn-outline-white" @if($productRow['is_subscribed'] && $allowSystemAccess) target="_blank" @endif>
                                                         {{ $productRow['action_label'] }}
                                                     </a>
                                                 </div>

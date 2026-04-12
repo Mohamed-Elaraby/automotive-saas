@@ -2174,12 +2174,35 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'payment_failures_count' => 0,
         ]);
 
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_portal_cta_' . uniqid(),
+            'name' => 'Accounting Portal CTA',
+            'slug' => 'accounting-portal-cta-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = $this->createPlan(
+            'Accounting Portal CTA Growth',
+            'accounting-portal-cta-growth-' . uniqid(),
+            'monthly',
+            399,
+            $accountingProduct->id
+        );
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'payment_failures_count' => 0,
+        ]);
+
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
 
         $response->assertOk();
         $response->assertSee('Products Catalog', false);
         $response->assertSee('Open Product Workspace', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'Open Product Workspace'));
+        $this->assertSame(2, substr_count($response->getContent(), 'Open Product Workspace'));
         $response->assertDontSee('Manage Product', false);
         $response->assertSee('ACTIVE', false);
         $response->assertSee('This product is already attached to your workspace.', false);
