@@ -618,12 +618,7 @@ class CustomerPortalController extends Controller
 
         $productSubscriptions = collect();
         $capabilitiesByProductId = collect();
-        $paidPlanCounts = Plan::query()
-            ->where('is_active', true)
-            ->where('billing_period', '!=', 'trial')
-            ->selectRaw('product_id, COUNT(*) as aggregate')
-            ->groupBy('product_id')
-            ->pluck('aggregate', 'product_id');
+        $paidPlanCountsByProductCode = $this->billingPlanCatalogService->paidPlanCountsByProductCode();
 
         if (Schema::connection($connection)->hasTable('product_capabilities')) {
             $capabilitiesByProductId = DB::connection($connection)
@@ -653,11 +648,11 @@ class CustomerPortalController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCounts, $capabilitiesByProductId, $hasWorkspace): array {
+            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCountsByProductCode, $capabilitiesByProductId, $hasWorkspace): array {
                 $subscription = $productSubscriptions->get($product->id);
                 $status = (string) ($subscription->status ?? '');
                 $isAutomotive = (string) $product->code === self::PRODUCT_CODE;
-                $hasPaidPlans = (int) ($paidPlanCounts->get($product->id) ?? 0) > 0;
+                $hasPaidPlans = (int) ($paidPlanCountsByProductCode->get((string) $product->code) ?? 0) > 0;
                 $isSubscribed = $subscription !== null
                     && ! in_array($status, ['expired', 'canceled'], true);
 

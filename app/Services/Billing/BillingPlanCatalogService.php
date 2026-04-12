@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\Schema;
 
 class BillingPlanCatalogService
 {
+    public function paidPlanCountsByProductCode(): Collection
+    {
+        return Plan::query()
+            ->join('products', 'products.id', '=', 'plans.product_id')
+            ->where('plans.is_active', true)
+            ->where('plans.billing_period', '!=', 'trial')
+            ->selectRaw('products.code, COUNT(*) as aggregate')
+            ->groupBy('products.code')
+            ->pluck('aggregate', 'products.code');
+    }
+
     public function getPaidPlans(?string $productCode = null): Collection
     {
         $query = Plan::query()

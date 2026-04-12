@@ -587,6 +587,94 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee(route('automotive.portal', ['product' => $partsProduct->slug]) . '#paid-plans', false);
     }
 
+    public function test_canonical_parts_product_keeps_browse_plans_cta_after_another_product_is_subscribed(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Canonical Parts User',
+            'email' => 'portal-canonical-parts-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Canonical Parts Co',
+            'subdomain' => 'portal-canonical-parts-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-canonical-parts-' . uniqid(),
+            'data' => ['company_name' => 'Portal Canonical Parts Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting',
+            'name' => 'Accounting System',
+            'slug' => 'accounting',
+            'description' => 'Accounting product',
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Growth',
+            'slug' => 'accounting-growth-' . uniqid(),
+            'description' => 'Accounting paid plan',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_canonical_parts',
+            'gateway_subscription_id' => 'sub_canonical_parts',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        $partsProduct = Product::query()->create([
+            'code' => 'parts_inventory',
+            'name' => 'Parts Inventory Management',
+            'slug' => 'parts-inventory',
+            'description' => 'Canonical parts product',
+            'is_active' => true,
+        ]);
+
+        Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Parts Starter',
+            'slug' => 'canonical-parts-starter-' . uniqid(),
+            'description' => 'Parts paid plan',
+            'price' => 149,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('Parts Inventory Management', false);
+        $response->assertSee('Browse Product Plans', false);
+        $response->assertSee(route('automotive.portal', ['product' => 'parts-inventory']) . '#paid-plans', false);
+    }
+
     public function test_automotive_plans_are_not_blocked_by_live_subscription_on_another_product(): void
     {
         $user = User::query()->create([
