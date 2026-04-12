@@ -98,10 +98,31 @@ class CustomerPortalController extends Controller
             && filled($subscription->gateway_checkout_session_id)
             && ! filled($subscription->gateway_subscription_id);
         $hasAnyWorkspace = $tenantIds->isNotEmpty();
-        $canStartPaidCheckout = ! $hasLiveStripeSubscription
+        $selectedPrimarySubscription = $selectedProductCode === self::PRODUCT_CODE
+            ? ($selectedProductSubscription ?: $subscription)
+            : $selectedProductSubscription;
+        $selectedProductHasLiveBilling = $selectedProductCode === self::PRODUCT_CODE
+            ? $this->hasLiveStripeSubscription($selectedPrimarySubscription)
+            : $this->hasLiveTenantProductBilling($selectedProductSubscription);
+        $selectedProductHasPendingCheckout = $selectedProductCode === self::PRODUCT_CODE
+            ? (
+                $selectedPrimarySubscription
+                && filled($selectedPrimarySubscription->gateway_checkout_session_id ?? null)
+                && ! filled($selectedPrimarySubscription->gateway_subscription_id ?? null)
+            )
+            : (
+                $selectedProductSubscription !== null
+                && filled($selectedProductSubscription->gateway_checkout_session_id ?? null)
+                && ! filled($selectedProductSubscription->gateway_subscription_id ?? null)
+            );
+        $selectedProductStatus = (string) ($selectedPrimarySubscription->status ?? '');
+        $selectedProductIsTrialWorkspace = $selectedProductCode === self::PRODUCT_CODE
+            ? $this->subscriptionRepresentsTrialWorkspace($selectedPrimarySubscription, $plan)
+            : false;
+        $canStartPaidCheckout = ! $selectedProductHasLiveBilling
             && (
-                (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE
-                || $isTrialWorkspace
+                $selectedProductStatus !== SubscriptionStatuses::ACTIVE
+                || $selectedProductIsTrialWorkspace
             );
         $selectedProductSupportsCheckout = $selectedProduct !== null && (! $hasAnyWorkspace
             ? ((bool) ($selectedProduct['is_active'] ?? false) && ((bool) ($selectedProduct['has_paid_plans'] ?? false) || $selectedProductHasTrialPlan))
@@ -114,17 +135,6 @@ class CustomerPortalController extends Controller
                     || $selectedProductSubscription !== null
                 )
             ));
-        $selectedProductHasLiveBilling = $selectedProduct !== null && ($selectedProductCode === self::PRODUCT_CODE
-            ? $hasLiveStripeSubscription
-            : $this->hasLiveTenantProductBilling($selectedProductSubscription));
-        $selectedProductStatus = (string) ($selectedProductSubscription->status ?? ($subscription->status ?? ''));
-        $selectedProductHasPendingCheckout = $selectedProductCode === self::PRODUCT_CODE
-            ? $hasPendingPaidCheckout
-            : (
-                $selectedProductSubscription !== null
-                && filled($selectedProductSubscription->gateway_checkout_session_id ?? null)
-                && ! filled($selectedProductSubscription->gateway_subscription_id ?? null)
-            );
         $selectedPortalBillingUrl = $hasAnyWorkspace && $selectedProductCode !== ''
             ? route('automotive.portal.billing.status', ['workspace_product' => $selectedProductCode])
             : null;

@@ -585,6 +585,90 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee(route('automotive.portal', ['product' => $partsProduct->slug]) . '#paid-plans', false);
     }
 
+    public function test_automotive_plans_are_not_blocked_by_live_subscription_on_another_product(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Automotive Product Focus User',
+            'email' => 'portal-automotive-product-focus-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Automotive Product Focus Co',
+            'subdomain' => 'portal-automotive-product-focus-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-automotive-product-focus-' . uniqid(),
+            'data' => ['company_name' => 'Portal Automotive Product Focus Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+        $automotivePlan = Plan::query()->create([
+            'product_id' => $automotiveProduct->id,
+            'name' => 'Automotive Growth',
+            'slug' => 'automotive-growth-' . uniqid(),
+            'description' => 'Automotive paid plan',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_live_' . uniqid(),
+            'name' => 'Accounting Live',
+            'slug' => 'accounting-live-' . uniqid(),
+            'description' => 'Accounting product',
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Growth',
+            'slug' => 'accounting-growth-' . uniqid(),
+            'description' => 'Accounting paid plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_accounting_live_product',
+            'gateway_subscription_id' => 'sub_accounting_live_product',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', [
+            'product' => $automotiveProduct->slug,
+        ]));
+
+        $response->assertOk();
+        $response->assertDontSee('This account already has a live Stripe subscription.', false);
+        $response->assertSee('Automotive Growth', false);
+        $response->assertSee('Select &amp; Continue', false);
+        $response->assertDontSee('Billing Managed In System', false);
+    }
+
     public function test_user_can_request_enablement_for_non_automotive_product_after_workspace_exists(): void
     {
         $user = User::query()->create([

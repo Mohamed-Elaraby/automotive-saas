@@ -555,6 +555,9 @@ Frequently used tests during recent work:
 - when a workspace already exists, non-automotive product cards that have active paid plans now show:
   - `Browse Product Plans`
   - instead of incorrectly defaulting to `Explore Enablement`
+- portal billing gates are now product-scoped:
+  - a live Stripe subscription on one product must not block paid plans for a different product
+  - example: active `Accounting` billing must not block `Automotive` plan selection
 - tenant admin billing surface is now decommissioned into a transition page:
   - `automotive/admin/billing` remains only as a runtime-access landing page
   - it no longer presents billing/account ownership as a tenant-admin responsibility
