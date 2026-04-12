@@ -561,6 +561,13 @@ Frequently used tests during recent work:
 - additional products with active paid plans are now direct-billed in the portal:
   - they must show `Select & Continue` instead of `Approval Required Before Checkout`
   - enablement workflow remains only for products that do not yet have direct paid checkout configured
+- portal must distinguish between:
+  - the primary/default product subscription (`automotive_service`)
+  - any other workspace product subscription
+- a legacy `subscriptions` row for `Accounting` or another non-primary product must not be treated as the automotive/default subscription:
+  - it must not make `Automotive Service Management` appear live-billed
+  - it must not hide paid plans for other products
+  - it must not re-enable first-workspace trial UI once a workspace already exists
 - portal billing gates are now product-scoped:
   - a live Stripe subscription on one product must not block paid plans for a different product
   - example: active `Accounting` billing must not block `Automotive` plan selection

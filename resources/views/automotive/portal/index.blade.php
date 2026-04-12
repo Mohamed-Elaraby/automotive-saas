@@ -88,7 +88,7 @@
                                 Please review your plan and billing before opening the system workspace.
                             @endif
                         </div>
-                    @elseif(empty($subscription))
+                    @elseif(!$hasAnyWorkspace)
                         <div class="alert alert-primary mb-3">
                             @if($freeTrialEnabled)
                                 Your account is ready. Choose how you want to continue: start a free trial or subscribe to a paid plan.
@@ -398,7 +398,7 @@
                                             @if(empty($selectedProduct))
                                                 Choose a product from the catalog above first. Trial and paid options will load here for the product you select.
                                             @elseif($selectedProductSupportsCheckout)
-                                                @if(empty($subscription) && empty($selectedProductWasExplicit))
+                                                @if(!$hasAnyWorkspace && empty($selectedProductWasExplicit))
                                                     Choose a product from the catalog first, then review its trial and paid options here.
                                                 @else
                                                     Review trial and paid options for <strong>{{ $selectedProductName }}</strong>, compare the real limits, then continue with the right subscription flow.
@@ -428,7 +428,7 @@
                                 </div>
                             @endif
 
-                            @if(!empty($selectedProduct) && empty($subscription) && $freeTrialEnabled && $selectedProductHasTrialPlan && !empty($selectedProductWasExplicit))
+                            @if(!empty($selectedProduct) && !$hasAnyWorkspace && $freeTrialEnabled && $selectedProductHasTrialPlan && !empty($selectedProductWasExplicit))
                                 <div class="alert alert-primary border mb-4">
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                         <div>
@@ -455,7 +455,7 @@
                                 @endphp
                                 <div class="alert alert-info">
                                     {{ $selectedProductName }} is visible in the shared workspace catalog.
-                                    @if(empty($subscription))
+                                    @if(!$hasAnyWorkspace)
                                         This product is visible in the shared workspace catalog, but it does not have a direct trial or paid checkout configured yet.
                                     @else
                                         {{ $selectedProductName }} is visible in the shared workspace catalog.

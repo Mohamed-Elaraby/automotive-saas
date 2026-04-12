@@ -52,7 +52,7 @@ class CustomerPortalController extends Controller
             ->first();
 
         $tenantIds = $this->tenantIdsForUser($user);
-        $subscription = $this->latestSubscriptionForUser($user);
+        $subscription = $this->latestPrimarySubscriptionForUser($user);
         $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
         $domains = $subscription && ! empty($subscription->tenant_id)
             ? $this->domainsForTenant((string) $subscription->tenant_id)
@@ -211,12 +211,12 @@ class CustomerPortalController extends Controller
                 ]);
         }
 
-        $existingSubscription = $this->latestSubscriptionForUser($user);
-        if ($existingSubscription) {
+        $existingSubscription = $this->latestAnySubscriptionForUser($user);
+        if ($existingSubscription || $this->tenantIdsForUser($user)->isNotEmpty()) {
             return redirect()
                 ->route('automotive.portal')
                 ->withErrors([
-                    'portal' => 'A subscription already exists for your account.',
+                    'portal' => 'A workspace already exists for your account.',
                 ]);
         }
 
@@ -339,7 +339,7 @@ class CustomerPortalController extends Controller
             ->first();
 
         $tenantIds = $this->tenantIdsForUser($user);
-        $subscription = $this->latestSubscriptionForUser($user);
+        $subscription = $this->latestPrimarySubscriptionForUser($user);
         $plan = $subscription ? $this->planById((int) ($subscription->plan_id ?? 0)) : null;
         $workspaceTenantId = (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''));
         $domains = $workspaceTenantId !== '' ? $this->domainsForTenant($workspaceTenantId) : collect();
@@ -542,7 +542,7 @@ class CustomerPortalController extends Controller
         return (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
     }
 
-    protected function latestSubscriptionForUser(object $user): ?object
+    protected function latestPrimarySubscriptionForUser(object $user): ?object
     {
         $connection = $this->centralConnectionName();
 
@@ -576,13 +576,69 @@ class CustomerPortalController extends Controller
             }
         }
 
-        if (! Schema::connection($connection)->hasTable('subscriptions')) {
+        if (
+            ! Schema::connection($connection)->hasTable('subscriptions')
+            || ! Schema::connection($connection)->hasTable('plans')
+        ) {
             return null;
         }
 
         return DB::connection($connection)
             ->table('subscriptions')
+            ->leftJoin('plans', 'plans.id', '=', 'subscriptions.plan_id')
+            ->leftJoin('products', 'products.id', '=', 'plans.product_id')
             ->whereIn('tenant_id', $tenantIds->all())
+            ->where(function ($query) {
+                $query->where('products.code', self::PRODUCT_CODE)
+                    ->orWhereNull('plans.product_id');
+            })
+            ->orderByDesc('id')
+            ->select('subscriptions.*')
+            ->first();
+    }
+
+    protected function latestAnySubscriptionForUser(object $user): ?object
+    {
+        $connection = $this->centralConnectionName();
+        $tenantIds = $this->tenantIdsForUser($user);
+
+        if ($tenantIds->isNotEmpty()) {
+            if (Schema::connection($connection)->hasTable('tenant_product_subscriptions')) {
+                $productSubscription = DB::connection($connection)
+                    ->table('tenant_product_subscriptions')
+                    ->whereIn('tenant_id', $tenantIds->all())
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($productSubscription) {
+                    return $productSubscription;
+                }
+            }
+
+            if (Schema::connection($connection)->hasTable('subscriptions')) {
+                $legacySubscription = DB::connection($connection)
+                    ->table('subscriptions')
+                    ->whereIn('tenant_id', $tenantIds->all())
+                    ->orderByDesc('id')
+                    ->first();
+
+                if ($legacySubscription) {
+                    return $legacySubscription;
+                }
+            }
+        }
+
+        $profile = CustomerOnboardingProfile::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $profile || blank($profile->subdomain) || ! Schema::connection($connection)->hasTable('subscriptions')) {
+            return null;
+        }
+
+        return DB::connection($connection)
+            ->table('subscriptions')
+            ->where('tenant_id', strtolower(trim((string) $profile->subdomain)))
             ->orderByDesc('id')
             ->first();
     }

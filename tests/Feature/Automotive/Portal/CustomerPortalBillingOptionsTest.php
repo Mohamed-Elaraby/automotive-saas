@@ -1753,6 +1753,104 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $this->assertSame($profile->subdomain, $result['tenant_id']);
     }
 
+    public function test_automotive_portal_does_not_inherit_live_legacy_subscription_from_another_first_product(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Legacy Product Scope User',
+            'email' => 'portal-legacy-product-scope-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Legacy Product Scope Co',
+            'subdomain' => 'portal-legacy-product-scope-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-legacy-product-scope-' . uniqid(),
+            'data' => ['company_name' => 'Portal Legacy Product Scope Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+        $automotivePlan = Plan::query()->create([
+            'product_id' => $automotiveProduct->id,
+            'name' => 'Automotive Scoped Growth',
+            'slug' => 'automotive-scoped-growth-' . uniqid(),
+            'description' => 'Automotive paid plan',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_legacy_scope_' . uniqid(),
+            'name' => 'Accounting Legacy Scope',
+            'slug' => 'accounting-legacy-scope-' . uniqid(),
+            'description' => 'Accounting first product',
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Legacy Growth',
+            'slug' => 'accounting-legacy-growth-' . uniqid(),
+            'description' => 'Accounting paid plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $legacySubscription = Subscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_legacy_scope',
+            'gateway_subscription_id' => 'sub_legacy_scope',
+            'gateway_checkout_session_id' => 'cs_legacy_scope',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'legacy_subscription_id' => $legacySubscription->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_legacy_scope',
+            'gateway_subscription_id' => 'sub_legacy_scope',
+            'gateway_checkout_session_id' => 'cs_legacy_scope',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', [
+            'product' => $automotiveProduct->slug,
+        ]));
+
+        $response->assertOk();
+        $response->assertDontSee('This workspace product already has a live Stripe subscription.', false);
+        $response->assertDontSee('A workspace already exists for your account.', false);
+        $response->assertSee('Automotive Scoped Growth', false);
+        $response->assertSee('Select &amp; Continue', false);
+        $response->assertDontSee('Start Automotive Service Management Free Trial', false);
+    }
+
     public function test_paid_checkout_updates_tenant_product_subscription_when_legacy_subscription_is_created(): void
     {
         $user = User::query()->create([
