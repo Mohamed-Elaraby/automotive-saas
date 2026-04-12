@@ -552,6 +552,12 @@ Frequently used tests during recent work:
   - `company_name`
   - `owner_email`
 - portal navigation/header now expose `Account & Settings` directly
+- tenant admin billing surface is now decommissioned into a transition page:
+  - `automotive/admin/billing` remains only as a runtime-access landing page
+  - it no longer presents billing/account ownership as a tenant-admin responsibility
+  - billing mutations inside tenant admin now redirect back with a portal handoff message
+  - payment method JSON endpoints now return `410` with a portal-only message
+- tenant admin header/breadcrumb wording now uses `Subscription Access` instead of `Plans & Billing`
 
 ## 14) Current Strong Summary
 If a new session starts and reads only this section, the safe understanding is:
@@ -559,6 +565,7 @@ If a new session starts and reads only this section, the safe understanding is:
 - This is now a multi-product SaaS in transition from automotive-first to product-neutral.
 - The portal is becoming the home of tenant-facing account management.
 - Tenant admin is becoming the home of runtime modules only.
+- Tenant-admin billing now exists only as a transition/access state surface, not as the billing control plane.
 - Automotive runtime is the most mature product family.
 - Spare parts is already viable as its own runtime family for current inventory-related workflows.
 - Accounting exists architecturally but still needs deeper runtime implementation.
@@ -589,6 +596,39 @@ Suggested start files:
 - `resources/views/automotive/admin/billing/*`
 - `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
 - tenant admin header/breadcrumb files where billing/account language still appears
+
+Status:
+- completed
+- tenant-admin billing is now a transition/read-only surface
+- runtime blocking still lands on tenant-admin billing safely
+- active billing mutations now belong to the customer portal only
+
+Important files:
+- `app/Http/Controllers/Automotive/Admin/BillingController.php`
+- `resources/views/automotive/admin/billing/status.blade.php`
+- `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
+- `resources/views/automotive/admin/layouts/adminLayout/partials/header.blade.php`
+- `tests/Feature/Automotive/Admin/BillingPageTest.php`
+- `tests/Feature/Automotive/Admin/EnsureTenantSubscriptionIsActiveMiddlewareTest.php`
+
+### Portal Handoff And Tenant Runtime Copy Cleanup
+Scope:
+- improve tenant-admin to portal handoff copy and deep links around blocked runtime access
+- remove or rewrite any remaining tenant-admin wording that still implies account/billing ownership
+- make portal entry points clearer when tenant users hit suspended/past-due runtime states
+
+Why this is next:
+- the billing control plane has already moved out of tenant admin
+- the remaining work is UX polish and handoff clarity
+- this further hardens:
+  - `Portal = account and subscription control`
+  - `Tenant Admin = systems and operations`
+
+Suggested start files:
+- `resources/views/automotive/admin/auth/subscription-expired.blade.php`
+- `resources/views/automotive/admin/billing/status.blade.php`
+- `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
+- tenant-admin login / blocked-state messaging files
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

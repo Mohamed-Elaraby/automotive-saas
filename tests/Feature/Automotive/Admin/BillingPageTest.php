@@ -10,15 +10,9 @@ use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
 use App\Models\TenantUser;
 use App\Models\User;
-use App\Services\Billing\PaymentGatewayManager;
-use App\Services\Billing\CheckoutStripePlanRecoveryService;
-use App\Services\Billing\StripeCustomerPortalService;
-use App\Services\Billing\StripePriceInspectorService;
-use App\Services\Billing\StripeTenantProductSubscriptionPlanChangeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Stancl\Tenancy\Database\Models\Domain;
-use Mockery;
 use Tests\TestCase;
 
 class BillingPageTest extends TestCase
@@ -30,13 +24,6 @@ class BillingPageTest extends TestCase
         parent::setUp();
 
         $this->withoutMiddleware(VerifyCsrfToken::class);
-    }
-
-    protected function tearDown(): void
-    {
-        Mockery::close();
-
-        parent::tearDown();
     }
 
     public function test_billing_related_models_can_be_prepared_for_ui_state_rendering(): void
@@ -126,7 +113,7 @@ class BillingPageTest extends TestCase
         $this->assertNotNull($subscription->suspended_at);
     }
 
-    public function test_billing_page_can_focus_attached_non_primary_product_read_only(): void
+    public function test_billing_page_now_renders_transition_message_for_attached_product(): void
     {
         $tenant = Tenant::query()->create([
             'id' => 'billing-product-focus-' . uniqid(),
@@ -187,16 +174,13 @@ class BillingPageTest extends TestCase
             $response = $this->get("http://{$domain}/automotive/admin/billing?workspace_product=" . urlencode($accountingProduct->code));
 
             $response->assertOk();
-            $response->assertSee('Accounting Billing Billing', false);
-            $response->assertSee('Choose Paid Plan', false);
+            $response->assertSee('Subscription Access', false);
             $response->assertSee('Accounting Pro', false);
-            $response->assertSee('Attached product billing with product-scoped checkout, payment method management, invoice history, and Stripe lifecycle actions.', false);
-            $response->assertSee('This attached product now supports admin-side checkout, plan changes, payment method management, invoice history, and Stripe lifecycle actions in this screen.', false);
-            $response->assertSee('Confirm Plan Change', false);
-            $response->assertSee('Cancel at Period End', false);
-            $response->assertSee('Update Accounting Billing Payment Method', false);
-            $response->assertSee('Manage Accounting Billing Billing', false);
-            $response->assertSee('Accounting Billing Invoice History', false);
+            $response->assertSee('Billing Moved To Customer Portal', false);
+            $response->assertSee('Accounting Billing', false);
+            $response->assertSee('Open Customer Portal Billing', false);
+            $response->assertDontSee('Confirm Plan Change', false);
+            $response->assertDontSee('Cancel at Period End', false);
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');
@@ -264,8 +248,10 @@ class BillingPageTest extends TestCase
             $response = $this->get("http://{$domain}/automotive/admin/billing");
 
             $response->assertOk();
-            $response->assertSee('Inventory Hub Billing', false);
+            $response->assertSee('Subscription Access', false);
+            $response->assertSee('Inventory Hub', false);
             $response->assertSee('Inventory Pro', false);
+            $response->assertSee('Billing Moved To Customer Portal', false);
             $response->assertDontSee('Starter', false);
         } finally {
             tenancy()->end();
@@ -273,7 +259,7 @@ class BillingPageTest extends TestCase
         }
     }
 
-    public function test_attached_product_change_plan_uses_product_subscription_plan_change_service(): void
+    public function test_attached_product_change_plan_redirects_back_with_portal_message(): void
     {
         [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
 
@@ -299,37 +285,6 @@ class BillingPageTest extends TestCase
             'payment_failures_count' => 0,
         ]);
 
-        $service = Mockery::mock(StripeTenantProductSubscriptionPlanChangeService::class);
-        $service->shouldReceive('changePlan')
-            ->once()
-            ->with(
-                Mockery::on(fn ($model) => (int) $model->id === (int) $productSubscription->id),
-                Mockery::on(fn ($plan) => (int) $plan->id === (int) $targetPlan->id),
-                null
-            )
-            ->andReturn([
-                'ok' => true,
-                'message' => 'Product subscription plan changed successfully.',
-            ]);
-
-        $this->app->instance(StripeTenantProductSubscriptionPlanChangeService::class, $service);
-
-        $priceInspector = Mockery::mock(StripePriceInspectorService::class);
-        $priceInspector->shouldReceive('auditPlan')
-            ->atLeast()
-            ->once()
-            ->andReturn([
-                'checks' => ['is_aligned' => true],
-                'stripe' => [
-                    'unit_amount_decimal' => 399,
-                    'currency' => 'USD',
-                    'interval' => 'month',
-                    'product_name' => 'Accounting Change',
-                ],
-            ]);
-
-        $this->app->instance(StripePriceInspectorService::class, $priceInspector);
-
         tenancy()->initialize($tenant);
 
         try {
@@ -340,14 +295,16 @@ class BillingPageTest extends TestCase
                 'target_plan_id' => $targetPlan->id,
             ]);
 
-            $response->assertRedirect("http://{$domain}/automotive/admin/billing?target_plan_id={$targetPlan->id}&workspace_product={$product->code}");
+            $response->assertStatus(302);
+            $this->assertStringContainsString('/automotive/admin/billing', (string) $response->headers->get('Location'));
+            $response->assertSessionHas('error');
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');
         }
     }
 
-    public function test_attached_product_renew_starts_checkout_on_product_subscription(): void
+    public function test_attached_product_renew_redirects_back_with_portal_message(): void
     {
         [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
 
@@ -369,42 +326,6 @@ class BillingPageTest extends TestCase
             'payment_failures_count' => 0,
         ]);
 
-        $recoveryService = Mockery::mock(CheckoutStripePlanRecoveryService::class);
-        $recoveryService->shouldReceive('recoverPaidPlan')
-            ->once()
-            ->with($plan->id, $product->code)
-            ->andReturn($plan);
-
-        $recoveryService->shouldReceive('retryIfStripePriceNeedsRepair')
-            ->once()
-            ->with(
-                Mockery::on(fn ($checkoutPlan) => (int) $checkoutPlan->id === (int) $plan->id),
-                $product->code,
-                Mockery::type('callable')
-            )
-            ->andReturn([
-                'success' => true,
-                'checkout_url' => 'https://stripe.test/checkout/session_attached',
-                'session_id' => 'cs_attached_product_checkout',
-            ]);
-
-        $this->app->instance(CheckoutStripePlanRecoveryService::class, $recoveryService);
-
-        $priceInspector = Mockery::mock(StripePriceInspectorService::class);
-        $priceInspector->shouldReceive('auditPlan')
-            ->once()
-            ->andReturn([
-                'checks' => ['is_aligned' => true],
-                'stripe' => [
-                    'unit_amount_decimal' => 299,
-                    'currency' => 'USD',
-                    'interval' => 'month',
-                    'product_name' => 'Accounting Checkout',
-                ],
-            ]);
-
-        $this->app->instance(StripePriceInspectorService::class, $priceInspector);
-
         tenancy()->initialize($tenant);
 
         try {
@@ -415,20 +336,21 @@ class BillingPageTest extends TestCase
                 'target_plan_id' => $plan->id,
             ]);
 
-            $response->assertRedirect('https://stripe.test/checkout/session_attached');
+            $response->assertStatus(302);
+            $this->assertStringContainsString('/automotive/admin/billing', (string) $response->headers->get('Location'));
+            $response->assertSessionHas('error');
 
             $this->assertNotNull($productSubscription->fresh());
-            $this->assertSame($plan->id, $productSubscription->fresh()->plan_id);
-            $this->assertSame('stripe', $productSubscription->fresh()->gateway);
-            $this->assertSame('cs_attached_product_checkout', $productSubscription->fresh()->gateway_checkout_session_id);
-            $this->assertSame($plan->stripe_price_id, $productSubscription->fresh()->gateway_price_id);
+            $this->assertNull($productSubscription->fresh()->plan_id);
+            $this->assertNull($productSubscription->fresh()->gateway);
+            $this->assertNull($productSubscription->fresh()->gateway_checkout_session_id);
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');
         }
     }
 
-    public function test_attached_product_can_create_setup_intent_for_its_own_stripe_customer(): void
+    public function test_attached_product_setup_intent_endpoint_returns_gone_message(): void
     {
         [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
 
@@ -453,18 +375,6 @@ class BillingPageTest extends TestCase
             'payment_failures_count' => 0,
         ]);
 
-        $setupIntentService = Mockery::mock(\App\Services\Billing\StripeSetupIntentService::class);
-        $setupIntentService->shouldReceive('createForCustomer')
-            ->once()
-            ->with('cus_attached_pm')
-            ->andReturn([
-                'ok' => true,
-                'client_secret' => 'seti_secret_attached',
-                'setup_intent_id' => 'seti_attached',
-            ]);
-
-        $this->app->instance(\App\Services\Billing\StripeSetupIntentService::class, $setupIntentService);
-
         tenancy()->initialize($tenant);
 
         try {
@@ -474,11 +384,10 @@ class BillingPageTest extends TestCase
                 'workspace_product' => $product->code,
             ]);
 
-            $response->assertOk();
+            $response->assertStatus(410);
             $response->assertJson([
-                'ok' => true,
-                'client_secret' => 'seti_secret_attached',
-                'setup_intent_id' => 'seti_attached',
+                'ok' => false,
+                'message' => 'Billing and payment method changes moved to the customer portal.',
             ]);
         } finally {
             tenancy()->end();
@@ -486,7 +395,7 @@ class BillingPageTest extends TestCase
         }
     }
 
-    public function test_attached_product_can_save_default_payment_method(): void
+    public function test_attached_product_save_default_payment_method_returns_gone_message(): void
     {
         [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
 
@@ -511,22 +420,6 @@ class BillingPageTest extends TestCase
             'payment_failures_count' => 0,
         ]);
 
-        $paymentMethodService = Mockery::mock(\App\Services\Billing\StripePaymentMethodManagementService::class);
-        $paymentMethodService->shouldReceive('setDefaultPaymentMethod')
-            ->once()
-            ->with(
-                Mockery::on(fn ($model) => (int) $model->id === (int) $productSubscription->id),
-                'pm_attached_default'
-            )
-            ->andReturn([
-                'ok' => true,
-                'message' => 'Default payment method updated successfully.',
-                'stripe_subscription_id' => 'sub_attached_default_pm',
-                'default_payment_method' => 'pm_attached_default',
-            ]);
-
-        $this->app->instance(\App\Services\Billing\StripePaymentMethodManagementService::class, $paymentMethodService);
-
         tenancy()->initialize($tenant);
 
         try {
@@ -537,11 +430,10 @@ class BillingPageTest extends TestCase
                 'payment_method_id' => 'pm_attached_default',
             ]);
 
-            $response->assertOk();
+            $response->assertStatus(410);
             $response->assertJson([
-                'ok' => true,
-                'message' => 'Default payment method updated successfully.',
-                'default_payment_method' => 'pm_attached_default',
+                'ok' => false,
+                'message' => 'Billing and payment method changes moved to the customer portal.',
             ]);
         } finally {
             tenancy()->end();
@@ -549,7 +441,7 @@ class BillingPageTest extends TestCase
         }
     }
 
-    public function test_attached_product_billing_portal_uses_product_customer_context(): void
+    public function test_attached_product_billing_portal_post_redirects_back_with_portal_message(): void
     {
         [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
 
@@ -574,21 +466,6 @@ class BillingPageTest extends TestCase
             'payment_failures_count' => 0,
         ]);
 
-        $portalService = Mockery::mock(StripeCustomerPortalService::class);
-        $portalService->shouldReceive('createSession')
-            ->once()
-            ->with(
-                'cus_attached_portal',
-                Mockery::on(fn ($url) => str_contains((string) $url, '/automotive/admin/billing?workspace_product=' . $product->code))
-            )
-            ->andReturn([
-                'success' => true,
-                'url' => 'https://stripe.test/portal/attached',
-                'message' => 'Stripe billing portal session created successfully.',
-            ]);
-
-        $this->app->instance(StripeCustomerPortalService::class, $portalService);
-
         tenancy()->initialize($tenant);
 
         try {
@@ -598,7 +475,8 @@ class BillingPageTest extends TestCase
                 'workspace_product' => $product->code,
             ]);
 
-            $response->assertRedirect('https://stripe.test/portal/attached');
+            $response->assertRedirect("http://{$domain}/automotive/admin/billing?workspace_product={$product->code}");
+            $response->assertSessionHas('error', 'Billing actions moved to the customer portal. Tenant admin is now runtime-only.');
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');

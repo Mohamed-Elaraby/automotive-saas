@@ -15,7 +15,7 @@
         'automotive.admin.stock-transfers.*' => 'Stock Transfers',
         'automotive.admin.inventory-report.*' => 'Inventory Report',
         'automotive.admin.stock-movements.*' => 'Stock Movement Report',
-        'automotive.admin.billing.*' => 'Plans & Billing',
+        'automotive.admin.billing.*' => 'Subscription Access',
         'automotive.admin.modules.workshop-operations' => 'Workshop Operations',
         'automotive.admin.modules.supplier-catalog' => 'Supplier Catalog',
         'automotive.admin.modules.general-ledger' => 'General Ledger',
