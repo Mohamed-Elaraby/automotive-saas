@@ -1857,6 +1857,42 @@ Why this matters:
 - the catalog no longer contradicts the plan panel
 - additional-product onboarding is now clearer and less misleading for customers reviewing product expansion options
 
+## 18.44) Recommended Next Package: Portal-Owned Tenant Profile And Settings
+Recommended scope:
+- move tenant-facing profile/settings management fully into the customer portal
+- keep `tenant admin` focused on subscribed product runtime only
+- make the portal the single place for tenant-level account controls
+
+Suggested implementation scope:
+- add portal pages for:
+  - workspace profile
+  - company name / contact info
+  - subdomain/domain snapshot
+  - user password/change credentials
+  - basic workspace preferences
+- move any remaining tenant-facing account controls out of tenant admin navigation
+- keep tenant admin limited to:
+  - shared operational modules
+  - product modules
+  - runtime workflows
+
+Why this is the right next package:
+- billing has already moved into the portal
+- the product catalog and first-subscription flow are now product-aware
+- this completes the separation between:
+  - customer account management in the portal
+  - system operations inside tenant admin
+
+Expected outcome:
+- cleaner UX boundary
+- less duplicated navigation
+- easier future expansion when new industries/products are added
+- a more stable mental model for tenants: portal for account, tenant admin for systems
+
+Recommended start point:
+- create `Portal Profile / Workspace Settings` page
+- remove the last tenant-account concerns from tenant admin sidebar/header if any remain
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
