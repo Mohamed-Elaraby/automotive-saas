@@ -14,11 +14,11 @@ class Authenticate extends Middleware
         }
 
         if ($request->routeIs('automotive.admin.*')) {
-            return url('/automotive/admin/login');
+            return url('/workspace');
         }
 
         if ($request->routeIs('automotive.*')) {
-            return url('/automotive/login');
+            return url('/workspace/login');
         }
 
         if ($request->routeIs('admin.*')) {

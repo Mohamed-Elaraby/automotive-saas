@@ -187,6 +187,27 @@ class BillingPageTest extends TestCase
         }
     }
 
+    public function test_workspace_billing_route_is_canonical_and_legacy_automotive_billing_route_still_works(): void
+    {
+        [$tenant, $domain, $user] = $this->prepareTenantBillingWorkspace();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->actingAs($user, 'automotive_admin');
+
+            $canonicalResponse = $this->get("http://{$domain}/workspace/admin/billing");
+            $legacyResponse = $this->get("http://{$domain}/automotive/admin/billing");
+
+            $canonicalResponse->assertOk();
+            $legacyResponse->assertRedirect("http://{$domain}/workspace/admin/billing");
+            $canonicalResponse->assertSee('Billing Moved To Customer Portal', false);
+        } finally {
+            tenancy()->end();
+            \Illuminate\Support\Facades\DB::purge('tenant');
+        }
+    }
+
     public function test_billing_page_uses_primary_product_plan_catalog_for_non_automotive_alias_product(): void
     {
         $tenant = Tenant::query()->create([
@@ -245,7 +266,7 @@ class BillingPageTest extends TestCase
         try {
             $this->actingAs($user, 'automotive_admin');
 
-            $response = $this->get("http://{$domain}/automotive/admin/billing");
+            $response = $this->get("http://{$domain}/workspace/admin/billing");
 
             $response->assertOk();
             $response->assertSee('Subscription Access', false);
@@ -290,13 +311,13 @@ class BillingPageTest extends TestCase
         try {
             $this->actingAs($user, 'automotive_admin');
 
-            $response = $this->post("http://{$domain}/automotive/admin/billing/change-plan", [
+            $response = $this->post("http://{$domain}/workspace/admin/billing/change-plan", [
                 'workspace_product' => $product->code,
                 'target_plan_id' => $targetPlan->id,
             ]);
 
             $response->assertStatus(302);
-            $this->assertStringContainsString('/automotive/admin/billing', (string) $response->headers->get('Location'));
+            $this->assertStringContainsString('/workspace/admin/billing', (string) $response->headers->get('Location'));
             $response->assertSessionHas('error');
         } finally {
             tenancy()->end();
@@ -331,13 +352,13 @@ class BillingPageTest extends TestCase
         try {
             $this->actingAs($user, 'automotive_admin');
 
-            $response = $this->post("http://{$domain}/automotive/admin/billing/renew", [
+            $response = $this->post("http://{$domain}/workspace/admin/billing/renew", [
                 'workspace_product' => $product->code,
                 'target_plan_id' => $plan->id,
             ]);
 
             $response->assertStatus(302);
-            $this->assertStringContainsString('/automotive/admin/billing', (string) $response->headers->get('Location'));
+            $this->assertStringContainsString('/workspace/admin/billing', (string) $response->headers->get('Location'));
             $response->assertSessionHas('error');
 
             $this->assertNotNull($productSubscription->fresh());
@@ -380,7 +401,7 @@ class BillingPageTest extends TestCase
         try {
             $this->actingAs($user, 'automotive_admin');
 
-            $response = $this->postJson("http://{$domain}/automotive/admin/billing/payment-method/setup-intent", [
+            $response = $this->postJson("http://{$domain}/workspace/admin/billing/payment-method/setup-intent", [
                 'workspace_product' => $product->code,
             ]);
 
@@ -425,7 +446,7 @@ class BillingPageTest extends TestCase
         try {
             $this->actingAs($user, 'automotive_admin');
 
-            $response = $this->postJson("http://{$domain}/automotive/admin/billing/payment-method/default", [
+            $response = $this->postJson("http://{$domain}/workspace/admin/billing/payment-method/default", [
                 'workspace_product' => $product->code,
                 'payment_method_id' => 'pm_attached_default',
             ]);
@@ -471,11 +492,11 @@ class BillingPageTest extends TestCase
         try {
             $this->actingAs($user, 'automotive_admin');
 
-            $response = $this->post("http://{$domain}/automotive/admin/billing/portal", [
+            $response = $this->post("http://{$domain}/workspace/admin/billing/portal", [
                 'workspace_product' => $product->code,
             ]);
 
-            $response->assertRedirect("http://{$domain}/automotive/admin/billing?workspace_product={$product->code}");
+            $response->assertRedirect("http://{$domain}/workspace/admin/billing?workspace_product={$product->code}");
             $response->assertSessionHas('error', 'Billing actions moved to the customer portal. Tenant admin is now runtime-only.');
         } finally {
             tenancy()->end();

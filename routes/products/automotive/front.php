@@ -1,18 +1,25 @@
 <?php
 
-use App\Http\Controllers\Automotive\Front\Auth\LoginController;
 use App\Http\Controllers\Automotive\Front\Auth\ForgotPasswordController;
+use App\Http\Controllers\Automotive\Front\Auth\LoginController;
 use App\Http\Controllers\Automotive\Front\Auth\RegisterController;
 use App\Http\Controllers\Automotive\Front\Auth\ResetPasswordController;
-use App\Http\Controllers\Automotive\Front\PortalBillingController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalController;
 use App\Http\Controllers\Automotive\Front\CustomerPortalNotificationController;
+use App\Http\Controllers\Automotive\Front\PortalBillingController;
 use App\Http\Controllers\Automotive\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('automotive')
-    ->name('automotive.')
-    ->group(function () {
+$registerWorkspaceFrontRoutes = function (string $prefix, bool $named): void {
+    $group = Route::prefix($prefix);
+
+    if ($named) {
+        $group = $group->name('automotive.');
+    } else {
+        $group = $group->name('legacy.automotive.');
+    }
+
+    $group->group(function () {
         Route::middleware('guest:web')->group(function () {
             Route::get('/login', [LoginController::class, 'show'])->name('login');
             Route::post('/login', [LoginController::class, 'submit'])->name('login.submit');
@@ -57,3 +64,7 @@ Route::prefix('automotive')
         Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
             ->name('webhooks.stripe');
     });
+};
+
+$registerWorkspaceFrontRoutes('workspace', true);
+$registerWorkspaceFrontRoutes('automotive', false);

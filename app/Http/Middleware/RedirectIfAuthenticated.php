@@ -24,15 +24,25 @@ class RedirectIfAuthenticated
             }
 
             if ($guard === 'automotive_admin') {
-                if ($request->is('automotive/admin/dashboard') || $request->is('automotive/admin/subscription-expired')) {
+                if (
+                    $request->is('workspace/admin/dashboard')
+                    || $request->is('workspace/admin/subscription-expired')
+                    || $request->is('automotive/admin/dashboard')
+                    || $request->is('automotive/admin/subscription-expired')
+                ) {
                     return $next($request);
                 }
 
-                return redirect('/automotive/admin/dashboard');
+                return redirect('/workspace');
             }
 
             if ($guard === 'web' || $guard === null) {
-                if ($request->is('automotive') || $request->is('automotive/*')) {
+                if (
+                    $request->is('workspace')
+                    || $request->is('workspace/*')
+                    || $request->is('automotive')
+                    || $request->is('automotive/*')
+                ) {
                     return redirect()->route('automotive.portal');
                 }
             }

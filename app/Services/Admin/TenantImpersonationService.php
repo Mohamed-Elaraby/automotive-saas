@@ -77,7 +77,7 @@ class TenantImpersonationService
 
     protected function tenantImpersonationUrl(string $domain, string $token): string
     {
-        return rtrim($this->domainToUrl($domain), '/') . '/automotive/admin/impersonate/' . urlencode($token);
+        return rtrim($this->domainToUrl($domain), '/') . '/workspace/admin/impersonate/' . urlencode($token);
     }
 
     protected function centralBaseUrl(): string

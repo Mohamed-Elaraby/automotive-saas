@@ -16,6 +16,15 @@ class AuthController extends Controller
     ) {
     }
 
+    public function landing()
+    {
+        if (Auth::guard('automotive_admin')->check()) {
+            return redirect()->route('automotive.admin.dashboard');
+        }
+
+        return $this->showLogin();
+    }
+
     public function showLogin()
     {
         return view('automotive.admin.auth.login');
@@ -48,7 +57,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('automotive.admin.login');
+        return redirect()->route('automotive.admin.home');
     }
 
     public function impersonate(Request $request, string $token)
@@ -89,7 +98,7 @@ class AuthController extends Controller
                 ->with('success', 'Tenant impersonation started successfully.');
         } catch (RuntimeException $exception) {
             return redirect()
-                ->route('automotive.admin.login')
+                ->route('automotive.admin.home')
                 ->withErrors(['email' => $exception->getMessage()]);
         }
     }

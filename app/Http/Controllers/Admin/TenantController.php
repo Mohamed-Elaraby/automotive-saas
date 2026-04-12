@@ -1625,7 +1625,7 @@ protected function tenantAdminLoginUrl(?string $domain): ?string
         return null;
     }
 
-    return rtrim($baseUrl, '/') . '/automotive/admin/login';
+    return rtrim($baseUrl, '/') . '/workspace';
 }
 
 protected function findTenantOrFail(string $tenantId): Model

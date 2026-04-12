@@ -667,3 +667,21 @@ When starting from this file:
    - update this file
    - give UI test steps
    - give exact git commands
+
+## 17) Workspace URL Canonicalization
+Status:
+- completed
+- canonical public and tenant runtime URLs now use `/workspace`
+- legacy `/automotive/*` paths are preserved as compatibility aliases where needed
+
+Current rules:
+- customer portal and auth named routes now generate `/workspace/*`
+- tenant entry is `/workspace`
+- tenant runtime admin routes are `/workspace/admin/*`
+- legacy `/automotive/portal`, `/automotive/login`, and `/automotive/admin/*` paths still resolve
+- legacy tenant-admin billing path redirects to canonical `/workspace/admin/billing`
+- trial bootstrap API is canonical at `/api/workspace/start-trial` with legacy `/api/automotive/start-trial` preserved
+
+Guardrail:
+- any new controller redirect, builder, or Blade link should use named routes or the workspace URL builder
+- do not add new hard-coded `/automotive/...` URLs except explicit legacy aliases

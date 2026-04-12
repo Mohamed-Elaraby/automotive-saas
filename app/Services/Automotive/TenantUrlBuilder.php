@@ -20,7 +20,7 @@ class TenantUrlBuilder
             $url .= ':' . $port;
         }
 
-        return $url . '/automotive/admin/login';
+        return $url . '/workspace';
     }
 
     protected function buildTenantHost(string $currentHost, string $subdomain): string

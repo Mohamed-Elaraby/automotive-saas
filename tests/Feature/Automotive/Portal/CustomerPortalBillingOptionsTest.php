@@ -120,7 +120,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
                 'status' => 201,
                 'tenant_id' => 'trial-coupon-tenant',
                 'domain' => 'trial-coupon-tenant.example.test',
-                'login_url' => 'https://trial-coupon-tenant.example.test/automotive/admin/login',
+                'login_url' => 'https://trial-coupon-tenant.example.test/workspace',
             ]);
         $this->app->instance(StartTrialService::class, $service);
 
@@ -324,6 +324,33 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee('Product Subscription Options', false);
         $response->assertDontSee('No product is focused yet.', false);
         $response->assertSee('Choose Product', false);
+    }
+
+    public function test_workspace_routes_are_canonical_for_portal_and_legacy_automotive_routes_still_work(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Workspace Portal Alias User',
+            'email' => 'workspace-portal-alias-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Workspace Portal Alias Co',
+            'subdomain' => 'workspace-portal-alias-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $this->assertStringContainsString('/workspace/portal', route('automotive.portal'));
+        $this->assertStringContainsString('/workspace/login', route('automotive.login'));
+
+        $canonicalResponse = $this->actingAs($user, 'web')->get('/workspace/portal');
+        $canonicalResponse->assertOk();
+        $canonicalResponse->assertSee('Products Catalog', false);
+
+        $legacyResponse = $this->actingAs($user, 'web')->get('/automotive/portal');
+        $legacyResponse->assertOk();
+        $legacyResponse->assertSee('Products Catalog', false);
     }
 
     public function test_portal_returns_to_neutral_state_after_opening_base_route_without_explicit_product(): void
@@ -2042,7 +2069,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Open My Workspace', false);
         $response->assertSee('portal-workspace-login', false);
         $response->assertSee('.example.test', false);
-        $response->assertSee('/automotive/admin/login', false);
+        $response->assertSee('/workspace', false);
     }
 
     public function test_paid_checkout_updates_tenant_product_subscription_when_legacy_subscription_is_created(): void

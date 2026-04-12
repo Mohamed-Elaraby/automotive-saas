@@ -215,7 +215,7 @@ public function start(array $data): array
             'status' => 201,
             'tenant_id' => $tenant->id,
             'domain' => $fullDomain,
-            'login_url' => "https://{$fullDomain}/automotive/admin/login",
+            'login_url' => "https://{$fullDomain}/workspace",
         ];
     }
 

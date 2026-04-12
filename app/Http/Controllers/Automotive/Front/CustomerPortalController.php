@@ -965,7 +965,7 @@ class CustomerPortalController extends Controller
                     'tenant_id' => (string) $row->tenant_id,
                     'domain' => $domain,
                     'url' => $baseUrl,
-                    'admin_login_url' => rtrim($baseUrl, '/') . '/automotive/admin/login',
+                    'admin_login_url' => rtrim($baseUrl, '/') . '/workspace',
                 ];
             })
             ->values();
@@ -1050,7 +1050,7 @@ class CustomerPortalController extends Controller
             'tenant_id' => $tenantId,
             'domain' => $domain,
             'url' => $baseUrl,
-            'admin_login_url' => rtrim($baseUrl, '/') . '/automotive/admin/login',
+            'admin_login_url' => rtrim($baseUrl, '/') . '/workspace',
         ]]);
     }
 

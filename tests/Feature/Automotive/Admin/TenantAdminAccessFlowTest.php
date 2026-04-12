@@ -64,7 +64,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'password' => $password,
         ]);
 
-        $response->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        $response->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard");
 
@@ -79,6 +79,29 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->assertAuthenticated('automotive_admin');
     }
 
+    public function test_workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works(): void
+    {
+        [, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $workspaceRootResponse = $this->get("http://{$domain}/workspace");
+        $workspaceRootResponse->assertOk();
+        $workspaceRootResponse->assertSee('Login', false);
+
+        $legacyLoginResponse = $this->get("http://{$domain}/automotive/admin/login");
+        $legacyLoginResponse->assertOk();
+        $legacyLoginResponse->assertSee('Login', false);
+
+        $loginResponse = $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ]);
+
+        $loginResponse->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $workspaceRootAfterLogin = $this->get("http://{$domain}/workspace");
+        $workspaceRootAfterLogin->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+    }
+
     public function test_suspended_tenant_admin_is_redirected_to_billing_after_login(): void
     {
         [, $domain, $email, $password] = $this->prepareTenantWorkspace('suspended');
@@ -88,11 +111,11 @@ class TenantAdminAccessFlowTest extends TestCase
             'password' => $password,
         ]);
 
-        $loginResponse->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        $loginResponse->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard");
 
-        $dashboardResponse->assertRedirect("http://{$domain}/automotive/admin/billing");
+        $dashboardResponse->assertRedirect("http://{$domain}/workspace/admin/billing");
     }
 
     public function test_dashboard_shows_all_workspace_products_for_the_same_tenant(): void
@@ -165,7 +188,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard");
 
@@ -233,7 +256,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product=parts_inventory");
 
@@ -285,7 +308,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product={$partsProduct->code}");
 
@@ -304,7 +327,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $catalogResponse = $this->get("http://{$domain}/automotive/admin/supplier-catalog?workspace_product=parts_inventory");
         $catalogResponse->assertOk();
@@ -322,7 +345,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'is_active' => '1',
         ]);
 
-        $storeResponse->assertRedirect("http://{$domain}/automotive/admin/supplier-catalog?workspace_product=parts_inventory");
+        $storeResponse->assertRedirect("http://{$domain}/workspace/admin/supplier-catalog?workspace_product=parts_inventory");
 
         tenancy()->initialize($tenant);
 
@@ -349,11 +372,11 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $response = $this->get("http://{$domain}/automotive/admin/products");
 
-        $response->assertRedirect("http://{$domain}/automotive/admin/dashboard?workspace_product=parts_inventory");
+        $response->assertRedirect("http://{$domain}/workspace/admin/dashboard?workspace_product=parts_inventory");
     }
 
     public function test_workshop_operations_show_connected_spare_parts_stock_snapshot(): void
@@ -372,7 +395,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $response = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
 
@@ -403,7 +426,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/automotive/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
         $createCustomerResponse = $this->post("http://{$domain}/automotive/admin/workshop-operations/customers?workspace_product=automotive_service", [
             'workspace_product' => 'automotive_service',
@@ -412,7 +435,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'email' => 'ahmed@example.test',
         ]);
 
-        $createCustomerResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+        $createCustomerResponse->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
 
         tenancy()->initialize($tenant);
 
@@ -435,7 +458,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'vin' => 'VIN-123456',
         ]);
 
-        $createVehicleResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+        $createVehicleResponse->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
 
         tenancy()->initialize($tenant);
 
@@ -458,7 +481,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'notes' => 'Customer brake maintenance',
         ]);
 
-        $createWorkOrderResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+        $createWorkOrderResponse->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
 
         tenancy()->initialize($tenant);
 
@@ -482,7 +505,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'notes' => 'Used in brake service',
         ]);
 
-        $response->assertRedirect("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+        $response->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
 
         tenancy()->initialize($tenant);
 
@@ -543,7 +566,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'notes' => 'Initial workshop labor',
         ]);
 
-        $addLaborLineResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+        $addLaborLineResponse->assertRedirect("http://{$domain}/workspace/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
 
         tenancy()->initialize($tenant);
 
@@ -568,7 +591,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'status' => 'completed',
         ]);
 
-        $statusResponse->assertRedirect("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+        $statusResponse->assertRedirect("http://{$domain}/workspace/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
 
         tenancy()->initialize($tenant);
 

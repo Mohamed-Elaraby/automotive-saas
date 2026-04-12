@@ -13,5 +13,6 @@ class VerifyCsrfToken extends Middleware
      */
     protected $except = [
         'automotive/webhooks/stripe',
+        'workspace/webhooks/stripe',
     ];
 }

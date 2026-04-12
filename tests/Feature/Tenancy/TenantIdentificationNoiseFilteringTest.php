@@ -58,7 +58,7 @@ class TenantIdentificationNoiseFilteringTest extends TestCase
 
     protected function reportExceptionForHost(string $host): void
     {
-        $request = Request::create("http://{$host}/automotive/admin", 'GET');
+        $request = Request::create("http://{$host}/workspace/admin", 'GET');
         $request->server->set('HTTP_HOST', $host);
         $request->headers->set('host', $host);
 

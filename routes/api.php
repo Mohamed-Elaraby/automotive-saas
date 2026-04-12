@@ -19,6 +19,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/automotive/start-trial', TrialSignupController::class)
-    ->name('api.automotive.startTrial')
-    ->middleware('throttle:10,1');
+$registerTrialSignupRoute = static function (string $prefix, ?string $namePrefix = null): void {
+    Route::post("{$prefix}/start-trial", TrialSignupController::class)
+        ->name(ltrim(($namePrefix ? "{$namePrefix}." : '') . 'api.automotive.startTrial', '.'))
+        ->middleware('throttle:10,1');
+};
+
+$registerTrialSignupRoute('/workspace');
+$registerTrialSignupRoute('/automotive', 'legacy');

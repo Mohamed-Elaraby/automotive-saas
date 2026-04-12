@@ -13,9 +13,22 @@ use App\Http\Controllers\Automotive\Admin\UserController;
 use App\Http\Controllers\Automotive\Admin\WorkspaceModuleController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('automotive/admin')
-    ->name('automotive.admin.')
-    ->group(function () {
+$registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefix, bool $named): void {
+    if ($named) {
+        Route::get('/' . trim($homePrefix, '/'), [AuthController::class, 'landing'])->name('automotive.admin.home');
+    } else {
+        Route::get('/' . trim($homePrefix, '/'), [AuthController::class, 'landing']);
+    }
+
+    $group = Route::prefix(trim($adminPrefix, '/'));
+
+    if ($named) {
+        $group = $group->name('automotive.admin.');
+    } else {
+        $group = $group->name('legacy.automotive.admin.');
+    }
+
+    $group->group(function () {
         Route::get('/subscription-expired', function () {
             return response()->view('automotive.admin.auth.subscription-expired');
         })->name('subscription.expired');
@@ -69,16 +82,16 @@ Route::prefix('automotive/admin')
                 Route::get('/workshop-operations', [WorkspaceModuleController::class, 'workshopOperations'])
                     ->name('modules.workshop-operations');
                 Route::middleware('tenant.workspace.product:workshop-customers')->group(function () {
-                Route::get('/workshop-customers', [WorkspaceModuleController::class, 'workshopCustomers'])
-                    ->name('modules.workshop-customers');
+                    Route::get('/workshop-customers', [WorkspaceModuleController::class, 'workshopCustomers'])
+                        ->name('modules.workshop-customers');
                 });
                 Route::middleware('tenant.workspace.product:workshop-vehicles')->group(function () {
-                Route::get('/workshop-vehicles', [WorkspaceModuleController::class, 'workshopVehicles'])
-                    ->name('modules.workshop-vehicles');
+                    Route::get('/workshop-vehicles', [WorkspaceModuleController::class, 'workshopVehicles'])
+                        ->name('modules.workshop-vehicles');
                 });
                 Route::middleware('tenant.workspace.product:workshop-work-orders')->group(function () {
-                Route::get('/work-orders', [WorkspaceModuleController::class, 'workshopWorkOrders'])
-                    ->name('modules.workshop-work-orders');
+                    Route::get('/work-orders', [WorkspaceModuleController::class, 'workshopWorkOrders'])
+                        ->name('modules.workshop-work-orders');
                 });
                 Route::post('/workshop-operations/customers', [WorkspaceModuleController::class, 'storeWorkshopCustomer'])
                     ->name('modules.workshop-operations.customers.store');
@@ -132,3 +145,7 @@ Route::prefix('automotive/admin')
             });
         });
     });
+};
+
+$registerWorkspaceAdminRoutes('workspace', 'workspace/admin', true);
+$registerWorkspaceAdminRoutes('automotive', 'automotive/admin', false);

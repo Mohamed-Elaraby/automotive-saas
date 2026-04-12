@@ -155,7 +155,7 @@ class StartTrialServiceTest extends TestCase
         $this->assertSame(201, $result['status']);
         $this->assertSame('trial-success', $result['tenant_id']);
         $this->assertSame('trial-success.example.test', $result['domain']);
-        $this->assertSame('https://trial-success.example.test/automotive/admin/login', $result['login_url']);
+        $this->assertSame('https://trial-success.example.test/workspace', $result['login_url']);
 
         $centralUser = User::query()->where('email', 'trial-success@example.test')->firstOrFail();
 

@@ -73,7 +73,7 @@ class AdminTenantImpersonationTest extends TestCase
 
         $url = $service->start($tenant->id);
 
-        $this->assertStringStartsWith('https://' . $tenantId . '.example.test/automotive/admin/impersonate/', $url);
+        $this->assertStringStartsWith('https://' . $tenantId . '.example.test/workspace/admin/impersonate/', $url);
 
         $token = basename(parse_url($url, PHP_URL_PATH));
         $payload = $service->consume($token, $tenant->id);
@@ -145,7 +145,7 @@ class AdminTenantImpersonationTest extends TestCase
         $impersonationService->shouldReceive('start')
             ->once()
             ->with($tenant->id)
-            ->andReturn('https://' . $tenantId . '.example.test/automotive/admin/impersonate/mock-token');
+            ->andReturn('https://' . $tenantId . '.example.test/workspace/admin/impersonate/mock-token');
 
         $activityLogger = Mockery::mock(AdminActivityLogger::class);
         $activityLogger->shouldReceive('log')
@@ -155,7 +155,7 @@ class AdminTenantImpersonationTest extends TestCase
                     && $subjectType === 'tenant'
                     && $subjectId === $tenant->id
                     && $tenantId === $tenant->id
-                    && ($contextPayload['redirect_url'] ?? null) === 'https://' . $tenantId . '.example.test/automotive/admin/impersonate/mock-token';
+                    && ($contextPayload['redirect_url'] ?? null) === 'https://' . $tenantId . '.example.test/workspace/admin/impersonate/mock-token';
             });
 
         $controller = new TenantController(
@@ -167,6 +167,6 @@ class AdminTenantImpersonationTest extends TestCase
         $response = $controller->impersonate($tenant->id);
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('https://' . $tenantId . '.example.test/automotive/admin/impersonate/mock-token', $response->getTargetUrl());
+        $this->assertSame('https://' . $tenantId . '.example.test/workspace/admin/impersonate/mock-token', $response->getTargetUrl());
     }
 }
