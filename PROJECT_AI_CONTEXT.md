@@ -1818,6 +1818,27 @@ Why this matters:
 - the public portal no longer feels as if automotive is the only real first-class product on first open
 - seeded plans now look more credible during demos and testing because pricing/limits differ by system
 
+## 18.42) Portal Product Focus No Longer Falls Back To Automotive On Refresh
+What changed:
+- `CustomerPortalController::resolveSelectedProduct()` no longer falls back to the first subscribed product blindly
+- explicit product focus from `?product=` is now persisted in session as `portal_selected_product`
+- subsequent portal refreshes reuse the last explicitly focused product if it still exists in the catalog
+- if there is no explicit choice, no remembered choice, and more than one subscribed product, the portal now keeps the subscription panel neutral instead of defaulting to automotive
+- if exactly one subscribed product exists, the portal can still focus that single product automatically
+
+Portal UX impact:
+- `Product Subscription Options` no longer jumps back to `automotive` after refresh when the customer was reviewing another product
+- a multi-product customer without an active focused selection sees a neutral prompt asking them to choose a product from the catalog first
+- this removes the misleading impression that automotive is always the primary product inside the public portal
+
+Test coverage:
+- added a portal feature test proving the page no longer defaults to automotive without an explicit selection
+- added a portal feature test proving the last explicitly selected product survives a plain page refresh
+
+Why this matters:
+- multi-product tenants now get deterministic portal behavior instead of a legacy automotive-first fallback
+- the portal selection model is now aligned with the product-neutral onboarding direction already introduced in previous batches
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 

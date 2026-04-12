@@ -78,7 +78,11 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'ends_at' => now()->addDays(5),
         ]);
 
-        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', [
+            'product' => $automotiveProduct->slug,
+        ]));
 
         $response->assertOk();
         $response->assertSee('Select &amp; Continue', false);
@@ -180,7 +184,11 @@ class CustomerPortalBillingOptionsTest extends TestCase
             $reports->id => ['sort_order' => 1],
         ]);
 
-        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', [
+            'product' => $automotiveProduct->slug,
+        ]));
 
         $response->assertOk();
         $response->assertSee('What you get:', false);
@@ -268,7 +276,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Accounting Portal Invoice History', false);
     }
 
-    public function test_portal_only_shows_plans_for_the_automotive_product(): void
+    public function test_portal_does_not_default_to_automotive_plans_without_an_explicit_product_choice(): void
     {
         $user = User::query()->create([
             'name' => 'Portal Product Filter User',
@@ -306,13 +314,64 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
 
         $response->assertOk();
-        $response->assertSee($automotivePlan->name, false);
+        $response->assertDontSee($automotivePlan->name, false);
         $response->assertDontSee($accountingPlan->name, false);
         $response->assertSee('Products Catalog', false);
         $response->assertSee('Automotive Service Management', false);
         $response->assertSee('Accounting System', false);
         $response->assertSee('AVAILABLE NOW', false);
         $response->assertSee('Browse Product Plans', false);
+        $response->assertSee('No product is focused yet.', false);
+        $response->assertSee('Choose a product from the catalog above first.', false);
+    }
+
+    public function test_portal_remembers_the_last_explicitly_selected_product_after_refresh(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Remembered Product User',
+            'email' => 'portal-remembered-product-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Remembered Product Co',
+            'subdomain' => 'portal-remembered-product-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $this->createPlan('Automotive Growth', 'automotive-growth-' . uniqid(), 'monthly', 399);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_' . uniqid(),
+            'name' => 'Accounting System',
+            'slug' => 'accounting-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Pro',
+            'slug' => 'accounting-pro-' . uniqid(),
+            'description' => 'Accounting only plan',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $this->actingAs($user, 'web')
+            ->get(route('automotive.portal', ['product' => $accountingProduct->slug]))
+            ->assertOk()
+            ->assertSee($accountingPlan->name, false);
+
+        $refreshResponse = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $refreshResponse->assertOk();
+        $refreshResponse->assertSee($accountingPlan->name, false);
+        $refreshResponse->assertDontSee('No product is focused yet.', false);
     }
 
     public function test_portal_hides_coupon_badge_when_coupon_value_is_an_email(): void
@@ -992,7 +1051,11 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'ends_at' => now()->subMinute(),
         ]);
 
-        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+        $automotiveProduct = Product::query()->where('code', 'automotive_service')->firstOrFail();
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', [
+            'product' => $automotiveProduct->slug,
+        ]));
 
         $response->assertOk();
         $response->assertDontSee('This account already has a live Stripe subscription.', false);

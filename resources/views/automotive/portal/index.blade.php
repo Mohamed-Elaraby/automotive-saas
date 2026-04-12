@@ -387,7 +387,9 @@
                                     <div>
                                         <h6 class="mb-1">Product Subscription Options</h6>
                                         <p class="text-muted mb-0">
-                                            @if($selectedProductSupportsCheckout)
+                                            @if(empty($selectedProduct))
+                                                Choose a product from the catalog above first. Trial and paid options will load here for the product you select.
+                                            @elseif($selectedProductSupportsCheckout)
                                                 @if(empty($subscription) && empty($selectedProductWasExplicit))
                                                     Choose a product from the catalog first, then review its trial and paid options here.
                                                 @else
@@ -407,7 +409,11 @@
                                 </div>
                             </div>
 
-                            @if(($selectedProductCapabilities ?? collect())->isNotEmpty())
+                            @if(empty($selectedProduct))
+                                <div class="alert alert-light border mb-0">
+                                    No product is focused yet. Use the product catalog above to choose the system you want to trial or subscribe to.
+                                </div>
+                            @elseif(($selectedProductCapabilities ?? collect())->isNotEmpty())
                                 <div class="alert alert-light border mb-4">
                                     <div class="fw-semibold mb-2">Included Product Capabilities</div>
                                     <div class="d-flex flex-wrap gap-2">
@@ -418,7 +424,7 @@
                                 </div>
                             @endif
 
-                            @if(empty($subscription) && $freeTrialEnabled && $selectedProductHasTrialPlan && !empty($selectedProductWasExplicit))
+                            @if(!empty($selectedProduct) && empty($subscription) && $freeTrialEnabled && $selectedProductHasTrialPlan && !empty($selectedProductWasExplicit))
                                 <div class="alert alert-primary border mb-4">
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                         <div>
@@ -438,7 +444,8 @@
                                 </div>
                             @endif
 
-                            @if(!$selectedProductSupportsCheckout)
+                            @if(empty($selectedProduct))
+                            @elseif(!$selectedProductSupportsCheckout)
                                 @php
                                     $selectedProductEnablementStatus = (string) ($selectedProductEnablementRequest->status ?? '');
                                 @endphp

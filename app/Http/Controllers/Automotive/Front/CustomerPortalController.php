@@ -57,11 +57,13 @@ class CustomerPortalController extends Controller
             $tenantIds,
             (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''))
         );
-        $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog);
+        $selectedProduct = $this->resolveSelectedProduct($request, $productCatalog, $subscription);
         $selectedProductWasExplicit = trim((string) $request->query('product')) !== '';
-        $selectedProductCode = (string) ($selectedProduct['code'] ?? self::PRODUCT_CODE);
+        $selectedProductCode = (string) ($selectedProduct['code'] ?? '');
         $selectedProductCapabilities = collect($selectedProduct['capabilities'] ?? []);
-        $paidPlans = $this->billingPlanCatalogService->getPaidPlans($selectedProductCode);
+        $paidPlans = $selectedProductCode !== ''
+            ? $this->billingPlanCatalogService->getPaidPlans($selectedProductCode)
+            : collect();
         $selectedProductTrialPlan = $this->selectedProductTrialPlan((int) ($selectedProduct['id'] ?? 0));
         $selectedProductHasTrialPlan = $selectedProductTrialPlan !== null;
         $selectedProductEnablementRequest = $this->productEnablementRequestForUser(
@@ -97,7 +99,7 @@ class CustomerPortalController extends Controller
                 (string) ($subscription->status ?? '') !== SubscriptionStatuses::ACTIVE
                 || $isTrialWorkspace
             );
-        $selectedProductSupportsCheckout = ! $hasAnyWorkspace
+        $selectedProductSupportsCheckout = $selectedProduct !== null && (! $hasAnyWorkspace
             ? ((bool) ($selectedProduct['is_active'] ?? false) && ((bool) ($selectedProduct['has_paid_plans'] ?? false) || $selectedProductHasTrialPlan))
             : $selectedProductCode === self::PRODUCT_CODE
             || (
@@ -107,10 +109,10 @@ class CustomerPortalController extends Controller
                     (string) ($selectedProductEnablementRequest->status ?? '') === 'approved'
                     || $selectedProductSubscription !== null
                 )
-            );
-        $selectedProductHasLiveBilling = $selectedProductCode === self::PRODUCT_CODE
+            ));
+        $selectedProductHasLiveBilling = $selectedProduct !== null && ($selectedProductCode === self::PRODUCT_CODE
             ? $hasLiveStripeSubscription
-            : $this->hasLiveTenantProductBilling($selectedProductSubscription);
+            : $this->hasLiveTenantProductBilling($selectedProductSubscription));
         $selectedProductStatus = (string) ($selectedProductSubscription->status ?? ($subscription->status ?? ''));
         $selectedProductHasPendingCheckout = $selectedProductCode === self::PRODUCT_CODE
             ? $hasPendingPaidCheckout
@@ -119,7 +121,7 @@ class CustomerPortalController extends Controller
                 && filled($selectedProductSubscription->gateway_checkout_session_id ?? null)
                 && ! filled($selectedProductSubscription->gateway_subscription_id ?? null)
             );
-        $selectedPortalBillingUrl = $hasAnyWorkspace
+        $selectedPortalBillingUrl = $hasAnyWorkspace && $selectedProductCode !== ''
             ? route('automotive.portal.billing.status', ['workspace_product' => $selectedProductCode])
             : null;
 
@@ -527,7 +529,7 @@ class CustomerPortalController extends Controller
             ->values();
     }
 
-    protected function resolveSelectedProduct(Request $request, Collection $productCatalog): ?array
+    protected function resolveSelectedProduct(Request $request, Collection $productCatalog, ?object $subscription = null): ?array
     {
         $selected = trim((string) $request->query('product'));
 
@@ -538,12 +540,50 @@ class CustomerPortalController extends Controller
             });
 
             if ($matched) {
+                $request->session()->put('portal_selected_product', (string) ($matched['code'] ?? $selected));
+
                 return $matched;
             }
         }
 
-        return $productCatalog->firstWhere('code', self::PRODUCT_CODE)
-            ?: $productCatalog->first();
+        $remembered = trim((string) $request->session()->get('portal_selected_product', ''));
+
+        if ($remembered !== '') {
+            $matched = $productCatalog->first(function (array $productRow) use ($remembered) {
+                return (string) $productRow['code'] === $remembered
+                    || (string) $productRow['slug'] === $remembered;
+            });
+
+            if ($matched) {
+                return $matched;
+            }
+
+            $request->session()->forget('portal_selected_product');
+        }
+
+        if (! empty($subscription?->product_id)) {
+            $matched = $productCatalog->firstWhere('id', (int) $subscription->product_id);
+
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        if (! empty($subscription?->product_code)) {
+            $matched = $productCatalog->firstWhere('code', (string) $subscription->product_code);
+
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        $subscribedProducts = $productCatalog->where('is_subscribed', true)->values();
+
+        if ($subscribedProducts->count() === 1) {
+            return $subscribedProducts->first();
+        }
+
+        return null;
     }
 
     protected function productEnablementRequestForUser(int $userId, string $tenantId, int $productId): ?ProductEnablementRequest
