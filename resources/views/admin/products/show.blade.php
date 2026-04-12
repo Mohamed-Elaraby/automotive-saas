@@ -202,9 +202,7 @@
                                             <div class="fw-semibold">6. Workspace Manifest Wiring</div>
                                             <div class="text-muted small">Link the product to a workspace family, sidebar behavior, and final runtime resolution in code.</div>
                                         </div>
-                                        <span class="badge {{ $manifestFamily ? 'bg-success' : 'bg-warning text-dark' }}">
-                                            {{ $manifestFamily ? 'Configured In Manifest' : 'Code Setup Needed' }}
-                                        </span>
+                                        <a href="{{ route('admin.products.manifest-sync.show', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>
                                     </div>
                                 </div>
                                 <div class="list-group-item">

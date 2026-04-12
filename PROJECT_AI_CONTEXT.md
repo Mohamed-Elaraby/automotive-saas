@@ -811,3 +811,27 @@ Important files:
 - `app/Http/Controllers/Admin/ProductController.php`
 - `resources/views/admin/products/show.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 23) Manifest Sync Preview UI
+Status:
+- started
+- product drafts can now be reviewed as a derived workspace manifest payload from the central admin UI
+
+Current behavior:
+- `Product Builder` now links to `Manifest Sync Preview`
+- the preview combines:
+  - experience draft
+  - runtime module draft
+  - integration draft
+- the screen shows:
+  - sync checklist
+  - target family key
+  - derived manifest payload using `var_export`
+- this is currently a review/sync-prep screen, not a write-back editor for `config/workspace_products.php`
+
+Important files:
+- `app/Http/Controllers/Admin/ProductManifestSyncController.php`
+- `resources/views/admin/products/manifest-sync.blade.php`
+- `routes/web.php`
+- `resources/views/admin/products/show.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

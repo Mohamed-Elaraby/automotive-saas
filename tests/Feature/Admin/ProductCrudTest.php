@@ -396,6 +396,73 @@ class ProductCrudTest extends TestCase
         $builderResponse->assertSee(route('admin.products.integrations.edit', $product), false);
     }
 
+    public function test_admin_can_open_manifest_sync_preview_from_saved_drafts(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode([
+                'family_key' => 'perfume_retail',
+                'aliases' => ['perfume', 'fragrance'],
+                'portal' => ['title' => 'Retail and showroom operations'],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.runtime_modules.perfume_retail',
+            'value' => json_encode([
+                [
+                    'key' => 'sales-pos',
+                    'title' => 'Sales POS',
+                    'focus_code' => 'perfume_retail',
+                    'route_slug' => 'sales-pos',
+                    'icon' => 'isax-shop',
+                    'description' => 'Retail checkout and in-store sales.',
+                ],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.integrations.perfume_retail',
+            'value' => json_encode([
+                [
+                    'key' => 'perfume-accounting',
+                    'target_product_code' => 'accounting',
+                    'title' => 'Sales can post into accounting',
+                    'description' => 'Retail invoices and revenue events flow into accounting.',
+                    'target_label' => 'Open Accounting',
+                    'target_route_slug' => 'general-ledger',
+                ],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.show', $product));
+
+        $response->assertOk();
+        $response->assertSee('Manifest Sync Preview', false);
+        $response->assertSee('perfume_retail', false);
+        $response->assertSee('sales-pos', false);
+        $response->assertSee('perfume-accounting', false);
+        $response->assertSee('automotive.admin.modules.general-ledger', false);
+    }
+
     public function test_admin_cannot_delete_product_when_it_is_used(): void
     {
         $admin = $this->createAdmin();
