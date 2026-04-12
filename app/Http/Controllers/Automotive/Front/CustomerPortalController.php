@@ -853,12 +853,12 @@ class CustomerPortalController extends Controller
                 : 'Manage Product';
         }
 
-        if ($hasWorkspace && (string) $product->code !== self::PRODUCT_CODE) {
-            return 'Explore Enablement';
-        }
-
         if ($hasPaidPlans) {
             return 'Browse Product Plans';
+        }
+
+        if ($hasWorkspace && (string) $product->code !== self::PRODUCT_CODE) {
+            return 'Explore Enablement';
         }
 
         return 'Explore Enablement';

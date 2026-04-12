@@ -552,6 +552,9 @@ Frequently used tests during recent work:
   - `company_name`
   - `owner_email`
 - portal navigation/header now expose `Account & Settings` directly
+- when a workspace already exists, non-automotive product cards that have active paid plans now show:
+  - `Browse Product Plans`
+  - instead of incorrectly defaulting to `Explore Enablement`
 - tenant admin billing surface is now decommissioned into a transition page:
   - `automotive/admin/billing` remains only as a runtime-access landing page
   - it no longer presents billing/account ownership as a tenant-admin responsibility

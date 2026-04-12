@@ -497,7 +497,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee(route('automotive.portal', ['product' => $otherProduct->slug]) . '#paid-plans', false);
     }
 
-    public function test_workspace_additional_product_card_uses_enablement_cta_even_when_paid_plans_exist(): void
+    public function test_workspace_additional_product_card_uses_browse_plans_cta_when_paid_plans_exist(): void
     {
         $user = User::query()->create([
             'name' => 'Portal Workspace Product Card User',
@@ -524,21 +524,41 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $automotivePlan = $this->createPlan('Automotive Growth', 'automotive-growth-' . uniqid(), 'monthly', 399);
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_portal_card_' . uniqid(),
+            'name' => 'Accounting',
+            'slug' => 'accounting-portal-card-' . uniqid(),
+            'description' => 'Accounting product',
+            'is_active' => true,
+        ]);
 
-        Subscription::query()->create([
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Growth',
+            'slug' => 'accounting-growth-' . uniqid(),
+            'description' => 'Accounting paid plan',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
             'tenant_id' => $tenant->id,
-            'plan_id' => $automotivePlan->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
             'status' => 'active',
             'gateway' => 'stripe',
             'gateway_customer_id' => 'cus_workspace_product_card',
             'gateway_subscription_id' => 'sub_workspace_product_card',
-            'gateway_price_id' => $automotivePlan->stripe_price_id,
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
         ]);
 
         $partsProduct = Product::query()->create([
             'code' => 'parts_inventory_' . uniqid(),
-            'name' => 'Parts Inventory',
+            'name' => 'Parts Inventory Management',
             'slug' => 'parts-inventory-' . uniqid(),
             'description' => 'Standalone parts product',
             'is_active' => true,
@@ -561,7 +581,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee((string) $partsProduct->name, false);
-        $response->assertSee('Explore Enablement', false);
+        $response->assertSee('Browse Product Plans', false);
         $response->assertSee(route('automotive.portal', ['product' => $partsProduct->slug]) . '#paid-plans', false);
     }
 
