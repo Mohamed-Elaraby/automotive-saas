@@ -686,3 +686,27 @@ Current rules:
 Guardrail:
 - any new controller redirect, builder, or Blade link should use named routes or the workspace URL builder
 - do not add new hard-coded `/automotive/...` URLs except explicit legacy aliases
+
+## 18) Central Admin Product Builder UI
+Status:
+- started
+- the central admin product catalog now has a `Product Builder` page that acts as the first UI lifecycle surface for new systems/products
+
+Current behavior:
+- creating a product now redirects to the product builder instead of only returning to the index
+- updating a product now returns to the builder as well
+- the builder page shows:
+  - readiness checklist
+  - lifecycle snapshot
+  - plan/capability/subscription counts
+  - workspace manifest mapping status
+  - next-step actions for capabilities and plans
+- `Add Plan` from the builder preselects the product in the central plan form
+
+Important files:
+- `app/Http/Controllers/Admin/ProductController.php`
+- `app/Http/Controllers/Admin/PlanController.php`
+- `resources/views/admin/products/show.blade.php`
+- `resources/views/admin/products/index.blade.php`
+- `routes/web.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

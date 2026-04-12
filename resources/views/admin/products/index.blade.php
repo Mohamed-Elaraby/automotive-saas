@@ -101,6 +101,9 @@
                                         <td>{{ $product->sort_order }}</td>
                                         <td class="text-end">
                                             <div class="d-inline-flex gap-2">
+                                                <a href="{{ route('admin.products.show', $product) }}" class="btn btn-sm btn-primary">
+                                                    Builder
+                                                </a>
                                                 <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-outline-primary">
                                                     Edit
                                                 </a>

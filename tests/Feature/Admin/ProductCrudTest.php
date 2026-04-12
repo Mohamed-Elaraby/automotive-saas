@@ -41,8 +41,8 @@ class ProductCrudTest extends TestCase
         $product = Product::query()->where('slug', 'accounting-suite')->firstOrFail();
 
         $createResponse
-            ->assertRedirect(route('admin.products.index'))
-            ->assertSessionHas('success', 'Product created successfully.');
+            ->assertRedirect(route('admin.products.show', $product))
+            ->assertSessionHas('success', 'Product created successfully. Continue the lifecycle from the product builder below.');
 
         $updateResponse = $this
             ->actingAs($admin, 'admin')
@@ -56,7 +56,7 @@ class ProductCrudTest extends TestCase
             ]);
 
         $updateResponse
-            ->assertRedirect(route('admin.products.index'))
+            ->assertRedirect(route('admin.products.show', $product))
             ->assertSessionHas('success', 'Product updated successfully.');
 
         $product->refresh();
@@ -109,6 +109,45 @@ class ProductCrudTest extends TestCase
         $response->assertSee('1 Plans', false);
         $response->assertSee('0 Capabilities', false);
         $response->assertSee(route('admin.plans.index', ['product_id' => $product->id]), false);
+        $response->assertSee(route('admin.products.capabilities.index', $product), false);
+        $response->assertSee(route('admin.products.show', $product), false);
+    }
+
+    public function test_product_builder_page_shows_lifecycle_steps_and_readiness(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'description' => 'Retail and showroom management for perfume stores.',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Perfume Growth',
+            'slug' => 'perfume-growth',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.show', $product));
+
+        $response->assertOk();
+        $response->assertSee('Product Builder', false);
+        $response->assertSee('Lifecycle Snapshot', false);
+        $response->assertSee('Builder Steps', false);
+        $response->assertSee('Portal Capabilities', false);
+        $response->assertSee('Billing Plans', false);
+        $response->assertSee(route('admin.plans.create', ['product_id' => $product->id]), false);
         $response->assertSee(route('admin.products.capabilities.index', $product), false);
     }
 

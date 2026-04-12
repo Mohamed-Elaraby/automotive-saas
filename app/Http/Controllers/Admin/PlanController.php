@@ -78,10 +78,13 @@ class PlanController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $productId = (int) $request->integer('product_id');
+
         return view('admin.plans.create', [
             'plan' => new Plan([
+                'product_id' => $productId > 0 ? $productId : null,
                 'currency' => 'USD',
                 'billing_period' => 'monthly',
                 'trial_days' => 14,

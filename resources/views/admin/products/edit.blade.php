@@ -7,10 +7,10 @@
             <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="content-page-header">
                     <h5>Edit Product</h5>
-                    <p class="text-muted mb-0">Update this central product catalog item.</p>
+                    <p class="text-muted mb-0">Update the base definition, then return to the product builder to continue plans, capabilities, and portal readiness.</p>
                 </div>
 
-                <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">Back to Products</a>
+                <a href="{{ route('admin.products.show', $product) }}" class="btn btn-outline-white">Back to Product Builder</a>
             </div>
 
             <div class="card">

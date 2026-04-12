@@ -7,7 +7,7 @@
             <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="content-page-header">
                     <h5>Add Product</h5>
-                    <p class="text-muted mb-0">Create a new central product catalog item.</p>
+                    <p class="text-muted mb-0">Create the base product record first. After saving, continue the full lifecycle from the product builder.</p>
                 </div>
 
                 <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">Back to Products</a>

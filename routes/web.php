@@ -106,6 +106,7 @@ Route::prefix('admin')
                 Route::get('/', [ProductController::class, 'index'])->name('index');
                 Route::get('/create', [ProductController::class, 'create'])->name('create');
                 Route::post('/', [ProductController::class, 'store'])->name('store');
+                Route::get('/{product}', [ProductController::class, 'show'])->name('show');
                 Route::prefix('/{product}/capabilities')
                     ->name('capabilities.')
                     ->group(function () {
