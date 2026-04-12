@@ -827,7 +827,12 @@ Current behavior:
   - sync checklist
   - target family key
   - derived manifest payload using `var_export`
-- this is currently a review/sync-prep screen, not a write-back editor for `config/workspace_products.php`
+- the screen now also stores workflow state:
+  - `draft`
+  - `approved`
+  - `applied`
+- workflow notes and last reviewed timestamp are stored centrally in `app_settings`
+- this is still a review/sync-prep screen, not a write-back editor for `config/workspace_products.php`
 
 Important files:
 - `app/Http/Controllers/Admin/ProductManifestSyncController.php`

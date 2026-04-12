@@ -463,6 +463,42 @@ class ProductCrudTest extends TestCase
         $response->assertSee('automotive.admin.modules.general-ledger', false);
     }
 
+    public function test_admin_can_update_manifest_sync_workflow_state(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.manifest-sync.update', $product), [
+                'status' => 'approved',
+                'notes' => 'Ready for config/workspace_products.php write-back.',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.manifest-sync.show', $product))
+            ->assertSessionHas('success', 'Manifest sync workflow updated successfully.');
+
+        $setting = AppSetting::query()
+            ->where('key', 'workspace_products.manifest_sync_workflow.perfume_retail')
+            ->first();
+
+        $this->assertNotNull($setting);
+
+        $payload = json_decode((string) $setting->value, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('approved', $payload['status']);
+        $this->assertSame('Ready for config/workspace_products.php write-back.', $payload['notes']);
+        $this->assertNotEmpty($payload['reviewed_at']);
+    }
+
     public function test_admin_cannot_delete_product_when_it_is_used(): void
     {
         $admin = $this->createAdmin();

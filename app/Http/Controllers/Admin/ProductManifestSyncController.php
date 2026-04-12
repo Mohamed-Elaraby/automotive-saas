@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Tenancy\WorkspaceManifestService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ProductManifestSyncController extends Controller
@@ -75,6 +77,7 @@ class ProductManifestSyncController extends Controller
             'runtime_modules' => $runtimeModulesDraft !== [],
             'integrations' => $integrationDraft !== [],
         ];
+        $workflow = $this->workflowState($product);
 
         return view('admin.products.manifest-sync', [
             'product' => $product,
@@ -83,7 +86,33 @@ class ProductManifestSyncController extends Controller
             'payload' => $payload,
             'payloadExport' => var_export($payload, true),
             'syncChecklist' => $syncChecklist,
+            'workflow' => $workflow,
         ]);
+    }
+
+    public function update(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:draft,approved,applied'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $payload = [
+            'status' => (string) $validated['status'],
+            'notes' => trim((string) ($validated['notes'] ?? '')),
+            'reviewed_at' => now()->toDateTimeString(),
+        ];
+
+        $this->settingsService->set(
+            key: $this->workflowSettingKey($product),
+            value: $payload,
+            valueType: 'json',
+            groupKey: 'workspace_products'
+        );
+
+        return redirect()
+            ->route('admin.products.manifest-sync.show', $product)
+            ->with('success', 'Manifest sync workflow updated successfully.');
     }
 
     protected function experienceDraft(Product $product): array
@@ -99,5 +128,19 @@ class ProductManifestSyncController extends Controller
     protected function integrationDraft(Product $product): array
     {
         return (array) $this->settingsService->get('workspace_products.integrations.' . $product->code, []);
+    }
+
+    protected function workflowState(Product $product): array
+    {
+        return (array) $this->settingsService->get($this->workflowSettingKey($product), [
+            'status' => 'draft',
+            'notes' => '',
+            'reviewed_at' => null,
+        ]);
+    }
+
+    protected function workflowSettingKey(Product $product): string
+    {
+        return 'workspace_products.manifest_sync_workflow.' . $product->code;
     }
 }

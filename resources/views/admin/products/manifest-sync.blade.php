@@ -17,6 +17,10 @@
                 <div class="col-xl-4">
                     <div class="card">
                         <div class="card-body">
+                            @if(session('success'))
+                                <div class="alert alert-success">{{ session('success') }}</div>
+                            @endif
+
                             <h6 class="mb-3">Sync Checklist</h6>
                             <div class="list-group">
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -41,6 +45,31 @@
                                 Current manifest status:
                                 {{ $currentFamilyDefinition === [] ? 'Not configured in code yet.' : 'Family already exists in config/workspace_products.php.' }}
                             </div>
+
+                            <hr>
+
+                            <h6 class="mb-3">Apply Workflow</h6>
+                            <form method="POST" action="{{ route('admin.products.manifest-sync.update', $product) }}">
+                                @csrf
+                                @method('PUT')
+                                <div class="mb-3">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" class="form-select">
+                                        <option value="draft" @selected(($workflow['status'] ?? 'draft') === 'draft')>Draft</option>
+                                        <option value="approved" @selected(($workflow['status'] ?? '') === 'approved')>Approved For Sync</option>
+                                        <option value="applied" @selected(($workflow['status'] ?? '') === 'applied')>Applied In Code</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Execution Notes</label>
+                                    <textarea name="notes" rows="5" class="form-control" placeholder="What still needs to happen in config/workspace_products.php or runtime wiring?">{{ old('notes', $workflow['notes'] ?? '') }}</textarea>
+                                </div>
+                                <div class="small text-muted mb-3">
+                                    Last reviewed:
+                                    {{ !empty($workflow['reviewed_at']) ? $workflow['reviewed_at'] : 'Not reviewed yet' }}
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Save Workflow State</button>
+                            </form>
                         </div>
                     </div>
                 </div>

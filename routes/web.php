@@ -119,6 +119,7 @@ Route::prefix('admin')
                 Route::get('/{product}/runtime-modules', [ProductRuntimeModuleController::class, 'edit'])->name('runtime-modules.edit');
                 Route::put('/{product}/runtime-modules', [ProductRuntimeModuleController::class, 'update'])->name('runtime-modules.update');
                 Route::get('/{product}/manifest-sync', [ProductManifestSyncController::class, 'show'])->name('manifest-sync.show');
+                Route::put('/{product}/manifest-sync', [ProductManifestSyncController::class, 'update'])->name('manifest-sync.update');
                 Route::get('/{product}/portal-publication', [ProductPortalPublicationController::class, 'show'])->name('portal-publication.show');
                 Route::put('/{product}/portal-publication/publish', [ProductPortalPublicationController::class, 'publish'])->name('portal-publication.publish');
                 Route::put('/{product}/portal-publication/hide', [ProductPortalPublicationController::class, 'hide'])->name('portal-publication.hide');
