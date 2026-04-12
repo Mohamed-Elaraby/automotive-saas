@@ -458,6 +458,7 @@ class CustomerPortalController extends Controller
     protected function productCatalogForTenantIds(Collection $tenantIds, string $currentTenantId = ''): Collection
     {
         $connection = $this->centralConnectionName();
+        $hasWorkspace = $tenantIds->isNotEmpty();
 
         if (! Schema::connection($connection)->hasTable('products')) {
             return collect();
@@ -500,7 +501,7 @@ class CustomerPortalController extends Controller
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
-            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCounts, $capabilitiesByProductId): array {
+            ->map(function (Product $product) use ($productSubscriptions, $currentTenantId, $paidPlanCounts, $capabilitiesByProductId, $hasWorkspace): array {
                 $subscription = $productSubscriptions->get($product->id);
                 $status = (string) ($subscription->status ?? '');
                 $isAutomotive = (string) $product->code === self::PRODUCT_CODE;
@@ -522,7 +523,7 @@ class CustomerPortalController extends Controller
                     'tenant_id' => (string) ($subscription->tenant_id ?? $currentTenantId),
                     'subscription_status' => $status,
                     'status_label' => $this->productStatusLabel($product, $subscription, $hasPaidPlans),
-                    'action_label' => $this->productActionLabel($product, $isSubscribed, $hasPaidPlans),
+                    'action_label' => $this->productActionLabel($product, $isSubscribed, $hasPaidPlans, $hasWorkspace),
                     'action_url' => route('automotive.portal', ['product' => $product->slug]) . '#paid-plans',
                 ];
             })
@@ -700,7 +701,7 @@ class CustomerPortalController extends Controller
         return 'READY FOR SETUP';
     }
 
-    protected function productActionLabel(Product $product, bool $isSubscribed, bool $hasPaidPlans): string
+    protected function productActionLabel(Product $product, bool $isSubscribed, bool $hasPaidPlans, bool $hasWorkspace): string
     {
         if (! (bool) $product->is_active) {
             return 'Coming Soon';
@@ -710,6 +711,10 @@ class CustomerPortalController extends Controller
             return (string) $product->code === self::PRODUCT_CODE
                 ? 'Open Product Workspace'
                 : 'Manage Product';
+        }
+
+        if ($hasWorkspace && (string) $product->code !== self::PRODUCT_CODE) {
+            return 'Explore Enablement';
         }
 
         if ($hasPaidPlans) {

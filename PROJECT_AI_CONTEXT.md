@@ -1839,6 +1839,24 @@ Why this matters:
 - multi-product tenants now get deterministic portal behavior instead of a legacy automotive-first fallback
 - the portal selection model is now aligned with the product-neutral onboarding direction already introduced in previous batches
 
+## 18.43) Portal Catalog CTA Now Matches Real Additional-Product Flow
+What changed:
+- the product catalog CTA logic no longer offers `Browse Product Plans` for non-automotive products when the customer already has a workspace
+- for attached-workspace scenarios, unsubscribed non-primary products now show `Explore Enablement` instead
+- this aligns the product card CTA with the actual portal panel behavior where approval/enablement is required before direct checkout is allowed
+- direct `Browse Product Plans` remains available for first-product scenarios and for products that are directly billable as the initial subscription
+
+Portal UX impact:
+- customers no longer click `Browse Product Plans` for `Parts Inventory` or other additional products only to land on `Approval Required Before Checkout`
+- the product card now communicates the real next step before the user opens the plan panel
+
+Test coverage:
+- added portal coverage proving that a workspace customer sees the enablement CTA for an additional paid product even when that product has active paid plans
+
+Why this matters:
+- the catalog no longer contradicts the plan panel
+- additional-product onboarding is now clearer and less misleading for customers reviewing product expansion options
+
 ## 19) Bottom Line
 If a new session starts from this file only, the safest current summary is:
 
