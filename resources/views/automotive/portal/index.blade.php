@@ -554,9 +554,9 @@
                                         @endforeach
                                     </div>
                                 @endif
-                            @elseif($hasLiveStripeSubscription)
+                            @elseif($selectedProductHasLiveBilling)
                                 <div class="alert alert-info mb-0">
-                                    This account already has a live Stripe subscription. Further billing changes should be managed from inside the tenant billing area.
+                                    This workspace product already has a live Stripe subscription. Further billing changes should be managed from its billing area.
                                 </div>
                             @elseif($paidPlans->count() === 0)
                                 <div class="alert alert-light border mb-0">

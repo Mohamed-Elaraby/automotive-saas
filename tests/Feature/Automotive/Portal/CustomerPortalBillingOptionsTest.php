@@ -763,6 +763,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('Select &amp; Continue', false);
         $response->assertDontSee('Approval Required Before Checkout', false);
         $response->assertDontSee('Submit or review enablement first.', false);
+        $response->assertDontSee('This workspace product already has a live Stripe subscription.', false);
     }
 
     public function test_automotive_plans_are_not_blocked_by_live_subscription_on_another_product(): void
@@ -844,6 +845,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('This account already has a live Stripe subscription.', false);
+        $response->assertDontSee('This workspace product already has a live Stripe subscription.', false);
         $response->assertSee('Automotive Growth', false);
         $response->assertSee('Select &amp; Continue', false);
         $response->assertDontSee('Billing Managed In System', false);
@@ -1347,8 +1349,8 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => $product->slug]));
 
         $response->assertOk();
-        $response->assertSee('already has a live billed subscription on this workspace', false);
-        $response->assertSee('Billing Managed In System', false);
+        $response->assertSee('This workspace product already has a live Stripe subscription.', false);
+        $response->assertDontSee('Billing Managed In System', false);
         $response->assertDontSee('Select &amp; Continue', false);
     }
 
