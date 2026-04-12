@@ -675,6 +675,96 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee(route('automotive.portal', ['product' => 'parts-inventory']) . '#paid-plans', false);
     }
 
+    public function test_direct_billed_additional_product_shows_checkout_instead_of_approval_required(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Direct Billed Additional User',
+            'email' => 'portal-direct-billed-additional-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Direct Billed Additional Co',
+            'subdomain' => 'portal-direct-billed-additional-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-direct-billed-additional-' . uniqid(),
+            'data' => ['company_name' => 'Portal Direct Billed Additional Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $accountingProduct = Product::query()->create([
+            'code' => 'accounting_direct_billed_' . uniqid(),
+            'name' => 'Accounting Direct Billed',
+            'slug' => 'accounting-direct-billed-' . uniqid(),
+            'description' => 'Accounting product',
+            'is_active' => true,
+        ]);
+
+        $accountingPlan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Growth',
+            'slug' => 'accounting-growth-' . uniqid(),
+            'description' => 'Accounting paid plan',
+            'price' => 399,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $accountingPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_direct_billed_additional',
+            'gateway_subscription_id' => 'sub_direct_billed_additional',
+            'gateway_price_id' => $accountingPlan->stripe_price_id,
+        ]);
+
+        $partsProduct = Product::query()->create([
+            'code' => 'parts_inventory',
+            'name' => 'Parts Inventory Management',
+            'slug' => 'parts-inventory',
+            'description' => 'Canonical parts product',
+            'is_active' => true,
+        ]);
+
+        Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Parts Starter',
+            'slug' => 'direct-parts-starter-' . uniqid(),
+            'description' => 'Parts paid plan',
+            'price' => 149,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', ['product' => 'parts-inventory']));
+
+        $response->assertOk();
+        $response->assertSee('Product Subscription Options', false);
+        $response->assertSee('Parts Starter', false);
+        $response->assertSee('Select &amp; Continue', false);
+        $response->assertDontSee('Approval Required Before Checkout', false);
+        $response->assertDontSee('Submit or review enablement first.', false);
+    }
+
     public function test_automotive_plans_are_not_blocked_by_live_subscription_on_another_product(): void
     {
         $user = User::query()->create([
@@ -1056,6 +1146,81 @@ class CustomerPortalBillingOptionsTest extends TestCase
             'product_id' => $product->id,
             'plan_id' => $plan->id,
             'gateway_checkout_session_id' => 'cs_additional_product_new',
+            'gateway_price_id' => $plan->stripe_price_id,
+            'gateway' => 'stripe',
+            'status' => 'past_due',
+        ]);
+    }
+
+    public function test_user_can_start_paid_checkout_for_direct_billed_additional_product_without_enablement_approval(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Direct Checkout User',
+            'email' => 'portal-direct-checkout-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Direct Checkout Co',
+            'subdomain' => 'portal-direct-checkout-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-direct-checkout-' . uniqid(),
+            'data' => ['company_name' => 'Portal Direct Checkout Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'parts_inventory',
+            'name' => 'Parts Inventory Management',
+            'slug' => 'parts-inventory',
+            'is_active' => true,
+        ]);
+
+        $plan = $this->createPlan('Parts Growth', 'parts-growth-' . uniqid(), 'monthly', 299, $product->id);
+
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('createRenewalSession')
+            ->once()
+            ->withArgs(function ($payload) use ($tenant, $product, $plan) {
+                return ($payload['tenant_id'] ?? null) === $tenant->id
+                    && ($payload['plan_id'] ?? null) === $plan->id
+                    && ($payload['product_scope'] ?? null) === $product->code;
+            })
+            ->andReturn([
+                'success' => true,
+                'checkout_url' => 'https://checkout.stripe.test/session/direct-additional-product',
+                'session_id' => 'cs_direct_additional_product_new',
+            ]);
+
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')->once()->with('stripe')->andReturn($gateway);
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $response = $this->actingAs($user, 'web')
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('automotive.portal.subscribe'), [
+                '_token' => 'test-token',
+                'plan_id' => $plan->id,
+                'product_id' => $product->id,
+            ]);
+
+        $response->assertRedirect('https://checkout.stripe.test/session/direct-additional-product');
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_direct_additional_product_new',
             'gateway_price_id' => $plan->stripe_price_id,
             'gateway' => 'stripe',
             'status' => 'past_due',

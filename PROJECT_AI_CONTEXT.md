@@ -558,6 +558,9 @@ Frequently used tests during recent work:
 - product card CTA availability must be derived by canonical `product code`, not only raw `product_id` counts:
   - the catalog card and the paid-plan panel must use the same billing-catalog source
   - subscribing to `Accounting` must not cause `Parts Inventory Management` to fall back to `Explore Enablement`
+- additional products with active paid plans are now direct-billed in the portal:
+  - they must show `Select & Continue` instead of `Approval Required Before Checkout`
+  - enablement workflow remains only for products that do not yet have direct paid checkout configured
 - portal billing gates are now product-scoped:
   - a live Stripe subscription on one product must not block paid plans for a different product
   - example: active `Accounting` billing must not block `Automotive` plan selection

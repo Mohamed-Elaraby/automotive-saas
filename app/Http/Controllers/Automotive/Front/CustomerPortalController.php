@@ -125,17 +125,21 @@ class CustomerPortalController extends Controller
                 $selectedProductStatus !== SubscriptionStatuses::ACTIVE
                 || $selectedProductIsTrialWorkspace
             );
-        $selectedProductSupportsCheckout = $selectedProduct !== null && (! $hasAnyWorkspace
-            ? ((bool) ($selectedProduct['is_active'] ?? false) && ((bool) ($selectedProduct['has_paid_plans'] ?? false) || $selectedProductHasTrialPlan))
-            : $selectedProductCode === self::PRODUCT_CODE
-            || (
-                (int) ($selectedProduct['id'] ?? 0) > 0
-                && (string) $selectedProductCode !== self::PRODUCT_CODE
-                && (
-                    (string) ($selectedProductEnablementRequest->status ?? '') === 'approved'
-                    || $selectedProductSubscription !== null
+        $selectedProductSupportsCheckout = $selectedProduct !== null
+            && (bool) ($selectedProduct['is_active'] ?? false)
+            && (
+                (bool) ($selectedProduct['has_paid_plans'] ?? false)
+                || (! $hasAnyWorkspace && $selectedProductHasTrialPlan)
+                || $selectedProductCode === self::PRODUCT_CODE
+                || (
+                    (int) ($selectedProduct['id'] ?? 0) > 0
+                    && (string) $selectedProductCode !== self::PRODUCT_CODE
+                    && (
+                        (string) ($selectedProductEnablementRequest->status ?? '') === 'approved'
+                        || $selectedProductSubscription !== null
+                    )
                 )
-            ));
+            );
         $selectedPortalBillingUrl = $hasAnyWorkspace && $selectedProductCode !== ''
             ? route('automotive.portal.billing.status', ['workspace_product' => $selectedProductCode])
             : null;
@@ -469,6 +473,14 @@ class CustomerPortalController extends Controller
                 ->route('automotive.portal', ['product' => $product->slug])
                 ->withErrors([
                     'portal' => 'This product uses the direct checkout flow instead of enablement request.',
+                ]);
+        }
+
+        if ($this->productHasPaidPlans((string) $product->code)) {
+            return redirect()
+                ->route('automotive.portal', ['product' => $product->slug])
+                ->withErrors([
+                    'portal' => 'This product now uses direct checkout from the portal. Choose a paid plan instead of requesting enablement.',
                 ]);
         }
 
@@ -826,6 +838,15 @@ class CustomerPortalController extends Controller
         }
 
         return 'Explore Enablement';
+    }
+
+    protected function productHasPaidPlans(string $productCode): bool
+    {
+        if ($productCode === '') {
+            return false;
+        }
+
+        return (int) ($this->billingPlanCatalogService->paidPlanCountsByProductCode()->get($productCode) ?? 0) > 0;
     }
 
     protected function displayableCouponCode(?CustomerOnboardingProfile $profile, ?object $user): ?string

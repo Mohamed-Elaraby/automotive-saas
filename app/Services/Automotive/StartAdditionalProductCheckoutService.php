@@ -5,10 +5,8 @@ namespace App\Services\Automotive;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Plan;
 use App\Models\Product;
-use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
 use App\Models\User;
-use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\CheckoutStripePlanRecoveryService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Support\Billing\SubscriptionStatuses;
@@ -19,7 +17,6 @@ class StartAdditionalProductCheckoutService
     protected const PRIMARY_PRODUCT_CODE = 'automotive_service';
 
     public function __construct(
-        protected BillingPlanCatalogService $billingPlanCatalogService,
         protected CheckoutStripePlanRecoveryService $checkoutStripePlanRecoveryService,
         protected PaymentGatewayManager $paymentGatewayManager
     ) {
@@ -55,28 +52,11 @@ class StartAdditionalProductCheckoutService
             ];
         }
 
-        $enablementRequest = ProductEnablementRequest::query()
-            ->where('tenant_id', $tenantId)
-            ->where('product_id', $product->id)
-            ->orderByDesc('id')
-            ->first();
-
         $productSubscription = TenantProductSubscription::query()
             ->where('tenant_id', $tenantId)
             ->where('product_id', $product->id)
             ->orderByDesc('id')
             ->first();
-
-        if (($enablementRequest?->status ?? '') !== 'approved' && ! $productSubscription) {
-            return [
-                'ok' => false,
-                'status' => 422,
-                'message' => 'This product must be approved before billing can start.',
-                'errors' => [
-                    'portal' => ['This product must be approved before billing can start.'],
-                ],
-            ];
-        }
 
         if (
             $productSubscription
