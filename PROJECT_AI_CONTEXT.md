@@ -736,3 +736,30 @@ Important files:
 - `app/Http/Controllers/Admin/ProductController.php`
 - `resources/views/admin/products/show.blade.php`
 - `tests/Feature/Admin/ProductCrudTest.php`
+
+## 20) Portal Publication Checklist UI
+Status:
+- started
+- central admin now has a dedicated portal publication screen for each product
+
+Current behavior:
+- each product has a `Portal Publication Checklist` screen linked from `Product Builder`
+- the screen shows:
+  - publication blockers
+  - readiness status
+  - portal card preview
+  - active plan preview
+- central admin can now:
+  - publish a ready product to the customer portal
+  - hide a product from the customer portal
+- publication currently requires:
+  - at least one active capability
+  - at least one active plan
+  - a saved workspace experience draft
+
+Important files:
+- `app/Http/Controllers/Admin/ProductPortalPublicationController.php`
+- `resources/views/admin/products/portal-publication.blade.php`
+- `routes/web.php`
+- `resources/views/admin/products/show.blade.php`
+- `tests/Feature/Admin/ProductCrudTest.php`

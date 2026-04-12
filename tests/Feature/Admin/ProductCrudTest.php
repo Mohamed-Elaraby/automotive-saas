@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\AppSetting;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\ProductCapability;
 use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
 use App\Models\User;
@@ -204,6 +205,73 @@ class ProductCrudTest extends TestCase
         $builderResponse->assertSee('Experience Draft', false);
         $builderResponse->assertSee('Yes', false);
         $builderResponse->assertSee(route('admin.products.experience.edit', $product), false);
+    }
+
+    public function test_admin_can_publish_ready_product_to_portal_and_hide_it_again(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => false,
+            'sort_order' => 2,
+        ]);
+
+        ProductCapability::query()->create([
+            'product_id' => $product->id,
+            'code' => 'catalog_management',
+            'name' => 'Catalog Management',
+            'slug' => 'catalog-management',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Perfume Growth',
+            'slug' => 'perfume-growth-ready',
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode(['family_key' => 'perfume_retail'], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $showResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.portal-publication.show', $product));
+
+        $showResponse->assertOk();
+        $showResponse->assertSee('Ready To Publish', false);
+
+        $publishResponse = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.portal-publication.publish', $product));
+
+        $publishResponse
+            ->assertRedirect(route('admin.products.portal-publication.show', $product))
+            ->assertSessionHas('success', 'Product is now live in the customer portal.');
+
+        $this->assertTrue($product->fresh()->is_active);
+
+        $hideResponse = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.portal-publication.hide', $product));
+
+        $hideResponse
+            ->assertRedirect(route('admin.products.portal-publication.show', $product))
+            ->assertSessionHas('success', 'Product has been hidden from the customer portal.');
+
+        $this->assertFalse($product->fresh()->is_active);
     }
 
     public function test_admin_cannot_delete_product_when_it_is_used(): void

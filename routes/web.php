@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCapabilityController;
 use App\Http\Controllers\Admin\ProductExperienceController;
 use App\Http\Controllers\Admin\ProductEnablementRequestController;
+use App\Http\Controllers\Admin\ProductPortalPublicationController;
 use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
@@ -110,6 +111,9 @@ Route::prefix('admin')
                 Route::get('/{product}', [ProductController::class, 'show'])->name('show');
                 Route::get('/{product}/experience', [ProductExperienceController::class, 'edit'])->name('experience.edit');
                 Route::put('/{product}/experience', [ProductExperienceController::class, 'update'])->name('experience.update');
+                Route::get('/{product}/portal-publication', [ProductPortalPublicationController::class, 'show'])->name('portal-publication.show');
+                Route::put('/{product}/portal-publication/publish', [ProductPortalPublicationController::class, 'publish'])->name('portal-publication.publish');
+                Route::put('/{product}/portal-publication/hide', [ProductPortalPublicationController::class, 'hide'])->name('portal-publication.hide');
                 Route::prefix('/{product}/capabilities')
                     ->name('capabilities.')
                     ->group(function () {

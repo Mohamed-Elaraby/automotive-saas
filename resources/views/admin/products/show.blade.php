@@ -196,9 +196,7 @@
                                             <div class="fw-semibold">6. Portal Publication</div>
                                             <div class="text-muted small">When active + capabilities + plans are ready, the product can appear logically in the customer portal.</div>
                                         </div>
-                                        <span class="badge {{ ($product->is_active && $product->active_plans_count > 0 && $product->capabilities_count > 0) ? 'bg-success' : 'bg-secondary' }}">
-                                            {{ ($product->is_active && $product->active_plans_count > 0 && $product->capabilities_count > 0) ? 'Ready For Portal' : 'Not Ready Yet' }}
-                                        </span>
+                                        <a href="{{ route('admin.products.portal-publication.show', $product) }}" class="btn btn-sm btn-outline-primary">Open</a>
                                     </div>
                                 </div>
                             </div>
