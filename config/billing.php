@@ -6,7 +6,7 @@ return [
 
     'grace_period_days' => env('BILLING_GRACE_PERIOD_DAYS', 3),
 
-    'portal_return_url' => env('BILLING_PORTAL_RETURN_URL', env('APP_URL') . '/automotive/admin/billing'),
+    'portal_return_url' => env('BILLING_PORTAL_RETURN_URL', env('APP_URL') . '/workspace/admin/billing'),
 
     'gateways' => [
         'null' => [

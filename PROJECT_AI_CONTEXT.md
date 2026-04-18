@@ -1011,7 +1011,21 @@ Important files:
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
 - `app/Http/Middleware/CanonicalizeWorkspaceHost.php`
 - `config/tenancy.php`
+- `deploy/nginx/seven-scapital.conf.example`
+- `.env.example`
 - `tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php`
 - `tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
 - `tests/Feature/Automotive/Portal/StartTrialServiceTest.php`
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+
+Deployment notes:
+- production web server should bind:
+  - `seven-scapital.com`
+  - `www.seven-scapital.com`
+  - `*.seven-scapital.com`
+- document root must point to:
+  - `/public`
+- Laravel production env should use:
+  - `APP_URL=https://seven-scapital.com`
+  - `SESSION_DOMAIN=.seven-scapital.com`
+  - `SESSION_SECURE_COOKIE=true`
