@@ -52,6 +52,22 @@
                     @if(session('success'))
                         <div class="alert alert-success mb-3">
                             {{ session('success') }}
+                            @if(session('checkout_completed'))
+                                <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
+                                    @if($allowSystemAccess && !empty($systemUrl))
+                                        <a href="{{ $systemUrl }}" target="_blank" class="btn btn-sm btn-success">
+                                            Open My Workspace
+                                        </a>
+                                    @else
+                                        <a href="{{ route('automotive.portal', array_filter(['product' => session('checkout_completed_product')])) }}" class="btn btn-sm btn-outline-success">
+                                            Refresh Portal Status
+                                        </a>
+                                        <span class="small text-muted">
+                                            Stripe checkout finished. Workspace access will appear here as soon as subscription sync completes.
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     @endif
 

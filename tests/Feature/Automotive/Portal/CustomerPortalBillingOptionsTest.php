@@ -2271,6 +2271,82 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee($tenantId . '.automotive.seven-scapital.com', false);
     }
 
+    public function test_checkout_success_redirects_directly_to_workspace_when_access_is_ready(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Checkout Redirect User',
+            'email' => 'portal-checkout-redirect-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $profile = CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Checkout Redirect Co',
+            'subdomain' => 'portal-checkout-redirect-' . uniqid(),
+            'base_host' => 'seven-scapital.com',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-checkout-redirect-' . uniqid(),
+            'data' => [
+                'company_name' => $profile->company_name,
+                'owner_email' => $user->email,
+            ],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Domain::query()->create([
+            'domain' => 'demo-checkout-ready.seven-scapital.com',
+            'tenant_id' => $tenant->id,
+        ]);
+
+        $paidPlan = $this->createPlan('Checkout Redirect Pro', 'checkout-redirect-pro-' . uniqid(), 'monthly', 149);
+
+        Subscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $paidPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_checkout_redirect',
+            'gateway_price_id' => $paidPlan->stripe_price_id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')
+            ->get(route('automotive.portal.checkout.success', ['product' => 'automotive-service']));
+
+        $response->assertRedirect('https://demo-checkout-ready.seven-scapital.com/workspace');
+    }
+
+    public function test_checkout_success_returns_to_portal_with_pending_handoff_message_when_workspace_access_is_not_ready_yet(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Checkout Pending User',
+            'email' => 'portal-checkout-pending-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Checkout Pending Co',
+            'subdomain' => 'portal-checkout-pending-' . uniqid(),
+            'base_host' => 'seven-scapital.com',
+        ]);
+
+        $response = $this->actingAs($user, 'web')
+            ->get(route('automotive.portal.checkout.success', ['product' => 'accounting']));
+
+        $response->assertRedirect(route('automotive.portal', ['product' => 'accounting']));
+        $response->assertSessionHas('checkout_completed', true);
+        $response->assertSessionHas('checkout_completed_product', 'accounting');
+        $response->assertSessionHas('success', 'Your payment was completed. We are finalizing workspace access now.');
+    }
+
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price, ?int $productId = null): Plan
     {
         $productId = $productId ?: Product::query()->where('code', 'automotive_service')->value('id');

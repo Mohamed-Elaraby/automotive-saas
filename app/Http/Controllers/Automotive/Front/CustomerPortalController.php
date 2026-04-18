@@ -315,9 +315,28 @@ class CustomerPortalController extends Controller
 
     public function checkoutSuccess(): RedirectResponse
     {
+        $user = Auth::guard('web')->user();
+
+        abort_unless($user, 403);
+
+        $profile = CustomerOnboardingProfile::query()
+            ->where('user_id', $user->id)
+            ->first();
+
+        $workspaceAccess = $this->workspaceAccessContextForUser($user, $profile);
+        $productSlug = request()->query('product');
+
+        if ($workspaceAccess['allow_system_access'] && filled($workspaceAccess['system_url'])) {
+            return redirect()
+                ->away((string) $workspaceAccess['system_url'])
+                ->with('success', 'Your payment was completed and your workspace is ready.');
+        }
+
         return redirect()
-            ->route('automotive.portal', ['product' => request()->query('product')])
-            ->with('success', 'Your checkout session was completed. Subscription sync will finalize via Stripe webhook.');
+            ->route('automotive.portal', array_filter(['product' => $productSlug]))
+            ->with('success', 'Your payment was completed. We are finalizing workspace access now.')
+            ->with('checkout_completed', true)
+            ->with('checkout_completed_product', $productSlug);
     }
 
     public function checkoutCancel(): RedirectResponse
@@ -1130,5 +1149,29 @@ class CustomerPortalController extends Controller
         }
 
         return in_array((string) ($subscription->status ?? ''), SubscriptionStatuses::accessAllowedStatuses(), true);
+    }
+
+    protected function workspaceAccessContextForUser(object $user, ?CustomerOnboardingProfile $profile = null): array
+    {
+        $tenantIds = $this->tenantIdsForUser($user);
+        $subscription = $this->latestPrimarySubscriptionForUser($user);
+        $workspaceTenantId = (string) ($subscription->tenant_id ?? ($tenantIds->first() ?? ''));
+        $domains = $workspaceTenantId !== ''
+            ? $this->domainsForTenant($workspaceTenantId, $profile)
+            : collect();
+        $productCatalog = $this->productCatalogForTenantIds($tenantIds, $workspaceTenantId);
+        $primaryDomain = $domains->first();
+        $systemUrl = $primaryDomain['admin_login_url'] ?? null;
+        $allowSystemAccess = $this->workspaceHasAccessibleProduct($productCatalog, $subscription) && filled($systemUrl);
+
+        return [
+            'tenant_ids' => $tenantIds,
+            'subscription' => $subscription,
+            'workspace_tenant_id' => $workspaceTenantId,
+            'domains' => $domains,
+            'product_catalog' => $productCatalog,
+            'system_url' => $systemUrl,
+            'allow_system_access' => $allowSystemAccess,
+        ];
     }
 }
