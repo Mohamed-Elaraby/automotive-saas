@@ -14,6 +14,8 @@ class WorkspaceHostResolverTest extends TestCase
         $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('automotive.seven-scapital.com'));
         $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('spareparts.seven-scapital.com'));
         $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('www.seven-scapital.com'));
+        $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.automotive.seven-scapital.com'));
+        $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.spareparts.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.seven-scapital.com'));
         $this->assertSame('example.test', $resolver->canonicalBaseHost('example.test'));
     }

@@ -993,6 +993,7 @@ Current behavior:
   - `automotive.seven-scapital.com`
   - `spareparts.seven-scapital.com`
   are now treated as legacy aliases for central access only
+- incoming requests on those legacy hosts must redirect back to the canonical root-domain host while preserving path and query string
 - host normalization now runs through a shared resolver used by:
   - registration
   - trial provisioning
@@ -1008,7 +1009,9 @@ Important files:
 - `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
 - `app/Http/Controllers/Automotive/Front/Auth/RegisterController.php`
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Http/Middleware/CanonicalizeWorkspaceHost.php`
 - `config/tenancy.php`
+- `tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php`
 - `tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
 - `tests/Feature/Automotive/Portal/StartTrialServiceTest.php`
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`

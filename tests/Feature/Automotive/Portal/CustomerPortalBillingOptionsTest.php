@@ -2210,6 +2210,8 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
     public function test_portal_normalizes_legacy_product_prefixed_base_host_when_falling_back_to_workspace_domain(): void
     {
+        $tenantId = 'demo-' . uniqid();
+
         $user = User::query()->create([
             'name' => 'Portal Legacy Host User',
             'email' => 'portal-legacy-host-' . uniqid() . '@example.test',
@@ -2219,12 +2221,12 @@ class CustomerPortalBillingOptionsTest extends TestCase
         CustomerOnboardingProfile::query()->create([
             'user_id' => $user->id,
             'company_name' => 'Portal Legacy Host Co',
-            'subdomain' => 'demo',
+            'subdomain' => $tenantId,
             'base_host' => 'automotive.seven-scapital.com',
         ]);
 
         $tenant = Tenant::query()->create([
-            'id' => 'demo',
+            'id' => $tenantId,
             'data' => ['company_name' => 'Portal Legacy Host Co'],
         ]);
 
@@ -2265,8 +2267,8 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Open My Workspace', false);
-        $response->assertSee('demo.seven-scapital.com', false);
-        $response->assertDontSee('demo.automotive.seven-scapital.com', false);
+        $response->assertSee($tenantId . '.seven-scapital.com', false);
+        $response->assertDontSee($tenantId . '.automotive.seven-scapital.com', false);
     }
 
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price, ?int $productId = null): Plan

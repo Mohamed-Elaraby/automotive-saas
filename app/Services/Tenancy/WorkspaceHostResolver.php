@@ -16,13 +16,16 @@ class WorkspaceHostResolver
         $host = preg_replace('#:\d+$#', '', $host) ?? $host;
         $host = trim($host, '/');
 
-        foreach (['www.', 'automotive.', 'spareparts.'] as $prefix) {
-            if (str_starts_with($host, $prefix)) {
-                return substr($host, strlen($prefix));
-            }
+        if (str_starts_with($host, 'www.')) {
+            $host = substr($host, 4);
         }
 
-        return $host;
+        foreach (['automotive', 'spareparts'] as $segment) {
+            $pattern = '/(^|\.)' . preg_quote($segment, '/') . '\.(seven-scapital\.com)$/';
+            $host = preg_replace($pattern, '$1$2', $host) ?? $host;
+        }
+
+        return ltrim($host, '.');
     }
 
     public function tenantDomain(string $subdomain, ?string $host): string
