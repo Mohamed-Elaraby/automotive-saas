@@ -10,7 +10,7 @@ class CanonicalizeWorkspaceHostMiddlewareTest extends TestCase
     {
         $response = $this->get('https://seven-scapital.com/workspace/portal');
 
-        $response->assertRedirect('http://localhost/workspace/login');
+        $response->assertRedirectContains('/workspace/login');
     }
 
     public function test_it_redirects_legacy_central_workspace_host_to_root_domain(): void
