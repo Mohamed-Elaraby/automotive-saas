@@ -37,9 +37,20 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+$centralRootHosts = array_values(array_unique(array_filter(array_merge(
+    (array) config('tenancy.central_domains', []),
+    [parse_url((string) config('app.url'), PHP_URL_HOST)]
+))));
+
+foreach ($centralRootHosts as $index => $host) {
+    $route = Route::domain($host)->get('/', function () {
+        return view('welcome');
+    });
+
+    if ($index === 0) {
+        $route->name('home');
+    }
+}
 
 Auth::routes();
 
