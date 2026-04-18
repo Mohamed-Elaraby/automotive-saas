@@ -6,6 +6,13 @@ use Tests\TestCase;
 
 class CanonicalizeWorkspaceHostMiddlewareTest extends TestCase
 {
+    public function test_canonical_workspace_portal_path_redirects_guest_to_login_on_root_domain(): void
+    {
+        $response = $this->get('https://seven-scapital.com/workspace/portal');
+
+        $response->assertRedirect('http://localhost/workspace/login');
+    }
+
     public function test_it_redirects_legacy_central_workspace_host_to_root_domain(): void
     {
         $response = $this->get('https://automotive.seven-scapital.com/workspace/login?product=accounting');
