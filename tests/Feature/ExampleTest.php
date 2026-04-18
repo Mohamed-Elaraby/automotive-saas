@@ -15,6 +15,6 @@ class ExampleTest extends TestCase
         $response = $this->get('https://seven-scapital.com/');
 
         $response->assertOk();
-        $response->assertSee('Laravel', false);
+        $response->assertSee('Dashboard', false);
     }
 }

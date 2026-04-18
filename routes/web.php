@@ -44,7 +44,7 @@ $centralRootHosts = array_values(array_unique(array_filter(array_merge(
 
 foreach ($centralRootHosts as $index => $host) {
     $route = Route::domain($host)->get('/', function () {
-        return view('welcome');
+        return view('index');
     });
 
     if ($index === 0) {
