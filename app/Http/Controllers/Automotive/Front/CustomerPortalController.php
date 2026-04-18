@@ -15,6 +15,7 @@ use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Notifications\AdminNotificationService;
+use App\Services\Tenancy\WorkspaceHostResolver;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -37,7 +38,8 @@ class CustomerPortalController extends Controller
     public function __construct(
         protected AppSettingsService $settingsService,
         protected BillingPlanCatalogService $billingPlanCatalogService,
-        protected AdminNotificationService $adminNotificationService
+        protected AdminNotificationService $adminNotificationService,
+        protected WorkspaceHostResolver $workspaceHostResolver
     ) {
     }
 
@@ -242,7 +244,7 @@ class CustomerPortalController extends Controller
             'company_name' => $profile->company_name,
             'subdomain' => strtolower(trim((string) $profile->subdomain)),
             'coupon_code' => $this->displayableCouponCode($profile, $user) ?? '',
-            'base_host' => $profile->base_host ?: request()->getHost(),
+            'base_host' => $this->workspaceHostResolver->canonicalBaseHost($profile->base_host ?: request()->getHost()),
             'product_id' => ! empty($validated['product_id']) ? (int) $validated['product_id'] : null,
         ];
 
@@ -1102,13 +1104,13 @@ class CustomerPortalController extends Controller
 
     protected function fallbackDomainsForTenant(string $tenantId, ?CustomerOnboardingProfile $profile = null): Collection
     {
-        $baseHost = strtolower(trim((string) ($profile?->base_host ?? '')));
+        $baseHost = $this->workspaceHostResolver->canonicalBaseHost($profile?->base_host ?? '');
 
         if ($tenantId === '' || $baseHost === '') {
             return collect();
         }
 
-        $domain = strtolower($tenantId . '.' . $baseHost);
+        $domain = $this->workspaceHostResolver->tenantDomain($tenantId, $baseHost);
         $baseUrl = 'https://' . $domain;
 
         return collect([[

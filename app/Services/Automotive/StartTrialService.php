@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Billing\TenantProductSubscriptionSyncService;
 use App\Services\Billing\TrialSignupCouponService;
+use App\Services\Tenancy\WorkspaceHostResolver;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -19,7 +20,8 @@ class StartTrialService
 {
     public function __construct(
         protected TrialSignupCouponService $trialSignupCouponService,
-        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService,
+        protected WorkspaceHostResolver $workspaceHostResolver
     ) {
     }
 
@@ -28,11 +30,11 @@ public function start(array $data): array
     $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
 
     $sub = strtolower(trim($data['subdomain']));
-    $baseHost = strtolower(trim($data['base_host'] ?? 'automotive.seven-scapital.com'));
+    $baseHost = $this->workspaceHostResolver->canonicalBaseHost($data['base_host'] ?? 'seven-scapital.com');
     $couponCode = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
 
     $tenantId = $sub;
-    $fullDomain = "{$sub}.{$baseHost}";
+    $fullDomain = $this->workspaceHostResolver->tenantDomain($sub, $baseHost);
 
     if (Domain::query()->where('domain', $fullDomain)->exists()) {
         return [

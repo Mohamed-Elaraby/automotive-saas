@@ -267,4 +267,58 @@ class StartTrialServiceTest extends TestCase
             \Carbon\Carbon::parse($subscription->trial_ends_at)->format('Y-m-d')
         );
     }
+
+    public function test_it_uses_root_host_when_base_host_is_not_provided(): void
+    {
+        Event::fake([TenantCreated::class]);
+        Config::set('tenancy.bootstrappers', []);
+
+        $automotiveProductId = Product::query()->where('code', 'automotive_service')->value('id');
+
+        Plan::query()->create([
+            'product_id' => $automotiveProductId,
+            'name' => 'Trial Root Host',
+            'slug' => 'trial-root-host-' . uniqid(),
+            'description' => 'Trial plan',
+            'price' => 0,
+            'currency' => 'USD',
+            'billing_period' => 'trial',
+            'trial_days' => 14,
+            'is_active' => true,
+            'stripe_product_id' => null,
+            'stripe_price_id' => null,
+        ]);
+
+        $couponService = Mockery::mock(TrialSignupCouponService::class);
+        $couponService->shouldReceive('validateForTrialSignup')
+            ->once()
+            ->andReturn([
+                'ok' => true,
+                'coupon' => null,
+                'eligibility' => null,
+            ]);
+        $couponService->shouldNotReceive('attachCouponToSubscription');
+
+        $this->app->instance(TrialSignupCouponService::class, $couponService);
+
+        Artisan::shouldReceive('call')
+            ->once()
+            ->andReturn(0);
+
+        $service = app(StartTrialService::class);
+
+        $result = $service->start([
+            'name' => 'Root Host User',
+            'email' => 'root-host@example.test',
+            'password' => 'secret-pass',
+            'company_name' => 'Root Host Company',
+            'subdomain' => 'demo',
+            'coupon_code' => '',
+            'product_id' => $automotiveProductId,
+        ]);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame('demo.seven-scapital.com', $result['domain']);
+        $this->assertSame('https://demo.seven-scapital.com/workspace', $result['login_url']);
+    }
 }

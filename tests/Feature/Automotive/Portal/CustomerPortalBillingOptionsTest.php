@@ -2208,6 +2208,67 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertSee('This product is already attached to your workspace.', false);
     }
 
+    public function test_portal_normalizes_legacy_product_prefixed_base_host_when_falling_back_to_workspace_domain(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Legacy Host User',
+            'email' => 'portal-legacy-host-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Legacy Host Co',
+            'subdomain' => 'demo',
+            'base_host' => 'automotive.seven-scapital.com',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'demo',
+            'data' => ['company_name' => 'Portal Legacy Host Co'],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $partsProduct = Product::query()->create([
+            'code' => 'parts_inventory_legacy_host_' . uniqid(),
+            'name' => 'Parts Inventory Management',
+            'slug' => 'parts-inventory-legacy-host-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $partsPlan = $this->createPlan(
+            'Parts Legacy Host Plan',
+            'parts-legacy-host-plan-' . uniqid(),
+            'monthly',
+            199,
+            $partsProduct->id
+        );
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_legacy_host',
+            'gateway_subscription_id' => 'sub_legacy_host',
+            'gateway_price_id' => $partsPlan->stripe_price_id,
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal'));
+
+        $response->assertOk();
+        $response->assertSee('Open My Workspace', false);
+        $response->assertSee('demo.seven-scapital.com', false);
+        $response->assertDontSee('demo.automotive.seven-scapital.com', false);
+    }
+
     protected function createPlan(string $name, string $slug, string $billingPeriod, int $price, ?int $productId = null): Plan
     {
         $productId = $productId ?: Product::query()->where('code', 'automotive_service')->value('id');

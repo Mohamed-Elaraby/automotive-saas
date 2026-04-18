@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Admin\AppSettingsService;
 use App\Services\Billing\TrialSignupCouponService;
+use App\Services\Tenancy\WorkspaceHostResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,8 @@ use Stancl\Tenancy\Database\Models\Domain;
 class RegisterController extends Controller
 {
     public function __construct(
-        protected AppSettingsService $settingsService
+        protected AppSettingsService $settingsService,
+        protected WorkspaceHostResolver $workspaceHostResolver
     ) {
     }
 
@@ -51,7 +53,7 @@ public function previewCoupon(
 
     $validator->after(function ($validator) use ($request) {
         $subdomain = strtolower(trim((string) $request->input('subdomain')));
-        $baseHost = strtolower(trim((string) $request->getHost()));
+        $baseHost = $this->workspaceHostResolver->canonicalBaseHost($request->getHost());
 
         if (! $this->subdomainIsAvailable($subdomain, $baseHost)) {
             $validator->errors()->add('subdomain', 'This subdomain is not available.');
@@ -132,7 +134,7 @@ public function submit(Request $request): RedirectResponse
 
     $validator->after(function ($validator) use ($request) {
         $subdomain = strtolower(trim((string) $request->input('subdomain')));
-        $baseHost = strtolower(trim((string) $request->getHost()));
+        $baseHost = $this->workspaceHostResolver->canonicalBaseHost($request->getHost());
 
         if (! $this->subdomainIsAvailable($subdomain, $baseHost)) {
             $validator->errors()->add('subdomain', 'This subdomain is not available.');
@@ -157,7 +159,7 @@ public function submit(Request $request): RedirectResponse
             'company_name' => $data['company_name'],
             'subdomain' => strtolower(trim((string) $data['subdomain'])),
             'coupon_code' => strtoupper(trim((string) ($data['coupon_code'] ?? ''))),
-            'base_host' => $request->getHost(),
+            'base_host' => $this->workspaceHostResolver->canonicalBaseHost($request->getHost()),
             'password_payload' => Crypt::encryptString((string) $data['password']),
         ]
     );
@@ -175,7 +177,7 @@ protected function subdomainIsAvailable(string $subdomain, string $baseHost): bo
         return false;
     }
 
-    $fullDomain = $baseHost !== '' ? "{$subdomain}.{$baseHost}" : $subdomain;
+    $fullDomain = $this->workspaceHostResolver->tenantDomain($subdomain, $baseHost);
 
     if (Tenant::query()->where('id', $subdomain)->exists()) {
         return false;

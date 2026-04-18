@@ -3,9 +3,15 @@
 namespace App\Services\Automotive;
 
 use Illuminate\Http\Request;
+use App\Services\Tenancy\WorkspaceHostResolver;
 
 class TenantUrlBuilder
 {
+    public function __construct(
+        protected WorkspaceHostResolver $workspaceHostResolver
+    ) {
+    }
+
     public function tenantLoginUrl(Request $request, string $subdomain): string
     {
         $scheme = $request->getScheme();
@@ -25,14 +31,7 @@ class TenantUrlBuilder
 
     protected function buildTenantHost(string $currentHost, string $subdomain): string
     {
-        $currentHost = strtolower($currentHost);
-        $subdomain = strtolower($subdomain);
-
-        if (str_starts_with($currentHost, $subdomain . '.')) {
-            return $currentHost;
-        }
-
-        return $subdomain . '.' . $currentHost;
+        return $this->workspaceHostResolver->tenantDomain($subdomain, $currentHost);
     }
 
     protected function shouldAppendPort(string $scheme, int|string|null $port): bool

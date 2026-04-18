@@ -5,12 +5,18 @@ namespace App\Services\Automotive;
 use App\Models\CustomerOnboardingProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\WorkspaceHostResolver;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Stancl\Tenancy\Database\Models\Domain;
 
 class ProvisionTenantWorkspaceService
 {
+    public function __construct(
+        protected WorkspaceHostResolver $workspaceHostResolver
+    ) {
+    }
+
     public function ensureProvisioned(string $tenantId): void
     {
         $profile = CustomerOnboardingProfile::query()
@@ -30,7 +36,10 @@ class ProvisionTenantWorkspaceService
             ]);
         }
 
-        $fullDomain = $tenantId . '.' . strtolower(trim((string) ($profile->base_host ?: request()->getHost())));
+        $fullDomain = $this->workspaceHostResolver->tenantDomain(
+            $tenantId,
+            $profile->base_host ?: request()->getHost()
+        );
 
         if (! Domain::query()->where('domain', $fullDomain)->exists()) {
             Domain::query()->create([

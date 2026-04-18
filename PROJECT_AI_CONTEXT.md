@@ -980,3 +980,35 @@ Important files:
 - `app/Services/Admin/AppSettingsService.php`
 - `app/Services/Tenancy/WorkspaceManifestService.php`
 - `tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php`
+
+## 28) Canonical Tenant Host Structure
+Status:
+- started
+- tenant workspace hosts now normalize to the root domain instead of product-prefixed central hosts
+
+Current behavior:
+- tenant domains now canonicalize around:
+  - `demo.seven-scapital.com`
+- product-prefixed central hosts like:
+  - `automotive.seven-scapital.com`
+  - `spareparts.seven-scapital.com`
+  are now treated as legacy aliases for central access only
+- host normalization now runs through a shared resolver used by:
+  - registration
+  - trial provisioning
+  - tenant workspace provisioning
+  - portal fallback workspace URLs
+  - tenant URL building
+- legacy stored `base_host` values that include `automotive.` now resolve back to the root host automatically
+
+Important files:
+- `app/Services/Tenancy/WorkspaceHostResolver.php`
+- `app/Services/Automotive/TenantUrlBuilder.php`
+- `app/Services/Automotive/StartTrialService.php`
+- `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
+- `app/Http/Controllers/Automotive/Front/Auth/RegisterController.php`
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `config/tenancy.php`
+- `tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
+- `tests/Feature/Automotive/Portal/StartTrialServiceTest.php`
+- `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
