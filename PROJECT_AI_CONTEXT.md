@@ -1012,8 +1012,12 @@ Important files:
 - `app/Http/Middleware/CanonicalizeWorkspaceHost.php`
 - `config/tenancy.php`
 - `deploy/nginx/seven-scapital.conf.example`
+- `deploy/apache/seven-scapital.conf.example`
+- `deploy/WORKSPACE_ROUTING_CHECKLIST.md`
 - `.env.example`
+- `app/Console/Commands/Tenancy/DiagnoseWorkspaceRoutingCommand.php`
 - `tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php`
+- `tests/Feature/Tenancy/DiagnoseWorkspaceRoutingCommandTest.php`
 - `tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
 - `tests/Feature/Automotive/Portal/StartTrialServiceTest.php`
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`

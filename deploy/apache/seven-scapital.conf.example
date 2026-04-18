@@ -1,0 +1,30 @@
+<VirtualHost *:80>
+    ServerName seven-scapital.com
+    ServerAlias www.seven-scapital.com *.seven-scapital.com
+
+    RewriteEngine On
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+    ServerName seven-scapital.com
+    ServerAlias www.seven-scapital.com *.seven-scapital.com
+
+    DocumentRoot /var/www/automotive-saas/public
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/seven-scapital.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/seven-scapital.com/privkey.pem
+
+    <Directory /var/www/automotive-saas/public>
+        AllowOverride All
+        Require all granted
+        Options Indexes FollowSymLinks
+        DirectoryIndex index.php
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/seven-scapital-error.log
+    CustomLog ${APACHE_LOG_DIR}/seven-scapital-access.log combined
+</VirtualHost>
+</IfModule>

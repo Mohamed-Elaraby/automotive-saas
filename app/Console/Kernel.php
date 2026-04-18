@@ -8,6 +8,7 @@ use App\Console\Commands\Billing\RepairTenantProductSubscriptionMirrorsCommand;
 use App\Console\Commands\Billing\SyncStripePlanPricesCommand;
 use App\Console\Commands\Billing\VerifyBillingPlanPricesCommand;
 use App\Console\Commands\Notifications\CleanupNotificationsCommand;
+use App\Console\Commands\Tenancy\DiagnoseWorkspaceRoutingCommand;
 use App\Console\Commands\TenantsCleanup;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -22,6 +23,7 @@ class Kernel extends ConsoleKernel
         VerifyBillingPlanPricesCommand::class,
         SyncStripePlanPricesCommand::class,
         CleanupNotificationsCommand::class,
+        DiagnoseWorkspaceRoutingCommand::class,
     ];
 
     protected function schedule(Schedule $schedule): void
