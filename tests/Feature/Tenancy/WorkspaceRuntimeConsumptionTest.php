@@ -48,8 +48,9 @@ class WorkspaceRuntimeConsumptionTest extends TestCase
                     'integrations' => [
                         [
                             'key' => 'perfume-accounting',
-                            'requires_family' => 'accounting',
+                            'target_product_code' => 'ACCOUNTING',
                             'title' => 'Retail can hand off to accounting',
+                            'description' => 'Retail sales can move into accounting workflows.',
                             'target_label' => 'Open Accounting',
                             'target_route' => 'automotive.admin.modules.general-ledger',
                         ],
@@ -100,6 +101,25 @@ class WorkspaceRuntimeConsumptionTest extends TestCase
                 'product_code' => 'accounting',
                 'product_slug' => 'accounting',
                 'product_name' => 'Accounting System',
+                'status_label' => 'ACTIVE',
+                'is_accessible' => false,
+            ],
+        ]);
+
+        $this->assertSame([], $integrations->getIntegrations($workspaceProducts, $focusedProduct));
+
+        $workspaceProducts = new Collection([
+            [
+                'product_code' => 'perfume_retail',
+                'product_slug' => 'perfume-retail',
+                'product_name' => 'Perfume Retail Management',
+                'is_accessible' => true,
+            ],
+            [
+                'product_code' => 'accounting',
+                'product_slug' => 'accounting',
+                'product_name' => 'Accounting System',
+                'status_label' => 'ACTIVE',
                 'is_accessible' => true,
             ],
         ]);
@@ -108,5 +128,8 @@ class WorkspaceRuntimeConsumptionTest extends TestCase
 
         $this->assertCount(1, $integrationItems);
         $this->assertSame('perfume-accounting', $integrationItems[0]['key']);
+        $this->assertSame('Accounting System', $integrationItems[0]['target_product_name']);
+        $this->assertSame('accounting', $integrationItems[0]['target_product_code']);
+        $this->assertSame(['workspace_product' => 'accounting'], $integrationItems[0]['target_params']);
     }
 }

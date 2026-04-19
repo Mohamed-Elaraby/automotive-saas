@@ -199,6 +199,9 @@ class TenantAdminAccessFlowTest extends TestCase
         $dashboardResponse->assertSee('Accounting Suite', false);
         $dashboardResponse->assertSee('Spare Parts', false);
         $dashboardResponse->assertSee('Connected', false);
+        $dashboardResponse->assertSee('Cross-Product Integrations', false);
+        $dashboardResponse->assertSee('Target: Spare Parts', false);
+        $dashboardResponse->assertSee('Open Spare Parts', false);
 
         $focusedResponse = $this->get("http://{$domain}/automotive/admin/dashboard?workspace_product={$accountingProduct->code}");
 

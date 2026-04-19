@@ -1033,3 +1033,32 @@ Deployment notes:
   - `APP_URL=https://seven-scapital.com`
   - `SESSION_DOMAIN=.seven-scapital.com`
   - `SESSION_SECURE_COOKIE=true`
+
+## 29) Integration Runtime Rendering
+Status:
+- completed
+- workspace integrations now render consistently in tenant runtime screens
+
+Current behavior:
+- `WorkspaceIntegrationCatalogService` resolves integration targets from:
+  - manifest `requires_family`
+  - manifest/admin `target_family`
+  - admin `target_product_code`
+- integration cards only become available when the target product is active and accessible in the same tenant workspace
+- rendered integration cards now include:
+  - title
+  - description
+  - target product name
+  - target status badge
+  - action button to the target runtime route with `workspace_product` context
+- dashboard, module pages, and work-order pages share one Blade partial for integration cards
+- invalid route rendering is guarded at the Blade layer so bad draft routes do not break the whole screen
+
+Important files:
+- `app/Services/Tenancy/WorkspaceIntegrationCatalogService.php`
+- `resources/views/automotive/admin/partials/workspace-integrations.blade.php`
+- `resources/views/automotive/admin/dashboard/index.blade.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/work-order-show.blade.php`
+- `tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
