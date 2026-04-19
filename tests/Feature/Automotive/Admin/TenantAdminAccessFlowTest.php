@@ -86,10 +86,14 @@ class TenantAdminAccessFlowTest extends TestCase
         $workspaceRootResponse = $this->get("http://{$domain}/workspace");
         $workspaceRootResponse->assertOk();
         $workspaceRootResponse->assertSee('Login', false);
+        $workspaceRootResponse->assertDontSee('Workspace Products', false);
+        $workspaceRootResponse->assertDontSee('Logout', false);
 
         $legacyLoginResponse = $this->get("http://{$domain}/automotive/admin/login");
         $legacyLoginResponse->assertOk();
         $legacyLoginResponse->assertSee('Login', false);
+        $legacyLoginResponse->assertDontSee('Workspace Products', false);
+        $legacyLoginResponse->assertDontSee('Logout', false);
 
         $loginResponse = $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,

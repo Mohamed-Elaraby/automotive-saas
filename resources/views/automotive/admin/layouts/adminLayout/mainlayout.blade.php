@@ -2,8 +2,12 @@
 
 @php
     $tenantAdminAuthRoutes = [
+        'automotive.admin.home',
         'automotive.admin.login',
         'automotive.admin.subscription.expired',
+        'legacy.automotive.admin.home',
+        'legacy.automotive.admin.login',
+        'legacy.automotive.admin.subscription.expired',
     ];
 
     $isTenantAdminAuthRoute = Route::is($tenantAdminAuthRoutes);
