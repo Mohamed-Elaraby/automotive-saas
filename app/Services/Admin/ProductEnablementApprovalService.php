@@ -6,12 +6,14 @@ use App\Data\CustomerPortalNotificationData;
 use App\Models\ProductEnablementRequest;
 use App\Models\TenantProductSubscription;
 use App\Services\Notifications\CustomerPortalNotificationService;
+use App\Services\Tenancy\WorkspaceProductActivationService;
 use Illuminate\Support\Facades\DB;
 
 class ProductEnablementApprovalService
 {
     public function __construct(
-        protected CustomerPortalNotificationService $customerPortalNotificationService
+        protected CustomerPortalNotificationService $customerPortalNotificationService,
+        protected WorkspaceProductActivationService $workspaceProductActivationService
     ) {
     }
 
@@ -35,6 +37,13 @@ class ProductEnablementApprovalService
                 ->first();
 
             if ($attachedSubscription) {
+                if ((string) $attachedSubscription->status === 'active') {
+                    $attachedSubscription = $this->workspaceProductActivationService->markActive(
+                        $attachedSubscription,
+                        'enablement_approval'
+                    );
+                }
+
                 $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'approved', true);
 
                 return $attachedSubscription;
@@ -66,7 +75,10 @@ class ProductEnablementApprovalService
                     'gateway_price_id' => null,
                 ])->save();
 
-                $freshSubscription = $manualSubscription->fresh();
+                $freshSubscription = $this->workspaceProductActivationService->markActive(
+                    $manualSubscription->fresh(),
+                    'enablement_approval'
+                );
                 $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'approved', true);
 
                 return $freshSubscription;
@@ -79,6 +91,11 @@ class ProductEnablementApprovalService
                 'status' => 'active',
                 'payment_failures_count' => 0,
             ]);
+
+            $subscription = $this->workspaceProductActivationService->markActive(
+                $subscription,
+                'enablement_approval'
+            );
 
             $this->emitDecisionNotifications($request->fresh(['product', 'user']), 'approved', true);
 

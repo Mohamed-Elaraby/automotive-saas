@@ -504,6 +504,11 @@
                                                     <div class="small"><strong>Ends:</strong> {{ $productSubscription['ends_at'] ?: '-' }}</div>
                                                     <div class="small"><strong>Cancelled:</strong> {{ $productSubscription['cancelled_at'] ?: '-' }}</div>
                                                     <div class="small"><strong>Past Due:</strong> {{ $productSubscription['past_due_started_at'] ?: '-' }}</div>
+                                                    <div class="small"><strong>Activation:</strong> {{ strtoupper(str_replace('_', ' ', (string) ($productSubscription['activation_status'] ?: 'pending'))) }}</div>
+                                                    <div class="small"><strong>Provisioning:</strong> {{ strtoupper(str_replace('_', ' ', (string) ($productSubscription['provisioning_status'] ?: 'pending'))) }}</div>
+                                                    @if(!empty($productSubscription['activation_error']))
+                                                        <div class="small text-danger"><strong>Diagnostic:</strong> {{ $productSubscription['activation_error'] }}</div>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach

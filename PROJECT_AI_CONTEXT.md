@@ -159,6 +159,7 @@ Current rule:
 - `app/Http/Controllers/Automotive/Admin/DashboardController.php`
 - `app/Http/Middleware/EnsureTenantHasWorkspaceProduct.php`
 - `app/Services/Tenancy/TenantWorkspaceProductService.php`
+- `app/Services/Tenancy/WorkspaceProductActivationService.php`
 - `app/Services/Tenancy/WorkspaceManifestService.php`
 - `app/Services/Tenancy/WorkspaceModuleCatalogService.php`
 - `app/Services/Tenancy/WorkspaceIntegrationCatalogService.php`
@@ -601,10 +602,13 @@ If a new session starts and reads only this section, the safe understanding is:
   - workshop can consume spare parts
   - completed work orders can generate local accounting handoff events
 
-## 15) Recommended Next Package
-When a new AI session starts from this file, the next package to start immediately is:
+## 15) Recently Completed Package
+This package was completed in the current work cycle:
 
 ### Provisioning And Activation Flow
+Status:
+- completed
+
 Scope:
 - complete the post-checkout/post-approval path from "product is paid/approved" to "product is active and usable in the tenant workspace"
 - make product activation explicit, observable, and safe for every product family
@@ -618,7 +622,7 @@ Scope:
   - tenant workspace access decisions
 - ensure product runtime visibility depends on activation state, not only on plan/payment metadata
 
-Why this is next:
+Why this was needed:
 - product lifecycle UI now exists through:
   - product builder
   - capabilities
@@ -635,7 +639,7 @@ Why this is next:
 - the remaining gap is the activation/provisioning layer that turns billing/approval outcomes into reliable workspace availability
 - this prevents cases where payment succeeds but the portal still says workspace access is finalizing forever
 
-Suggested start files:
+Files inspected/used:
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
 - `app/Http/Controllers/Automotive/Webhooks/StripeWebhookController.php`
 - `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
@@ -665,6 +669,63 @@ Acceptance criteria:
   - enablement approval activation
   - failed/missing provisioning status in portal
   - tenant runtime visibility based on activation state
+
+Completed behavior:
+- `tenant_product_subscriptions` now carries explicit activation/provisioning state:
+  - `activation_status`
+  - `provisioning_status`
+  - `provisioning_started_at`
+  - `provisioning_completed_at`
+  - `provisioning_failed_at`
+  - `activated_at`
+  - `activation_error`
+  - `activation_source`
+- successful Stripe checkout completion now marks the product subscription as provisioning, provisions the tenant workspace, then marks the product active
+- failed provisioning is recorded on the product subscription instead of silently leaving the portal in an ambiguous state
+- additional direct-billed products use the same activation path as first paid products
+- product enablement approval marks the attached product subscription active and provisioned
+- tenant runtime module access now requires product activation/provisioning state to allow runtime access, not billing status alone
+- customer portal product cards and selected product panels show deterministic provisioning states:
+  - `Payment Pending Webhook`
+  - `Provisioning In Progress`
+  - `Active And Ready`
+  - `Provisioning Failed`
+- central admin tenant/product subscription screens expose activation/provisioning state and diagnostics
+
+Important files added/changed:
+- `database/migrations/2026_04_19_054718_add_activation_state_to_tenant_product_subscriptions_table.php`
+- `app/Services/Tenancy/WorkspaceProductActivationService.php`
+- `app/Services/Tenancy/TenantWorkspaceProductService.php`
+- `app/Services/Billing/StripeWebhookSyncService.php`
+- `app/Services/Admin/ProductEnablementApprovalService.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Automotive/StartAdditionalProductCheckoutService.php`
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `resources/views/admin/tenants/product-subscription-show.blade.php`
+- `resources/views/admin/tenants/product-subscriptions.blade.php`
+- `resources/views/admin/tenants/show.blade.php`
+- `tests/Feature/Billing/StripeWebhookSyncServiceTest.php`
+- `tests/Feature/Admin/ProductEnablementRequestsIndexTest.php`
+- `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- default `php artisan test ...` attempted but the local default database connection tried to reach unavailable MySQL database `automotive_local`
+- targeted suite passed with SQLite override:
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Billing/StripeWebhookSyncServiceTest.php tests/Feature/Admin/ProductEnablementRequestsIndexTest.php tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 63 passed, 428 assertions
+
+## 15.1) Recommended Next Package
+When a new AI session starts from this file, the next package to start immediately is:
+
+### Accounting Runtime Depth
+Recommended scope:
+- deepen Accounting Runtime beyond the current General Ledger entry and accounting handoff events
+- journal entry runtime screens
+- posting groups
+- accounting event review/posting workflow
+- tests for accounting workspace access and work-order handoff review
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

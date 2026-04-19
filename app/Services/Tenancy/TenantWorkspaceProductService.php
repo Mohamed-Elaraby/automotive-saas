@@ -2,7 +2,6 @@
 
 namespace App\Services\Tenancy;
 
-use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -11,7 +10,8 @@ class TenantWorkspaceProductService
 {
     public function __construct(
         protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
-        protected WorkspaceManifestService $workspaceManifestService
+        protected WorkspaceManifestService $workspaceManifestService,
+        protected WorkspaceProductActivationService $workspaceProductActivationService
     ) {
     }
 
@@ -35,26 +35,43 @@ class TenantWorkspaceProductService
             return collect();
         }
 
+        $selectColumns = [
+            'tenant_product_subscriptions.id',
+            'tenant_product_subscriptions.tenant_id',
+            'tenant_product_subscriptions.product_id',
+            'tenant_product_subscriptions.plan_id',
+            'tenant_product_subscriptions.status',
+            'tenant_product_subscriptions.gateway',
+            'tenant_product_subscriptions.gateway_subscription_id',
+            'tenant_product_subscriptions.ends_at',
+            'products.code as product_code',
+            'products.name as product_name',
+            'products.slug as product_slug',
+            'plans.name as plan_name',
+        ];
+
+        foreach ([
+            'activation_status',
+            'provisioning_status',
+            'provisioning_started_at',
+            'provisioning_completed_at',
+            'provisioning_failed_at',
+            'activated_at',
+            'activation_error',
+            'activation_source',
+        ] as $column) {
+            if (Schema::connection($connection)->hasColumn('tenant_product_subscriptions', $column)) {
+                $selectColumns[] = "tenant_product_subscriptions.{$column}";
+            }
+        }
+
         $rows = DB::connection($connection)
             ->table('tenant_product_subscriptions')
             ->join('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
             ->leftJoin('plans', 'plans.id', '=', 'tenant_product_subscriptions.plan_id')
             ->where('tenant_product_subscriptions.tenant_id', $tenantId)
             ->orderByDesc('tenant_product_subscriptions.id')
-            ->get([
-                'tenant_product_subscriptions.id',
-                'tenant_product_subscriptions.tenant_id',
-                'tenant_product_subscriptions.product_id',
-                'tenant_product_subscriptions.plan_id',
-                'tenant_product_subscriptions.status',
-                'tenant_product_subscriptions.gateway',
-                'tenant_product_subscriptions.gateway_subscription_id',
-                'tenant_product_subscriptions.ends_at',
-                'products.code as product_code',
-                'products.name as product_name',
-                'products.slug as product_slug',
-                'plans.name as plan_name',
-            ]);
+            ->get($selectColumns);
 
         $capabilitiesByProductId = collect();
 
@@ -74,7 +91,7 @@ class TenantWorkspaceProductService
             ->unique('product_id')
             ->map(function (object $row) use ($capabilitiesByProductId): array {
                 $status = (string) ($row->status ?? '');
-                $isAccessible = in_array($status, SubscriptionStatuses::accessAllowedStatuses(), true);
+                $isAccessible = $this->workspaceProductActivationService->allowsRuntimeAccess($row);
                 $workspaceProduct = [
                     'product_code' => (string) ($row->product_code ?? ''),
                     'product_name' => (string) ($row->product_name ?? ('Product #' . $row->product_id)),
@@ -94,6 +111,9 @@ class TenantWorkspaceProductService
                     'capabilities' => $capabilitiesByProductId->get($row->product_id, []),
                     'status' => $status,
                     'status_label' => strtoupper(str_replace('_', ' ', $status ?: 'unknown')),
+                    'activation_status' => (string) ($row->activation_status ?? ''),
+                    'provisioning_status' => (string) ($row->provisioning_status ?? ''),
+                    'provisioning_error' => (string) ($row->activation_error ?? ''),
                     'is_accessible' => $isAccessible,
                     'is_primary_workspace_product' => $family === $this->workspaceManifestService->defaultFamily(),
                 ];

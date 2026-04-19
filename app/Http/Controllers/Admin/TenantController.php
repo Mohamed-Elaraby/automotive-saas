@@ -1138,6 +1138,14 @@ protected function productSubscriptionsByTenantIds(array $tenantIds): Collection
                     'plan_price' => $row->plan_price ?? null,
                     'plan_currency' => $row->plan_currency ?? null,
                     'status' => $row->status ?? null,
+                    'activation_status' => $row->activation_status ?? null,
+                    'provisioning_status' => $row->provisioning_status ?? null,
+                    'provisioning_started_at' => $row->provisioning_started_at ?? null,
+                    'provisioning_completed_at' => $row->provisioning_completed_at ?? null,
+                    'provisioning_failed_at' => $row->provisioning_failed_at ?? null,
+                    'activated_at' => $row->activated_at ?? null,
+                    'activation_error' => $row->activation_error ?? null,
+                    'activation_source' => $row->activation_source ?? null,
                     'trial_ends_at' => $row->trial_ends_at ?? null,
                     'grace_ends_at' => $row->grace_ends_at ?? null,
                     'last_payment_failed_at' => $row->last_payment_failed_at ?? null,
@@ -1165,35 +1173,52 @@ protected function productSubscriptionsByTenantIds(array $tenantIds): Collection
 
 protected function productSubscriptionsBaseQuery()
 {
+    $selectColumns = [
+        'tenant_product_subscriptions.id',
+        'tenant_product_subscriptions.tenant_id',
+        'tenant_product_subscriptions.product_id',
+        'tenant_product_subscriptions.plan_id',
+        'tenant_product_subscriptions.legacy_subscription_id',
+        'tenant_product_subscriptions.status',
+        'tenant_product_subscriptions.trial_ends_at',
+        'tenant_product_subscriptions.grace_ends_at',
+        'tenant_product_subscriptions.last_payment_failed_at',
+        'tenant_product_subscriptions.past_due_started_at',
+        'tenant_product_subscriptions.suspended_at',
+        'tenant_product_subscriptions.cancelled_at',
+        'tenant_product_subscriptions.payment_failures_count',
+        'tenant_product_subscriptions.ends_at',
+        'tenant_product_subscriptions.external_id',
+        'tenant_product_subscriptions.gateway',
+        'tenant_product_subscriptions.gateway_customer_id',
+        'tenant_product_subscriptions.gateway_subscription_id',
+        'tenant_product_subscriptions.gateway_checkout_session_id',
+        'tenant_product_subscriptions.gateway_price_id',
+        'tenant_product_subscriptions.last_synced_from_stripe_at',
+        'tenant_product_subscriptions.last_sync_status',
+        'tenant_product_subscriptions.last_sync_error',
+        'tenant_product_subscriptions.created_at',
+        'tenant_product_subscriptions.updated_at',
+    ];
+
+    foreach ([
+        'activation_status',
+        'provisioning_status',
+        'provisioning_started_at',
+        'provisioning_completed_at',
+        'provisioning_failed_at',
+        'activated_at',
+        'activation_error',
+        'activation_source',
+    ] as $column) {
+        if (Schema::connection($this->centralConnectionName())->hasColumn('tenant_product_subscriptions', $column)) {
+            $selectColumns[] = "tenant_product_subscriptions.{$column}";
+        }
+    }
+
     $query = DB::connection($this->centralConnectionName())
         ->table('tenant_product_subscriptions')
-        ->select([
-            'tenant_product_subscriptions.id',
-            'tenant_product_subscriptions.tenant_id',
-            'tenant_product_subscriptions.product_id',
-            'tenant_product_subscriptions.plan_id',
-            'tenant_product_subscriptions.legacy_subscription_id',
-            'tenant_product_subscriptions.status',
-            'tenant_product_subscriptions.trial_ends_at',
-            'tenant_product_subscriptions.grace_ends_at',
-            'tenant_product_subscriptions.last_payment_failed_at',
-            'tenant_product_subscriptions.past_due_started_at',
-            'tenant_product_subscriptions.suspended_at',
-            'tenant_product_subscriptions.cancelled_at',
-            'tenant_product_subscriptions.payment_failures_count',
-            'tenant_product_subscriptions.ends_at',
-            'tenant_product_subscriptions.external_id',
-            'tenant_product_subscriptions.gateway',
-            'tenant_product_subscriptions.gateway_customer_id',
-            'tenant_product_subscriptions.gateway_subscription_id',
-            'tenant_product_subscriptions.gateway_checkout_session_id',
-            'tenant_product_subscriptions.gateway_price_id',
-            'tenant_product_subscriptions.last_synced_from_stripe_at',
-            'tenant_product_subscriptions.last_sync_status',
-            'tenant_product_subscriptions.last_sync_error',
-            'tenant_product_subscriptions.created_at',
-            'tenant_product_subscriptions.updated_at',
-        ]);
+        ->select($selectColumns);
 
     if ($this->productsTableExists()) {
         $query->leftJoin('products', 'products.id', '=', 'tenant_product_subscriptions.product_id')
@@ -1347,6 +1372,14 @@ protected function findProductSubscriptionOrFail(int $subscriptionId): array
         'plan_currency' => $record->plan_currency ?? null,
         'legacy_subscription_id' => $record->legacy_subscription_id ?? null,
         'status' => $record->status ?? null,
+        'activation_status' => $record->activation_status ?? null,
+        'provisioning_status' => $record->provisioning_status ?? null,
+        'provisioning_started_at' => $record->provisioning_started_at ?? null,
+        'provisioning_completed_at' => $record->provisioning_completed_at ?? null,
+        'provisioning_failed_at' => $record->provisioning_failed_at ?? null,
+        'activated_at' => $record->activated_at ?? null,
+        'activation_error' => $record->activation_error ?? null,
+        'activation_source' => $record->activation_source ?? null,
         'trial_ends_at' => $record->trial_ends_at ?? null,
         'grace_ends_at' => $record->grace_ends_at ?? null,
         'last_payment_failed_at' => $record->last_payment_failed_at ?? null,
@@ -1384,6 +1417,9 @@ protected function productSubscriptionDiagnostics(array $subscription): array
         'last_sync_status' => $subscription['last_sync_status'] ?? null,
         'has_last_sync_error' => ! empty($subscription['last_sync_error']),
         'has_legacy_subscription_id' => ! empty($subscription['legacy_subscription_id']),
+        'is_runtime_active' => ($subscription['activation_status'] ?? null) === 'active'
+            && ($subscription['provisioning_status'] ?? null) === 'active',
+        'has_activation_error' => ! empty($subscription['activation_error']),
         'has_payment_failures' => (int) ($subscription['payment_failures_count'] ?? 0) > 0,
         'has_end_date' => ! empty($subscription['ends_at']),
     ];

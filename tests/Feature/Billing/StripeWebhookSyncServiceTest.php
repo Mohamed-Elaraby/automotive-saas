@@ -8,6 +8,7 @@ use App\Models\TenantProductSubscription;
 use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Services\Billing\StripeWebhookSyncService;
 use App\Services\Billing\TenantProductSubscriptionSyncService;
+use App\Services\Tenancy\WorkspaceProductActivationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Mockery;
@@ -56,7 +57,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -113,7 +115,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -174,7 +177,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -199,6 +203,14 @@ class StripeWebhookSyncServiceTest extends TestCase
 
         $this->assertSame('cus_test_bootstrap_001', $subscription->gateway_customer_id);
         $this->assertSame('sub_test_bootstrap_001', $subscription->gateway_subscription_id);
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => $subscription->tenant_id,
+            'plan_id' => $subscription->plan_id,
+            'status' => 'active',
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
+        ]);
     }
 
     public function test_checkout_session_completed_can_create_subscription_from_metadata_and_provision_workspace(): void
@@ -229,7 +241,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -265,6 +278,9 @@ class StripeWebhookSyncServiceTest extends TestCase
             'tenant_id' => 'tenant-metadata-webhook',
             'plan_id' => $plan->id,
             'gateway_subscription_id' => 'sub_test_metadata_001',
+            'status' => 'active',
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
         ]);
 
         $productSubscription = TenantProductSubscription::query()
@@ -314,13 +330,16 @@ class StripeWebhookSyncServiceTest extends TestCase
         $notificationService->shouldNotReceive('checkoutCompleted');
 
         $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
-        $provisionService->shouldNotReceive('ensureProvisioned');
+        $provisionService->shouldReceive('ensureProvisioned')
+            ->once()
+            ->with('tenant-product-webhook');
 
         $service = new StripeWebhookSyncService(
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -350,6 +369,87 @@ class StripeWebhookSyncServiceTest extends TestCase
         $this->assertSame('cs_test_product_checkout_001', $productSubscription->gateway_checkout_session_id);
         $this->assertSame('active', $productSubscription->status);
         $this->assertSame($plan->id, $productSubscription->plan_id);
+        $this->assertSame('active', $productSubscription->activation_status);
+        $this->assertSame('active', $productSubscription->provisioning_status);
+        $this->assertNotNull($productSubscription->activated_at);
+    }
+
+    public function test_checkout_session_completed_marks_product_activation_failed_when_provisioning_fails(): void
+    {
+        Carbon::setTestNow('2026-03-26 12:00:00');
+
+        $product = \App\Models\Product::query()->create([
+            'code' => 'activation_failure_' . uniqid(),
+            'name' => 'Activation Failure Product',
+            'slug' => 'activation-failure-' . uniqid(),
+            'is_active' => true,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Activation Failure Plan ' . uniqid(),
+            'slug' => 'activation-failure-plan-' . uniqid(),
+            'price' => 299,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_test_failure_' . uniqid(),
+            'stripe_price_id' => 'price_test_failure_' . uniqid(),
+        ]);
+
+        $productSubscription = TenantProductSubscription::query()->create([
+            'tenant_id' => 'tenant-product-provisioning-fails',
+            'product_id' => $product->id,
+            'plan_id' => null,
+            'status' => 'past_due',
+            'payment_failures_count' => 0,
+        ]);
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldNotReceive('syncByGatewaySubscriptionId');
+
+        $notificationService = Mockery::mock(\App\Services\Billing\BillingNotificationService::class);
+        $notificationService->shouldNotReceive('checkoutCompleted');
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldReceive('ensureProvisioned')
+            ->once()
+            ->with('tenant-product-provisioning-fails')
+            ->andThrow(new \RuntimeException('Tenant database migration failed.'));
+
+        $service = new StripeWebhookSyncService(
+            $syncService,
+            $notificationService,
+            $provisionService,
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
+        );
+
+        $event = (object) [
+            'type' => 'checkout.session.completed',
+            'data' => (object) [
+                'object' => (object) [
+                    'id' => 'cs_test_product_checkout_failed_001',
+                    'mode' => 'subscription',
+                    'payment_status' => 'paid',
+                    'customer' => 'cus_test_product_checkout_failed_001',
+                    'subscription' => 'sub_test_product_checkout_failed_001',
+                    'metadata' => (object) [
+                        'tenant_product_subscription_id' => (string) $productSubscription->id,
+                        'plan_id' => (string) $plan->id,
+                    ],
+                ],
+            ],
+        ];
+
+        $service->handleEvent($event);
+
+        $productSubscription->refresh();
+
+        $this->assertSame('active', $productSubscription->status);
+        $this->assertSame('failed', $productSubscription->activation_status);
+        $this->assertSame('failed', $productSubscription->provisioning_status);
+        $this->assertSame('Tenant database migration failed.', $productSubscription->activation_error);
     }
 
     public function test_invoice_payment_failed_updates_additional_product_subscription_to_past_due(): void
@@ -382,7 +482,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -440,7 +541,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [
@@ -494,7 +596,8 @@ class StripeWebhookSyncServiceTest extends TestCase
             $syncService,
             $notificationService,
             $provisionService,
-            app(TenantProductSubscriptionSyncService::class)
+            app(TenantProductSubscriptionSyncService::class),
+            app(WorkspaceProductActivationService::class)
         );
 
         $event = (object) [

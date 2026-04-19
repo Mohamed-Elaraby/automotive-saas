@@ -16,6 +16,7 @@ use App\Services\Automotive\StartTrialService;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Notifications\AdminNotificationService;
 use App\Services\Tenancy\WorkspaceHostResolver;
+use App\Services\Tenancy\WorkspaceProductActivationService;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -39,7 +40,8 @@ class CustomerPortalController extends Controller
         protected AppSettingsService $settingsService,
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected AdminNotificationService $adminNotificationService,
-        protected WorkspaceHostResolver $workspaceHostResolver
+        protected WorkspaceHostResolver $workspaceHostResolver,
+        protected WorkspaceProductActivationService $workspaceProductActivationService
     ) {
     }
 
@@ -117,6 +119,7 @@ class CustomerPortalController extends Controller
                 && filled($selectedProductSubscription->gateway_checkout_session_id ?? null)
                 && ! filled($selectedProductSubscription->gateway_subscription_id ?? null)
             );
+        $selectedProductProvisioningStatus = $this->workspaceProductActivationService->portalStatusFor($selectedProductSubscription);
         $selectedProductStatus = (string) ($selectedPrimarySubscription->status ?? '');
         $selectedProductIsTrialWorkspace = $selectedProductCode === self::PRODUCT_CODE
             ? $this->subscriptionRepresentsTrialWorkspace($selectedPrimarySubscription, $plan)
@@ -177,6 +180,7 @@ class CustomerPortalController extends Controller
             'selectedProductHasLiveBilling' => $selectedProductHasLiveBilling,
             'selectedProductStatus' => $selectedProductStatus,
             'selectedProductHasPendingCheckout' => $selectedProductHasPendingCheckout,
+            'selectedProductProvisioningStatus' => $selectedProductProvisioningStatus,
             'hasAnyWorkspace' => $hasAnyWorkspace,
             'selectedPortalBillingUrl' => $selectedPortalBillingUrl,
         ]);
@@ -747,6 +751,7 @@ class CustomerPortalController extends Controller
                 $hasPaidPlans = (int) ($paidPlanCountsByProductCode->get((string) $product->code) ?? 0) > 0;
                 $isSubscribed = $subscription !== null
                     && ! in_array($status, ['expired', 'canceled'], true);
+                $activationPortalStatus = $this->workspaceProductActivationService->portalStatusFor($subscription);
 
                 return [
                     'id' => $product->id,
@@ -761,6 +766,9 @@ class CustomerPortalController extends Controller
                     'is_subscribed' => $isSubscribed,
                     'tenant_id' => (string) ($subscription->tenant_id ?? $currentTenantId),
                     'subscription_status' => $status,
+                    'activation_status' => (string) ($subscription->activation_status ?? ''),
+                    'provisioning_status' => (string) ($subscription->provisioning_status ?? ''),
+                    'activation_portal_status' => $activationPortalStatus,
                     'status_label' => $this->productStatusLabel($product, $subscription, $hasPaidPlans),
                     'action_label' => $this->productActionLabel($product, $isSubscribed, $hasPaidPlans, $hasWorkspace),
                     'action_url' => route('automotive.portal', ['product' => $product->slug]) . '#paid-plans',
@@ -902,6 +910,12 @@ class CustomerPortalController extends Controller
     protected function productStatusLabel(Product $product, ?object $subscription, bool $hasPaidPlans = false): string
     {
         if ($subscription) {
+            $activationStatus = $this->workspaceProductActivationService->portalStatusFor($subscription);
+
+            if (($activationStatus['state'] ?? '') !== 'not_active') {
+                return strtoupper((string) $activationStatus['label']);
+            }
+
             return strtoupper(str_replace('_', ' ', (string) ($subscription->status ?? 'subscribed')));
         }
 
@@ -1143,7 +1157,19 @@ class CustomerPortalController extends Controller
     protected function workspaceHasAccessibleProduct(Collection $productCatalog, ?object $subscription = null): bool
     {
         if ($productCatalog->contains(function (array $productRow): bool {
-            return in_array((string) ($productRow['subscription_status'] ?? ''), SubscriptionStatuses::accessAllowedStatuses(), true);
+            if (! in_array((string) ($productRow['subscription_status'] ?? ''), SubscriptionStatuses::accessAllowedStatuses(), true)) {
+                return false;
+            }
+
+            if (($productRow['provisioning_status'] ?? '') === 'failed' || ($productRow['activation_status'] ?? '') === 'failed') {
+                return false;
+            }
+
+            if (($productRow['provisioning_status'] ?? '') === 'pending' || ($productRow['activation_status'] ?? '') === 'pending') {
+                return false;
+            }
+
+            return true;
         })) {
             return true;
         }

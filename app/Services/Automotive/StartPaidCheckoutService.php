@@ -10,6 +10,7 @@ use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Billing\CheckoutStripePlanRecoveryService;
 use App\Services\Billing\PaymentGatewayManager;
 use App\Services\Billing\TenantProductSubscriptionSyncService;
+use App\Services\Tenancy\WorkspaceProductActivationService;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -20,7 +21,8 @@ class StartPaidCheckoutService
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected CheckoutStripePlanRecoveryService $checkoutStripePlanRecoveryService,
         protected PaymentGatewayManager $paymentGatewayManager,
-        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService,
+        protected WorkspaceProductActivationService $workspaceProductActivationService
     ) {
     }
 
@@ -149,7 +151,14 @@ class StartPaidCheckoutService
                 }
 
                 $subscription->save();
-                $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
+                $productSubscription = $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
+
+                if ($productSubscription) {
+                    $this->workspaceProductActivationService->markProvisioning(
+                        $productSubscription,
+                        'portal_primary_checkout'
+                    );
+                }
             }
 
             return [

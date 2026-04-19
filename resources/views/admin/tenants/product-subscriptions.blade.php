@@ -299,6 +299,7 @@
                                 <th>Product</th>
                                 <th>Plan</th>
                                 <th>Status</th>
+                                <th>Activation</th>
                                 <th>Gateway</th>
                                 <th>Last Sync</th>
                                 <th>Identifiers</th>
@@ -358,6 +359,21 @@
                                         @endif
                                     </td>
                                     <td>
+                                        <div class="small">
+                                            <span class="fw-semibold">Activation:</span>
+                                            {{ strtoupper(str_replace('_', ' ', (string) ($subscription->activation_status ?: 'pending'))) }}
+                                        </div>
+                                        <div class="small">
+                                            <span class="fw-semibold">Provisioning:</span>
+                                            {{ strtoupper(str_replace('_', ' ', (string) ($subscription->provisioning_status ?: 'pending'))) }}
+                                        </div>
+                                        @if(!empty($subscription->activation_error))
+                                            <div class="small text-danger text-truncate" style="max-width: 220px;">
+                                                {{ $subscription->activation_error }}
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <div class="fw-semibold">{{ $subscription->gateway ? strtoupper((string) $subscription->gateway) : 'LOCAL' }}</div>
                                         <div class="small text-muted">{{ $subscription->gateway_price_id ?: '-' }}</div>
                                     </td>
@@ -411,7 +427,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted py-4">
+                                    <td colspan="12" class="text-center text-muted py-4">
                                         No product subscriptions matched the current filters.
                                     </td>
                                 </tr>

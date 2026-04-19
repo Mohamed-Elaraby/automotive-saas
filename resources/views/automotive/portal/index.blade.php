@@ -365,6 +365,9 @@
                                                 <div class="mb-3">
                                                     @if($productRow['is_subscribed'])
                                                         <p class="mb-1 text-success">This product is already attached to your workspace.</p>
+                                                        @if(!empty($productRow['activation_portal_status']['message']))
+                                                            <p class="mb-0 text-muted fs-13">{{ $productRow['activation_portal_status']['message'] }}</p>
+                                                        @endif
                                                     @elseif($productRow['is_automotive'])
                                                         <p class="mb-1 text-muted">This product is currently active in your workspace catalog.</p>
                                                     @else
@@ -435,6 +438,16 @@
                                             <span class="badge bg-white text-dark border">{{ $capabilityName }}</span>
                                         @endforeach
                                     </div>
+                                </div>
+                            @endif
+
+                            @if(!empty($selectedProductSubscription) && !empty($selectedProductProvisioningStatus))
+                                <div class="alert alert-{{ $selectedProductProvisioningStatus['severity'] ?? 'secondary' }} mb-4">
+                                    <div class="fw-semibold mb-1">{{ $selectedProductProvisioningStatus['label'] ?? 'Provisioning Status' }}</div>
+                                    <div>{{ $selectedProductProvisioningStatus['message'] ?? 'Workspace product provisioning status is being resolved.' }}</div>
+                                    @if(($selectedProductProvisioningStatus['state'] ?? '') === 'provisioning_failed' && !empty($selectedProductProvisioningStatus['error']))
+                                        <div class="small mt-2 text-muted">Diagnostic: {{ $selectedProductProvisioningStatus['error'] }}</div>
+                                    @endif
                                 </div>
                             @endif
 

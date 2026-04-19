@@ -383,6 +383,52 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertRedirect("http://{$domain}/workspace/admin/dashboard?workspace_product=parts_inventory");
     }
 
+    public function test_product_runtime_is_blocked_until_activation_state_is_ready(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $partsProduct = Product::query()->firstOrCreate(
+            ['code' => 'parts_inventory'],
+            [
+                'name' => 'Spare Parts Inventory',
+                'slug' => 'spare-parts-inventory',
+                'is_active' => true,
+                'sort_order' => 2,
+            ]
+        );
+
+        $partsPlan = Plan::query()->create([
+            'product_id' => $partsProduct->id,
+            'name' => 'Parts Pending Activation',
+            'slug' => 'parts-pending-activation-' . uniqid(),
+            'price' => 149,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $partsProduct->id,
+            'plan_id' => $partsPlan->id,
+            'status' => 'active',
+            'activation_status' => 'failed',
+            'provisioning_status' => 'failed',
+            'activation_error' => 'Tenant migration did not finish.',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_failed_activation_' . uniqid(),
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $response = $this->get("http://{$domain}/automotive/admin/products?workspace_product=parts_inventory");
+
+        $response->assertRedirect("http://{$domain}/workspace/admin/dashboard?workspace_product=parts_inventory");
+    }
+
     public function test_workshop_operations_show_connected_spare_parts_stock_snapshot(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

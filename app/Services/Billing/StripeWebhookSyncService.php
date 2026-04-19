@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Models\Subscription;
 use App\Models\TenantProductSubscription;
+use App\Services\Tenancy\WorkspaceProductActivationService;
 use App\Support\Billing\SubscriptionStatuses;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
@@ -17,7 +18,8 @@ class StripeWebhookSyncService
         protected StripeSubscriptionSyncService $stripeSubscriptionSyncService,
         protected BillingNotificationService $billingNotificationService,
         protected ProvisionTenantWorkspaceService $provisionTenantWorkspaceService,
-        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService,
+        protected WorkspaceProductActivationService $workspaceProductActivationService
     ) {
     }
 
@@ -315,6 +317,7 @@ protected function handleCheckoutSessionCompleted(array $payload): void
 
     if ($sessionSubscriptionId !== '') {
         $subscription->gateway_subscription_id = $sessionSubscriptionId;
+        $subscription->status = SubscriptionStatuses::ACTIVE;
     }
 
     $subscription->save();
@@ -327,11 +330,20 @@ protected function handleCheckoutSessionCompleted(array $payload): void
         $subscription = $subscription->fresh();
     }
 
-    if ($subscription) {
-        $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription);
+    if ($subscription && $sessionSubscriptionId !== '' && (string) $subscription->status === SubscriptionStatuses::PAST_DUE) {
+        $subscription->update(['status' => SubscriptionStatuses::ACTIVE]);
+        $subscription = $subscription->fresh();
     }
 
-    $this->provisionWorkspaceAfterSuccessfulCheckout($subscription);
+    $productSubscription = $subscription
+        ? $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription($subscription)
+        : null;
+
+    if ($productSubscription) {
+        $this->workspaceProductActivationService->markProvisioning($productSubscription, 'stripe_checkout_completed');
+    }
+
+    $this->provisionWorkspaceAfterSuccessfulCheckout($subscription, $productSubscription);
 
     $this->billingNotificationService->checkoutCompleted($subscription, [
         'stripe_event' => 'checkout.session.completed',
@@ -370,6 +382,17 @@ protected function handleTenantProductCheckoutSessionCompleted(
     }
 
     $productSubscription->save();
+
+    $this->workspaceProductActivationService->markProvisioning(
+        $productSubscription->fresh(),
+        'stripe_checkout_completed'
+    );
+
+    if ($sessionSubscriptionId === '') {
+        return;
+    }
+
+    $this->activateTenantProductAfterSuccessfulCheckout($productSubscription->fresh());
 }
 
 protected function findTenantProductSubscriptionByGatewaySubscriptionId(string $gatewaySubscriptionId): ?TenantProductSubscription
@@ -484,7 +507,9 @@ protected function markTenantProductSubscriptionRecovered(TenantProductSubscript
         'updated_at' => $recoveredAt ?? now(),
     ]);
 
-    return $subscription->fresh();
+    $subscription = $subscription->fresh();
+
+    return $this->workspaceProductActivationService->markActive($subscription, 'stripe_subscription_recovered');
 }
 
 protected function markTenantProductSubscriptionSuspended(TenantProductSubscription $subscription, ?Carbon $suspendedAt = null): TenantProductSubscription
@@ -590,15 +615,53 @@ protected function eventToArray(object $event): array
     return json_decode(json_encode($event, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), true) ?: [];
 }
 
-protected function provisionWorkspaceAfterSuccessfulCheckout(Subscription $subscription): void
+protected function provisionWorkspaceAfterSuccessfulCheckout(?Subscription $subscription, ?TenantProductSubscription $productSubscription = null): void
 {
-    if (blank($subscription->tenant_id)) {
+    if (! $subscription || blank($subscription->tenant_id)) {
         return;
     }
 
     try {
         $this->provisionTenantWorkspaceService->ensureProvisioned((string) $subscription->tenant_id);
+
+        if ($productSubscription) {
+            $this->workspaceProductActivationService->markActive(
+                $productSubscription->fresh(),
+                'stripe_checkout_completed'
+            );
+        }
     } catch (Throwable $e) {
+        if ($productSubscription) {
+            $this->workspaceProductActivationService->markFailed(
+                $productSubscription->fresh(),
+                $e,
+                'stripe_checkout_completed'
+            );
+        }
+
+        report($e);
+    }
+}
+
+protected function activateTenantProductAfterSuccessfulCheckout(TenantProductSubscription $productSubscription): void
+{
+    try {
+        if (blank($productSubscription->tenant_id)) {
+            return;
+        }
+
+        $this->provisionTenantWorkspaceService->ensureProvisioned((string) $productSubscription->tenant_id);
+        $this->workspaceProductActivationService->markActive(
+            $productSubscription->fresh(),
+            'stripe_checkout_completed'
+        );
+    } catch (Throwable $e) {
+        $this->workspaceProductActivationService->markFailed(
+            $productSubscription->fresh(),
+            $e,
+            'stripe_checkout_completed'
+        );
+
         report($e);
     }
 }

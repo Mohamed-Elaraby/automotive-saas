@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class TenantProductSubscription extends Model
 {
@@ -12,6 +13,14 @@ class TenantProductSubscription extends Model
         'plan_id',
         'legacy_subscription_id',
         'status',
+        'activation_status',
+        'provisioning_status',
+        'provisioning_started_at',
+        'provisioning_completed_at',
+        'provisioning_failed_at',
+        'activated_at',
+        'activation_error',
+        'activation_source',
         'trial_ends_at',
         'grace_ends_at',
         'last_payment_failed_at',
@@ -33,6 +42,10 @@ class TenantProductSubscription extends Model
 
     protected $casts = [
         'trial_ends_at' => 'datetime',
+        'provisioning_started_at' => 'datetime',
+        'provisioning_completed_at' => 'datetime',
+        'provisioning_failed_at' => 'datetime',
+        'activated_at' => 'datetime',
         'grace_ends_at' => 'datetime',
         'last_payment_failed_at' => 'datetime',
         'past_due_started_at' => 'datetime',
@@ -50,6 +63,25 @@ class TenantProductSubscription extends Model
         $this->setConnection(
             config('tenancy.database.central_connection') ?? config('database.default')
         );
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (TenantProductSubscription $subscription): void {
+            if (
+                in_array((string) $subscription->status, ['active', 'trialing'], true)
+                && blank($subscription->activation_status)
+                && blank($subscription->provisioning_status)
+                && Schema::connection($subscription->getConnectionName())->hasColumn($subscription->getTable(), 'activation_status')
+                && Schema::connection($subscription->getConnectionName())->hasColumn($subscription->getTable(), 'provisioning_status')
+            ) {
+                $subscription->activation_status = 'active';
+                $subscription->provisioning_status = 'active';
+                $subscription->provisioning_completed_at = $subscription->provisioning_completed_at ?? now();
+                $subscription->activated_at = $subscription->activated_at ?? now();
+                $subscription->activation_source = $subscription->activation_source ?? 'model_default';
+            }
+        });
     }
 
     public function product()

@@ -123,6 +123,8 @@ class ProductEnablementRequestsIndexTest extends TestCase
             'tenant_id' => 'tenant-approve',
             'product_id' => $product->id,
             'status' => 'active',
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
             'legacy_subscription_id' => null,
         ]);
         $this->assertDatabaseMissing('admin_notifications', [
@@ -241,6 +243,8 @@ class ProductEnablementRequestsIndexTest extends TestCase
             'tenant_id' => 'tenant-approve-existing',
             'product_id' => $product->id,
             'status' => 'active',
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
         ]);
         $this->assertSame(0, AdminNotification::query()->where('source_id', $requestRow->id)->count());
         $this->assertSame(1, CustomerPortalNotification::query()->where('user_id', $user->id)->count());

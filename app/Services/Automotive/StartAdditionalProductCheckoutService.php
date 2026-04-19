@@ -9,6 +9,7 @@ use App\Models\TenantProductSubscription;
 use App\Models\User;
 use App\Services\Billing\CheckoutStripePlanRecoveryService;
 use App\Services\Billing\PaymentGatewayManager;
+use App\Services\Tenancy\WorkspaceProductActivationService;
 use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +19,8 @@ class StartAdditionalProductCheckoutService
 
     public function __construct(
         protected CheckoutStripePlanRecoveryService $checkoutStripePlanRecoveryService,
-        protected PaymentGatewayManager $paymentGatewayManager
+        protected PaymentGatewayManager $paymentGatewayManager,
+        protected WorkspaceProductActivationService $workspaceProductActivationService
     ) {
     }
 
@@ -129,6 +131,11 @@ class StartAdditionalProductCheckoutService
                 'gateway_price_id' => (string) $paidPlan->stripe_price_id,
                 'gateway_subscription_id' => null,
             ])->save();
+
+            $this->workspaceProductActivationService->markProvisioning(
+                $productSubscription->fresh(),
+                'portal_additional_product_checkout'
+            );
 
             return [
                 'ok' => true,

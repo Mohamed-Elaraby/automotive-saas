@@ -90,6 +90,60 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee('Billing Managed In System', false);
     }
 
+    public function test_portal_shows_failed_product_provisioning_status(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Provisioning User',
+            'email' => 'portal-provisioning-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Provisioning Co',
+            'subdomain' => 'portal-provisioning-' . uniqid(),
+            'base_host' => 'example.test',
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-provisioning-' . uniqid(),
+            'data' => [
+                'company_name' => 'Portal Provisioning Co',
+                'owner_email' => $user->email,
+            ],
+        ]);
+
+        DB::table('tenant_users')->insert([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $product = Product::query()->where('code', 'automotive_service')->firstOrFail();
+        $plan = $this->createPlan('Provisioning Failure Plan', 'provisioning-failure-plan-' . uniqid(), 'monthly', 149);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'activation_status' => 'failed',
+            'provisioning_status' => 'failed',
+            'activation_error' => 'Tenant migrations failed.',
+            'gateway' => 'stripe',
+            'gateway_subscription_id' => 'sub_portal_failed_' . uniqid(),
+        ]);
+
+        $response = $this->actingAs($user, 'web')->get(route('automotive.portal', [
+            'product' => $product->slug,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Provisioning Failed', false);
+        $response->assertSee('Tenant migrations failed.', false);
+    }
+
     public function test_start_trial_ignores_email_like_coupon_values_from_profile(): void
     {
         $email = 'client_1@gmail.com';

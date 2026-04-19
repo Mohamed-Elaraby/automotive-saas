@@ -107,7 +107,7 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Status</div>
+                            <div class="text-muted mb-1">Billing Status</div>
                             <span class="badge {{ $statusBadgeClass }}">
                                 {{ !empty($subscription['status']) ? strtoupper(str_replace('_', ' ', $subscription['status'])) : 'UNKNOWN' }}
                             </span>
@@ -161,6 +161,22 @@
                                             {{ !empty($subscription['status']) ? strtoupper(str_replace('_', ' ', $subscription['status'])) : 'UNKNOWN' }}
                                         </span>
                                     </td>
+                                </tr>
+                                <tr>
+                                    <th>Activation Status</th>
+                                    <td>{{ strtoupper(str_replace('_', ' ', (string) ($subscription['activation_status'] ?: 'pending'))) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Provisioning Status</th>
+                                    <td>{{ strtoupper(str_replace('_', ' ', (string) ($subscription['provisioning_status'] ?: 'pending'))) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Activation Source</th>
+                                    <td>{{ $subscription['activation_source'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Activation Diagnostic</th>
+                                    <td>{{ $subscription['activation_error'] ?: '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Gateway</th>
@@ -261,6 +277,22 @@
                                 <tr>
                                     <th>Ends At</th>
                                     <td>{{ $subscription['ends_at'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Provisioning Started At</th>
+                                    <td>{{ $subscription['provisioning_started_at'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Provisioning Completed At</th>
+                                    <td>{{ $subscription['provisioning_completed_at'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Provisioning Failed At</th>
+                                    <td>{{ $subscription['provisioning_failed_at'] ?: '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Activated At</th>
+                                    <td>{{ $subscription['activated_at'] ?: '-' }}</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -456,6 +488,14 @@
                                 <tr>
                                     <th>Legacy Subscription ID</th>
                                     <td>{!! $yesNoBadge((bool) ($diagnostics['has_legacy_subscription_id'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Runtime Active</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['is_runtime_active'] ?? false)) !!}</td>
+                                </tr>
+                                <tr>
+                                    <th>Activation Error</th>
+                                    <td>{!! $yesNoBadge((bool) ($diagnostics['has_activation_error'] ?? false)) !!}</td>
                                 </tr>
                                 <tr>
                                     <th>Payment Failures</th>
