@@ -22,7 +22,7 @@ class AuthController extends Controller
             return redirect()->route('automotive.admin.dashboard');
         }
 
-        return $this->showLogin();
+        return redirect()->route('automotive.admin.login');
     }
 
     public function showLogin()
