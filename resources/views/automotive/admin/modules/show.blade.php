@@ -133,7 +133,138 @@
             @elseif(($page ?? '') === 'workshop-work-orders')
                 <div class="card"><div class="card-header"><h5 class="card-title mb-0">Work Orders Table</h5></div><div class="card-body">@forelse(($moduleData['recent_work_orders'] ?? collect()) as $workOrder)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ $workOrder->work_order_number }}</h6><div class="text-muted small">{{ $workOrder->title }}</div><div class="text-muted small">{{ $workOrder->customer?->name ?: 'No customer' }}{{ $workOrder->vehicle ? ' · '.$workOrder->vehicle->make.' '.$workOrder->vehicle->model : '' }}</div></div><div class="text-end"><span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper(str_replace('_', ' ', $workOrder->status)) }}</span><div class="mt-2"><a href="{{ route('automotive.admin.modules.workshop-operations.work-orders.show', ['workOrder' => $workOrder->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Record</a></div></div></div></div>@empty<p class="text-muted mb-0">No work orders have been created yet.</p>@endforelse</div></div>
             @elseif(($page ?? '') === 'general-ledger')
-                <div class="card"><div class="card-header"><h5 class="card-title mb-0">Accounting Events Ledger</h5></div><div class="card-body">@forelse(($moduleData['recent_accounting_events'] ?? collect()) as $event)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }}</h6><div class="text-muted small">{{ data_get($event->payload, 'title', $event->event_type) }}</div><div class="text-muted small">{{ data_get($event->payload, 'customer_name', 'No customer') }}{{ data_get($event->payload, 'vehicle') ? ' · '.data_get($event->payload, 'vehicle') : '' }}</div></div><div class="text-end"><div class="fw-semibold">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div><div class="text-muted small">Labor {{ number_format((float) $event->labor_amount, 2) }} · Parts {{ number_format((float) $event->parts_amount, 2) }}</div><span class="badge bg-info mt-1">{{ strtoupper($event->status) }}</span></div></div></div>@empty<p class="text-muted mb-0">No local accounting events have been posted yet.</p>@endforelse</div></div>
+                <div class="row">
+                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Posting Groups</div><h4 class="mb-1">{{ ($moduleData['posting_groups'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Account mapping rules available for journal posting.</p></div></div></div>
+                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Events To Review</div><h4 class="mb-1">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Accounting events not yet posted to journal.</p></div></div></div>
+                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Journal Entries</div><h4 class="mb-1">{{ ($moduleData['recent_journal_entries'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Posted accounting entries in this workspace.</p></div></div></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Create Posting Group</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.posting-groups.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-5 mb-3"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', 'workshop_revenue') }}"></div>
+                                        <div class="col-md-7 mb-3"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'Workshop Revenue') }}"></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Receivable Account</label><input type="text" name="receivable_account" class="form-control" value="{{ old('receivable_account', '1100 Accounts Receivable') }}"></div>
+                                    <div class="mb-3"><label class="form-label">Labor Revenue Account</label><input type="text" name="labor_revenue_account" class="form-control" value="{{ old('labor_revenue_account', '4100 Service Labor Revenue') }}"></div>
+                                    <div class="mb-3"><label class="form-label">Parts Revenue Account</label><input type="text" name="parts_revenue_account" class="form-control" value="{{ old('parts_revenue_account', '4200 Parts Revenue') }}"></div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Currency</label><input type="text" name="currency" maxlength="3" class="form-control" value="{{ old('currency', 'USD') }}"></div>
+                                        <div class="col-md-8 mb-3 d-flex align-items-end"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="posting_group_default" name="is_default" value="1" {{ old('is_default', '1') ? 'checked' : '' }}><label class="form-check-label" for="posting_group_default">Default group</label></div></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                    <button type="submit" class="btn btn-primary">Create Posting Group</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Posting Groups</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['posting_groups'] ?? collect()) as $group)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-start gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $group->name }}</h6>
+                                                <div class="text-muted small">{{ $group->code }} · {{ $group->currency }}</div>
+                                                <div class="text-muted small">{{ $group->receivable_account }} / {{ $group->labor_revenue_account }} / {{ $group->parts_revenue_account }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                @if($group->is_default)<span class="badge bg-primary">DEFAULT</span>@endif
+                                                <span class="badge {{ $group->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $group->is_active ? 'ACTIVE' : 'INACTIVE' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No posting groups have been configured yet. Posting an event can also create a default group automatically.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Accounting Event Review</h5></div>
+                    <div class="card-body">
+                        @forelse(($moduleData['reviewable_accounting_events'] ?? collect()) as $event)
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <h6 class="mb-1">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }}</h6>
+                                        <div class="text-muted small">{{ data_get($event->payload, 'title', $event->event_type) }}</div>
+                                        <div class="text-muted small">{{ data_get($event->payload, 'customer_name', 'No customer') }}{{ data_get($event->payload, 'vehicle') ? ' · '.data_get($event->payload, 'vehicle') : '' }}</div>
+                                        <div class="text-muted small">Labor {{ number_format((float) $event->labor_amount, 2) }} · Parts {{ number_format((float) $event->parts_amount, 2) }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-semibold mb-2">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div>
+                                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.accounting-events.post', ['accountingEvent' => $event->id] + $workspaceQuery) }}">
+                                            @csrf
+                                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                            @if(($moduleData['posting_groups'] ?? collect())->isNotEmpty())
+                                                <select name="posting_group_id" class="form-select form-select-sm mb-2">
+                                                    @foreach(($moduleData['posting_groups'] ?? collect()) as $group)
+                                                        <option value="{{ $group->id }}" @selected($group->is_default)>{{ $group->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            @endif
+                                            <button type="submit" class="btn btn-sm btn-primary">Post To Journal</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-muted mb-0">No accounting events are waiting for journal posting.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Recent Journal Entries</h5></div>
+                    <div class="card-body">
+                        @forelse(($moduleData['recent_journal_entries'] ?? collect()) as $entry)
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                    <div>
+                                        <h6 class="mb-1">{{ $entry->journal_number }}</h6>
+                                        <div class="text-muted small">{{ $entry->memo ?: 'Journal entry' }}</div>
+                                        <div class="text-muted small">{{ optional($entry->entry_date)->format('Y-m-d') }} · {{ $entry->postingGroup?->name ?: 'Default posting' }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success">{{ strtoupper($entry->status) }}</span>
+                                        <div class="fw-semibold mt-1">{{ number_format((float) $entry->debit_total, 2) }} {{ $entry->currency }}</div>
+                                    </div>
+                                </div>
+                                <div class="table-responsive mt-2">
+                                    <table class="table table-sm mb-0">
+                                        <thead><tr><th>Account</th><th>Memo</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr></thead>
+                                        <tbody>
+                                        @foreach($entry->lines as $line)
+                                            <tr>
+                                                <td>{{ $line->account_code }}</td>
+                                                <td>{{ $line->memo ?: '-' }}</td>
+                                                <td class="text-end">{{ number_format((float) $line->debit, 2) }}</td>
+                                                <td class="text-end">{{ number_format((float) $line->credit, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-muted mb-0">No journal entries have been posted yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="card"><div class="card-header"><h5 class="card-title mb-0">Accounting Events Ledger</h5></div><div class="card-body">@forelse(($moduleData['recent_accounting_events'] ?? collect()) as $event)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }}</h6><div class="text-muted small">{{ data_get($event->payload, 'title', $event->event_type) }}</div><div class="text-muted small">{{ data_get($event->payload, 'customer_name', 'No customer') }}{{ data_get($event->payload, 'vehicle') ? ' · '.data_get($event->payload, 'vehicle') : '' }}</div></div><div class="text-end"><div class="fw-semibold">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div><div class="text-muted small">Labor {{ number_format((float) $event->labor_amount, 2) }} · Parts {{ number_format((float) $event->parts_amount, 2) }}</div><span class="badge {{ $event->status === 'journal_posted' ? 'bg-success' : 'bg-info' }} mt-1">{{ strtoupper(str_replace('_', ' ', $event->status)) }}</span></div></div></div>@empty<p class="text-muted mb-0">No local accounting events have been posted yet.</p>@endforelse</div></div>
             @elseif(($page ?? '') === 'supplier-catalog')
                 <div class="row">
                     <div class="col-xl-4 d-flex">

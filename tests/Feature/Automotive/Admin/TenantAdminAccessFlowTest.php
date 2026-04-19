@@ -459,6 +459,120 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertSee('OF-100', false);
     }
 
+    public function test_accounting_runtime_can_create_posting_group_and_post_event_to_journal(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $eventId = DB::connection('tenant')->table('accounting_events')->insertGetId([
+                'event_type' => 'work_order_completed',
+                'reference_type' => \App\Models\WorkOrder::class,
+                'reference_id' => 10,
+                'status' => 'posted',
+                'event_date' => now(),
+                'currency' => 'USD',
+                'labor_amount' => 150,
+                'parts_amount' => 40,
+                'total_amount' => 190,
+                'payload' => json_encode([
+                    'work_order_number' => 'WO-ACCOUNTING-1',
+                    'title' => 'Accounting review work order',
+                    'customer_name' => 'Ledger Customer',
+                    'vehicle' => 'Toyota Corolla',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Create Posting Group', false);
+        $ledgerResponse->assertSee('Accounting Event Review', false);
+        $ledgerResponse->assertSee('WO-ACCOUNTING-1', false);
+        $ledgerResponse->assertSee('Post To Journal', false);
+
+        $groupResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/posting-groups?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => 'service_revenue',
+            'name' => 'Service Revenue',
+            'receivable_account' => '1100 Accounts Receivable',
+            'labor_revenue_account' => '4100 Labor Revenue',
+            'parts_revenue_account' => '4200 Parts Revenue',
+            'currency' => 'USD',
+            'is_default' => '1',
+        ]);
+
+        $groupResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $postingGroup = DB::connection('tenant')->table('accounting_posting_groups')
+                ->where('code', 'service_revenue')
+                ->first();
+
+            $this->assertNotNull($postingGroup);
+            $this->assertSame('Service Revenue', $postingGroup->name);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $postResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$eventId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'posting_group_id' => $postingGroup->id,
+        ]);
+
+        $postResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $event = DB::connection('tenant')->table('accounting_events')->where('id', $eventId)->first();
+            $this->assertSame('journal_posted', $event->status);
+
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('accounting_event_id', $eventId)
+                ->first();
+
+            $this->assertNotNull($journal);
+            $this->assertSame('posted', $journal->status);
+            $this->assertSame(190.0, (float) $journal->debit_total);
+            $this->assertSame(190.0, (float) $journal->credit_total);
+
+            $lines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $journal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertCount(3, $lines);
+            $this->assertSame(190.0, (float) $lines[0]->debit);
+            $this->assertSame(150.0, (float) $lines[1]->credit);
+            $this->assertSame(40.0, (float) $lines[2]->credit);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $postedLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $postedLedgerResponse->assertOk();
+        $postedLedgerResponse->assertSee('Recent Journal Entries', false);
+        $postedLedgerResponse->assertSee('JE-', false);
+        $postedLedgerResponse->assertSee('JOURNAL POSTED', false);
+    }
+
     public function test_workshop_operations_can_create_work_order_and_consume_spare_parts_stock(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

@@ -142,6 +142,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
             Route::middleware('tenant.workspace.product:general-ledger')->group(function () {
                 Route::get('/general-ledger', [WorkspaceModuleController::class, 'generalLedger'])
                     ->name('modules.general-ledger');
+                Route::post('/general-ledger/posting-groups', [WorkspaceModuleController::class, 'storeAccountingPostingGroup'])
+                    ->name('modules.general-ledger.posting-groups.store');
+                Route::post('/general-ledger/accounting-events/{accountingEvent}/post', [WorkspaceModuleController::class, 'postAccountingEvent'])
+                    ->name('modules.general-ledger.accounting-events.post');
             });
         });
     });

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountingEvent;
 use App\Models\Customer;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Services\Automotive\AccountingRuntimeService;
 use App\Services\Automotive\SupplierCatalogService;
 use App\Services\Automotive\WorkOrderAccountingHandoffService;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
@@ -29,7 +31,8 @@ class WorkspaceModuleController extends Controller
         protected WorkshopPartsIntegrationService $workshopPartsIntegrationService,
         protected SupplierCatalogService $supplierCatalogService,
         protected WorkshopWorkOrderService $workshopWorkOrderService,
-        protected WorkOrderAccountingHandoffService $workOrderAccountingHandoffService
+        protected WorkOrderAccountingHandoffService $workOrderAccountingHandoffService,
+        protected AccountingRuntimeService $accountingRuntimeService
     ) {
     }
 
@@ -313,8 +316,64 @@ class WorkspaceModuleController extends Controller
             'general-ledger',
             fn () => [
                 'recent_accounting_events' => $this->workshopWorkOrderService->getRecentAccountingEvents(25),
+                'reviewable_accounting_events' => $this->accountingRuntimeService->getReviewableAccountingEvents(25),
+                'posting_groups' => $this->accountingRuntimeService->getPostingGroups(),
+                'recent_journal_entries' => $this->accountingRuntimeService->getRecentJournalEntries(15),
             ]
         );
+    }
+
+    public function storeAccountingPostingGroup(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:80'],
+            'name' => ['required', 'string', 'max:255'],
+            'receivable_account' => ['required', 'string', 'max:255'],
+            'labor_revenue_account' => ['required', 'string', 'max:255'],
+            'parts_revenue_account' => ['required', 'string', 'max:255'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'is_default' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->createPostingGroup($validated);
+        } catch (\Illuminate\Database\QueryException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors(['code' => 'A posting group with this code already exists.'])
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Posting group created successfully.');
+    }
+
+    public function postAccountingEvent(Request $request, AccountingEvent $accountingEvent): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'posting_group_id' => ['nullable', 'integer', 'exists:accounting_posting_groups,id'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->postAccountingEvent(
+                $accountingEvent,
+                isset($validated['posting_group_id']) ? (int) $validated['posting_group_id'] : null,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Journal entry {$entry->journal_number} posted successfully.");
     }
 
     protected function showManifestModule(

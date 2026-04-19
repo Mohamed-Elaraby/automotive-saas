@@ -716,16 +716,65 @@ Verification:
   - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Billing/StripeWebhookSyncServiceTest.php tests/Feature/Admin/ProductEnablementRequestsIndexTest.php tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
   - result: 63 passed, 428 assertions
 
-## 15.1) Recommended Next Package
-When a new AI session starts from this file, the next package to start immediately is:
+## 15.1) Recently Completed Package
+This package was completed after the provisioning/activation package:
 
 ### Accounting Runtime Depth
-Recommended scope:
+Status:
+- completed
+
+Completed scope:
 - deepen Accounting Runtime beyond the current General Ledger entry and accounting handoff events
 - journal entry runtime screens
 - posting groups
 - accounting event review/posting workflow
 - tests for accounting workspace access and work-order handoff review
+
+Current behavior:
+- tenant accounting runtime now has real tenant tables for:
+  - `accounting_posting_groups`
+  - `journal_entries`
+  - `journal_entry_lines`
+- General Ledger can now:
+  - show posting group count
+  - show accounting events waiting for journal posting
+  - show recent journal entries and their debit/credit lines
+  - create posting groups from the runtime UI
+  - post an accounting event into a balanced journal entry
+- posting a workshop accounting event creates:
+  - debit line to receivables
+  - credit line to labor revenue when labor amount exists
+  - credit line to parts revenue when parts amount exists
+  - balanced debit/credit totals
+- accounting events keep the existing handoff behavior and move to `journal_posted` after journal posting
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_19_171447_create_accounting_runtime_tables.php`
+- `app/Models/AccountingPostingGroup.php`
+- `app/Models/JournalEntry.php`
+- `app/Models/JournalEntryLine.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `routes/products/automotive/admin.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_runtime`
+  - result: 1 passed, 26 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 12 passed, 196 assertions
+
+## 15.2) Recommended Next Package
+When a new AI session starts from this file, the next package to start immediately is:
+
+### Accounting Runtime Expansion
+Recommended scope:
+- add journal entry detail pages and filters
+- add journal reversal / void workflow
+- add manual journal entry creation
+- add accounting reports such as trial balance and revenue summary
+- connect inventory valuation events from Spare Parts into accounting posting
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
