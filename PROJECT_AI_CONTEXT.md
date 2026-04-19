@@ -602,60 +602,69 @@ If a new session starts and reads only this section, the safe understanding is:
   - completed work orders can generate local accounting handoff events
 
 ## 15) Recommended Next Package
-The next package should be:
+When a new AI session starts from this file, the next package to start immediately is:
 
-### Tenant Admin Billing Surface Decommission
+### Provisioning And Activation Flow
 Scope:
-- remove or demote remaining tenant-admin billing/account surfaces that conflict with the portal boundary
-- keep middleware/runtime protection intact while reducing tenant confusion
-- ensure tenant admin UI does not present billing/account ownership as if it lives inside runtime
+- complete the post-checkout/post-approval path from "product is paid/approved" to "product is active and usable in the tenant workspace"
+- make product activation explicit, observable, and safe for every product family
+- create or update workspace product activation records after:
+  - Stripe checkout success/webhook sync
+  - product enablement approval
+  - central admin manual activation where needed
+- expose provisioning status clearly in:
+  - customer portal
+  - central admin product/subscription context
+  - tenant workspace access decisions
+- ensure product runtime visibility depends on activation state, not only on plan/payment metadata
 
 Why this is next:
-- portal-owned account/settings now exists
-- billing already exists in the portal too
-- the remaining gap is legacy tenant-admin billing exposure
-- this hardens the UX boundary:
-  - `Portal = account and subscription control`
-  - `Tenant Admin = systems and operations`
+- product lifecycle UI now exists through:
+  - product builder
+  - capabilities
+  - plans
+  - workspace experience
+  - runtime modules
+  - integrations
+  - portal publication
+  - manifest sync/writeback package
+  - apply queue
+  - lifecycle validation/audit
+- runtime wiring can now consume approved writeback packages
+- integrations now render inside tenant runtime
+- the remaining gap is the activation/provisioning layer that turns billing/approval outcomes into reliable workspace availability
+- this prevents cases where payment succeeds but the portal still says workspace access is finalizing forever
 
 Suggested start files:
-- `app/Http/Controllers/Automotive/Admin/BillingController.php`
-- `resources/views/automotive/admin/billing/*`
-- `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
-- tenant admin header/breadcrumb files where billing/account language still appears
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `app/Http/Controllers/Automotive/Webhooks/StripeWebhookController.php`
+- `app/Services/Automotive/ProvisionTenantWorkspaceService.php`
+- `app/Services/Automotive/StartAdditionalProductCheckoutService.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
+- `app/Services/Tenancy/TenantWorkspaceProductService.php`
+- `app/Http/Controllers/Admin/ProductEnablementRequestController.php`
+- `app/Http/Controllers/Admin/SubscriptionController.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `resources/views/admin/subscriptions/*`
+- `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
 
-Status:
-- completed
-- tenant-admin billing is now a transition/read-only surface
-- runtime blocking still lands on tenant-admin billing safely
-- active billing mutations now belong to the customer portal only
-
-Important files:
-- `app/Http/Controllers/Automotive/Admin/BillingController.php`
-- `resources/views/automotive/admin/billing/status.blade.php`
-- `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
-- `resources/views/automotive/admin/layouts/adminLayout/partials/header.blade.php`
-- `tests/Feature/Automotive/Admin/BillingPageTest.php`
-- `tests/Feature/Automotive/Admin/EnsureTenantSubscriptionIsActiveMiddlewareTest.php`
-
-### Portal Handoff And Tenant Runtime Copy Cleanup
-Scope:
-- improve tenant-admin to portal handoff copy and deep links around blocked runtime access
-- remove or rewrite any remaining tenant-admin wording that still implies account/billing ownership
-- make portal entry points clearer when tenant users hit suspended/past-due runtime states
-
-Why this is next:
-- the billing control plane has already moved out of tenant admin
-- the remaining work is UX polish and handoff clarity
-- this further hardens:
-  - `Portal = account and subscription control`
-  - `Tenant Admin = systems and operations`
-
-Suggested start files:
-- `resources/views/automotive/admin/auth/subscription-expired.blade.php`
-- `resources/views/automotive/admin/billing/status.blade.php`
-- `app/Http/Middleware/EnsureTenantSubscriptionIsActive.php`
-- tenant-admin login / blocked-state messaging files
+Acceptance criteria:
+- after a successful direct paid checkout, the relevant product becomes visible and usable in the tenant workspace without manual database repair
+- after enablement approval, the approved product becomes an active workspace product with a clear activation state
+- portal must show a deterministic status:
+  - payment pending webhook
+  - provisioning in progress
+  - active and ready
+  - provisioning failed with admin-facing diagnostic
+- tenant workspace runtime must only show products/modules whose activation state allows runtime access
+- activation must be product-scoped, so activating Accounting must not falsely activate Automotive or Parts Inventory
+- tests must cover at least:
+  - first paid product activation
+  - additional paid product activation
+  - enablement approval activation
+  - failed/missing provisioning status in portal
+  - tenant runtime visibility based on activation state
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
@@ -1062,3 +1071,46 @@ Important files:
 - `resources/views/automotive/admin/modules/work-order-show.blade.php`
 - `tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php`
 - `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+## 30) Production Routing And Tenant Auth Corrections
+Status:
+- completed
+- production routing expectations were clarified after moving from product-prefixed hosts to root-domain workspace hosts
+
+Current behavior:
+- public website landing page is expected to be served by the separate `saas` app on the production server:
+  - `https://seven-scapital.com/`
+  - server root: `/var/www/saas/public`
+- workspace/customer portal/admin routes are expected to be served by the `automotive` Laravel app:
+  - `https://seven-scapital.com/workspace/*`
+  - `https://seven-scapital.com/admin/*`
+  - `https://{tenant}.seven-scapital.com/workspace/*`
+  - server root for these routed paths: `/var/www/automotive/public`
+- production Nginx must split those paths explicitly when both apps share `seven-scapital.com`
+- wildcard SSL is valid and should cover:
+  - `seven-scapital.com`
+  - `*.seven-scapital.com`
+- Stripe webhook endpoint must use the canonical workspace route:
+  - `https://seven-scapital.com/workspace/webhooks/stripe`
+  not the legacy:
+  - `https://automotive.seven-scapital.com/automotive/webhooks/stripe`
+
+Tenant workspace auth behavior:
+- `/workspace` on a tenant host is now only an entry point
+- if logged out:
+  - redirect to `/workspace/admin/login`
+- if logged in:
+  - redirect to `/workspace/admin/dashboard`
+- the logged-out workspace entry must never render tenant sidebar/header
+
+Important files:
+- `app/Http/Controllers/Automotive/Admin/Auth/AuthController.php`
+- `resources/views/automotive/admin/layouts/adminLayout/mainlayout.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `routes/web.php`
+- `tests/Feature/ExampleTest.php`
+
+Production Nginx note:
+- if `/` should come from `saas` but `/workspace` and `/admin` should come from `automotive`, do not point the whole `seven-scapital.com` server block to `/var/www/automotive/public`
+- use `root /var/www/saas/public` for `/`
+- proxy/fastcgi `location ^~ /workspace`, `location ^~ /admin`, and legacy `location ^~ /automotive` to `/var/www/automotive/public/index.php`
