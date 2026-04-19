@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Inventory;
-use App\Models\Product;
+use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
@@ -35,7 +35,7 @@ public function index(Request $request): View
 
     $usersCount = User::query()->count();
     $branchesCount = Branch::query()->count();
-    $productsCount = Product::query()->count();
+    $productsCount = StockItem::query()->count();
     $userLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_users', $usersCount);
     $branchLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_branches', $branchesCount);
     $productLimit = $this->tenantPlanService->getLimitSummary($tenantId, 'max_products', $productsCount);

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\Product;
+use App\Models\StockItem;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -25,7 +25,7 @@ class StockMovementReportController extends Controller
             ->orderBy('name')
             ->get();
 
-        $products = Product::query()
+        $products = StockItem::query()
             ->where('is_active', true)
             ->orderBy('name')
             ->get();

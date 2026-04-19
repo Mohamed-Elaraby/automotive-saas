@@ -3,7 +3,6 @@
 namespace App\Services\Inventory;
 
 use App\Models\Inventory;
-use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use Illuminate\Support\Facades\DB;

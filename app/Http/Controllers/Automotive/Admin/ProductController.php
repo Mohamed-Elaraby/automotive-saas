@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
-use App\Models\Product;
+use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\StockTransferItem;
 use App\Services\Tenancy\TenantLimitService;
@@ -20,7 +20,7 @@ class ProductController extends Controller
 
 public function index()
 {
-    $products = Product::query()
+    $products = StockItem::query()
         ->orderBy('id')
         ->get();
 
@@ -53,7 +53,7 @@ public function store(Request $request)
         $decision = $this->tenantLimitService->getDecision(
             $tenant->id,
             'max_products',
-            Product::query()->count()
+            StockItem::query()->count()
         );
 
         if (! $decision['allowed']) {
@@ -67,19 +67,19 @@ public function store(Request $request)
 
     $data = $this->validatedData($request);
 
-    Product::query()->create($data);
+    StockItem::query()->create($data);
 
     return redirect()
         ->route('automotive.admin.products.index')
         ->with('success', 'Product created successfully.');
 }
 
-public function edit(Product $product)
+public function edit(StockItem $product)
 {
     return view('automotive.admin.products.edit', compact('product'));
 }
 
-public function update(Request $request, Product $product)
+public function update(Request $request, StockItem $product)
 {
     $data = $this->validatedData($request, $product->id);
 
@@ -90,7 +90,7 @@ public function update(Request $request, Product $product)
         ->with('success', 'Product updated successfully.');
 }
 
-public function destroy(Product $product)
+public function destroy(StockItem $product)
 {
     $hasInventory = Inventory::query()
         ->where('product_id', $product->id)

@@ -776,6 +776,65 @@ Recommended scope:
 - add accounting reports such as trial balance and revenue summary
 - connect inventory valuation events from Spare Parts into accounting posting
 
+## 15.3) Spare Parts Stock Item Model Correction
+Status:
+- completed
+
+Problem fixed:
+- tenant `Stock Items` screen was showing central SaaS products such as:
+  - `Accounting System`
+  - `Automotive Service Management`
+  - `Parts Inventory Management`
+- root cause:
+  - `App\Models\Product` is intentionally bound to the central connection for SaaS product families
+  - tenant spare-parts stock also uses a tenant table named `products`
+  - automotive admin inventory screens were using the central `Product` model instead of a tenant stock-item model
+
+Current behavior:
+- tenant spare-parts stock now uses `App\Models\StockItem`
+- inventory relationships now point to tenant stock items:
+  - `Inventory`
+  - `StockMovement`
+  - `StockTransferItem`
+  - `WorkOrderLine`
+- Stock Items, inventory adjustment, stock transfer, stock movement filters, and parts dashboard counts now read tenant stock items
+- central SaaS product catalog remains on `App\Models\Product`
+
+Demo data:
+- added `Database\Seeders\TenantSparePartsDemoSeeder`
+- seeds demo tenant stock items and opening inventory into the tenant database:
+  - `Engine Oil 5W-30`
+  - `Oil Filter Toyota`
+  - `Front Brake Pads Set`
+  - `Air Filter Generic`
+- also creates `Main Branch` when missing
+
+Seeder command:
+- for one tenant:
+  - `php artisan tenants:seed --class=Database\\Seeders\\TenantSparePartsDemoSeeder --tenants=TENANT_ID`
+- production should include:
+  - `--force`
+
+Important files:
+- `app/Models/StockItem.php`
+- `app/Models/Inventory.php`
+- `app/Models/StockMovement.php`
+- `app/Models/StockTransferItem.php`
+- `app/Models/WorkOrderLine.php`
+- `app/Http/Controllers/Automotive/Admin/ProductController.php`
+- `app/Http/Controllers/Automotive/Admin/InventoryAdjustmentController.php`
+- `app/Http/Controllers/Automotive/Admin/StockTransferController.php`
+- `app/Http/Controllers/Automotive/Admin/StockMovementReportController.php`
+- `app/Http/Controllers/Automotive/Admin/DashboardController.php`
+- `database/seeders/TenantSparePartsDemoSeeder.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=stock_items_use_tenant_spare_parts`
+  - result: 1 passed, 12 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 13 passed, 208 assertions
+
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
 1. read this file first

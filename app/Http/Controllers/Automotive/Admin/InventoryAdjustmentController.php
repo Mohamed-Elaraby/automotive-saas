@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\Product;
+use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\Inventory\InventoryAdjustmentService;
 use Illuminate\Http\Request;
@@ -35,7 +35,7 @@ public function create()
         ->orderBy('name')
         ->get();
 
-    $products = Product::query()
+    $products = StockItem::query()
         ->where('is_active', true)
         ->orderBy('name')
         ->get();

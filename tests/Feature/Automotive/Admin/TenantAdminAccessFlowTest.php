@@ -279,6 +279,41 @@ class TenantAdminAccessFlowTest extends TestCase
         $productsResponse->assertSee('Stock Items', false);
     }
 
+    public function test_stock_items_use_tenant_spare_parts_not_central_saas_products(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            app(\Database\Seeders\TenantSparePartsDemoSeeder::class)->run();
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $response = $this->get("http://{$domain}/automotive/admin/products?workspace_product=parts_inventory");
+
+        $response->assertOk();
+        $response->assertSee('Engine Oil 5W-30', false);
+        $response->assertSee('Oil Filter Toyota', false);
+        $response->assertSee('Front Brake Pads Set', false);
+        $response->assertSee('SP-OIL-5W30', false);
+        $response->assertSee('SP-FLT-TOY-OIL', false);
+        $response->assertDontSee('Accounting System', false);
+
+        $adjustmentResponse = $this->get("http://{$domain}/automotive/admin/inventory-adjustments/create?workspace_product=parts_inventory");
+        $adjustmentResponse->assertOk();
+        $adjustmentResponse->assertSee('Engine Oil 5W-30', false);
+        $adjustmentResponse->assertDontSee('Accounting System', false);
+    }
+
     public function test_inventory_family_alias_product_can_drive_parts_workspace_focus(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
