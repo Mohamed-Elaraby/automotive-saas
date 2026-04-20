@@ -13,9 +13,11 @@ class WorkspaceHostResolverTest extends TestCase
 
         $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('automotive.seven-scapital.com'));
         $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('spareparts.seven-scapital.com'));
+        $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('system.seven-scapital.com'));
         $this->assertSame('seven-scapital.com', $resolver->canonicalBaseHost('www.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.automotive.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.spareparts.seven-scapital.com'));
+        $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.system.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.seven-scapital.com'));
         $this->assertSame('example.test', $resolver->canonicalBaseHost('example.test'));
     }
@@ -25,6 +27,7 @@ class WorkspaceHostResolverTest extends TestCase
         $resolver = app(WorkspaceHostResolver::class);
 
         $this->assertSame('demo.seven-scapital.com', $resolver->tenantDomain('demo', 'automotive.seven-scapital.com'));
+        $this->assertSame('demo.seven-scapital.com', $resolver->tenantDomain('demo', 'system.seven-scapital.com'));
         $this->assertSame('trial.example.test', $resolver->tenantDomain('trial', 'example.test'));
     }
 }

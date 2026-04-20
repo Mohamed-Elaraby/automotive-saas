@@ -20,7 +20,7 @@ class WorkspaceHostResolver
             $host = substr($host, 4);
         }
 
-        foreach (['automotive', 'spareparts'] as $segment) {
+        foreach (['automotive', 'spareparts', 'system'] as $segment) {
             $pattern = '/(^|\.)' . preg_quote($segment, '/') . '\.(seven-scapital\.com)$/';
             $host = preg_replace($pattern, '$1$2', $host) ?? $host;
         }

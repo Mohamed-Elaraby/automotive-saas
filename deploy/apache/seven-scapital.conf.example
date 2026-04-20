@@ -1,6 +1,12 @@
+# Apache equivalent of the production split.
+#
+# Production currently uses Nginx, so prefer deploy/nginx/seven-scapital.conf.example.
+# This file exists only to keep Apache examples aligned with the same three-app
+# architecture.
+
 <VirtualHost *:80>
     ServerName seven-scapital.com
-    ServerAlias www.seven-scapital.com *.seven-scapital.com
+    ServerAlias www.seven-scapital.com
 
     RewriteEngine On
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
@@ -9,32 +15,73 @@
 <IfModule mod_ssl.c>
 <VirtualHost *:443>
     ServerName seven-scapital.com
-    ServerAlias www.seven-scapital.com *.seven-scapital.com
+    ServerAlias www.seven-scapital.com
 
-    DocumentRoot /var/www/automotive-saas/public
-
-    # If seven-scapital.com is split between a separate landing app at /
-    # and this Laravel workspace app at /workspace or /admin, expose theme
-    # assets from the automotive Laravel public directory as /theme.
-    #
-    # Alias /theme/ /var/www/automotive/public/theme/
-    # <Directory /var/www/automotive/public/theme>
-    #     Require all granted
-    #     Options FollowSymLinks
-    # </Directory>
+    DocumentRoot /var/www/saas/public
 
     SSLEngine on
     SSLCertificateFile /etc/letsencrypt/live/seven-scapital.com/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/seven-scapital.com/privkey.pem
 
-    <Directory /var/www/automotive-saas/public>
+    <Directory /var/www/saas/public>
         AllowOverride All
         Require all granted
-        Options Indexes FollowSymLinks
+        Options FollowSymLinks
         DirectoryIndex index.php
     </Directory>
+</VirtualHost>
+</IfModule>
 
-    ErrorLog ${APACHE_LOG_DIR}/seven-scapital-error.log
-    CustomLog ${APACHE_LOG_DIR}/seven-scapital-access.log combined
+<VirtualHost *:80>
+    ServerName system.seven-scapital.com
+    ServerAlias *.seven-scapital.com
+
+    RewriteEngine On
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+    ServerName system.seven-scapital.com
+    ServerAlias *.seven-scapital.com
+
+    DocumentRoot /var/www/automotive/public
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/seven-scapital.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/seven-scapital.com/privkey.pem
+
+    <Directory /var/www/automotive/public>
+        AllowOverride All
+        Require all granted
+        Options FollowSymLinks
+        DirectoryIndex index.php
+    </Directory>
+</VirtualHost>
+</IfModule>
+
+<VirtualHost *:80>
+    ServerName spareparts.seven-scapital.com
+
+    RewriteEngine On
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+<VirtualHost *:443>
+    ServerName spareparts.seven-scapital.com
+
+    DocumentRoot /var/www/spareparts/public
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/seven-scapital.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/seven-scapital.com/privkey.pem
+
+    <Directory /var/www/spareparts/public>
+        AllowOverride All
+        Require all granted
+        Options FollowSymLinks
+        DirectoryIndex index.php
+    </Directory>
 </VirtualHost>
 </IfModule>

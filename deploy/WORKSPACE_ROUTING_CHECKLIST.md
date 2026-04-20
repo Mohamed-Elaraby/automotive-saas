@@ -1,125 +1,172 @@
-# Workspace Routing Checklist
+# Production Routing Checklist
 
-Use this when `https://seven-scapital.com/workspace/portal` returns `404`.
+Use this when the production browser shows 404s for app routes or theme assets.
 
-## 1. Confirm Laravel route registration
+## 1. Confirm the intended production split
+
+The production server runs three separate Laravel projects:
+
+- `seven-scapital.com` and `www.seven-scapital.com`
+  - Nginx file: `/etc/nginx/sites-available/saas`
+  - document root: `/var/www/saas/public`
+  - purpose: public frontend/marketing/customer-facing pages only
+- system app
+  - Nginx file: `/etc/nginx/sites-available/automotive`
+  - document root: `/var/www/automotive/public`
+  - purpose: the multi-product SaaS/workspace system
+  - note: the Nginx file name is legacy; it must not mean the app is automotive-only
+- `spareparts.seven-scapital.com`
+  - Nginx file: `/etc/nginx/sites-available/spareparts`
+  - document root: `/var/www/spareparts/public`
+  - purpose: the standalone spare-parts Laravel project
+
+Do not put `*.seven-scapital.com` on the `saas` vhost. Tenant workspace
+subdomains must be handled by the system app unless a more specific standalone
+project vhost exists, such as `spareparts.seven-scapital.com`.
+
+## 2. Confirm Nginx server names
+
+Run on production:
+
+```bash
+sudo nginx -T | grep -n "server_name"
+```
+
+Expected shape:
+
+```nginx
+server_name seven-scapital.com www.seven-scapital.com;
+server_name system.seven-scapital.com *.seven-scapital.com;
+server_name spareparts.seven-scapital.com;
+```
+
+Replace `system.seven-scapital.com` with the real system hostname if production
+uses a different one.
+
+## 3. Confirm document roots
 
 Run:
 
 ```bash
-php artisan optimize:clear
-php artisan route:list --path=workspace/portal --except-vendor
-php artisan tenancy:diagnose-workspace-routing
+sudo nginx -T | grep -n "root /var/www"
 ```
 
 Expected:
-- `workspace/portal` exists as `automotive.portal`
-- the diagnosis command says Laravel routing is internally consistent
 
-## 2. Confirm production `.env`
+```nginx
+root /var/www/saas/public;
+root /var/www/automotive/public;
+root /var/www/spareparts/public;
+```
 
-Required values:
+## 4. Confirm Laravel front-controller behavior
+
+Every Laravel vhost must include:
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+
+location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+    fastcgi_param DOCUMENT_ROOT $realpath_root;
+}
+```
+
+## 5. Confirm each app's production env
+
+For `/var/www/saas`, `APP_URL` should be:
 
 ```env
 APP_URL=https://seven-scapital.com
-ASSET_URL=https://seven-scapital.com
+```
+
+For `/var/www/automotive`, use the system hostname, not an automotive-branded
+hostname:
+
+```env
+APP_URL=https://system.seven-scapital.com
+ASSET_URL=https://system.seven-scapital.com
 SESSION_DOMAIN=.seven-scapital.com
 SESSION_SECURE_COOKIE=true
-SANCTUM_STATEFUL_DOMAINS=seven-scapital.com,www.seven-scapital.com
 ```
 
-## 3. Confirm web server binding
+For `/var/www/spareparts`:
 
-The web server must serve the same Laravel `public/` directory for:
-- `seven-scapital.com`
-- `www.seven-scapital.com`
-- `*.seven-scapital.com`
+```env
+APP_URL=https://spareparts.seven-scapital.com
+```
 
-If the browser gets `404` but Laravel tests show `/workspace/portal` exists, the `404` is coming from the web server or upstream proxy before Laravel.
+If the actual system hostname is not `system.seven-scapital.com`, use the real
+hostname consistently in Nginx and `.env`.
 
-## 4. Confirm the document root
+## 6. Confirm theme assets are requested from the correct app
 
-It must point to:
+If the failing page is on:
 
 ```text
-/var/www/automotive-saas/public
+https://seven-scapital.com/login
 ```
 
-Not the project root.
-
-## 5. Confirm rewrite/front controller behavior
-
-For Nginx:
-- `try_files $uri $uri/ /index.php?$query_string;`
-
-For Apache:
-- `AllowOverride All`
-- Laravel `public/.htaccess` must be active
-
-## 5.1. Confirm theme assets routing
-
-If production serves `/` from the separate `saas` app and only routes `/workspace` / `/admin` to this Laravel app, the browser will still request theme assets from:
+then the request is handled by the `saas` app. Its assets must exist under:
 
 ```text
-https://seven-scapital.com/theme/...
+/var/www/saas/public/theme
 ```
 
-Those files live in the automotive Laravel app:
+or the `saas` layout must stop referencing `/theme/...`.
+
+If the failing page is on the system hostname, the system app theme files live in:
 
 ```text
 /var/www/automotive/public/theme
 ```
 
-Nginx split-host requirement:
+So system pages must request:
 
-```nginx
-location ^~ /theme/ {
-    alias /var/www/automotive/public/theme/;
-    try_files $uri =404;
-    access_log off;
-    expires 30d;
-    add_header Cache-Control "public";
-}
+```text
+https://system.seven-scapital.com/theme/...
 ```
+
+not:
+
+```text
+https://seven-scapital.com/theme/...
+```
+
+If the frontend app intentionally reuses the same theme as the system app, use a
+deliberate deployment step or Nginx alias on the `saas` vhost. Do not rely on
+the `automotive` vhost to serve assets for `seven-scapital.com`.
 
 Quick checks:
 
 ```bash
 curl -I https://seven-scapital.com/theme/css/bootstrap.min.css
-curl -I https://seven-scapital.com/theme/js/script.js
-curl -I https://seven-scapital.com/theme/img/logo.svg
+curl -I https://system.seven-scapital.com/theme/css/bootstrap.min.css
+curl -I https://system.seven-scapital.com/theme/js/script.js
+curl -I https://system.seven-scapital.com/theme/img/logo.svg
 ```
 
 Expected:
+
 - `200`
 - not Laravel HTML
 - not `404`
 
-## 6. Confirm request flow manually
+## 7. Reload safely after changes
 
-Guest central access:
-
-```bash
-curl -I https://seven-scapital.com/workspace/portal
-```
-
-Expected:
-- `302` or `303` to `/workspace/login`
-
-Legacy central access:
+Run:
 
 ```bash
-curl -I https://automotive.seven-scapital.com/workspace/portal
+sudo nginx -t
+sudo systemctl reload nginx
+cd /var/www/automotive
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
 ```
 
-Expected:
-- `308` to `https://seven-scapital.com/workspace/portal`
-
-Tenant access:
-
-```bash
-curl -I https://demo.seven-scapital.com/workspace
-```
-
-Expected:
-- Laravel tenant response, not web-server `404`
+Do not run `php artisan route:cache`.

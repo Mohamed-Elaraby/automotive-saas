@@ -14,6 +14,7 @@ class DiagnoseWorkspaceRoutingCommandTest extends TestCase
         Config::set('tenancy.central_domains', [
             'seven-scapital.com',
             'www.seven-scapital.com',
+            'system.seven-scapital.com',
             'automotive.seven-scapital.com',
         ]);
 

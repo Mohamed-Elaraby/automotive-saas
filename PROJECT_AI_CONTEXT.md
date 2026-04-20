@@ -1201,14 +1201,13 @@ Important files:
 - `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
 
 Deployment notes:
-- production web server should bind:
-  - `seven-scapital.com`
-  - `www.seven-scapital.com`
-  - `*.seven-scapital.com`
-- document root must point to:
-  - `/public`
-- Laravel production env should use:
-  - `APP_URL=https://seven-scapital.com`
+- production is split into separate Laravel projects:
+  - `seven-scapital.com` / `www.seven-scapital.com` -> `/etc/nginx/sites-available/saas` -> `/var/www/saas/public`
+  - system app -> `/etc/nginx/sites-available/automotive` -> `/var/www/automotive/public`
+  - `spareparts.seven-scapital.com` -> `/etc/nginx/sites-available/spareparts` -> `/var/www/spareparts/public`
+- the Nginx file name `automotive` is legacy server naming only; it hosts the multi-product system app, not an automotive-only product
+- do not bind `*.seven-scapital.com` to the `saas` vhost; tenant workspace subdomains must reach the system app unless a more specific standalone vhost exists
+- Laravel production env for the system app should use the real system hostname, with:
   - `SESSION_DOMAIN=.seven-scapital.com`
   - `SESSION_SECURE_COOKIE=true`
 
@@ -1244,25 +1243,30 @@ Important files:
 ## 30) Production Routing And Tenant Auth Corrections
 Status:
 - completed
-- production routing expectations were clarified after moving from product-prefixed hosts to root-domain workspace hosts
+- production routing expectations were clarified after separating the public frontend, system app, and standalone spare-parts app
 
 Current behavior:
-- public website landing page is expected to be served by the separate `saas` app on the production server:
-  - `https://seven-scapital.com/`
+- public website/frontend pages are served by the separate `saas` Laravel app:
+  - host: `seven-scapital.com` / `www.seven-scapital.com`
+  - Nginx file: `/etc/nginx/sites-available/saas`
   - server root: `/var/www/saas/public`
-- workspace/customer portal/admin routes are expected to be served by the `automotive` Laravel app:
-  - `https://seven-scapital.com/workspace/*`
-  - `https://seven-scapital.com/admin/*`
-  - `https://{tenant}.seven-scapital.com/workspace/*`
-  - server root for these routed paths: `/var/www/automotive/public`
-- production Nginx must split those paths explicitly when both apps share `seven-scapital.com`
+- the multi-product system app is served by the Laravel project in `/var/www/automotive`
+  - Nginx file: `/etc/nginx/sites-available/automotive`
+  - server root: `/var/www/automotive/public`
+  - the `automotive` file/project name is legacy naming and must not imply an automotive-only runtime
+  - `system.seven-scapital.com` is a central system host and is listed in `config/tenancy.php`
+  - tenant workspace wildcard hosts should route here unless a more specific standalone vhost exists
+- the standalone spare-parts app is separate:
+  - host: `spareparts.seven-scapital.com`
+  - Nginx file: `/etc/nginx/sites-available/spareparts`
+  - server root: `/var/www/spareparts/public`
+- production Nginx must not bind `*.seven-scapital.com` to the `saas` vhost
 - wildcard SSL is valid and should cover:
   - `seven-scapital.com`
   - `*.seven-scapital.com`
-- Stripe webhook endpoint must use the canonical workspace route:
-  - `https://seven-scapital.com/workspace/webhooks/stripe`
-  not the legacy:
-  - `https://automotive.seven-scapital.com/automotive/webhooks/stripe`
+- system app theme assets should be requested from the system app hostname, not from the frontend-only `seven-scapital.com` host
+- if a page on `https://seven-scapital.com` requests `/theme/...`, those files must exist in `/var/www/saas/public/theme` or the `saas` app must deliberately alias/copy the shared theme assets
+- `WorkspaceHostResolver` strips `system.`, `automotive.`, and `spareparts.` product/system host segments when building canonical tenant root domains
 
 Tenant workspace auth behavior:
 - `/workspace` on a tenant host is now only an entry point
@@ -1274,19 +1278,22 @@ Tenant workspace auth behavior:
 
 Important files:
 - `app/Http/Controllers/Automotive/Admin/Auth/AuthController.php`
+- `app/Services/Tenancy/WorkspaceHostResolver.php`
+- `config/tenancy.php`
+- `.env.example`
+- `deploy/nginx/seven-scapital.conf.example`
+- `deploy/WORKSPACE_ROUTING_CHECKLIST.md`
 - `resources/views/automotive/admin/layouts/adminLayout/mainlayout.blade.php`
+- `tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
+- `tests/Feature/Tenancy/DiagnoseWorkspaceRoutingCommandTest.php`
 - `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
 - `routes/web.php`
 - `tests/Feature/ExampleTest.php`
 
 Production Nginx note:
-- if `/` should come from `saas` but `/workspace` and `/admin` should come from `automotive`, do not point the whole `seven-scapital.com` server block to `/var/www/automotive/public`
-- use `root /var/www/saas/public` for `/`
-- proxy/fastcgi `location ^~ /workspace`, `location ^~ /admin`, and legacy `location ^~ /automotive` to `/var/www/automotive/public/index.php`
-- also serve automotive theme assets from the automotive public directory:
-  - `location ^~ /theme/ { alias /var/www/automotive/public/theme/; try_files $uri =404; }`
-- missing `/theme` routing causes production-only 404s for:
-  - `/theme/css/bootstrap.min.css`
-  - `/theme/js/script.js`
-  - `/theme/img/logo.svg`
-  - `/theme/plugins/...`
+- `/etc/nginx/sites-available/saas` should use only `server_name seven-scapital.com www.seven-scapital.com`
+- `/etc/nginx/sites-available/automotive` should use the real system hostname plus `*.seven-scapital.com` if tenant subdomains are served by this app
+- `/etc/nginx/sites-available/spareparts` should use the exact `spareparts.seven-scapital.com` host
+- if browser requests for system pages load `/theme/...` from `https://seven-scapital.com`, the system app `.env`/asset host is wrong for the three-project split
+- if browser requests for frontend pages on `https://seven-scapital.com` load `/theme/...` and return `404`, fix the `saas` project assets because that host is not served by the system app
+- see `deploy/nginx/seven-scapital.conf.example` and `deploy/WORKSPACE_ROUTING_CHECKLIST.md`
