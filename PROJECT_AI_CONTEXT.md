@@ -1283,3 +1283,10 @@ Production Nginx note:
 - if `/` should come from `saas` but `/workspace` and `/admin` should come from `automotive`, do not point the whole `seven-scapital.com` server block to `/var/www/automotive/public`
 - use `root /var/www/saas/public` for `/`
 - proxy/fastcgi `location ^~ /workspace`, `location ^~ /admin`, and legacy `location ^~ /automotive` to `/var/www/automotive/public/index.php`
+- also serve automotive theme assets from the automotive public directory:
+  - `location ^~ /theme/ { alias /var/www/automotive/public/theme/; try_files $uri =404; }`
+- missing `/theme` routing causes production-only 404s for:
+  - `/theme/css/bootstrap.min.css`
+  - `/theme/js/script.js`
+  - `/theme/img/logo.svg`
+  - `/theme/plugins/...`

@@ -56,6 +56,45 @@ For Apache:
 - `AllowOverride All`
 - Laravel `public/.htaccess` must be active
 
+## 5.1. Confirm theme assets routing
+
+If production serves `/` from the separate `saas` app and only routes `/workspace` / `/admin` to this Laravel app, the browser will still request theme assets from:
+
+```text
+https://seven-scapital.com/theme/...
+```
+
+Those files live in the automotive Laravel app:
+
+```text
+/var/www/automotive/public/theme
+```
+
+Nginx split-host requirement:
+
+```nginx
+location ^~ /theme/ {
+    alias /var/www/automotive/public/theme/;
+    try_files $uri =404;
+    access_log off;
+    expires 30d;
+    add_header Cache-Control "public";
+}
+```
+
+Quick checks:
+
+```bash
+curl -I https://seven-scapital.com/theme/css/bootstrap.min.css
+curl -I https://seven-scapital.com/theme/js/script.js
+curl -I https://seven-scapital.com/theme/img/logo.svg
+```
+
+Expected:
+- `200`
+- not Laravel HTML
+- not `404`
+
 ## 6. Confirm request flow manually
 
 Guest central access:

@@ -26,6 +26,27 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
+    # If seven-scapital.com is split between a separate landing app at /
+    # and this Laravel workspace app at /workspace or /admin, keep /theme
+    # served from the automotive Laravel public directory. The Blade layouts
+    # generate URLs like /theme/css/bootstrap.min.css.
+    #
+    # Example for a split server block whose main root is /var/www/saas/public:
+    #
+    # location ^~ /theme/ {
+    #     alias /var/www/automotive/public/theme/;
+    #     try_files $uri =404;
+    #     access_log off;
+    #     expires 30d;
+    #     add_header Cache-Control "public";
+    # }
+    #
+    # location = /theme/img/favicon.png {
+    #     alias /var/www/automotive/public/theme/img/favicon.png;
+    #     access_log off;
+    #     log_not_found off;
+    # }
+
     location = /favicon.ico { access_log off; log_not_found off; }
     location = /robots.txt  { access_log off; log_not_found off; }
 

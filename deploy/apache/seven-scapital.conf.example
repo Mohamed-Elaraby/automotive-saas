@@ -13,6 +13,16 @@
 
     DocumentRoot /var/www/automotive-saas/public
 
+    # If seven-scapital.com is split between a separate landing app at /
+    # and this Laravel workspace app at /workspace or /admin, expose theme
+    # assets from the automotive Laravel public directory as /theme.
+    #
+    # Alias /theme/ /var/www/automotive/public/theme/
+    # <Directory /var/www/automotive/public/theme>
+    #     Require all granted
+    #     Options FollowSymLinks
+    # </Directory>
+
     SSLEngine on
     SSLCertificateFile /etc/letsencrypt/live/seven-scapital.com/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/seven-scapital.com/privkey.pem
