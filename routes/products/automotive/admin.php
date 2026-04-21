@@ -144,6 +144,14 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger');
                 Route::post('/general-ledger/posting-groups', [WorkspaceModuleController::class, 'storeAccountingPostingGroup'])
                     ->name('modules.general-ledger.posting-groups.store');
+                Route::post('/general-ledger/accounts', [WorkspaceModuleController::class, 'storeAccountingAccount'])
+                    ->name('modules.general-ledger.accounts.store');
+                Route::post('/general-ledger/period-locks', [WorkspaceModuleController::class, 'storeAccountingPeriodLock'])
+                    ->name('modules.general-ledger.period-locks.store');
+                Route::post('/general-ledger/policies', [WorkspaceModuleController::class, 'storeAccountingPolicy'])
+                    ->name('modules.general-ledger.policies.store');
+                Route::get('/general-ledger/exports/{report}', [WorkspaceModuleController::class, 'exportAccountingReport'])
+                    ->name('modules.general-ledger.exports');
                 Route::post('/general-ledger/manual-journal-entries', [WorkspaceModuleController::class, 'storeManualJournalEntry'])
                     ->name('modules.general-ledger.manual-journal-entries.store');
                 Route::get('/general-ledger/journal-entries/{journalEntry}', [WorkspaceModuleController::class, 'showJournalEntry'])

@@ -768,13 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Runtime Hardening And Exports
+### New Product Onboarding Dry Run
 Recommended scope:
-- add CSV/PDF export for journal entries, trial balance, and revenue summary
-- add stronger account catalog controls instead of free-text accounts only
-- add period close/lock guards for journal posting and reversal
-- add configurable inventory posting accounts per product/accounting policy
-- add audit timeline for journal posting, manual journal creation, and reversals
+- create a small non-production sample product through the existing product builder / manifest flow
+- declare its runtime modules, capabilities, and integration contracts without custom product-specific shortcuts
+- run manifest sync/apply and confirm tenant workspace activation behaves like current products
+- prove it can emit or receive at least one integration handoff through the existing contract/handoff layer
+- document the exact checklist required before any real new product is added
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -1022,6 +1022,49 @@ Verification:
   - result: 5 passed, 166 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
   - result: 32 passed, 441 assertions
+
+## 15.7) Accounting Runtime Hardening And Exports
+Status:
+- completed
+
+Why this package was needed:
+- the integration layer can now hand events into accounting, but accounting needed operational controls before more products depend on it
+- future products should not post financial data into only free-text accounts or into periods that should already be closed
+
+Completed scope:
+- added tenant-level accounting control tables:
+  - `accounting_accounts`
+  - `accounting_period_locks`
+  - `accounting_policies`
+  - `accounting_audit_entries`
+- General Ledger now supports:
+  - account catalog creation and default account bootstrapping
+  - period locks that block journal posting/reversal for locked dates
+  - configurable inventory accounting policies for inventory asset, adjustment, and COGS accounts
+  - audit timeline for period locks, manual journals, event posting, inventory valuation posting, and reversals
+  - CSV exports for journal entries, trial balance, and revenue summary
+  - print-friendly report views that can be saved as PDF from the browser
+- manual journals now validate account codes against the active account catalog
+- inventory valuation posting now reads accounts from the active/default accounting policy instead of hard-coded accounts
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_020000_create_accounting_control_tables.php`
+- `app/Models/AccountingAccount.php`
+- `app/Models/AccountingPeriodLock.php`
+- `app/Models/AccountingPolicy.php`
+- `app/Models/AccountingAuditEntry.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-report-print.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 5 passed, 104 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 18 passed, 314 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

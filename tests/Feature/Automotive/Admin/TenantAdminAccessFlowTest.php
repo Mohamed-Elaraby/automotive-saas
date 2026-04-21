@@ -706,6 +706,98 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $accountResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => '1150 Clearing Account',
+            'name' => 'Clearing Account',
+            'type' => 'asset',
+            'normal_balance' => 'debit',
+        ]);
+        $accountResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $lockResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => '2026-04-01',
+            'period_end' => '2026-04-30',
+            'notes' => 'Month closed',
+        ]);
+        $lockResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $lockedManualResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'entry_date' => '2026-04-21',
+                'currency' => 'USD',
+                'memo' => 'Locked period entry',
+                'lines' => [
+                    ['account_code' => '1150 Clearing Account', 'account_name' => 'Clearing Account', 'debit' => 25, 'credit' => 0],
+                    ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 25],
+                ],
+            ]);
+        $lockedManualResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $lockedManualResponse->assertSessionHasErrors('entry_date');
+
+        $openManualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-05-02',
+            'currency' => 'USD',
+            'memo' => 'Exportable manual journal',
+            'lines' => [
+                ['account_code' => '1150 Clearing Account', 'account_name' => 'Clearing Account', 'debit' => 80, 'credit' => 0],
+                ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 80],
+            ],
+        ]);
+        $openManualResponse->assertRedirect();
+
+        $journalCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/journal-entries?workspace_product=accounting&format=csv");
+        $journalCsv->assertOk();
+        $journalCsvContent = $journalCsv->streamedContent();
+        $this->assertStringContainsString('Journal Number', $journalCsvContent);
+        $this->assertStringContainsString('Exportable manual journal', $journalCsvContent);
+
+        $trialCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/trial-balance?workspace_product=accounting&format=csv");
+        $trialCsv->assertOk();
+        $this->assertStringContainsString('1150 Clearing Account', $trialCsv->streamedContent());
+
+        $revenueCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/revenue-summary?workspace_product=accounting&format=csv");
+        $revenueCsv->assertOk();
+        $this->assertStringContainsString('4100 Service Revenue', $revenueCsv->streamedContent());
+
+        $printResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/journal-entries?workspace_product=accounting&format=print");
+        $printResponse->assertOk();
+        $printResponse->assertSee('Journal entries', false);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_accounts', [
+                'code' => '1150 Clearing Account',
+            ], 'tenant');
+            $periodLock = DB::connection('tenant')->table('accounting_period_locks')
+                ->where('status', 'locked')
+                ->first();
+            $this->assertNotNull($periodLock);
+            $this->assertStringStartsWith('2026-04-01', $periodLock->period_start);
+            $this->assertStringStartsWith('2026-04-30', $periodLock->period_end);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'manual_journal_created',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_accounting_runtime_can_post_inventory_valuation_movements(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
@@ -793,6 +885,89 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertSame('posted', $handoff->status);
             $this->assertSame(\App\Models\JournalEntry::class, $handoff->target_type);
             $this->assertSame((int) $journal->id, (int) $handoff->target_id);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
+    public function test_accounting_runtime_uses_configured_inventory_policy_accounts(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        [$branchId, $productId] = $this->seedTenantStock($tenant, [
+            [
+                'branch' => ['name' => 'Main Branch', 'code' => 'MAIN'],
+                'product' => ['name' => 'Air Filter', 'sku' => 'AF-POL'],
+                'quantity' => 5,
+            ],
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $movementId = DB::connection('tenant')->table('stock_movements')->insertGetId([
+                'branch_id' => $branchId,
+                'product_id' => $productId,
+                'type' => 'adjustment_out',
+                'quantity' => 1,
+                'reference_type' => null,
+                'reference_id' => null,
+                'notes' => 'Policy account test',
+                'created_by' => null,
+                'movement_date' => '2026-05-03',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $policyResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/policies?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => 'custom_inventory_policy',
+            'name' => 'Custom Inventory Policy',
+            'currency' => 'USD',
+            'inventory_asset_account' => '1310 Workshop Inventory',
+            'inventory_adjustment_offset_account' => '3910 Inventory Offset',
+            'inventory_adjustment_expense_account' => '5110 Inventory Shrinkage',
+            'cogs_account' => '5010 Workshop COGS',
+            'is_default' => 1,
+        ]);
+        $policyResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $postResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/inventory-movements/{$movementId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $postResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', \App\Models\StockMovement::class)
+                ->where('source_id', $movementId)
+                ->first();
+            $this->assertNotNull($journal);
+
+            $lines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $journal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertSame('5110 Inventory Shrinkage', $lines[0]->account_code);
+            $this->assertSame('1310 Workshop Inventory', $lines[1]->account_code);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'inventory_valuation_posted',
+            ], 'tenant');
         } finally {
             tenancy()->end();
             DB::purge('tenant');

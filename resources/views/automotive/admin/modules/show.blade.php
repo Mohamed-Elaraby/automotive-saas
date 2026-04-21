@@ -153,6 +153,99 @@
                                 <div class="col-md-3 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply Filters</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
                             </div>
                         </form>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries'] + $workspaceQuery + $journalFilters) }}">Export Journal CSV</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance'] + $workspaceQuery + $journalFilters) }}">Export Trial Balance CSV</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">Export Revenue CSV</a>
+                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Account Catalog</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.accounts.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="mb-2"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', '1150 Clearing Account') }}"></div>
+                                    <div class="mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'Clearing Account') }}"></div>
+                                    <div class="row">
+                                        <div class="col-6 mb-2"><label class="form-label">Type</label><select name="type" class="form-select"><option value="asset">Asset</option><option value="liability">Liability</option><option value="equity">Equity</option><option value="revenue">Revenue</option><option value="expense">Expense</option></select></div>
+                                        <div class="col-6 mb-2"><label class="form-label">Normal</label><select name="normal_balance" class="form-select"><option value="debit">Debit</option><option value="credit">Credit</option></select></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Account</button>
+                                </form>
+                                <hr>
+                                @forelse(($moduleData['accounting_accounts'] ?? collect())->take(8) as $account)
+                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                        <div><div class="fw-semibold">{{ $account->code }}</div><div class="text-muted small">{{ $account->name }}</div></div>
+                                        <span class="badge bg-light text-dark">{{ strtoupper($account->type) }}</span>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No accounting accounts are configured yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Period Locks</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-6 mb-2"><label class="form-label">Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                        <div class="col-6 mb-2"><label class="form-label">End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                    </div>
+                                    <div class="mb-2"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                    <button type="submit" class="btn btn-primary">Lock Period</button>
+                                </form>
+                                <hr>
+                                @forelse(($moduleData['accounting_period_locks'] ?? collect()) as $lock)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="fw-semibold">{{ optional($lock->period_start)->format('Y-m-d') }} → {{ optional($lock->period_end)->format('Y-m-d') }}</div>
+                                        <div class="text-muted small">{{ strtoupper($lock->status) }} · {{ optional($lock->locked_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No locked accounting periods yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Inventory Accounting Policy</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.policies.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-5 mb-2"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', 'default_inventory_policy') }}"></div>
+                                        <div class="col-7 mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'Default Inventory Policy') }}"></div>
+                                    </div>
+                                    <div class="mb-2"><label class="form-label">Inventory Asset</label><input type="text" name="inventory_asset_account" class="form-control" value="{{ old('inventory_asset_account', '1300 Inventory Asset') }}"></div>
+                                    <div class="mb-2"><label class="form-label">Adjustment Offset</label><input type="text" name="inventory_adjustment_offset_account" class="form-control" value="{{ old('inventory_adjustment_offset_account', '3900 Inventory Adjustment Offset') }}"></div>
+                                    <div class="mb-2"><label class="form-label">Adjustment Expense</label><input type="text" name="inventory_adjustment_expense_account" class="form-control" value="{{ old('inventory_adjustment_expense_account', '5100 Inventory Adjustment Expense') }}"></div>
+                                    <div class="mb-2"><label class="form-label">COGS</label><input type="text" name="cogs_account" class="form-control" value="{{ old('cogs_account', '5000 Cost Of Goods Sold') }}"></div>
+                                    <input type="hidden" name="currency" value="USD">
+                                    <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="policy_default" name="is_default" value="1" checked><label class="form-check-label" for="policy_default">Default policy</label></div>
+                                    <button type="submit" class="btn btn-primary">Save Policy</button>
+                                </form>
+                                <hr>
+                                @forelse(($moduleData['accounting_policies'] ?? collect()) as $policy)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="fw-semibold">{{ $policy->name }}</div>
+                                        <div class="text-muted small">{{ $policy->inventory_asset_account }} / {{ $policy->cogs_account }}</div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No accounting policies are configured yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -333,6 +426,11 @@
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Create Manual Journal Entry</h5></div>
                     <div class="card-body">
+                        <datalist id="account-catalog-options">
+                            @foreach(($moduleData['accounting_accounts'] ?? collect()) as $account)
+                                <option value="{{ $account->code }}">{{ $account->name }}</option>
+                            @endforeach
+                        </datalist>
                         <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.manual-journal-entries.store', $workspaceQuery) }}">
                             @csrf
                             <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
@@ -347,7 +445,7 @@
                                     <tbody>
                                     @for($lineIndex = 0; $lineIndex < 4; $lineIndex++)
                                         <tr>
-                                            <td><input type="text" name="lines[{{ $lineIndex }}][account_code]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_code") }}"></td>
+                                            <td><input type="text" name="lines[{{ $lineIndex }}][account_code]" list="account-catalog-options" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_code") }}"></td>
                                             <td><input type="text" name="lines[{{ $lineIndex }}][account_name]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_name") }}"></td>
                                             <td><input type="text" name="lines[{{ $lineIndex }}][memo]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.memo") }}"></td>
                                             <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][debit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.debit") }}"></td>
@@ -442,6 +540,25 @@
                             </div>
                         @empty
                             <p class="text-muted mb-0">No journal entries have been posted yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Accounting Audit Timeline</h5></div>
+                    <div class="card-body">
+                        @forelse(($moduleData['accounting_audit_entries'] ?? collect()) as $audit)
+                            <div class="border-bottom pb-2 mb-2">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div>
+                                        <h6 class="mb-1">{{ str_replace('_', ' ', strtoupper($audit->event_type)) }}</h6>
+                                        <div class="text-muted small">{{ $audit->description }}</div>
+                                    </div>
+                                    <div class="text-muted small text-end">{{ optional($audit->created_at)->format('Y-m-d H:i') }}</div>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-muted mb-0">No accounting audit entries have been recorded yet.</p>
                         @endforelse
                     </div>
                 </div>

@@ -2,12 +2,17 @@
 
 namespace App\Services\Automotive;
 
+use App\Models\AccountingAccount;
+use App\Models\AccountingAuditEntry;
 use App\Models\AccountingEvent;
+use App\Models\AccountingPeriodLock;
+use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
 use App\Models\JournalEntry;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
 use App\Services\Tenancy\WorkspaceIntegrationHandoffService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,6 +30,43 @@ class AccountingRuntimeService
         return AccountingPostingGroup::query()
             ->orderByDesc('is_default')
             ->orderBy('name')
+            ->get();
+    }
+
+    public function getAccounts(): Collection
+    {
+        $this->ensureDefaultAccounts();
+
+        return AccountingAccount::query()
+            ->orderBy('code')
+            ->get();
+    }
+
+    public function getPeriodLocks(): Collection
+    {
+        return AccountingPeriodLock::query()
+            ->latest('period_end')
+            ->latest('id')
+            ->limit(12)
+            ->get();
+    }
+
+    public function getPolicies(): Collection
+    {
+        $this->ensureDefaultPolicy();
+
+        return AccountingPolicy::query()
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getAuditEntries(int $limit = 30): Collection
+    {
+        return AccountingAuditEntry::query()
+            ->latest('created_at')
+            ->latest('id')
+            ->limit($limit)
             ->get();
     }
 
@@ -119,6 +161,83 @@ class AccountingRuntimeService
         });
     }
 
+    public function createAccount(array $data): AccountingAccount
+    {
+        return AccountingAccount::query()->updateOrCreate(
+            ['code' => trim((string) $data['code'])],
+            [
+                'name' => $data['name'],
+                'type' => $data['type'],
+                'normal_balance' => $data['normal_balance'],
+                'is_active' => ! array_key_exists('is_active', $data) || (bool) $data['is_active'],
+                'notes' => $data['notes'] ?? null,
+            ]
+        );
+    }
+
+    public function createPeriodLock(array $data, ?int $createdBy = null): AccountingPeriodLock
+    {
+        $start = Carbon::parse($data['period_start'])->toDateString();
+        $end = Carbon::parse($data['period_end'])->toDateString();
+
+        if ($end < $start) {
+            throw ValidationException::withMessages([
+                'period_end' => 'Period end date must be on or after period start date.',
+            ]);
+        }
+
+        $lock = AccountingPeriodLock::query()->create([
+            'period_start' => $start,
+            'period_end' => $end,
+            'status' => 'locked',
+            'locked_by' => $createdBy,
+            'locked_at' => now(),
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        $this->recordAudit('period_locked', $lock, "Accounting period {$start} to {$end} locked.", [
+            'period_start' => $start,
+            'period_end' => $end,
+        ], $createdBy);
+
+        return $lock;
+    }
+
+    public function createPolicy(array $data): AccountingPolicy
+    {
+        return DB::transaction(function () use ($data): AccountingPolicy {
+            $isDefault = ! empty($data['is_default']);
+
+            if ($isDefault) {
+                AccountingPolicy::query()->update(['is_default' => false]);
+            }
+
+            $policy = AccountingPolicy::query()->updateOrCreate(
+                ['code' => Str::slug((string) $data['code'], '_')],
+                [
+                    'name' => $data['name'],
+                    'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
+                    'inventory_asset_account' => $data['inventory_asset_account'],
+                    'inventory_adjustment_offset_account' => $data['inventory_adjustment_offset_account'],
+                    'inventory_adjustment_expense_account' => $data['inventory_adjustment_expense_account'],
+                    'cogs_account' => $data['cogs_account'],
+                    'is_default' => $isDefault,
+                    'is_active' => true,
+                    'notes' => $data['notes'] ?? null,
+                ]
+            );
+
+            $this->ensureAccountsFromCodes([
+                $policy->inventory_asset_account,
+                $policy->inventory_adjustment_offset_account,
+                $policy->inventory_adjustment_expense_account,
+                $policy->cogs_account,
+            ]);
+
+            return $policy;
+        });
+    }
+
     public function postAccountingEvent(AccountingEvent $event, ?int $postingGroupId = null, ?int $createdBy = null): JournalEntry
     {
         if (JournalEntry::query()->where('accounting_event_id', $event->id)->exists()) {
@@ -128,6 +247,8 @@ class AccountingRuntimeService
         }
 
         $postingGroup = $this->resolvePostingGroup($postingGroupId);
+        $entryDate = optional($event->event_date)->toDateString() ?: now()->toDateString();
+        $this->assertPeriodOpen($entryDate);
         $laborAmount = round((float) $event->labor_amount, 2);
         $partsAmount = round((float) $event->parts_amount, 2);
         $totalAmount = round((float) $event->total_amount, 2);
@@ -138,7 +259,7 @@ class AccountingRuntimeService
             ]);
         }
 
-        return DB::transaction(function () use ($event, $postingGroup, $laborAmount, $partsAmount, $totalAmount, $createdBy): JournalEntry {
+        return DB::transaction(function () use ($event, $postingGroup, $entryDate, $laborAmount, $partsAmount, $totalAmount, $createdBy): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'accounting_event_id' => $event->id,
                 'posting_group_id' => $postingGroup?->id,
@@ -146,7 +267,7 @@ class AccountingRuntimeService
                 'source_type' => $event->reference_type,
                 'source_id' => $event->reference_id,
                 'status' => 'posted',
-                'entry_date' => optional($event->event_date)->toDateString() ?: now()->toDateString(),
+                'entry_date' => $entryDate,
                 'currency' => $event->currency ?: ($postingGroup?->currency ?: 'USD'),
                 'debit_total' => $totalAmount,
                 'credit_total' => $totalAmount,
@@ -187,6 +308,10 @@ class AccountingRuntimeService
             }
 
             $event->forceFill(['status' => 'journal_posted'])->save();
+            $this->recordAudit('journal_posted', $entry, "Accounting event posted as {$entry->journal_number}.", [
+                'accounting_event_id' => $event->id,
+                'total_amount' => $totalAmount,
+            ], $createdBy);
 
             return $entry->load(['lines', 'postingGroup']);
         });
@@ -207,6 +332,9 @@ class AccountingRuntimeService
             })
             ->filter(fn (array $line): bool => $line['account_code'] !== '' && ($line['debit'] > 0 || $line['credit'] > 0))
             ->values();
+
+        $this->assertPeriodOpen($data['entry_date'] ?? now()->toDateString());
+        $this->assertKnownAccounts($lines);
 
         if ($lines->count() < 2) {
             throw ValidationException::withMessages([
@@ -244,6 +372,11 @@ class AccountingRuntimeService
                 ]);
             }
 
+            $this->recordAudit('manual_journal_created', $entry, "Manual journal {$entry->journal_number} created.", [
+                'debit_total' => $debitTotal,
+                'credit_total' => $creditTotal,
+            ], $createdBy);
+
             return $entry->load(['lines', 'postingGroup', 'creator']);
         });
     }
@@ -251,6 +384,7 @@ class AccountingRuntimeService
     public function reverseJournalEntry(JournalEntry $entry, ?int $createdBy = null): JournalEntry
     {
         $entry->loadMissing('lines');
+        $this->assertPeriodOpen(now()->toDateString());
 
         if ($entry->status !== 'posted') {
             throw ValidationException::withMessages([
@@ -302,6 +436,9 @@ class AccountingRuntimeService
             }
 
             $entry->forceFill(['status' => 'reversed'])->save();
+            $this->recordAudit('journal_reversed', $reversal, "Journal {$entry->journal_number} reversed by {$reversal->journal_number}.", [
+                'original_journal_entry_id' => $entry->id,
+            ], $createdBy);
 
             return $reversal->load(['lines', 'postingGroup', 'creator']);
         });
@@ -320,6 +457,9 @@ class AccountingRuntimeService
 
         $movement->loadMissing(['product', 'branch']);
         $amount = $this->inventoryMovementValue($movement);
+        $entryDate = optional($movement->movement_date)->toDateString() ?: now()->toDateString();
+        $this->assertPeriodOpen($entryDate);
+        $policy = $this->ensureDefaultPolicy();
         $handoff = $this->workspaceIntegrationHandoffService->start([
             'integration_key' => 'parts-accounting',
             'event_name' => 'stock_movement.valued',
@@ -348,14 +488,14 @@ class AccountingRuntimeService
         }
 
         try {
-            return DB::transaction(function () use ($movement, $amount, $createdBy, $handoff): JournalEntry {
+            return DB::transaction(function () use ($movement, $amount, $entryDate, $policy, $createdBy, $handoff): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'journal_number' => $this->nextJournalNumber('INV'),
                 'source_type' => StockMovement::class,
                 'source_id' => $movement->id,
                 'status' => 'posted',
-                'entry_date' => optional($movement->movement_date)->toDateString() ?: now()->toDateString(),
-                'currency' => 'USD',
+                'entry_date' => $entryDate,
+                'currency' => $policy->currency ?: 'USD',
                 'debit_total' => $amount,
                 'credit_total' => $amount,
                 'memo' => $this->inventoryMovementMemo($movement),
@@ -365,8 +505,8 @@ class AccountingRuntimeService
 
             if (in_array($movement->type, ['opening', 'adjustment_in'], true)) {
                 $entry->lines()->create([
-                    'account_code' => '1300 Inventory Asset',
-                    'account_name' => 'Inventory Asset',
+                    'account_code' => $policy->inventory_asset_account,
+                    'account_name' => $this->resolveAccountName($policy->inventory_asset_account, 'Inventory Asset'),
                     'line_type' => 'debit',
                     'debit' => $amount,
                     'credit' => 0,
@@ -374,8 +514,8 @@ class AccountingRuntimeService
                 ]);
 
                 $entry->lines()->create([
-                    'account_code' => '3900 Inventory Adjustment Offset',
-                    'account_name' => 'Inventory Adjustment Offset',
+                    'account_code' => $policy->inventory_adjustment_offset_account,
+                    'account_name' => $this->resolveAccountName($policy->inventory_adjustment_offset_account, 'Inventory Adjustment Offset'),
                     'line_type' => 'credit',
                     'debit' => 0,
                     'credit' => $amount,
@@ -383,8 +523,8 @@ class AccountingRuntimeService
                 ]);
             } else {
                 $expenseAccount = $movement->reference_type === WorkOrder::class
-                    ? ['5000 Cost Of Goods Sold', 'Cost Of Goods Sold']
-                    : ['5100 Inventory Adjustment Expense', 'Inventory Adjustment Expense'];
+                    ? [$policy->cogs_account, $this->resolveAccountName($policy->cogs_account, 'Cost Of Goods Sold')]
+                    : [$policy->inventory_adjustment_expense_account, $this->resolveAccountName($policy->inventory_adjustment_expense_account, 'Inventory Adjustment Expense')];
 
                 $entry->lines()->create([
                     'account_code' => $expenseAccount[0],
@@ -396,8 +536,8 @@ class AccountingRuntimeService
                 ]);
 
                 $entry->lines()->create([
-                    'account_code' => '1300 Inventory Asset',
-                    'account_name' => 'Inventory Asset',
+                    'account_code' => $policy->inventory_asset_account,
+                    'account_name' => $this->resolveAccountName($policy->inventory_asset_account, 'Inventory Asset'),
                     'line_type' => 'credit',
                     'debit' => 0,
                     'credit' => $amount,
@@ -408,6 +548,11 @@ class AccountingRuntimeService
                 $this->workspaceIntegrationHandoffService->markPosted($handoff, $entry, [
                     'journal_entry_id' => $entry->id,
                 ]);
+                $this->recordAudit('inventory_valuation_posted', $entry, "Inventory movement posted as {$entry->journal_number}.", [
+                    'stock_movement_id' => $movement->id,
+                    'policy_id' => $policy->id,
+                    'valuation_amount' => $amount,
+                ], $createdBy);
 
                 return $entry->load(['lines', 'creator']);
             });
@@ -480,7 +625,7 @@ class AccountingRuntimeService
             return $postingGroup;
         }
 
-        return AccountingPostingGroup::query()->create([
+        $group = AccountingPostingGroup::query()->create([
             'code' => 'workshop_revenue',
             'name' => 'Workshop Revenue',
             'receivable_account' => '1100 Accounts Receivable',
@@ -489,6 +634,155 @@ class AccountingRuntimeService
             'currency' => 'USD',
             'is_default' => true,
             'is_active' => true,
+        ]);
+
+        $this->ensureAccountsFromCodes([
+            $group->receivable_account,
+            $group->labor_revenue_account,
+            $group->parts_revenue_account,
+        ]);
+
+        return $group;
+    }
+
+    protected function ensureDefaultAccounts(): void
+    {
+        $defaults = [
+            ['1100 Accounts Receivable', 'Accounts Receivable', 'asset', 'debit'],
+            ['1300 Inventory Asset', 'Inventory Asset', 'asset', 'debit'],
+            ['3900 Inventory Adjustment Offset', 'Inventory Adjustment Offset', 'equity', 'credit'],
+            ['4100 Service Labor Revenue', 'Service Labor Revenue', 'revenue', 'credit'],
+            ['4100 Service Revenue', 'Service Revenue', 'revenue', 'credit'],
+            ['4200 Parts Revenue', 'Parts Revenue', 'revenue', 'credit'],
+            ['5000 Cost Of Goods Sold', 'Cost Of Goods Sold', 'expense', 'debit'],
+            ['5100 Inventory Adjustment Expense', 'Inventory Adjustment Expense', 'expense', 'debit'],
+        ];
+
+        foreach ($defaults as [$code, $name, $type, $normalBalance]) {
+            AccountingAccount::query()->firstOrCreate(
+                ['code' => $code],
+                [
+                    'name' => $name,
+                    'type' => $type,
+                    'normal_balance' => $normalBalance,
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
+    protected function ensureAccountsFromCodes(array $codes): void
+    {
+        foreach ($codes as $code) {
+            $code = trim((string) $code);
+
+            if ($code === '') {
+                continue;
+            }
+
+            AccountingAccount::query()->firstOrCreate(
+                ['code' => $code],
+                [
+                    'name' => $this->nameFromAccountCode($code),
+                    'type' => Str::startsWith($code, '4') ? 'revenue' : (Str::startsWith($code, '5') ? 'expense' : 'asset'),
+                    'normal_balance' => Str::startsWith($code, ['2', '3', '4']) ? 'credit' : 'debit',
+                    'is_active' => true,
+                ]
+            );
+        }
+    }
+
+    protected function ensureDefaultPolicy(): AccountingPolicy
+    {
+        $this->ensureDefaultAccounts();
+
+        $policy = AccountingPolicy::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('id')
+            ->first();
+
+        if ($policy) {
+            return $policy;
+        }
+
+        return AccountingPolicy::query()->create([
+            'code' => 'default_inventory_policy',
+            'name' => 'Default Inventory Policy',
+            'currency' => 'USD',
+            'inventory_asset_account' => '1300 Inventory Asset',
+            'inventory_adjustment_offset_account' => '3900 Inventory Adjustment Offset',
+            'inventory_adjustment_expense_account' => '5100 Inventory Adjustment Expense',
+            'cogs_account' => '5000 Cost Of Goods Sold',
+            'is_default' => true,
+            'is_active' => true,
+        ]);
+    }
+
+    protected function assertPeriodOpen(string $entryDate): void
+    {
+        $date = Carbon::parse($entryDate)->toDateString();
+
+        $lock = AccountingPeriodLock::query()
+            ->where('status', 'locked')
+            ->whereDate('period_start', '<=', $date)
+            ->whereDate('period_end', '>=', $date)
+            ->first();
+
+        if ($lock) {
+            throw ValidationException::withMessages([
+                'entry_date' => "Accounting period is locked for {$date}.",
+            ]);
+        }
+    }
+
+    protected function assertKnownAccounts(Collection $lines): void
+    {
+        $this->ensureDefaultAccounts();
+        $activeCodes = AccountingAccount::query()
+            ->where('is_active', true)
+            ->pluck('code')
+            ->all();
+
+        if ($activeCodes === []) {
+            return;
+        }
+
+        $unknownCodes = $lines
+            ->pluck('account_code')
+            ->unique()
+            ->reject(fn (string $code): bool => in_array($code, $activeCodes, true))
+            ->values();
+
+        if ($unknownCodes->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'lines' => 'Unknown or inactive account code: ' . $unknownCodes->implode(', '),
+            ]);
+        }
+    }
+
+    protected function resolveAccountName(string $code, string $fallback): string
+    {
+        return AccountingAccount::query()->where('code', $code)->value('name') ?: $fallback;
+    }
+
+    protected function nameFromAccountCode(string $code): string
+    {
+        $parts = explode(' ', $code, 2);
+
+        return $parts[1] ?? $code;
+    }
+
+    protected function recordAudit(string $eventType, JournalEntry|AccountingPeriodLock $auditable, string $description, array $payload = [], ?int $createdBy = null): void
+    {
+        AccountingAuditEntry::query()->create([
+            'event_type' => $eventType,
+            'auditable_type' => $auditable::class,
+            'auditable_id' => $auditable->id,
+            'description' => $description,
+            'payload' => $payload,
+            'created_by' => $createdBy,
+            'created_at' => now(),
         ]);
     }
 

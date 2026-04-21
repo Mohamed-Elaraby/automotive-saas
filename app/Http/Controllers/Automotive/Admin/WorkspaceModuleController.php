@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WorkspaceModuleController extends Controller
 {
@@ -331,10 +332,14 @@ class WorkspaceModuleController extends Controller
                 'reviewable_accounting_events' => $this->accountingRuntimeService->getReviewableAccountingEvents(25),
                 'reviewable_inventory_movements' => $this->accountingRuntimeService->getReviewableInventoryMovements(25),
                 'posting_groups' => $this->accountingRuntimeService->getPostingGroups(),
+                'accounting_accounts' => $this->accountingRuntimeService->getAccounts(),
+                'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
+                'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'journal_filters' => $filters,
                 'recent_journal_entries' => $this->accountingRuntimeService->getJournalEntries($filters, 25),
                 'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
                 'revenue_summary' => $this->accountingRuntimeService->revenueSummary($filters),
+                'accounting_audit_entries' => $this->accountingRuntimeService->getAuditEntries(30),
                 'integration_contracts' => $this->workspaceIntegrationContractService->contracts(),
                 'recent_integration_handoffs' => $this->workspaceIntegrationHandoffService->recent(25),
             ]
@@ -387,6 +392,142 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Posting group created successfully.');
+    }
+
+    public function storeAccountingAccount(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:120'],
+            'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'in:asset,liability,equity,revenue,expense'],
+            'normal_balance' => ['required', 'in:debit,credit'],
+            'is_active' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->accountingRuntimeService->createAccount($validated);
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Accounting account saved successfully.');
+    }
+
+    public function storeAccountingPeriodLock(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'period_start' => ['required', 'date'],
+            'period_end' => ['required', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->createPeriodLock($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Accounting period locked successfully.');
+    }
+
+    public function storeAccountingPolicy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:80'],
+            'name' => ['required', 'string', 'max:255'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'inventory_asset_account' => ['required', 'string', 'max:120'],
+            'inventory_adjustment_offset_account' => ['required', 'string', 'max:120'],
+            'inventory_adjustment_expense_account' => ['required', 'string', 'max:120'],
+            'cogs_account' => ['required', 'string', 'max:120'],
+            'is_default' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->accountingRuntimeService->createPolicy($validated);
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Accounting policy saved successfully.');
+    }
+
+    public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
+    {
+        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary'], true), 404);
+
+        $filters = $request->validate([
+            'status' => ['nullable', 'in:posted,reversed'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'search' => ['nullable', 'string', 'max:120'],
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'format' => ['nullable', 'in:csv,print'],
+        ]);
+        $format = $filters['format'] ?? 'csv';
+
+        $headers = [];
+        $rows = [];
+
+        if ($report === 'journal-entries') {
+            $headers = ['Journal Number', 'Entry Date', 'Status', 'Memo', 'Currency', 'Debit Total', 'Credit Total'];
+            $rows = $this->accountingRuntimeService->getJournalEntries($filters, 500)
+                ->map(fn (JournalEntry $entry): array => [
+                    $entry->journal_number,
+                    optional($entry->entry_date)->format('Y-m-d'),
+                    $entry->status,
+                    $entry->memo,
+                    $entry->currency,
+                    (string) $entry->debit_total,
+                    (string) $entry->credit_total,
+                ])
+                ->all();
+        } elseif ($report === 'trial-balance') {
+            $headers = ['Account Code', 'Account Name', 'Debit Total', 'Credit Total', 'Balance'];
+            $rows = $this->accountingRuntimeService->trialBalance($filters)
+                ->map(fn ($row): array => [
+                    $row->account_code,
+                    $row->account_name,
+                    (string) $row->debit_total,
+                    (string) $row->credit_total,
+                    (string) $row->balance,
+                ])
+                ->all();
+        } else {
+            $headers = ['Account Code', 'Account Name', 'Revenue Total'];
+            $rows = $this->accountingRuntimeService->revenueSummary($filters)
+                ->map(fn ($row): array => [
+                    $row->account_code,
+                    $row->account_name,
+                    (string) $row->revenue_total,
+                ])
+                ->all();
+        }
+
+        if ($format === 'print') {
+            $title = ucfirst(str_replace('-', ' ', $report));
+
+            return view('automotive.admin.modules.accounting-report-print', compact('title', 'headers', 'rows', 'filters'));
+        }
+
+        $filename = $report . '-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () use ($headers, $rows): void {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, $headers);
+
+            foreach ($rows as $row) {
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function postAccountingEvent(Request $request, AccountingEvent $accountingEvent): RedirectResponse
