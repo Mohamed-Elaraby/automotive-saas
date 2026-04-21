@@ -149,9 +149,10 @@
                                 <div class="col-md-3 mb-3"><label class="form-label">Search</label><input type="text" name="search" class="form-control" value="{{ $journalFilters['search'] ?? '' }}" placeholder="Journal, memo, account"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Any</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>Posted</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>Reversed</option><option value="void" @selected(($journalFilters['status'] ?? '') === 'void')>Void</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Reconciliation</label><select name="reconciliation_status" class="form-select"><option value="">Any</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>Pending</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>Deposited</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Vendor Bills</label><select name="vendor_bill_status" class="form-select"><option value="">Any</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>Draft</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>Posted</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
-                                <div class="col-md-1 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
+                                <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
                             </div>
                         </form>
                         <div class="d-flex gap-2 flex-wrap">
@@ -221,6 +222,18 @@
                                     <p class="text-muted mb-0">No deposit batches have been posted yet.</p>
                                 @endforelse
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'posted_count' => 0, 'posted_amount' => 0])
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Payables Summary</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3"><div class="text-muted small">Draft Bills</div><h5 class="mb-0">{{ $payablesSummary['draft_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['draft_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">Posted Payables</div><h5 class="mb-0">{{ $payablesSummary['posted_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['posted_amount'], 2) }}</div></div>
+                            <div class="col-md-6 mb-3"><div class="text-muted small">Posting Rule</div><p class="mb-0">Vendor bills debit the selected expense or inventory account and credit Accounts Payable.</p></div>
                         </div>
                     </div>
                 </div>
@@ -483,6 +496,68 @@
                         @empty
                             <p class="text-muted mb-0">No valued inventory movements are waiting for accounting posting.</p>
                         @endforelse
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Create Vendor Bill</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bills.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3"><label class="form-label">Supplier Name</label><input type="text" name="supplier_name" class="form-control" value="{{ old('supplier_name') }}" placeholder="Vendor or supplier"></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Bill Date</label><input type="date" name="bill_date" class="form-control" value="{{ old('bill_date', now()->toDateString()) }}"></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control" value="{{ old('due_date') }}"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Amount</label><input type="number" step="0.01" min="0.01" name="amount" class="form-control" value="{{ old('amount') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Expense Account</label><input type="text" name="expense_account" list="account-catalog-options" class="form-control" value="{{ old('expense_account', '5200 Operating Expense') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Payable Account</label><input type="text" name="payable_account" list="account-catalog-options" class="form-control" value="{{ old('payable_account', '2000 Accounts Payable') }}"></div>
+                                    </div>
+                                    <input type="hidden" name="currency" value="USD">
+                                    <div class="mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                    <button type="submit" class="btn btn-primary">Create Vendor Bill</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Payables Review</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['vendor_bills'] ?? collect()) as $bill)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $bill->bill_number }}</h6>
+                                                <div class="text-muted small">{{ $bill->supplier_name ?: $bill->supplier?->name ?: 'Vendor bill' }} · {{ $bill->reference ?: 'No reference' }}</div>
+                                                <div class="text-muted small">{{ optional($bill->bill_date)->format('Y-m-d') }}{{ $bill->due_date ? ' · Due '.optional($bill->due_date)->format('Y-m-d') : '' }}</div>
+                                                <div class="text-muted small">{{ $bill->expense_account }} → {{ $bill->payable_account }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $bill->status === 'posted' ? 'bg-success' : 'bg-warning text-dark' }}">{{ strtoupper($bill->status) }}</span>
+                                                <div class="fw-semibold">{{ number_format((float) $bill->amount, 2) }} {{ $bill->currency }}</div>
+                                                @if($bill->journal_entry_id)
+                                                    <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $bill->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                @elseif($bill->status === 'draft')
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bills.post', ['vendorBill' => $bill->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <button type="submit" class="btn btn-sm btn-primary">Post To Payables</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No vendor bills have been created yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
                     </div>
                 </div>
 

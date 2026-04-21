@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
+use App\Models\AccountingVendorBill;
 use App\Models\JournalEntry;
 use App\Models\Customer;
 use App\Models\StockMovement;
@@ -321,6 +322,7 @@ class WorkspaceModuleController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void'],
             'reconciliation_status' => ['nullable', 'in:pending,deposited'],
+            'vendor_bill_status' => ['nullable', 'in:draft,posted,paid,void'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -343,6 +345,8 @@ class WorkspaceModuleController extends Controller
                 'reconcilable_payments' => $this->accountingRuntimeService->getReconcilablePayments(25),
                 'recent_deposit_batches' => $this->accountingRuntimeService->getDepositBatches(10),
                 'payment_reconciliation_summary' => $this->accountingRuntimeService->paymentReconciliationSummary(),
+                'vendor_bills' => $this->accountingRuntimeService->getVendorBills($filters, 15),
+                'payables_summary' => $this->accountingRuntimeService->payablesSummary(),
                 'receivables_aging' => $this->accountingRuntimeService->receivablesAging(),
                 'statement_customers' => $this->accountingRuntimeService->statementCustomerNames(),
                 'journal_filters' => $filters,
@@ -708,6 +712,65 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', "Deposit batch {$batch->deposit_number} posted successfully.");
+    }
+
+    public function storeAccountingVendorBill(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+            'bill_date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'expense_account' => ['nullable', 'string', 'max:120'],
+            'payable_account' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $bill = $this->accountingRuntimeService->createVendorBill(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Vendor bill {$bill->bill_number} created successfully.");
+    }
+
+    public function postAccountingVendorBill(Request $request, AccountingVendorBill $vendorBill): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->postVendorBill(
+                $vendorBill,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Vendor bill journal {$entry->journal_number} posted successfully.");
     }
 
     public function showAccountingDepositBatch(Request $request, AccountingDepositBatch $depositBatch): View

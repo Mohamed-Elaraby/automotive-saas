@@ -768,12 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Vendor Bills And Payables Foundation
+### Accounting Vendor Bill Payments And Payables Settlement
 Recommended scope:
-- add vendor bill runtime model and tenant table
-- create payables review list inside General Ledger
-- post vendor bills into Accounts Payable and expense/inventory accounts
-- add basic bill status lifecycle and audit trail
+- record vendor bill payments from cash/bank accounts
+- settle posted Accounts Payable bills partially or fully
+- create balanced payment journals that debit Accounts Payable and credit cash/bank
+- add payable aging/payment reporting basics
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1418,6 +1418,53 @@ Verification:
   - result: 7 passed, 207 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 24 passed, 441 assertions
+
+## 15.15) Accounting Vendor Bills And Payables Foundation
+Status:
+- completed
+
+Why this package was needed:
+- Accounting had receivables, payments, deposit reconciliation, and reports, but no runtime entry point for vendor-side obligations
+- this package starts Accounts Payable without adding a separate procurement system or changing journal truth
+
+Completed scope:
+- added tenant table `accounting_vendor_bills`
+- added `AccountingVendorBill` model
+- added default accounting accounts:
+  - `2000 Accounts Payable`
+  - `5200 Operating Expense`
+- General Ledger now shows:
+  - Payables Summary
+  - Create Vendor Bill form
+  - Payables Review list
+  - Vendor Bills status filter
+- vendor bill creation:
+  - creates a `VBILL-*` draft bill
+  - supports supplier name, bill/due date, reference, amount, expense account, payable account, and notes
+- vendor bill posting:
+  - only draft bills can be posted
+  - creates an `AP-*` journal entry
+  - debits the selected expense/inventory account
+  - credits Accounts Payable
+  - updates the bill to `posted`
+  - records `vendor_bill_posted` audit entry
+- integration readiness verification now requires the new `accounting_vendor_bills` tenant table
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_060000_create_accounting_vendor_bills_table.php`
+- `app/Models/AccountingVendorBill.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 8 passed, 240 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 25 passed, 474 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

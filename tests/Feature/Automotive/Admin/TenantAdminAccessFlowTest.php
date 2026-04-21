@@ -949,6 +949,103 @@ class TenantAdminAccessFlowTest extends TestCase
         $correctedDetailResponse->assertSee('Bank slip entered against the wrong date.', false);
     }
 
+    public function test_accounting_runtime_can_create_and_post_vendor_bill_to_payables(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Create Vendor Bill', false);
+        $ledgerResponse->assertSee('Payables Review', false);
+
+        $createResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'bill_date' => '2026-05-09',
+            'due_date' => '2026-05-30',
+            'supplier_name' => 'Rent Vendor',
+            'reference' => 'BILL-RENT-001',
+            'currency' => 'USD',
+            'amount' => 240,
+            'expense_account' => '5200 Operating Expense',
+            'payable_account' => '2000 Accounts Payable',
+            'notes' => 'Monthly workshop rent.',
+        ]);
+
+        $createResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $bill = DB::connection('tenant')->table('accounting_vendor_bills')->first();
+
+            $this->assertNotNull($bill);
+            $this->assertStringStartsWith('VBILL-', $bill->bill_number);
+            $this->assertSame('draft', $bill->status);
+            $this->assertSame('Rent Vendor', $bill->supplier_name);
+            $this->assertSame(240.0, (float) $bill->amount);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $reviewResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&vendor_bill_status=draft");
+        $reviewResponse->assertOk();
+        $reviewResponse->assertSee('Rent Vendor', false);
+        $reviewResponse->assertSee('Post To Payables', false);
+        $reviewResponse->assertSee('DRAFT', false);
+
+        $postResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills/{$bill->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $postResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $postedBill = DB::connection('tenant')->table('accounting_vendor_bills')->where('id', $bill->id)->first();
+
+            $this->assertSame('posted', $postedBill->status);
+            $this->assertNotNull($postedBill->journal_entry_id);
+            $this->assertNotNull($postedBill->posted_at);
+
+            $journal = DB::connection('tenant')->table('journal_entries')->where('id', $postedBill->journal_entry_id)->first();
+            $this->assertNotNull($journal);
+            $this->assertStringStartsWith('AP-', $journal->journal_number);
+            $this->assertSame(240.0, (float) $journal->debit_total);
+            $this->assertSame(240.0, (float) $journal->credit_total);
+
+            $lines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $journal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertCount(2, $lines);
+            $this->assertSame('5200 Operating Expense', $lines[0]->account_code);
+            $this->assertSame(240.0, (float) $lines[0]->debit);
+            $this->assertSame('2000 Accounts Payable', $lines[1]->account_code);
+            $this->assertSame(240.0, (float) $lines[1]->credit);
+
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'vendor_bill_posted',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $journalDetailResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting");
+        $journalDetailResponse->assertOk();
+        $journalDetailResponse->assertSee('Vendor bill', false);
+        $journalDetailResponse->assertSee('Accounts Payable', false);
+    }
+
 
     public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void
     {

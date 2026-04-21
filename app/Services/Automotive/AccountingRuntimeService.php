@@ -10,6 +10,7 @@ use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
+use App\Models\AccountingVendorBill;
 use App\Models\JournalEntry;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
@@ -153,6 +154,47 @@ class AccountingRuntimeService
             ->latest('id')
             ->limit($limit)
             ->get();
+    }
+
+    public function getVendorBills(array $filters = [], int $limit = 25): Collection
+    {
+        return AccountingVendorBill::query()
+            ->with(['supplier', 'journalEntry', 'creator', 'poster'])
+            ->when(! empty($filters['vendor_bill_status']), fn ($query) => $query->where('status', $filters['vendor_bill_status']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('bill_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('bill_date', '<=', $filters['date_to']))
+            ->when(! empty($filters['search']), function ($query) use ($filters) {
+                $search = '%' . trim((string) $filters['search']) . '%';
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('bill_number', 'like', $search)
+                        ->orWhere('supplier_name', 'like', $search)
+                        ->orWhere('reference', 'like', $search)
+                        ->orWhere('notes', 'like', $search);
+                });
+            })
+            ->latest('bill_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function payablesSummary(): array
+    {
+        $bills = AccountingVendorBill::query()
+            ->selectRaw('status, COUNT(*) as bills_count, COALESCE(SUM(amount), 0) as total_amount')
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
+        $draft = $bills->get('draft');
+        $posted = $bills->get('posted');
+
+        return [
+            'draft_count' => (int) ($draft?->bills_count ?? 0),
+            'draft_amount' => round((float) ($draft?->total_amount ?? 0), 2),
+            'posted_count' => (int) ($posted?->bills_count ?? 0),
+            'posted_amount' => round((float) ($posted?->total_amount ?? 0), 2),
+        ];
     }
 
     public function depositBatchDetail(AccountingDepositBatch $batch): AccountingDepositBatch
@@ -759,6 +801,107 @@ class AccountingRuntimeService
         });
     }
 
+    public function createVendorBill(array $data, ?int $createdBy = null): AccountingVendorBill
+    {
+        $billDate = Carbon::parse($data['bill_date'] ?? now()->toDateString())->toDateString();
+        $dueDate = ! empty($data['due_date']) ? Carbon::parse($data['due_date'])->toDateString() : null;
+        $amount = round((float) ($data['amount'] ?? 0), 2);
+
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                'amount' => 'Vendor bill amount must be greater than zero.',
+            ]);
+        }
+
+        $expenseAccount = trim((string) ($data['expense_account'] ?? '5200 Operating Expense')) ?: '5200 Operating Expense';
+        $payableAccount = trim((string) ($data['payable_account'] ?? '2000 Accounts Payable')) ?: '2000 Accounts Payable';
+        $this->ensureAccountsFromCodes([$expenseAccount, $payableAccount]);
+
+        return AccountingVendorBill::query()->create([
+            'supplier_id' => $data['supplier_id'] ?? null,
+            'bill_number' => $this->nextJournalNumber('VBILL'),
+            'bill_date' => $billDate,
+            'due_date' => $dueDate,
+            'supplier_name' => $data['supplier_name'] ?? null,
+            'reference' => $data['reference'] ?? null,
+            'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
+            'amount' => $amount,
+            'expense_account' => $expenseAccount,
+            'payable_account' => $payableAccount,
+            'status' => 'draft',
+            'notes' => $data['notes'] ?? null,
+            'created_by' => $createdBy,
+        ])->load(['supplier', 'creator']);
+    }
+
+    public function postVendorBill(AccountingVendorBill $bill, ?int $createdBy = null): JournalEntry
+    {
+        if ($bill->status !== 'draft') {
+            throw ValidationException::withMessages([
+                'vendor_bill' => 'Only draft vendor bills can be posted.',
+            ]);
+        }
+
+        if ($bill->journal_entry_id !== null || JournalEntry::query()->where('source_type', AccountingVendorBill::class)->where('source_id', $bill->id)->exists()) {
+            throw ValidationException::withMessages([
+                'vendor_bill' => 'This vendor bill already has a journal entry.',
+            ]);
+        }
+
+        $entryDate = optional($bill->bill_date)->toDateString() ?: now()->toDateString();
+        $this->assertPeriodOpen($entryDate);
+        $amount = round((float) $bill->amount, 2);
+        $this->ensureAccountsFromCodes([$bill->expense_account, $bill->payable_account]);
+
+        return DB::transaction(function () use ($bill, $entryDate, $amount, $createdBy): JournalEntry {
+            $entry = JournalEntry::query()->create([
+                'journal_number' => $this->nextJournalNumber('AP'),
+                'source_type' => AccountingVendorBill::class,
+                'source_id' => $bill->id,
+                'status' => 'posted',
+                'entry_date' => $entryDate,
+                'currency' => $bill->currency ?: 'USD',
+                'debit_total' => $amount,
+                'credit_total' => $amount,
+                'memo' => 'Vendor bill ' . $bill->bill_number . ' ' . ($bill->supplier_name ?: $bill->supplier?->name ?: ''),
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $bill->expense_account,
+                'account_name' => $this->resolveAccountName($bill->expense_account, 'Operating Expense'),
+                'line_type' => 'debit',
+                'debit' => $amount,
+                'credit' => 0,
+                'memo' => 'Vendor bill expense.',
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $bill->payable_account,
+                'account_name' => $this->resolveAccountName($bill->payable_account, 'Accounts Payable'),
+                'line_type' => 'credit',
+                'debit' => 0,
+                'credit' => $amount,
+                'memo' => 'Vendor bill payable.',
+            ]);
+
+            $bill->forceFill([
+                'journal_entry_id' => $entry->id,
+                'status' => 'posted',
+                'posted_by' => $createdBy,
+                'posted_at' => now(),
+            ])->save();
+
+            $this->recordAudit('vendor_bill_posted', $bill, "Vendor bill {$bill->bill_number} posted.", [
+                'journal_entry_id' => $entry->id,
+                'amount' => $amount,
+            ], $createdBy);
+
+            return $entry->load(['lines', 'creator']);
+        });
+    }
+
     public function voidCustomerPayment(AccountingPayment $payment, ?int $createdBy = null): JournalEntry
     {
         $payment->loadMissing(['accountingEvent', 'journalEntry']);
@@ -1251,12 +1394,14 @@ class AccountingRuntimeService
             ['1000 Cash On Hand', 'Cash On Hand', 'asset', 'debit'],
             ['1010 Bank Account', 'Bank Account', 'asset', 'debit'],
             ['1300 Inventory Asset', 'Inventory Asset', 'asset', 'debit'],
+            ['2000 Accounts Payable', 'Accounts Payable', 'liability', 'credit'],
             ['3900 Inventory Adjustment Offset', 'Inventory Adjustment Offset', 'equity', 'credit'],
             ['4100 Service Labor Revenue', 'Service Labor Revenue', 'revenue', 'credit'],
             ['4100 Service Revenue', 'Service Revenue', 'revenue', 'credit'],
             ['4200 Parts Revenue', 'Parts Revenue', 'revenue', 'credit'],
             ['5000 Cost Of Goods Sold', 'Cost Of Goods Sold', 'expense', 'debit'],
             ['5100 Inventory Adjustment Expense', 'Inventory Adjustment Expense', 'expense', 'debit'],
+            ['5200 Operating Expense', 'Operating Expense', 'expense', 'debit'],
         ];
 
         foreach ($defaults as [$code, $name, $type, $normalBalance]) {
@@ -1285,7 +1430,13 @@ class AccountingRuntimeService
                 ['code' => $code],
                 [
                     'name' => $this->nameFromAccountCode($code),
-                    'type' => Str::startsWith($code, '4') ? 'revenue' : (Str::startsWith($code, '5') ? 'expense' : 'asset'),
+                    'type' => match (true) {
+                        Str::startsWith($code, '2') => 'liability',
+                        Str::startsWith($code, '3') => 'equity',
+                        Str::startsWith($code, '4') => 'revenue',
+                        Str::startsWith($code, '5') => 'expense',
+                        default => 'asset',
+                    },
                     'normal_balance' => Str::startsWith($code, ['2', '3', '4']) ? 'credit' : 'debit',
                     'is_active' => true,
                 ]
