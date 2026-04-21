@@ -608,6 +608,113 @@ class TenantAdminAccessFlowTest extends TestCase
         $postedLedgerResponse->assertSee('JOURNAL POSTED', false);
     }
 
+    public function test_accounting_runtime_can_record_customer_payment_and_settle_receivable(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $eventId = DB::connection('tenant')->table('accounting_events')->insertGetId([
+                'event_type' => 'work_order_completed',
+                'reference_type' => \App\Models\WorkOrder::class,
+                'reference_id' => 20,
+                'status' => 'posted',
+                'event_date' => '2026-05-04',
+                'currency' => 'USD',
+                'labor_amount' => 120,
+                'parts_amount' => 30,
+                'total_amount' => 150,
+                'payload' => json_encode([
+                    'work_order_number' => 'WO-PAYMENT-1',
+                    'title' => 'Payment collection work order',
+                    'customer_name' => 'Payment Customer',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$eventId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Record Customer Payment', false);
+        $ledgerResponse->assertSee('WO-PAYMENT-1', false);
+        $ledgerResponse->assertSee('Open 150.00 USD', false);
+
+        $paymentResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_event_id' => $eventId,
+            'payment_date' => '2026-05-05',
+            'amount' => 150,
+            'method' => 'cash',
+            'payer_name' => 'Payment Customer',
+            'reference' => 'RCPT-001',
+            'currency' => 'USD',
+            'cash_account' => '1000 Cash On Hand',
+        ]);
+
+        $paymentResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $event = DB::connection('tenant')->table('accounting_events')->where('id', $eventId)->first();
+            $this->assertSame('paid', $event->status);
+
+            $payment = DB::connection('tenant')->table('accounting_payments')
+                ->where('accounting_event_id', $eventId)
+                ->first();
+
+            $this->assertNotNull($payment);
+            $this->assertStringStartsWith('PMT-', $payment->payment_number);
+            $this->assertSame(150.0, (float) $payment->amount);
+            $this->assertSame('RCPT-001', $payment->reference);
+
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('id', $payment->journal_entry_id)
+                ->first();
+
+            $this->assertNotNull($journal);
+            $this->assertStringStartsWith('PAY-', $journal->journal_number);
+            $this->assertSame(150.0, (float) $journal->debit_total);
+            $this->assertSame(150.0, (float) $journal->credit_total);
+
+            $lines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $journal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertCount(2, $lines);
+            $this->assertSame('1000 Cash On Hand', $lines[0]->account_code);
+            $this->assertSame(150.0, (float) $lines[0]->debit);
+            $this->assertSame('1100 Accounts Receivable', $lines[1]->account_code);
+            $this->assertSame(150.0, (float) $lines[1]->credit);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'customer_payment_recorded',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $detailResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting");
+        $detailResponse->assertOk();
+        $detailResponse->assertSee('Customer payment for WO-PAYMENT-1', false);
+    }
+
     public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

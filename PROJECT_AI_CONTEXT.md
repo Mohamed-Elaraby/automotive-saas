@@ -768,14 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Run Production Integration Verification
+### Accounting Receivables Aging And Payment Reporting
 Recommended scope:
-- deploy the latest code to the system app
-- run central and tenant migrations
-- run `php artisan tenancy:verify-integration-readiness`
-- run `php artisan tenancy:verify-integration-readiness --tenant=TENANT_ID` against a tenant with Automotive, Parts Inventory, and Accounting active
-- complete the UI smoke test in `deploy/INTEGRATION_VERIFICATION_CHECKLIST.md`
-- after this passes on production, normal product feature work can resume
+- add A/R aging buckets for unpaid and partially paid accounting events
+- add payment list filters and CSV/print export
+- add payment reversal/void workflow with reversing journal
+- add dashboard totals for open receivables, collected amount, and overdue buckets
+- keep this inside Accounting runtime; do not reopen integration architecture unless a real blocker appears
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -1124,7 +1123,7 @@ Integration closure note:
 ## 15.9) Post-Integration Stabilization And Deployment Verification Tooling
 Status:
 - completed locally
-- production verification still must be run on the server after deploy
+- completed on production for tenant `client_1`
 
 Why this package was needed:
 - code-level integration closure was complete, but deployment still needed a repeatable verification gate
@@ -1167,6 +1166,72 @@ Production command:
   - `php artisan tenancy:verify-integration-readiness`
 - full tenant verification:
   - `php artisan tenancy:verify-integration-readiness --tenant=TENANT_ID`
+
+Production verification actually run:
+- `php artisan migrate --force`
+  - result: `Nothing to migrate.`
+- `php artisan tenants:migrate --force`
+  - result: tenant `client_1` ran `2026_04_21_020000_create_accounting_control_tables`
+- `php artisan tenancy:verify-integration-readiness`
+  - result: passed contract registry verification
+  - tenant checks intentionally skipped because no `--tenant` was supplied
+- `php artisan tenancy:verify-integration-readiness --tenant=client_1`
+  - result: passed
+  - tenant runtime tables: `OK`
+  - workspace products: `OK`
+  - recorded handoffs: `1`
+
+Production integration status:
+- integration is closed on production for `client_1`
+- future product work can resume as long as new products use product manifests, capabilities, integration contracts, and handoff envelopes
+
+## 15.10) Accounting Customer Payments And Receivable Settlement
+Status:
+- completed
+
+Why this package was needed:
+- Accounting could post work-order revenue into Accounts Receivable, but there was no runtime workflow to record customer collection and settle that receivable
+- this completes the first practical accounting cycle:
+  - work order completed
+  - accounting event created
+  - revenue journal posted
+  - customer payment received
+  - cash debited and receivable credited
+
+Completed scope:
+- added tenant table `accounting_payments`
+- added `AccountingPayment` model
+- General Ledger now shows:
+  - open customer receivables from journal-posted accounting events
+  - Record Customer Payment form
+  - Recent Customer Payments
+- recording a payment now:
+  - validates the accounting event is journal-posted
+  - blocks overpayment above the open receivable amount
+  - respects accounting period locks
+  - creates a `PAY-*` journal entry
+  - debits `1000 Cash On Hand` or configured cash/bank account
+  - credits Accounts Receivable
+  - creates a `PMT-*` payment record
+  - marks the accounting event as `paid` when fully settled
+  - writes `customer_payment_recorded` into the accounting audit timeline
+- integration readiness command now also checks `accounting_payments` as a required tenant runtime table
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_030000_create_accounting_payments_table.php`
+- `app/Models/AccountingPayment.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 6 passed, 130 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 23 passed, 364 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

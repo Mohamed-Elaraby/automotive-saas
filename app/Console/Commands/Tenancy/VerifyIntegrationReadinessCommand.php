@@ -33,6 +33,7 @@ class VerifyIntegrationReadinessCommand extends Command
         'accounting_period_locks',
         'accounting_policies',
         'accounting_audit_entries',
+        'accounting_payments',
         'work_orders',
         'work_order_lines',
         'stock_movements',

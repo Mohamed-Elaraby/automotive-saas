@@ -423,6 +423,71 @@
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-xl-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Record Customer Payment</h5></div>
+                            <div class="card-body">
+                                @if(($moduleData['receivable_events'] ?? collect())->isEmpty())
+                                    <p class="text-muted mb-0">No open customer receivables are ready for payment collection.</p>
+                                @else
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.payments.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="mb-3">
+                                            <label class="form-label">Receivable</label>
+                                            <select name="accounting_event_id" class="form-select">
+                                                @foreach(($moduleData['receivable_events'] ?? collect()) as $event)
+                                                    <option value="{{ $event->id }}">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }} · {{ data_get($event->payload, 'customer_name', 'Customer') }} · Open {{ number_format((float) $event->getAttribute('open_amount'), 2) }} {{ $event->currency }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3"><label class="form-label">Payment Date</label><input type="date" name="payment_date" class="form-control" value="{{ old('payment_date', now()->toDateString()) }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Amount</label><input type="number" step="0.01" min="0.01" name="amount" class="form-control" value="{{ old('amount') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Method</label><select name="method" class="form-select"><option value="cash">Cash</option><option value="bank_transfer">Bank Transfer</option><option value="card">Card</option><option value="check">Check</option><option value="other">Other</option></select></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-5 mb-3"><label class="form-label">Payer Name</label><input type="text" name="payer_name" class="form-control" value="{{ old('payer_name') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Cash/Bank Account</label><input type="text" name="cash_account" list="account-catalog-options" class="form-control" value="{{ old('cash_account', '1000 Cash On Hand') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                        </div>
+                                        <input type="hidden" name="currency" value="USD">
+                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">Record Payment</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Recent Customer Payments</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['recent_accounting_payments'] ?? collect()) as $payment)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $payment->payment_number }}</h6>
+                                                <div class="text-muted small">{{ $payment->payer_name ?: 'Customer payment' }} · {{ ucfirst(str_replace('_', ' ', $payment->method)) }}</div>
+                                                <div class="text-muted small">{{ optional($payment->payment_date)->format('Y-m-d') }} · {{ $payment->cash_account }} → {{ $payment->receivable_account }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-semibold">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</div>
+                                                @if($payment->journal_entry_id)
+                                                    <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $payment->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No customer payments have been recorded yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Create Manual Journal Entry</h5></div>
                     <div class="card-body">

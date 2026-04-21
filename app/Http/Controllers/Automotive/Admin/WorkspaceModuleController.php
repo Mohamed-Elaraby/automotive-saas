@@ -335,6 +335,8 @@ class WorkspaceModuleController extends Controller
                 'accounting_accounts' => $this->accountingRuntimeService->getAccounts(),
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
+                'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
+                'recent_accounting_payments' => $this->accountingRuntimeService->getRecentPayments(15),
                 'journal_filters' => $filters,
                 'recent_journal_entries' => $this->accountingRuntimeService->getJournalEntries($filters, 25),
                 'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
@@ -579,6 +581,41 @@ class WorkspaceModuleController extends Controller
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
             ->with('success', "Inventory valuation journal {$entry->journal_number} posted successfully.");
+    }
+
+    public function storeAccountingPayment(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'accounting_event_id' => ['required', 'integer', 'exists:accounting_events,id'],
+            'payment_date' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'method' => ['required', 'in:cash,bank_transfer,card,check,other'],
+            'payer_name' => ['nullable', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'cash_account' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $payment = $this->accountingRuntimeService->recordCustomerPayment(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $payment->journal_entry_id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Payment {$payment->payment_number} recorded successfully.");
     }
 
     public function retryIntegrationHandoff(Request $request, WorkspaceIntegrationHandoff $handoff): RedirectResponse

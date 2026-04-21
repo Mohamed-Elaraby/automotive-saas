@@ -5,6 +5,7 @@ namespace App\Services\Automotive;
 use App\Models\AccountingAccount;
 use App\Models\AccountingAuditEntry;
 use App\Models\AccountingEvent;
+use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
@@ -12,6 +13,7 @@ use App\Models\JournalEntry;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
 use App\Services\Tenancy\WorkspaceIntegrationHandoffService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +67,41 @@ class AccountingRuntimeService
     {
         return AccountingAuditEntry::query()
             ->latest('created_at')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function getReceivableEvents(int $limit = 25): Collection
+    {
+        return AccountingEvent::query()
+            ->where('status', 'journal_posted')
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('journal_entries')
+                    ->whereColumn('journal_entries.accounting_event_id', 'accounting_events.id')
+                    ->where('journal_entries.status', 'posted');
+            })
+            ->latest('event_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->map(function (AccountingEvent $event): AccountingEvent {
+                $paidAmount = $this->paidAmountForEvent($event->id);
+                $event->setAttribute('paid_amount', $paidAmount);
+                $event->setAttribute('open_amount', max(0, round((float) $event->total_amount - $paidAmount, 2)));
+
+                return $event;
+            })
+            ->filter(fn (AccountingEvent $event): bool => (float) $event->getAttribute('open_amount') > 0)
+            ->values();
+    }
+
+    public function getRecentPayments(int $limit = 15): Collection
+    {
+        return AccountingPayment::query()
+            ->with(['accountingEvent', 'journalEntry', 'creator'])
+            ->latest('payment_date')
             ->latest('id')
             ->limit($limit)
             ->get();
@@ -235,6 +272,101 @@ class AccountingRuntimeService
             ]);
 
             return $policy;
+        });
+    }
+
+    public function recordCustomerPayment(array $data, ?int $createdBy = null): AccountingPayment
+    {
+        $event = AccountingEvent::query()->findOrFail((int) $data['accounting_event_id']);
+
+        if ($event->status !== 'journal_posted') {
+            throw ValidationException::withMessages([
+                'accounting_event_id' => 'Payments can only be recorded for journal-posted accounting events.',
+            ]);
+        }
+
+        $paymentDate = Carbon::parse($data['payment_date'] ?? now()->toDateString())->toDateString();
+        $this->assertPeriodOpen($paymentDate);
+
+        $amount = round((float) $data['amount'], 2);
+        $remainingAmount = $this->remainingAmountForEvent($event);
+
+        if ($amount <= 0 || $amount > $remainingAmount) {
+            throw ValidationException::withMessages([
+                'amount' => 'Payment amount must be greater than zero and cannot exceed the open receivable amount.',
+            ]);
+        }
+
+        $postingGroup = $this->resolvePostingGroup();
+        $cashAccount = trim((string) ($data['cash_account'] ?? '1000 Cash On Hand')) ?: '1000 Cash On Hand';
+        $receivableAccount = $postingGroup?->receivable_account ?: '1100 Accounts Receivable';
+        $this->ensureAccountsFromCodes([$cashAccount, $receivableAccount]);
+
+        return DB::transaction(function () use ($data, $event, $paymentDate, $amount, $remainingAmount, $cashAccount, $receivableAccount, $createdBy): AccountingPayment {
+            $entry = JournalEntry::query()->create([
+                'accounting_event_id' => $event->id,
+                'journal_number' => $this->nextJournalNumber('PAY'),
+                'source_type' => AccountingPayment::class,
+                'source_id' => null,
+                'status' => 'posted',
+                'entry_date' => $paymentDate,
+                'currency' => strtoupper((string) ($data['currency'] ?? $event->currency ?: 'USD')),
+                'debit_total' => $amount,
+                'credit_total' => $amount,
+                'memo' => 'Customer payment for ' . $this->eventMemo($event),
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $cashAccount,
+                'account_name' => $this->resolveAccountName($cashAccount, 'Cash On Hand'),
+                'line_type' => 'debit',
+                'debit' => $amount,
+                'credit' => 0,
+                'memo' => 'Customer payment received.',
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $receivableAccount,
+                'account_name' => $this->resolveAccountName($receivableAccount, 'Accounts Receivable'),
+                'line_type' => 'credit',
+                'debit' => 0,
+                'credit' => $amount,
+                'memo' => 'Receivable settled by customer payment.',
+            ]);
+
+            $payment = AccountingPayment::query()->create([
+                'accounting_event_id' => $event->id,
+                'journal_entry_id' => $entry->id,
+                'payment_number' => $this->nextJournalNumber('PMT'),
+                'payment_date' => $paymentDate,
+                'payer_name' => $data['payer_name'] ?? data_get($event->payload, 'customer_name'),
+                'method' => $data['method'] ?? 'cash',
+                'reference' => $data['reference'] ?? null,
+                'currency' => strtoupper((string) ($data['currency'] ?? $event->currency ?: 'USD')),
+                'amount' => $amount,
+                'cash_account' => $cashAccount,
+                'receivable_account' => $receivableAccount,
+                'status' => 'posted',
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->forceFill(['source_id' => $payment->id])->save();
+
+            if (round($remainingAmount - $amount, 2) <= 0) {
+                $event->forceFill(['status' => 'paid'])->save();
+            }
+
+            $this->recordAudit('customer_payment_recorded', $payment, "Customer payment {$payment->payment_number} recorded.", [
+                'accounting_event_id' => $event->id,
+                'journal_entry_id' => $entry->id,
+                'amount' => $amount,
+            ], $createdBy);
+
+            return $payment->load(['accountingEvent', 'journalEntry', 'creator']);
         });
     }
 
@@ -649,6 +781,8 @@ class AccountingRuntimeService
     {
         $defaults = [
             ['1100 Accounts Receivable', 'Accounts Receivable', 'asset', 'debit'],
+            ['1000 Cash On Hand', 'Cash On Hand', 'asset', 'debit'],
+            ['1010 Bank Account', 'Bank Account', 'asset', 'debit'],
             ['1300 Inventory Asset', 'Inventory Asset', 'asset', 'debit'],
             ['3900 Inventory Adjustment Offset', 'Inventory Adjustment Offset', 'equity', 'credit'],
             ['4100 Service Labor Revenue', 'Service Labor Revenue', 'revenue', 'credit'],
@@ -773,7 +907,20 @@ class AccountingRuntimeService
         return $parts[1] ?? $code;
     }
 
-    protected function recordAudit(string $eventType, JournalEntry|AccountingPeriodLock $auditable, string $description, array $payload = [], ?int $createdBy = null): void
+    protected function paidAmountForEvent(int $eventId): float
+    {
+        return round((float) AccountingPayment::query()
+            ->where('accounting_event_id', $eventId)
+            ->where('status', 'posted')
+            ->sum('amount'), 2);
+    }
+
+    protected function remainingAmountForEvent(AccountingEvent $event): float
+    {
+        return max(0, round((float) $event->total_amount - $this->paidAmountForEvent($event->id), 2));
+    }
+
+    protected function recordAudit(string $eventType, Model $auditable, string $description, array $payload = [], ?int $createdBy = null): void
     {
         AccountingAuditEntry::query()->create([
             'event_type' => $eventType,
