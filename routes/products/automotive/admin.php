@@ -192,12 +192,18 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.deposit-batches.show');
                 Route::post('/general-ledger/deposit-batches/{depositBatch}/correct', [WorkspaceModuleController::class, 'correctAccountingDepositBatch'])
                     ->name('modules.general-ledger.deposit-batches.correct');
+                Route::post('/general-ledger/deposit-batches/{depositBatch}/reconcile', [WorkspaceModuleController::class, 'reconcileAccountingDepositBatch'])
+                    ->name('modules.general-ledger.deposit-batches.reconcile');
                 Route::post('/general-ledger/vendor-bills', [WorkspaceModuleController::class, 'storeAccountingVendorBill'])
                     ->name('modules.general-ledger.vendor-bills.store');
                 Route::post('/general-ledger/vendor-bills/{vendorBill}/post', [WorkspaceModuleController::class, 'postAccountingVendorBill'])
                     ->name('modules.general-ledger.vendor-bills.post');
                 Route::post('/general-ledger/vendor-bill-payments', [WorkspaceModuleController::class, 'storeAccountingVendorBillPayment'])
                     ->name('modules.general-ledger.vendor-bill-payments.store');
+                Route::post('/general-ledger/vendor-bill-payments/{payment}/reconcile', [WorkspaceModuleController::class, 'reconcileAccountingVendorBillPayment'])
+                    ->name('modules.general-ledger.vendor-bill-payments.reconcile');
+                Route::post('/general-ledger/payments/{payment}/reconcile', [WorkspaceModuleController::class, 'reconcileAccountingPayment'])
+                    ->name('modules.general-ledger.payments.reconcile');
                 Route::post('/general-ledger/payments/{payment}/void', [WorkspaceModuleController::class, 'voidAccountingPayment'])
                     ->name('modules.general-ledger.payments.void');
                 Route::post('/general-ledger/integration-handoffs/{handoff}/retry', [WorkspaceModuleController::class, 'retryIntegrationHandoff'])

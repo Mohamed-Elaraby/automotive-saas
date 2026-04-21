@@ -266,7 +266,7 @@ class AccountingRuntimeService
     public function getDepositBatches(int $limit = 15): Collection
     {
         return AccountingDepositBatch::query()
-            ->with(['payments', 'bankAccount', 'creator', 'corrector'])
+            ->with(['payments', 'bankAccount', 'creator', 'reconciler', 'corrector'])
             ->latest('deposit_date')
             ->latest('id')
             ->limit($limit)
@@ -334,6 +334,7 @@ class AccountingRuntimeService
         return AccountingVendorBillPayment::query()
             ->with(['vendorBill', 'journalEntry', 'bankAccount', 'creator'])
             ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(! empty($filters['reconciliation_status']), fn ($query) => $query->where('reconciliation_status', $filters['reconciliation_status']))
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
             ->when(! empty($filters['search']), function ($query) use ($filters) {
@@ -396,7 +397,9 @@ class AccountingRuntimeService
         return $batch->load([
             'payments.accountingEvent',
             'payments.journalEntry',
+            'bankAccount',
             'creator',
+            'reconciler',
             'corrector',
         ]);
     }
@@ -404,8 +407,9 @@ class AccountingRuntimeService
     public function bankReconciliationReport(array $filters = []): array
     {
         $batches = AccountingDepositBatch::query()
-            ->with(['payments', 'creator', 'corrector'])
+            ->with(['payments', 'bankAccount', 'creator', 'reconciler', 'corrector'])
             ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(! empty($filters['reconciliation_status']), fn ($query) => $query->where('reconciliation_status', $filters['reconciliation_status']))
             ->when(! empty($filters['deposit_account']), fn ($query) => $query->where('deposit_account', $filters['deposit_account']))
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('deposit_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('deposit_date', '<=', $filters['date_to']))
@@ -413,33 +417,86 @@ class AccountingRuntimeService
             ->orderBy('id')
             ->get();
 
+        $vendorPayments = AccountingVendorBillPayment::query()
+            ->with(['vendorBill', 'bankAccount'])
+            ->where('status', 'posted')
+            ->when(! empty($filters['reconciliation_status']), fn ($query) => $query->where('reconciliation_status', $filters['reconciliation_status']))
+            ->when(! empty($filters['deposit_account']), fn ($query) => $query->where('cash_account', $filters['deposit_account']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
+
+        $directReceipts = AccountingPayment::query()
+            ->with(['accountingEvent', 'bankAccount'])
+            ->where('status', 'posted')
+            ->whereNull('deposit_batch_id')
+            ->when(! empty($filters['reconciliation_status']), fn ($query) => $query->where('reconciliation_status', $filters['reconciliation_status']))
+            ->when(! empty($filters['deposit_account']), fn ($query) => $query->where('cash_account', $filters['deposit_account']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
+
         return [
             'filters' => $filters,
             'batches' => $batches,
+            'vendor_payments' => $vendorPayments,
+            'direct_receipts' => $directReceipts,
             'posted_count' => $batches->where('status', 'posted')->count(),
             'corrected_count' => $batches->where('status', 'corrected')->count(),
+            'reconciled_count' => $batches->where('reconciliation_status', 'reconciled')->count(),
             'posted_total' => round((float) $batches->where('status', 'posted')->sum('total_amount'), 2),
             'corrected_total' => round((float) $batches->where('status', 'corrected')->sum('total_amount'), 2),
+            'reconciled_total' => round((float) $batches->where('reconciliation_status', 'reconciled')->sum('total_amount'), 2),
+            'vendor_payments_total' => round((float) $vendorPayments->sum('amount'), 2),
+            'direct_receipts_total' => round((float) $directReceipts->sum('amount'), 2),
         ];
     }
 
     public function paymentReconciliationSummary(): array
     {
-        $payments = AccountingPayment::query()
-            ->selectRaw('COALESCE(reconciliation_status, ?) as reconciliation_status, COUNT(*) as payments_count, COALESCE(SUM(amount), 0) as total_amount', ['pending'])
+        $unreconciledReceipts = AccountingPayment::query()
             ->where('status', 'posted')
-            ->groupBy('reconciliation_status')
-            ->get()
-            ->keyBy('reconciliation_status');
-
-        $pending = $payments->get('pending');
-        $deposited = $payments->get('deposited');
+            ->whereNull('deposit_batch_id')
+            ->where('reconciliation_status', '!=', 'reconciled');
+        $unreconciledDeposits = AccountingDepositBatch::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', '!=', 'reconciled');
+        $unreconciledVendorPayments = AccountingVendorBillPayment::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', '!=', 'reconciled');
+        $periodStart = now()->startOfMonth()->toDateString();
+        $periodEnd = now()->endOfMonth()->toDateString();
+        $reconciledDepositTotal = AccountingDepositBatch::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', 'reconciled')
+            ->whereBetween('bank_reconciliation_date', [$periodStart, $periodEnd])
+            ->sum('total_amount');
+        $reconciledVendorTotal = AccountingVendorBillPayment::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', 'reconciled')
+            ->whereBetween('bank_reconciliation_date', [$periodStart, $periodEnd])
+            ->sum('amount');
+        $reconciledDirectReceiptTotal = AccountingPayment::query()
+            ->where('status', 'posted')
+            ->whereNull('deposit_batch_id')
+            ->where('reconciliation_status', 'reconciled')
+            ->whereBetween('bank_reconciliation_date', [$periodStart, $periodEnd])
+            ->sum('amount');
 
         return [
-            'pending_count' => (int) ($pending?->payments_count ?? 0),
-            'pending_amount' => round((float) ($pending?->total_amount ?? 0), 2),
-            'deposited_count' => (int) ($deposited?->payments_count ?? 0),
-            'deposited_amount' => round((float) ($deposited?->total_amount ?? 0), 2),
+            'pending_count' => (int) (clone $unreconciledReceipts)->count(),
+            'pending_amount' => round((float) (clone $unreconciledReceipts)->sum('amount'), 2),
+            'deposited_count' => (int) (clone $unreconciledDeposits)->count(),
+            'deposited_amount' => round((float) (clone $unreconciledDeposits)->sum('total_amount'), 2),
+            'vendor_payment_count' => (int) (clone $unreconciledVendorPayments)->count(),
+            'vendor_payment_amount' => round((float) (clone $unreconciledVendorPayments)->sum('amount'), 2),
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+            'reconciled_period_amount' => round((float) $reconciledDepositTotal + (float) $reconciledDirectReceiptTotal - (float) $reconciledVendorTotal, 2),
         ];
     }
 
@@ -937,7 +994,19 @@ class AccountingRuntimeService
         $openReceivables = $this->receivablesInPeriod($start, $end);
         $unreconciledPayments = AccountingPayment::query()
             ->where('status', 'posted')
-            ->where('reconciliation_status', 'pending')
+            ->where('reconciliation_status', '!=', 'reconciled')
+            ->whereDate('payment_date', '>=', $start)
+            ->whereDate('payment_date', '<=', $end)
+            ->count();
+        $unreconciledDepositBatches = AccountingDepositBatch::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', '!=', 'reconciled')
+            ->whereDate('deposit_date', '>=', $start)
+            ->whereDate('deposit_date', '<=', $end)
+            ->count();
+        $unreconciledVendorPayments = AccountingVendorBillPayment::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', '!=', 'reconciled')
             ->whereDate('payment_date', '>=', $start)
             ->whereDate('payment_date', '<=', $end)
             ->count();
@@ -972,9 +1041,9 @@ class AccountingRuntimeService
                 'blocking' => $openReceivables['count'] > 0,
             ],
             'unreconciled_payments' => [
-                'label' => 'Unreconciled payments',
-                'count' => $unreconciledPayments,
-                'blocking' => $unreconciledPayments > 0,
+                'label' => 'Unreconciled cash activity',
+                'count' => $unreconciledPayments + $unreconciledDepositBatches + $unreconciledVendorPayments,
+                'blocking' => ($unreconciledPayments + $unreconciledDepositBatches + $unreconciledVendorPayments) > 0,
             ],
             'unapproved_manual_journals' => [
                 'label' => 'Unapproved manual journals',
@@ -1218,6 +1287,7 @@ class AccountingRuntimeService
                 'total_amount' => $totalAmount,
                 'payments_count' => $payments->count(),
                 'status' => 'posted',
+                'reconciliation_status' => 'pending',
                 'reference' => $data['reference'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $createdBy,
@@ -1254,6 +1324,12 @@ class AccountingRuntimeService
             ]);
         }
 
+        if ($batch->reconciliation_status === 'reconciled') {
+            throw ValidationException::withMessages([
+                'deposit_batch' => 'Reconciled deposit batches cannot be corrected. Reverse through a controlled accounting correction first.',
+            ]);
+        }
+
         $correctionDate = now()->toDateString();
         $this->assertPeriodOpen($correctionDate, 'correcting deposit batches');
 
@@ -1266,6 +1342,12 @@ class AccountingRuntimeService
             if ($lockedBatch->status !== 'posted') {
                 throw ValidationException::withMessages([
                     'deposit_batch' => 'Only posted deposit batches can be corrected.',
+                ]);
+            }
+
+            if ($lockedBatch->reconciliation_status === 'reconciled') {
+                throw ValidationException::withMessages([
+                    'deposit_batch' => 'Reconciled deposit batches cannot be corrected. Reverse through a controlled accounting correction first.',
                 ]);
             }
 
@@ -1295,6 +1377,139 @@ class AccountingRuntimeService
 
             return $lockedBatch->load(['payments.accountingEvent', 'payments.journalEntry', 'creator', 'corrector']);
         });
+    }
+
+    public function reconcileDepositBatch(AccountingDepositBatch $batch, array $data = [], ?int $createdBy = null): AccountingDepositBatch
+    {
+        if ($batch->status !== 'posted') {
+            throw ValidationException::withMessages([
+                'deposit_batch' => 'Only posted deposit batches can be reconciled.',
+            ]);
+        }
+
+        if ($batch->reconciliation_status === 'reconciled') {
+            throw ValidationException::withMessages([
+                'deposit_batch' => 'This deposit batch is already reconciled.',
+            ]);
+        }
+
+        $reconciliationDate = Carbon::parse($data['bank_reconciliation_date'] ?? $batch->deposit_date ?? now()->toDateString())->toDateString();
+
+        return DB::transaction(function () use ($batch, $data, $reconciliationDate, $createdBy): AccountingDepositBatch {
+            $lockedBatch = AccountingDepositBatch::query()
+                ->whereKey($batch->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedBatch->status !== 'posted' || $lockedBatch->reconciliation_status === 'reconciled') {
+                throw ValidationException::withMessages([
+                    'deposit_batch' => 'This deposit batch is not available for reconciliation.',
+                ]);
+            }
+
+            $lockedBatch->forceFill([
+                'reconciliation_status' => 'reconciled',
+                'bank_reconciliation_date' => $reconciliationDate,
+                'bank_reference' => $data['bank_reference'] ?? $lockedBatch->reference,
+                'reconciled_by' => $createdBy,
+                'reconciled_at' => now(),
+            ])->save();
+
+            AccountingPayment::query()
+                ->where('deposit_batch_id', $lockedBatch->id)
+                ->where('status', 'posted')
+                ->update([
+                    'reconciliation_status' => 'reconciled',
+                    'bank_reconciliation_date' => $reconciliationDate,
+                    'bank_reference' => $data['bank_reference'] ?? $lockedBatch->reference,
+                    'reconciled_by' => $createdBy,
+                    'reconciled_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            $this->recordAudit('deposit_batch_reconciled', $lockedBatch, "Deposit batch {$lockedBatch->deposit_number} reconciled.", [
+                'deposit_batch_id' => $lockedBatch->id,
+                'bank_reconciliation_date' => $reconciliationDate,
+                'bank_reference' => $lockedBatch->bank_reference,
+                'total_amount' => (float) $lockedBatch->total_amount,
+            ], $createdBy);
+
+            return $lockedBatch->load(['payments.accountingEvent', 'payments.journalEntry', 'bankAccount', 'creator', 'reconciler', 'corrector']);
+        });
+    }
+
+    public function reconcileCustomerPayment(AccountingPayment $payment, array $data = [], ?int $createdBy = null): AccountingPayment
+    {
+        if ($payment->status !== 'posted') {
+            throw ValidationException::withMessages([
+                'payment' => 'Only posted customer payments can be reconciled.',
+            ]);
+        }
+
+        if ($payment->deposit_batch_id !== null || $payment->reconciliation_status === 'deposited') {
+            throw ValidationException::withMessages([
+                'payment' => 'Deposited customer payments must be reconciled through their deposit batch.',
+            ]);
+        }
+
+        if ($payment->reconciliation_status === 'reconciled') {
+            throw ValidationException::withMessages([
+                'payment' => 'This customer payment is already reconciled.',
+            ]);
+        }
+
+        $reconciliationDate = Carbon::parse($data['bank_reconciliation_date'] ?? $payment->payment_date ?? now()->toDateString())->toDateString();
+
+        $payment->forceFill([
+            'reconciliation_status' => 'reconciled',
+            'bank_reconciliation_date' => $reconciliationDate,
+            'bank_reference' => $data['bank_reference'] ?? $payment->reference,
+            'reconciled_by' => $createdBy,
+            'reconciled_at' => now(),
+        ])->save();
+
+        $this->recordAudit('customer_payment_reconciled', $payment, "Customer payment {$payment->payment_number} reconciled.", [
+            'payment_id' => $payment->id,
+            'bank_reconciliation_date' => $reconciliationDate,
+            'bank_reference' => $payment->bank_reference,
+            'amount' => (float) $payment->amount,
+        ], $createdBy);
+
+        return $payment->load(['accountingEvent', 'journalEntry', 'bankAccount', 'creator', 'reconciler']);
+    }
+
+    public function reconcileVendorBillPayment(AccountingVendorBillPayment $payment, array $data = [], ?int $createdBy = null): AccountingVendorBillPayment
+    {
+        if ($payment->status !== 'posted') {
+            throw ValidationException::withMessages([
+                'payment' => 'Only posted vendor payments can be reconciled.',
+            ]);
+        }
+
+        if ($payment->reconciliation_status === 'reconciled') {
+            throw ValidationException::withMessages([
+                'payment' => 'This vendor payment is already reconciled.',
+            ]);
+        }
+
+        $reconciliationDate = Carbon::parse($data['bank_reconciliation_date'] ?? $payment->payment_date ?? now()->toDateString())->toDateString();
+
+        $payment->forceFill([
+            'reconciliation_status' => 'reconciled',
+            'bank_reconciliation_date' => $reconciliationDate,
+            'bank_reference' => $data['bank_reference'] ?? $payment->reference,
+            'reconciled_by' => $createdBy,
+            'reconciled_at' => now(),
+        ])->save();
+
+        $this->recordAudit('vendor_payment_reconciled', $payment, "Vendor payment {$payment->payment_number} reconciled.", [
+            'vendor_payment_id' => $payment->id,
+            'bank_reconciliation_date' => $reconciliationDate,
+            'bank_reference' => $payment->bank_reference,
+            'amount' => (float) $payment->amount,
+        ], $createdBy);
+
+        return $payment->load(['vendorBill', 'journalEntry', 'bankAccount', 'creator', 'reconciler']);
     }
 
     public function createVendorBill(array $data, ?int $createdBy = null): AccountingVendorBill
@@ -1501,6 +1716,7 @@ class AccountingRuntimeService
                 'cash_account' => $cashAccount,
                 'payable_account' => $payableAccount,
                 'status' => 'posted',
+                'reconciliation_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $createdBy,
                 'posted_at' => now(),
@@ -1535,6 +1751,12 @@ class AccountingRuntimeService
         if ($payment->deposit_batch_id !== null || $payment->reconciliation_status === 'deposited') {
             throw ValidationException::withMessages([
                 'payment' => 'Deposited payments cannot be voided until the deposit is corrected.',
+            ]);
+        }
+
+        if ($payment->reconciliation_status === 'reconciled') {
+            throw ValidationException::withMessages([
+                'payment' => 'Reconciled payments cannot be voided directly. Reverse through a controlled accounting correction first.',
             ]);
         }
 

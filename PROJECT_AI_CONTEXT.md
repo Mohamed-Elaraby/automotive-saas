@@ -768,17 +768,22 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Reconciliation Workflow Completion
+### Accounting AR Invoicing Foundation
 Recommended scope:
-- add reconciliation status tracking for bank/cash activity
-- allow marking deposit batches as reconciled
-- allow matching payment/deposit records to bank account/date/reference
-- add reconciliation summary:
-  - unreconciled receipts
-  - unreconciled vendor payments
-  - unreconciled deposits
-  - reconciled totals by period
-- add reversal/correction behavior for reconciled records
+- separate formal customer invoicing from source accounting events where needed
+- decide whether work-order completion should directly produce accounting events only or also produce tenant invoices
+- if invoices are added:
+  - create invoice table
+  - invoice number
+  - customer
+  - issue date
+  - due date
+  - lines
+  - tax
+  - status
+  - journal posting relation
+- support customer statement output from invoices/payments/journal state
+- preserve existing work-order accounting handoff behavior
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -851,6 +856,10 @@ Current accounting foundations already completed:
 - bank/cash accounts are controlled tenant records linked to account catalog codes
 - customer payments, vendor payments, and deposit batches now select configured active bank/cash accounts
 - bank/cash account balances shown in General Ledger are derived from posted journal lines
+- cash reconciliation now tracks matched bank date/reference on direct receipts, deposit batches, and vendor payments
+- deposit batches and vendor payments can be marked reconciled from General Ledger
+- reconciled deposit batches cannot be directly corrected; reconciled customer payments cannot be directly voided
+- General Ledger exposes unreconciled receipts, unreconciled deposits, unreconciled vendor payments, and period reconciled total
 
 Important accounting runtime tables currently expected in tenant DB:
 - `accounting_posting_groups`
@@ -1222,26 +1231,59 @@ Verification:
 
 ### Package 5 - Accounting Reconciliation Workflow Completion
 Status:
-- pending
+- completed
 
 Goal:
 - complete reconciliation beyond basic deposit batching
 
-Required scope:
-- add reconciliation status tracking for bank/cash activity
-- allow marking deposit batches as reconciled
-- allow matching payment/deposit records to bank account/date/reference
-- add reconciliation summary:
-  - unreconciled receipts
-  - unreconciled vendor payments
-  - unreconciled deposits
-  - reconciled totals by period
-- add reversal/correction behavior for reconciled records
-
-Acceptance criteria:
+Completed behavior:
 - finance user can tell what cash activity has not been reconciled
 - reconciled activity is harder to modify directly
 - reports remain journal-driven
+- reconciliation status/date/reference tracking now exists for:
+  - direct customer receipts
+  - deposit batches
+  - vendor bill payments
+- deposit batches can be marked reconciled from the deposit detail page
+- direct customer receipts can be marked reconciled when they are not part of a deposit batch
+- vendor bill payments can be marked reconciled from General Ledger
+- General Ledger reconciliation summary now shows:
+  - unreconciled receipts
+  - unreconciled deposits
+  - unreconciled vendor payments
+  - reconciled total for the current period
+- bank reconciliation print report now includes deposit batches, direct receipts, vendor payments, and bank match metadata
+- reconciled deposit batches are blocked from direct correction
+- reconciled direct customer payments are blocked from direct voiding
+- reconciliation actions write audit entries
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_120000_add_cash_reconciliation_controls_to_accounting_tables.php`
+- `app/Models/AccountingPayment.php`
+- `app/Models/AccountingDepositBatch.php`
+- `app/Models/AccountingVendorBillPayment.php`
+- `app/Services/Automotive/AccountingPermissionService.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-deposit-batch-show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-bank-reconciliation-print.blade.php`
+- `routes/products/automotive/admin.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `php -l database/migrations/tenant/2026_04_21_120000_add_cash_reconciliation_controls_to_accounting_tables.php`
+  - result: passed
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='reconciliation_workflow|bank_accounts_control|deposit_batch|vendor_bill_to_payables'`
+  - result: 4 passed, 204 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 28 passed, 699 assertions
 
 ### Package 6 - Accounting AR Invoicing Foundation
 Status:

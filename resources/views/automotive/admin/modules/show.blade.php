@@ -148,7 +148,7 @@
                             <div class="row align-items-end">
                                 <div class="col-md-3 mb-3"><label class="form-label">Search</label><input type="text" name="search" class="form-control" value="{{ $journalFilters['search'] ?? '' }}" placeholder="Journal, memo, account"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Any</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>Posted</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>Reversed</option><option value="void" @selected(($journalFilters['status'] ?? '') === 'void')>Void</option></select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Reconciliation</label><select name="reconciliation_status" class="form-select"><option value="">Any</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>Pending</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>Deposited</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Reconciliation</label><select name="reconciliation_status" class="form-select"><option value="">Any</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>Pending</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>Deposited</option><option value="reconciled" @selected(($journalFilters['reconciliation_status'] ?? '') === 'reconciled')>Reconciled</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Vendor Bills</label><select name="vendor_bill_status" class="form-select"><option value="">Any</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>Draft</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>Posted</option><option value="partial" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'partial')>Partial</option><option value="paid" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'paid')>Paid</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
@@ -210,18 +210,20 @@
                     </div>
                 </div>
 
-                @php($reconciliationSummary = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'pending_amount' => 0, 'deposited_count' => 0, 'deposited_amount' => 0])
+                @php($reconciliationSummary = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'pending_amount' => 0, 'deposited_count' => 0, 'deposited_amount' => 0, 'vendor_payment_count' => 0, 'vendor_payment_amount' => 0, 'reconciled_period_amount' => 0])
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Payment Reconciliation</h5></div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Pending Payments</div><h5 class="mb-0">{{ $reconciliationSummary['pending_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['pending_amount'], 2) }}</div></div>
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Deposited Payments</div><h5 class="mb-0">{{ $reconciliationSummary['deposited_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['deposited_amount'], 2) }}</div></div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Unreconciled Receipts</div><h5 class="mb-0">{{ $reconciliationSummary['pending_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['pending_amount'], 2) }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Unreconciled Deposits</div><h5 class="mb-0">{{ $reconciliationSummary['deposited_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['deposited_amount'], 2) }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Unreconciled Vendor Payments</div><h5 class="mb-0">{{ $reconciliationSummary['vendor_payment_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['vendor_payment_amount'], 2) }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Reconciled This Period</div><h5 class="mb-0">{{ number_format((float) $reconciliationSummary['reconciled_period_amount'], 2) }}</h5><div class="text-muted small">{{ $reconciliationSummary['period_start'] ?? '' }} - {{ $reconciliationSummary['period_end'] ?? '' }}</div></div>
+                            <div class="col-md-4 mb-3">
                                 <div class="text-muted small">Recent Deposit Batches</div>
                                 @forelse(($moduleData['recent_deposit_batches'] ?? collect())->take(3) as $batch)
                                     <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
-                                        <a href="{{ route('automotive.admin.modules.general-ledger.deposit-batches.show', ['depositBatch' => $batch->id] + $workspaceQuery) }}">{{ $batch->deposit_number }} · {{ optional($batch->deposit_date)->format('Y-m-d') }}{{ $batch->reference ? ' · '.$batch->reference : '' }}</a>
+                                        <a href="{{ route('automotive.admin.modules.general-ledger.deposit-batches.show', ['depositBatch' => $batch->id] + $workspaceQuery) }}">{{ $batch->deposit_number }} · {{ optional($batch->deposit_date)->format('Y-m-d') }}{{ $batch->reference ? ' · '.$batch->reference : '' }} · {{ strtoupper($batch->reconciliation_status ?: 'pending') }}</a>
                                         <span>{{ number_format((float) $batch->total_amount, 2) }} {{ $batch->currency }}</span>
                                     </div>
                                 @empty
@@ -843,9 +845,19 @@
                                             </div>
                                             <div class="text-end">
                                                 <span class="badge {{ $payment->status === 'posted' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($payment->status) }}</span>
+                                                <span class="badge {{ $payment->reconciliation_status === 'reconciled' ? 'bg-primary' : 'bg-warning text-dark' }}">{{ strtoupper($payment->reconciliation_status ?: 'pending') }}</span>
                                                 <div class="fw-semibold">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</div>
                                                 @if($payment->journal_entry_id)
                                                     <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $payment->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                @endif
+                                                @if(($accountingPermissions['reconciliation_manage'] ?? true) && $payment->status === 'posted' && $payment->reconciliation_status !== 'reconciled')
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bill-payments.reconcile', ['payment' => $payment->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <input type="hidden" name="bank_reconciliation_date" value="{{ now()->toDateString() }}">
+                                                        <input type="hidden" name="bank_reference" value="{{ $payment->reference }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Mark Reconciled</button>
+                                                    </form>
                                                 @endif
                                             </div>
                                         </div>
@@ -952,7 +964,16 @@
                                                 @if($payment->journal_entry_id)
                                                     <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $payment->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
                                                 @endif
-                                                @if($payment->status === 'posted')
+                                                @if(($accountingPermissions['reconciliation_manage'] ?? true) && $payment->status === 'posted' && $payment->deposit_batch_id === null && $payment->reconciliation_status !== 'reconciled')
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.payments.reconcile', ['payment' => $payment->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <input type="hidden" name="bank_reconciliation_date" value="{{ now()->toDateString() }}">
+                                                        <input type="hidden" name="bank_reference" value="{{ $payment->reference }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Mark Reconciled</button>
+                                                    </form>
+                                                @endif
+                                                @if($payment->status === 'posted' && ! in_array($payment->reconciliation_status, ['deposited', 'reconciled'], true))
                                                     <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.payments.void', ['payment' => $payment->id] + $workspaceQuery) }}" class="mt-2">
                                                         @csrf
                                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">

@@ -17,6 +17,7 @@ class AccountingPermissionService
     public const CUSTOMER_PAYMENTS_RECORD = 'accounting.customer_payments.record';
     public const DEPOSIT_BATCHES_CREATE = 'accounting.deposit_batches.create';
     public const DEPOSIT_BATCHES_CORRECT = 'accounting.deposit_batches.correct';
+    public const RECONCILIATION_MANAGE = 'accounting.reconciliation.manage';
     public const JOURNALS_REVERSE = 'accounting.journals.reverse';
     public const PERIODS_LOCK = 'accounting.periods.lock';
     public const ACCOUNTS_MANAGE = 'accounting.accounts.manage';

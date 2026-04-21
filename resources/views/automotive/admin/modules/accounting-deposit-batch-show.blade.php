@@ -44,19 +44,30 @@
                         <div class="card-header"><h5 class="card-title mb-0">Batch Status</h5></div>
                         <div class="card-body">
                             <div class="mb-3"><div class="text-muted small">Status</div><span class="badge {{ $depositBatch->status === 'posted' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($depositBatch->status) }}</span></div>
+                            <div class="mb-3"><div class="text-muted small">Reconciliation</div><span class="badge {{ $depositBatch->reconciliation_status === 'reconciled' ? 'bg-primary' : 'bg-warning text-dark' }}">{{ strtoupper($depositBatch->reconciliation_status ?: 'pending') }}</span></div>
                             <div class="mb-3"><div class="text-muted small">Total Amount</div><h5 class="mb-0">{{ number_format((float) $depositBatch->total_amount, 2) }} {{ $depositBatch->currency }}</h5></div>
                             <div class="mb-3"><div class="text-muted small">Reference</div><div>{{ $depositBatch->reference ?: '-' }}</div></div>
+                            <div class="mb-3"><div class="text-muted small">Bank Match</div><div>{{ optional($depositBatch->bank_reconciliation_date)->format('Y-m-d') ?: '-' }}{{ $depositBatch->bank_reference ? ' · '.$depositBatch->bank_reference : '' }}</div></div>
                             <div class="mb-3"><div class="text-muted small">Posted At</div><div>{{ optional($depositBatch->posted_at)->format('Y-m-d H:i') ?: '-' }}</div></div>
                             @if($depositBatch->status === 'corrected')
                                 <div class="mb-3"><div class="text-muted small">Corrected At</div><div>{{ optional($depositBatch->corrected_at)->format('Y-m-d H:i') ?: '-' }}</div></div>
                                 <div class="mb-3"><div class="text-muted small">Correction Reason</div><div>{{ $depositBatch->correction_reason ?: '-' }}</div></div>
                             @else
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.deposit-batches.correct', ['depositBatch' => $depositBatch->id] + $workspaceQuery) }}">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="mb-3"><label class="form-label">Correction Reason</label><textarea name="correction_reason" class="form-control" rows="3">{{ old('correction_reason') }}</textarea></div>
-                                    <button type="submit" class="btn btn-outline-danger w-100">Correct Deposit Batch</button>
-                                </form>
+                                @if($depositBatch->reconciliation_status !== 'reconciled')
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.deposit-batches.reconcile', ['depositBatch' => $depositBatch->id] + $workspaceQuery) }}" class="mb-3">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="mb-3"><label class="form-label">Bank Date</label><input type="date" name="bank_reconciliation_date" class="form-control" value="{{ old('bank_reconciliation_date', optional($depositBatch->deposit_date)->format('Y-m-d') ?: now()->toDateString()) }}"></div>
+                                        <div class="mb-3"><label class="form-label">Bank Reference</label><input type="text" name="bank_reference" class="form-control" value="{{ old('bank_reference', $depositBatch->reference) }}"></div>
+                                        <button type="submit" class="btn btn-outline-primary w-100">Mark Reconciled</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.deposit-batches.correct', ['depositBatch' => $depositBatch->id] + $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="mb-3"><label class="form-label">Correction Reason</label><textarea name="correction_reason" class="form-control" rows="3">{{ old('correction_reason') }}</textarea></div>
+                                        <button type="submit" class="btn btn-outline-danger w-100">Correct Deposit Batch</button>
+                                    </form>
+                                @endif
                             @endif
                         </div>
                     </div>

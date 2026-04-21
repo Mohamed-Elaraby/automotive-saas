@@ -326,7 +326,7 @@ class WorkspaceModuleController extends Controller
     {
         $filters = $request->validate([
             'status' => ['nullable', 'in:pending_approval,approved,posted,reversed,rejected,void'],
-            'reconciliation_status' => ['nullable', 'in:pending,deposited'],
+            'reconciliation_status' => ['nullable', 'in:pending,deposited,reconciled'],
             'vendor_bill_status' => ['nullable', 'in:draft,posted,partial,paid,void'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
@@ -672,7 +672,7 @@ class WorkspaceModuleController extends Controller
 
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void,corrected'],
-            'reconciliation_status' => ['nullable', 'in:pending,deposited'],
+            'reconciliation_status' => ['nullable', 'in:pending,deposited,reconciled'],
             'deposit_account' => ['nullable', 'string', 'max:120'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
@@ -1105,6 +1105,96 @@ class WorkspaceModuleController extends Controller
             ->with('success', "Deposit batch {$correctedBatch->deposit_number} corrected successfully.");
     }
 
+    public function reconcileAccountingDepositBatch(Request $request, AccountingDepositBatch $depositBatch): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::RECONCILIATION_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'bank_reconciliation_date' => ['required', 'date'],
+            'bank_reference' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        try {
+            $reconciledBatch = $this->accountingRuntimeService->reconcileDepositBatch(
+                $depositBatch,
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger.deposit-batches.show', [
+                    'depositBatch' => $depositBatch->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+                ])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.deposit-batches.show', [
+                'depositBatch' => $reconciledBatch->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Deposit batch {$reconciledBatch->deposit_number} reconciled successfully.");
+    }
+
+    public function reconcileAccountingPayment(Request $request, AccountingPayment $payment): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::RECONCILIATION_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'bank_reconciliation_date' => ['required', 'date'],
+            'bank_reference' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->reconcileCustomerPayment(
+                $payment,
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Payment {$payment->payment_number} reconciled successfully.");
+    }
+
+    public function reconcileAccountingVendorBillPayment(Request $request, AccountingVendorBillPayment $payment): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::RECONCILIATION_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'bank_reconciliation_date' => ['required', 'date'],
+            'bank_reference' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->reconcileVendorBillPayment(
+                $payment,
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Vendor payment {$payment->payment_number} reconciled successfully.");
+    }
+
     public function voidAccountingPayment(Request $request, AccountingPayment $payment): RedirectResponse
     {
         $this->authorizeAccounting(AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD);
@@ -1398,6 +1488,7 @@ class WorkspaceModuleController extends Controller
             'customer_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD),
             'deposit_batches_create' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CREATE),
             'deposit_batches_correct' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CORRECT),
+            'reconciliation_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::RECONCILIATION_MANAGE),
             'journals_reverse' => $this->accountingPermissionService->can($user, AccountingPermissionService::JOURNALS_REVERSE),
             'periods_lock' => $this->accountingPermissionService->can($user, AccountingPermissionService::PERIODS_LOCK),
             'accounts_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::ACCOUNTS_MANAGE),

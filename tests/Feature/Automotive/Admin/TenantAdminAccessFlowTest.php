@@ -1899,6 +1899,210 @@ class TenantAdminAccessFlowTest extends TestCase
         $ledgerResponse->assertSee('300.00 USD', false);
     }
 
+    public function test_accounting_reconciliation_workflow_matches_cash_activity_and_blocks_direct_corrections(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $eventId = DB::connection('tenant')->table('accounting_events')->insertGetId([
+                'event_type' => 'work_order_completed',
+                'reference_type' => \App\Models\WorkOrder::class,
+                'reference_id' => 9911,
+                'status' => 'posted',
+                'event_date' => '2026-09-01 10:00:00',
+                'currency' => 'USD',
+                'labor_amount' => 180,
+                'parts_amount' => 0,
+                'total_amount' => 180,
+                'payload' => json_encode([
+                    'work_order_number' => 'WO-RECON-1',
+                    'title' => 'Reconciliation workflow',
+                    'customer_name' => 'Recon Customer',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$eventId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_event_id' => $eventId,
+            'payment_date' => '2026-09-02',
+            'amount' => 180,
+            'method' => 'bank_transfer',
+            'payer_name' => 'Recon Customer',
+            'reference' => 'RCPT-RECON-001',
+            'currency' => 'USD',
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $payment = DB::connection('tenant')->table('accounting_payments')
+                ->where('accounting_event_id', $eventId)
+                ->first();
+            $this->assertNotNull($payment);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/deposit-batches?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'payment_ids' => [$payment->id],
+            'deposit_date' => '2026-09-03',
+            'currency' => 'USD',
+            'reference' => 'DEP-RECON-001',
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $batch = DB::connection('tenant')->table('accounting_deposit_batches')
+                ->where('reference', 'DEP-RECON-001')
+                ->first();
+            $this->assertNotNull($batch);
+            $this->assertSame('pending', $batch->reconciliation_status);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $batchDetail = $this->get("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting");
+        $batchDetail->assertOk();
+        $batchDetail->assertSee('Mark Reconciled', false);
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}/reconcile?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'bank_reconciliation_date' => '2026-09-04',
+            'bank_reference' => 'BANK-STMT-DEP-1',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $reconciledBatch = DB::connection('tenant')->table('accounting_deposit_batches')->where('id', $batch->id)->first();
+            $reconciledPayment = DB::connection('tenant')->table('accounting_payments')->where('id', $payment->id)->first();
+
+            $this->assertSame('reconciled', $reconciledBatch->reconciliation_status);
+            $this->assertStringStartsWith('2026-09-04', (string) $reconciledBatch->bank_reconciliation_date);
+            $this->assertSame('BANK-STMT-DEP-1', $reconciledBatch->bank_reference);
+            $this->assertSame('reconciled', $reconciledPayment->reconciliation_status);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'deposit_batch_reconciled',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $correctionResponse = $this->from("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}/correct?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'correction_reason' => 'Bank already reconciled',
+            ]);
+        $correctionResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting");
+        $correctionResponse->assertSessionHasErrors('deposit_batch');
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'supplier_name' => 'Recon Vendor',
+            'bill_date' => '2026-09-05',
+            'due_date' => '2026-09-20',
+            'amount' => 90,
+            'currency' => 'USD',
+            'reference' => 'VB-RECON-001',
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $bill = DB::connection('tenant')->table('accounting_vendor_bills')
+                ->where('reference', 'VB-RECON-001')
+                ->first();
+            $this->assertNotNull($bill);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills/{$bill->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect();
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bill-payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_vendor_bill_id' => $bill->id,
+            'payment_date' => '2026-09-06',
+            'amount' => 90,
+            'method' => 'bank_transfer',
+            'reference' => 'VPMT-RECON-001',
+            'currency' => 'USD',
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $vendorPayment = DB::connection('tenant')->table('accounting_vendor_bill_payments')
+                ->where('reference', 'VPMT-RECON-001')
+                ->first();
+            $this->assertNotNull($vendorPayment);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bill-payments/{$vendorPayment->id}/reconcile?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'bank_reconciliation_date' => '2026-09-07',
+            'bank_reference' => 'BANK-STMT-VPAY-1',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $reconciledVendorPayment = DB::connection('tenant')->table('accounting_vendor_bill_payments')->where('id', $vendorPayment->id)->first();
+
+            $this->assertSame('reconciled', $reconciledVendorPayment->reconciliation_status);
+            $this->assertStringStartsWith('2026-09-07', (string) $reconciledVendorPayment->bank_reconciliation_date);
+            $this->assertSame('BANK-STMT-VPAY-1', $reconciledVendorPayment->bank_reference);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'vendor_payment_reconciled',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&reconciliation_status=reconciled");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Unreconciled Receipts', false);
+        $ledgerResponse->assertSee('Reconciled This Period', false);
+        $ledgerResponse->assertSee('RECONCILED', false);
+
+        $printResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/bank-reconciliation?workspace_product=accounting&format=print&reconciliation_status=reconciled");
+        $printResponse->assertOk();
+        $printResponse->assertSee('Bank Reconciliation Report', false);
+        $printResponse->assertSee('Vendor Payments', false);
+        $printResponse->assertSee('BANK-STMT-DEP-1', false);
+        $printResponse->assertSee('BANK-STMT-VPAY-1', false);
+    }
+
     public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

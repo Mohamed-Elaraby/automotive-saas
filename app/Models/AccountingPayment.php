@@ -27,6 +27,8 @@ class AccountingPayment extends Model
         'reconciled_by',
         'posted_at',
         'reconciled_at',
+        'bank_reconciliation_date',
+        'bank_reference',
     ];
 
     protected $casts = [
@@ -34,6 +36,7 @@ class AccountingPayment extends Model
         'amount' => 'decimal:2',
         'posted_at' => 'datetime',
         'reconciled_at' => 'datetime',
+        'bank_reconciliation_date' => 'date',
     ];
 
     public function accountingEvent()
