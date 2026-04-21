@@ -9,6 +9,7 @@ class AccountingVendorBill extends Model
     protected $fillable = [
         'supplier_id',
         'journal_entry_id',
+        'accounting_tax_rate_id',
         'bill_number',
         'bill_date',
         'due_date',
@@ -16,8 +17,10 @@ class AccountingVendorBill extends Model
         'reference',
         'currency',
         'amount',
+        'tax_amount',
         'expense_account',
         'payable_account',
+        'tax_account',
         'status',
         'notes',
         'created_by',
@@ -29,6 +32,7 @@ class AccountingVendorBill extends Model
         'bill_date' => 'date',
         'due_date' => 'date',
         'amount' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
         'posted_at' => 'datetime',
     ];
 
@@ -40,6 +44,11 @@ class AccountingVendorBill extends Model
     public function journalEntry()
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function taxRate()
+    {
+        return $this->belongsTo(AccountingTaxRate::class, 'accounting_tax_rate_id');
     }
 
     public function payments()

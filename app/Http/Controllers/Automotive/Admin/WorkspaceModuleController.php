@@ -341,6 +341,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_accounts' => $this->accountingRuntimeService->getAccounts(),
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
+                'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
                 'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
                 'reconcilable_payments' => $this->accountingRuntimeService->getReconcilablePayments(25),
@@ -476,9 +477,30 @@ class WorkspaceModuleController extends Controller
             ->with('success', 'Accounting policy saved successfully.');
     }
 
+    public function storeAccountingTaxRate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:80'],
+            'name' => ['required', 'string', 'max:255'],
+            'rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'input_tax_account' => ['required', 'string', 'max:120'],
+            'output_tax_account' => ['required', 'string', 'max:120'],
+            'is_default' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->accountingRuntimeService->createTaxRate($validated);
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Tax rate saved successfully.');
+    }
+
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
     {
-        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation', 'profit-and-loss', 'balance-sheet'], true), 404);
+        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation', 'profit-and-loss', 'balance-sheet', 'tax-summary'], true), 404);
 
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void,corrected'],
@@ -520,6 +542,22 @@ class WorkspaceModuleController extends Controller
                 ]))
                 ->push(['Summary', '', ''])
                 ->merge(collect($statement['summary'])->map(fn ($amount, $label): array => ['Summary', '', $label, (string) $amount]))
+                ->all();
+        } elseif ($report === 'tax-summary') {
+            $taxSummary = $this->accountingRuntimeService->taxSummary($filters);
+            $headers = ['Tax Type', 'Account Code', 'Account Name', 'Debit Total', 'Credit Total', 'Tax Amount'];
+            $rows = $taxSummary['rows']
+                ->map(fn ($row): array => [
+                    ucfirst($row->tax_type),
+                    $row->account_code,
+                    $row->account_name,
+                    (string) $row->debit_total,
+                    (string) $row->credit_total,
+                    (string) $row->amount,
+                ])
+                ->push(['Summary', '', 'Input Tax Total', '', '', (string) $taxSummary['input_total']])
+                ->push(['Summary', '', 'Output Tax Total', '', '', (string) $taxSummary['output_total']])
+                ->push(['Summary', '', 'Net Tax Payable', '', '', (string) $taxSummary['net_payable']])
                 ->all();
         } elseif ($report === 'journal-entries') {
             $headers = ['Journal Number', 'Entry Date', 'Status', 'Memo', 'Currency', 'Debit Total', 'Credit Total'];
@@ -574,7 +612,7 @@ class WorkspaceModuleController extends Controller
         }
 
         if ($format === 'print') {
-            $title = ucfirst(str_replace('-', ' ', $report));
+            $title = $report === 'tax-summary' ? 'Tax Summary' : ucfirst(str_replace('-', ' ', $report));
 
             return view('automotive.admin.modules.accounting-report-print', compact('title', 'headers', 'rows', 'filters'));
         }
@@ -749,8 +787,11 @@ class WorkspaceModuleController extends Controller
             'reference' => ['nullable', 'string', 'max:120'],
             'currency' => ['nullable', 'string', 'size:3'],
             'amount' => ['required', 'numeric', 'gt:0'],
+            'accounting_tax_rate_id' => ['nullable', 'integer', 'exists:accounting_tax_rates,id'],
+            'tax_amount' => ['nullable', 'numeric', 'min:0'],
             'expense_account' => ['nullable', 'string', 'max:120'],
             'payable_account' => ['nullable', 'string', 'max:120'],
+            'tax_account' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

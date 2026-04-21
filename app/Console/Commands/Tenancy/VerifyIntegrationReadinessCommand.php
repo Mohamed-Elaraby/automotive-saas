@@ -32,6 +32,7 @@ class VerifyIntegrationReadinessCommand extends Command
         'accounting_accounts',
         'accounting_period_locks',
         'accounting_policies',
+        'accounting_tax_rates',
         'accounting_audit_entries',
         'accounting_payments',
         'accounting_deposit_batches',

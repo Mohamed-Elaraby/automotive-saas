@@ -10,6 +10,7 @@ use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
+use App\Models\AccountingTaxRate;
 use App\Models\AccountingVendorBill;
 use App\Models\AccountingVendorBillPayment;
 use App\Models\JournalEntry;
@@ -61,6 +62,16 @@ class AccountingRuntimeService
         $this->ensureDefaultPolicy();
 
         return AccountingPolicy::query()
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getTaxRates(): Collection
+    {
+        $this->ensureDefaultTaxRate();
+
+        return AccountingTaxRate::query()
             ->orderByDesc('is_default')
             ->orderBy('name')
             ->get();
@@ -646,6 +657,37 @@ class AccountingRuntimeService
         });
     }
 
+    public function createTaxRate(array $data): AccountingTaxRate
+    {
+        return DB::transaction(function () use ($data): AccountingTaxRate {
+            $isDefault = ! empty($data['is_default']);
+
+            if ($isDefault) {
+                AccountingTaxRate::query()->update(['is_default' => false]);
+            }
+
+            $rate = AccountingTaxRate::query()->updateOrCreate(
+                ['code' => Str::slug((string) $data['code'], '_')],
+                [
+                    'name' => $data['name'],
+                    'rate' => round((float) ($data['rate'] ?? 0), 4),
+                    'input_tax_account' => $data['input_tax_account'] ?? '1410 VAT Input Receivable',
+                    'output_tax_account' => $data['output_tax_account'] ?? '2100 VAT Output Payable',
+                    'is_default' => $isDefault,
+                    'is_active' => ! array_key_exists('is_active', $data) || (bool) $data['is_active'],
+                    'notes' => $data['notes'] ?? null,
+                ]
+            );
+
+            $this->ensureAccountsFromCodes([
+                $rate->input_tax_account,
+                $rate->output_tax_account,
+            ]);
+
+            return $rate;
+        });
+    }
+
     public function recordCustomerPayment(array $data, ?int $createdBy = null): AccountingPayment
     {
         $event = AccountingEvent::query()->findOrFail((int) $data['accounting_event_id']);
@@ -884,6 +926,7 @@ class AccountingRuntimeService
         $billDate = Carbon::parse($data['bill_date'] ?? now()->toDateString())->toDateString();
         $dueDate = ! empty($data['due_date']) ? Carbon::parse($data['due_date'])->toDateString() : null;
         $amount = round((float) ($data['amount'] ?? 0), 2);
+        $taxAmount = round((float) ($data['tax_amount'] ?? 0), 2);
 
         if ($amount <= 0) {
             throw ValidationException::withMessages([
@@ -891,12 +934,23 @@ class AccountingRuntimeService
             ]);
         }
 
+        if ($taxAmount < 0 || $taxAmount > $amount) {
+            throw ValidationException::withMessages([
+                'tax_amount' => 'Tax amount cannot be negative or greater than the vendor bill amount.',
+            ]);
+        }
+
+        $taxRate = ! empty($data['accounting_tax_rate_id'])
+            ? AccountingTaxRate::query()->where('is_active', true)->find((int) $data['accounting_tax_rate_id'])
+            : null;
         $expenseAccount = trim((string) ($data['expense_account'] ?? '5200 Operating Expense')) ?: '5200 Operating Expense';
         $payableAccount = trim((string) ($data['payable_account'] ?? '2000 Accounts Payable')) ?: '2000 Accounts Payable';
-        $this->ensureAccountsFromCodes([$expenseAccount, $payableAccount]);
+        $taxAccount = trim((string) ($data['tax_account'] ?? $taxRate?->input_tax_account ?? '1410 VAT Input Receivable')) ?: '1410 VAT Input Receivable';
+        $this->ensureAccountsFromCodes([$expenseAccount, $payableAccount, $taxAccount]);
 
         return AccountingVendorBill::query()->create([
             'supplier_id' => $data['supplier_id'] ?? null,
+            'accounting_tax_rate_id' => $taxRate?->id,
             'bill_number' => $this->nextJournalNumber('VBILL'),
             'bill_date' => $billDate,
             'due_date' => $dueDate,
@@ -904,8 +958,10 @@ class AccountingRuntimeService
             'reference' => $data['reference'] ?? null,
             'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
             'amount' => $amount,
+            'tax_amount' => $taxAmount,
             'expense_account' => $expenseAccount,
             'payable_account' => $payableAccount,
+            'tax_account' => $taxAmount > 0 ? $taxAccount : null,
             'status' => 'draft',
             'notes' => $data['notes'] ?? null,
             'created_by' => $createdBy,
@@ -929,9 +985,11 @@ class AccountingRuntimeService
         $entryDate = optional($bill->bill_date)->toDateString() ?: now()->toDateString();
         $this->assertPeriodOpen($entryDate);
         $amount = round((float) $bill->amount, 2);
-        $this->ensureAccountsFromCodes([$bill->expense_account, $bill->payable_account]);
+        $taxAmount = round((float) $bill->tax_amount, 2);
+        $expenseAmount = round($amount - $taxAmount, 2);
+        $this->ensureAccountsFromCodes([$bill->expense_account, $bill->payable_account, $bill->tax_account]);
 
-        return DB::transaction(function () use ($bill, $entryDate, $amount, $createdBy): JournalEntry {
+        return DB::transaction(function () use ($bill, $entryDate, $amount, $taxAmount, $expenseAmount, $createdBy): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'journal_number' => $this->nextJournalNumber('AP'),
                 'source_type' => AccountingVendorBill::class,
@@ -950,10 +1008,21 @@ class AccountingRuntimeService
                 'account_code' => $bill->expense_account,
                 'account_name' => $this->resolveAccountName($bill->expense_account, 'Operating Expense'),
                 'line_type' => 'debit',
-                'debit' => $amount,
+                'debit' => $expenseAmount,
                 'credit' => 0,
                 'memo' => 'Vendor bill expense.',
             ]);
+
+            if ($taxAmount > 0) {
+                $entry->lines()->create([
+                    'account_code' => $bill->tax_account ?: '1410 VAT Input Receivable',
+                    'account_name' => $this->resolveAccountName($bill->tax_account ?: '1410 VAT Input Receivable', 'VAT Input Receivable'),
+                    'line_type' => 'debit',
+                    'debit' => $taxAmount,
+                    'credit' => 0,
+                    'memo' => 'Recoverable input tax from vendor bill.',
+                ]);
+            }
 
             $entry->lines()->create([
                 'account_code' => $bill->payable_account,
@@ -974,6 +1043,7 @@ class AccountingRuntimeService
             $this->recordAudit('vendor_bill_posted', $bill, "Vendor bill {$bill->bill_number} posted.", [
                 'journal_entry_id' => $entry->id,
                 'amount' => $amount,
+                'tax_amount' => $taxAmount,
             ], $createdBy);
 
             return $entry->load(['lines', 'creator']);
@@ -1163,6 +1233,8 @@ class AccountingRuntimeService
         $laborAmount = round((float) $event->labor_amount, 2);
         $partsAmount = round((float) $event->parts_amount, 2);
         $totalAmount = round((float) $event->total_amount, 2);
+        $taxAmount = round((float) data_get($event->payload, 'tax_amount', 0), 2);
+        $outputTaxAccount = trim((string) data_get($event->payload, 'tax_account', '2100 VAT Output Payable')) ?: '2100 VAT Output Payable';
 
         if ($totalAmount <= 0) {
             throw ValidationException::withMessages([
@@ -1170,7 +1242,15 @@ class AccountingRuntimeService
             ]);
         }
 
-        return DB::transaction(function () use ($event, $postingGroup, $entryDate, $laborAmount, $partsAmount, $totalAmount, $createdBy): JournalEntry {
+        if ($taxAmount < 0 || $taxAmount > $totalAmount) {
+            throw ValidationException::withMessages([
+                'accounting_event' => 'Tax amount cannot be negative or greater than the accounting event total.',
+            ]);
+        }
+
+        $this->ensureAccountsFromCodes([$outputTaxAccount]);
+
+        return DB::transaction(function () use ($event, $postingGroup, $entryDate, $laborAmount, $partsAmount, $totalAmount, $taxAmount, $outputTaxAccount, $createdBy): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'accounting_event_id' => $event->id,
                 'posting_group_id' => $postingGroup?->id,
@@ -1196,25 +1276,41 @@ class AccountingRuntimeService
                 'memo' => 'Customer receivable from posted accounting event.',
             ]);
 
-            if ($laborAmount > 0) {
+            $taxReduction = $taxAmount;
+            $netLaborAmount = max(0, round($laborAmount - min($laborAmount, $taxReduction), 2));
+            $taxReduction = max(0, round($taxReduction - ($laborAmount - $netLaborAmount), 2));
+            $netPartsAmount = max(0, round($partsAmount - min($partsAmount, $taxReduction), 2));
+
+            if ($netLaborAmount > 0) {
                 $entry->lines()->create([
                     'account_code' => $postingGroup?->labor_revenue_account ?: '4100 Service Labor Revenue',
                     'account_name' => 'Service Labor Revenue',
                     'line_type' => 'credit',
                     'debit' => 0,
-                    'credit' => $laborAmount,
+                    'credit' => $netLaborAmount,
                     'memo' => 'Labor revenue from workshop work order.',
                 ]);
             }
 
-            if ($partsAmount > 0) {
+            if ($netPartsAmount > 0) {
                 $entry->lines()->create([
                     'account_code' => $postingGroup?->parts_revenue_account ?: '4200 Parts Revenue',
                     'account_name' => 'Parts Revenue',
                     'line_type' => 'credit',
                     'debit' => 0,
-                    'credit' => $partsAmount,
+                    'credit' => $netPartsAmount,
                     'memo' => 'Parts revenue from workshop work order.',
+                ]);
+            }
+
+            if ($taxAmount > 0) {
+                $entry->lines()->create([
+                    'account_code' => $outputTaxAccount,
+                    'account_name' => $this->resolveAccountName($outputTaxAccount, 'VAT Output Payable'),
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => $taxAmount,
+                    'memo' => 'Output tax from customer revenue.',
                 ]);
             }
 
@@ -1222,6 +1318,7 @@ class AccountingRuntimeService
             $this->recordAudit('journal_posted', $entry, "Accounting event posted as {$entry->journal_number}.", [
                 'accounting_event_id' => $event->id,
                 'total_amount' => $totalAmount,
+                'tax_amount' => $taxAmount,
             ], $createdBy);
 
             return $entry->load(['lines', 'postingGroup']);
@@ -1514,6 +1611,51 @@ class AccountingRuntimeService
             ->get();
     }
 
+    public function taxSummary(array $filters = []): array
+    {
+        $rates = $this->getTaxRates();
+        $inputAccounts = $rates->pluck('input_tax_account')->filter()->unique()->values();
+        $outputAccounts = $rates->pluck('output_tax_account')->filter()->unique()->values();
+
+        $rows = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.status', 'posted')
+            ->where(function ($query) use ($inputAccounts, $outputAccounts) {
+                $query->whereIn('journal_entry_lines.account_code', $inputAccounts->all() ?: ['1410 VAT Input Receivable'])
+                    ->orWhereIn('journal_entry_lines.account_code', $outputAccounts->all() ?: ['2100 VAT Output Payable']);
+            })
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('journal_entries.entry_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('journal_entries.entry_date', '<=', $filters['date_to']))
+            ->groupBy('journal_entry_lines.account_code', 'journal_entry_lines.account_name')
+            ->orderBy('journal_entry_lines.account_code')
+            ->select([
+                'journal_entry_lines.account_code',
+                'journal_entry_lines.account_name',
+                DB::raw('SUM(journal_entry_lines.debit) as debit_total'),
+                DB::raw('SUM(journal_entry_lines.credit) as credit_total'),
+            ])
+            ->get()
+            ->map(function ($row) use ($inputAccounts, $outputAccounts) {
+                $row->tax_type = $inputAccounts->contains($row->account_code) ? 'input' : ($outputAccounts->contains($row->account_code) ? 'output' : 'tax');
+                $row->amount = $row->tax_type === 'input'
+                    ? round((float) $row->debit_total - (float) $row->credit_total, 2)
+                    : round((float) $row->credit_total - (float) $row->debit_total, 2);
+
+                return $row;
+            });
+
+        $inputTotal = round((float) $rows->where('tax_type', 'input')->sum('amount'), 2);
+        $outputTotal = round((float) $rows->where('tax_type', 'output')->sum('amount'), 2);
+
+        return [
+            'filters' => $filters,
+            'rows' => $rows,
+            'input_total' => $inputTotal,
+            'output_total' => $outputTotal,
+            'net_payable' => round($outputTotal - $inputTotal, 2),
+        ];
+    }
+
     public function profitAndLoss(array $filters = []): array
     {
         $rows = $this->statementRows(['revenue', 'expense'], ['4', '5'], $filters)
@@ -1669,7 +1811,9 @@ class AccountingRuntimeService
             ['1000 Cash On Hand', 'Cash On Hand', 'asset', 'debit'],
             ['1010 Bank Account', 'Bank Account', 'asset', 'debit'],
             ['1300 Inventory Asset', 'Inventory Asset', 'asset', 'debit'],
+            ['1410 VAT Input Receivable', 'VAT Input Receivable', 'asset', 'debit'],
             ['2000 Accounts Payable', 'Accounts Payable', 'liability', 'credit'],
+            ['2100 VAT Output Payable', 'VAT Output Payable', 'liability', 'credit'],
             ['3900 Inventory Adjustment Offset', 'Inventory Adjustment Offset', 'equity', 'credit'],
             ['4100 Service Labor Revenue', 'Service Labor Revenue', 'revenue', 'credit'],
             ['4100 Service Revenue', 'Service Revenue', 'revenue', 'credit'],
@@ -1690,6 +1834,34 @@ class AccountingRuntimeService
                 ]
             );
         }
+    }
+
+    protected function ensureDefaultTaxRate(): AccountingTaxRate
+    {
+        $this->ensureAccountsFromCodes([
+            '1410 VAT Input Receivable',
+            '2100 VAT Output Payable',
+        ]);
+
+        $rate = AccountingTaxRate::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('id')
+            ->first();
+
+        if ($rate) {
+            return $rate;
+        }
+
+        return AccountingTaxRate::query()->create([
+            'code' => 'vat_5',
+            'name' => 'VAT 5%',
+            'rate' => 5,
+            'input_tax_account' => '1410 VAT Input Receivable',
+            'output_tax_account' => '2100 VAT Output Payable',
+            'is_default' => true,
+            'is_active' => true,
+        ]);
     }
 
     protected function ensureAccountsFromCodes(array $codes): void

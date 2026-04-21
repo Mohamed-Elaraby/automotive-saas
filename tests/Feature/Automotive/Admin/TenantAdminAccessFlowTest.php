@@ -963,6 +963,33 @@ class TenantAdminAccessFlowTest extends TestCase
         $ledgerResponse->assertOk();
         $ledgerResponse->assertSee('Create Vendor Bill', false);
         $ledgerResponse->assertSee('Payables Review', false);
+        $ledgerResponse->assertSee('Tax And VAT Settings', false);
+
+        $taxRateResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/tax-rates?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => 'vat_5_test',
+            'name' => 'VAT 5 Test',
+            'rate' => 5,
+            'input_tax_account' => '1410 VAT Input Receivable',
+            'output_tax_account' => '2100 VAT Output Payable',
+            'is_default' => '1',
+            'is_active' => '1',
+        ]);
+
+        $taxRateResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $taxRate = DB::connection('tenant')->table('accounting_tax_rates')->where('code', 'vat_5_test')->first();
+
+            $this->assertNotNull($taxRate);
+            $this->assertSame('1410 VAT Input Receivable', $taxRate->input_tax_account);
+            $this->assertSame('2100 VAT Output Payable', $taxRate->output_tax_account);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
 
         $createResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills?workspace_product=accounting", [
             'workspace_product' => 'accounting',
@@ -972,8 +999,11 @@ class TenantAdminAccessFlowTest extends TestCase
             'reference' => 'BILL-RENT-001',
             'currency' => 'USD',
             'amount' => 240,
+            'accounting_tax_rate_id' => $taxRate->id,
+            'tax_amount' => 12,
             'expense_account' => '5200 Operating Expense',
             'payable_account' => '2000 Accounts Payable',
+            'tax_account' => '1410 VAT Input Receivable',
             'notes' => 'Monthly workshop rent.',
         ]);
 
@@ -989,6 +1019,7 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertSame('draft', $bill->status);
             $this->assertSame('Rent Vendor', $bill->supplier_name);
             $this->assertSame(240.0, (float) $bill->amount);
+            $this->assertSame(12.0, (float) $bill->tax_amount);
         } finally {
             tenancy()->end();
             DB::purge('tenant');
@@ -1026,11 +1057,13 @@ class TenantAdminAccessFlowTest extends TestCase
                 ->orderBy('id')
                 ->get();
 
-            $this->assertCount(2, $lines);
+            $this->assertCount(3, $lines);
             $this->assertSame('5200 Operating Expense', $lines[0]->account_code);
-            $this->assertSame(240.0, (float) $lines[0]->debit);
-            $this->assertSame('2000 Accounts Payable', $lines[1]->account_code);
-            $this->assertSame(240.0, (float) $lines[1]->credit);
+            $this->assertSame(228.0, (float) $lines[0]->debit);
+            $this->assertSame('1410 VAT Input Receivable', $lines[1]->account_code);
+            $this->assertSame(12.0, (float) $lines[1]->debit);
+            $this->assertSame('2000 Accounts Payable', $lines[2]->account_code);
+            $this->assertSame(240.0, (float) $lines[2]->credit);
 
             $this->assertDatabaseHas('accounting_audit_entries', [
                 'event_type' => 'vendor_bill_posted',
@@ -1161,6 +1194,18 @@ class TenantAdminAccessFlowTest extends TestCase
         $balanceSheetContent = $balanceSheetCsv->streamedContent();
         $this->assertStringContainsString('Bank Account', $balanceSheetContent);
         $this->assertStringContainsString('Difference', $balanceSheetContent);
+
+        $taxSummaryPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/tax-summary?workspace_product=accounting&format=print");
+        $taxSummaryPrint->assertOk();
+        $taxSummaryPrint->assertSee('Tax Summary', false);
+        $taxSummaryPrint->assertSee('VAT Input Receivable', false);
+        $taxSummaryPrint->assertSee('Input Tax Total', false);
+
+        $taxSummaryCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/tax-summary?workspace_product=accounting&format=csv");
+        $taxSummaryCsv->assertOk();
+        $taxSummaryContent = $taxSummaryCsv->streamedContent();
+        $this->assertStringContainsString('VAT Input Receivable', $taxSummaryContent);
+        $this->assertStringContainsString('Net Tax Payable', $taxSummaryContent);
     }
 
 

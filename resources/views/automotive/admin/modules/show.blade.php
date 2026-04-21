@@ -161,11 +161,13 @@
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">Export Revenue CSV</a>
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss'] + $workspaceQuery + $journalFilters) }}">Export P&amp;L CSV</a>
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet'] + $workspaceQuery + $journalFilters) }}">Export Balance Sheet CSV</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary'] + $workspaceQuery + $journalFilters) }}">Export Tax Summary CSV</a>
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">Export Payments CSV</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print P&amp;L</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Balance Sheet</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payments</a>
+                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Tax Summary</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Bank Reconciliation</a>
                         </div>
                     </div>
@@ -257,6 +259,41 @@
                                     <div class="text-muted small">{{ $bucket['count'] }} open</div>
                                 </div>
                             @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Tax And VAT Settings</h5></div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-rates.store', $workspaceQuery) }}">
+                            @csrf
+                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                            <div class="row">
+                                <div class="col-md-2 mb-3"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', 'vat_5') }}"></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'VAT 5%') }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Rate %</label><input type="number" step="0.0001" min="0" max="100" name="rate" class="form-control" value="{{ old('rate', '5') }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Input Account</label><input type="text" name="input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('input_tax_account', '1410 VAT Input Receivable') }}"></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">Output Account</label><input type="text" name="output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('output_tax_account', '2100 VAT Output Payable') }}"></div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="tax_rate_default" name="is_default" value="1" checked><label class="form-check-label" for="tax_rate_default">Default tax rate</label></div>
+                                <button type="submit" class="btn btn-primary">Save Tax Rate</button>
+                            </div>
+                        </form>
+                        <hr>
+                        <div class="row">
+                            @forelse(($moduleData['accounting_tax_rates'] ?? collect()) as $taxRate)
+                                <div class="col-md-4 mb-2">
+                                    <div class="border rounded p-2 h-100">
+                                        <div class="fw-semibold">{{ $taxRate->name }} · {{ rtrim(rtrim(number_format((float) $taxRate->rate, 4), '0'), '.') }}%</div>
+                                        <div class="text-muted small">{{ $taxRate->input_tax_account }}</div>
+                                        <div class="text-muted small">{{ $taxRate->output_tax_account }}</div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-muted mb-0">No tax rates are configured yet.</p>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -537,8 +574,13 @@
                                     </div>
                                     <div class="row">
                                         <div class="col-md-4 mb-3"><label class="form-label">Amount</label><input type="number" step="0.01" min="0.01" name="amount" class="form-control" value="{{ old('amount') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Tax Rate</label><select name="accounting_tax_rate_id" class="form-select"><option value="">No tax</option>@foreach(($moduleData['accounting_tax_rates'] ?? collect()) as $taxRate)<option value="{{ $taxRate->id }}">{{ $taxRate->name }}</option>@endforeach</select></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Tax Amount</label><input type="number" step="0.01" min="0" name="tax_amount" class="form-control" value="{{ old('tax_amount', '0') }}"></div>
+                                    </div>
+                                    <div class="row">
                                         <div class="col-md-4 mb-3"><label class="form-label">Expense Account</label><input type="text" name="expense_account" list="account-catalog-options" class="form-control" value="{{ old('expense_account', '5200 Operating Expense') }}"></div>
                                         <div class="col-md-4 mb-3"><label class="form-label">Payable Account</label><input type="text" name="payable_account" list="account-catalog-options" class="form-control" value="{{ old('payable_account', '2000 Accounts Payable') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Tax Account</label><input type="text" name="tax_account" list="account-catalog-options" class="form-control" value="{{ old('tax_account', '1410 VAT Input Receivable') }}"></div>
                                     </div>
                                     <input type="hidden" name="currency" value="USD">
                                     <div class="mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>

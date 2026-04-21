@@ -150,6 +150,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.period-locks.store');
                 Route::post('/general-ledger/policies', [WorkspaceModuleController::class, 'storeAccountingPolicy'])
                     ->name('modules.general-ledger.policies.store');
+                Route::post('/general-ledger/tax-rates', [WorkspaceModuleController::class, 'storeAccountingTaxRate'])
+                    ->name('modules.general-ledger.tax-rates.store');
                 Route::get('/general-ledger/exports/{report}', [WorkspaceModuleController::class, 'exportAccountingReport'])
                     ->name('modules.general-ledger.exports');
                 Route::post('/general-ledger/manual-journal-entries', [WorkspaceModuleController::class, 'storeManualJournalEntry'])

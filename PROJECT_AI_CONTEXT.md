@@ -768,12 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Tax And VAT Foundation
+### Accounting Fiscal Close And Posting Controls
 Recommended scope:
-- add tax/VAT account defaults and configurable tax rates
-- add basic tax fields to customer revenue and vendor bill workflows where appropriate
-- create tax summary report from posted journals/documents
-- keep tax reporting journal-driven and date-filtered
+- add stronger period close workflow around existing period locks
+- add posting-control checks for high-risk actions
+- expose close/lock status summaries in General Ledger
+- keep all corrections through explicit reversal/correction flows
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1566,6 +1566,66 @@ Verification:
   - result: 8 passed, 283 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 25 passed, 517 assertions
+
+## 15.18) Accounting Tax And VAT Foundation
+Status:
+- completed
+
+Why this package was needed:
+- Accounting had financial statements and AP/AR workflows, but no tax/VAT configuration or tax summary reporting
+- this package adds a minimal VAT foundation while keeping reports journal-driven
+
+Completed scope:
+- added tenant table `accounting_tax_rates`
+- added `AccountingTaxRate` model
+- added default VAT accounts:
+  - `1410 VAT Input Receivable`
+  - `2100 VAT Output Payable`
+- General Ledger now shows:
+  - Tax And VAT Settings
+  - tax rate create/update form
+  - active tax rate cards
+  - Tax Summary CSV/print actions
+- default tax rate auto-creation:
+  - `VAT 5%`
+  - input account: `1410 VAT Input Receivable`
+  - output account: `2100 VAT Output Payable`
+- vendor bills now support:
+  - selected tax rate
+  - tax amount
+  - input tax account
+- vendor bill posting with tax now:
+  - debits expense net of tax
+  - debits VAT Input Receivable
+  - credits Accounts Payable for the gross bill amount
+- revenue posting now supports optional payload tax values:
+  - `tax_amount`
+  - `tax_account`
+  and credits output VAT when the source event provides those values
+- Tax Summary report:
+  - reads posted journal lines for configured input/output tax accounts
+  - calculates input tax total
+  - calculates output tax total
+  - calculates net tax payable
+  - supports CSV and print output using existing date filters
+- integration readiness verification now requires `accounting_tax_rates`
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_080000_create_accounting_tax_rates_table.php`
+- `app/Models/AccountingTaxRate.php`
+- `app/Models/AccountingVendorBill.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 8 passed, 299 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 25 passed, 533 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
