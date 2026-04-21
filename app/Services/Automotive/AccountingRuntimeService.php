@@ -39,11 +39,24 @@ class AccountingRuntimeService
             ->get();
     }
 
-    public function getAccounts(): Collection
+    public function getAccounts(array $filters = []): Collection
     {
         $this->ensureDefaultAccounts();
 
         return AccountingAccount::query()
+            ->when(! empty($filters['account_type']), fn ($query) => $query->where('type', $filters['account_type']))
+            ->when(isset($filters['account_status']) && $filters['account_status'] !== '', function ($query) use ($filters) {
+                $query->where('is_active', $filters['account_status'] === 'active');
+            })
+            ->when(! empty($filters['account_search']), function ($query) use ($filters) {
+                $search = '%' . trim((string) $filters['account_search']) . '%';
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('code', 'like', $search)
+                        ->orWhere('name', 'like', $search)
+                        ->orWhere('notes', 'like', $search);
+                });
+            })
             ->orderBy('code')
             ->get();
     }
@@ -603,6 +616,12 @@ class AccountingRuntimeService
     {
         return DB::transaction(function () use ($data): AccountingPostingGroup {
             $isDefault = ! empty($data['is_default']);
+            $this->ensureDefaultAccounts();
+            $this->assertActiveAccountCodes([
+                $data['receivable_account'],
+                $data['labor_revenue_account'],
+                $data['parts_revenue_account'],
+            ], 'posting_group_accounts');
 
             if ($isDefault) {
                 AccountingPostingGroup::query()->update(['is_default' => false]);
@@ -624,16 +643,72 @@ class AccountingRuntimeService
 
     public function createAccount(array $data): AccountingAccount
     {
-        return AccountingAccount::query()->updateOrCreate(
-            ['code' => trim((string) $data['code'])],
-            [
+        $code = $this->normalizeAccountCode((string) $data['code']);
+        $type = (string) $data['type'];
+        $normalBalance = (string) $data['normal_balance'];
+
+        $this->assertValidNormalBalance($type, $normalBalance);
+
+        return DB::transaction(function () use ($data, $code, $type, $normalBalance): AccountingAccount {
+            $account = AccountingAccount::query()->where('code', $code)->first();
+            $payload = [
                 'name' => $data['name'],
-                'type' => $data['type'],
-                'normal_balance' => $data['normal_balance'],
+                'type' => $type,
+                'normal_balance' => $normalBalance,
                 'is_active' => ! array_key_exists('is_active', $data) || (bool) $data['is_active'],
                 'notes' => $data['notes'] ?? null,
-            ]
-        );
+            ];
+
+            if ($account && $this->accountCodeIsUsed($account->code)) {
+                foreach (['name', 'type', 'normal_balance'] as $field) {
+                    if ((string) $account->{$field} !== (string) $payload[$field]) {
+                        throw ValidationException::withMessages([
+                            'code' => 'Accounts used by posted journal lines cannot be renamed or reclassified. Deactivate the account instead.',
+                        ]);
+                    }
+                }
+
+                $account->forceFill([
+                    'is_active' => $payload['is_active'],
+                    'notes' => $payload['notes'],
+                ])->save();
+
+                return $account->refresh();
+            }
+
+            return AccountingAccount::query()->updateOrCreate(
+                ['code' => $code],
+                $payload
+            );
+        });
+    }
+
+    public function deactivateAccount(AccountingAccount $account, ?int $createdBy = null): AccountingAccount
+    {
+        $account->forceFill(['is_active' => false])->save();
+
+        $this->recordAudit('account_deactivated', $account, "Accounting account {$account->code} deactivated.", [
+            'code' => $account->code,
+            'used_by_posted_journals' => $this->accountCodeIsUsed($account->code),
+        ], $createdBy);
+
+        return $account->refresh();
+    }
+
+    public function deleteAccount(AccountingAccount $account, ?int $createdBy = null): void
+    {
+        if ($this->accountCodeIsUsed($account->code)) {
+            throw ValidationException::withMessages([
+                'account' => 'Accounts used by posted journal lines cannot be deleted. Deactivate the account instead.',
+            ]);
+        }
+
+        $code = $account->code;
+        $account->delete();
+
+        $this->recordAudit('account_deleted', new AccountingAccount(['code' => $code]), "Unused accounting account {$code} deleted.", [
+            'code' => $code,
+        ], $createdBy);
     }
 
     public function createPeriodLock(array $data, ?int $createdBy = null): AccountingPeriodLock
@@ -680,6 +755,12 @@ class AccountingRuntimeService
     {
         return DB::transaction(function () use ($data): AccountingPolicy {
             $isDefault = ! empty($data['is_default']);
+            $this->assertActiveAccountCodes([
+                $data['inventory_asset_account'],
+                $data['inventory_adjustment_offset_account'],
+                $data['inventory_adjustment_expense_account'],
+                $data['cogs_account'],
+            ], 'accounts');
 
             if ($isDefault) {
                 AccountingPolicy::query()->update(['is_default' => false]);
@@ -700,13 +781,6 @@ class AccountingRuntimeService
                 ]
             );
 
-            $this->ensureAccountsFromCodes([
-                $policy->inventory_asset_account,
-                $policy->inventory_adjustment_offset_account,
-                $policy->inventory_adjustment_expense_account,
-                $policy->cogs_account,
-            ]);
-
             return $policy;
         });
     }
@@ -715,6 +789,10 @@ class AccountingRuntimeService
     {
         return DB::transaction(function () use ($data): AccountingTaxRate {
             $isDefault = ! empty($data['is_default']);
+            $this->assertActiveAccountCodes([
+                $data['input_tax_account'] ?? '1410 VAT Input Receivable',
+                $data['output_tax_account'] ?? '2100 VAT Output Payable',
+            ], 'tax_accounts');
 
             if ($isDefault) {
                 AccountingTaxRate::query()->update(['is_default' => false]);
@@ -732,11 +810,6 @@ class AccountingRuntimeService
                     'notes' => $data['notes'] ?? null,
                 ]
             );
-
-            $this->ensureAccountsFromCodes([
-                $rate->input_tax_account,
-                $rate->output_tax_account,
-            ]);
 
             return $rate;
         });
@@ -767,7 +840,8 @@ class AccountingRuntimeService
         $postingGroup = $this->resolvePostingGroup();
         $cashAccount = trim((string) ($data['cash_account'] ?? '1000 Cash On Hand')) ?: '1000 Cash On Hand';
         $receivableAccount = $postingGroup?->receivable_account ?: '1100 Accounts Receivable';
-        $this->ensureAccountsFromCodes([$cashAccount, $receivableAccount]);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes([$cashAccount, $receivableAccount], 'cash_account');
 
         return DB::transaction(function () use ($data, $event, $paymentDate, $amount, $remainingAmount, $cashAccount, $receivableAccount, $createdBy): AccountingPayment {
             $entry = JournalEntry::query()->create([
@@ -885,7 +959,8 @@ class AccountingRuntimeService
 
             $currency = strtoupper((string) ($data['currency'] ?? $currencies->first() ?: 'USD'));
             $depositAccount = trim((string) ($data['deposit_account'] ?? '1010 Bank Account')) ?: '1010 Bank Account';
-            $this->ensureAccountsFromCodes([$depositAccount]);
+            $this->ensureDefaultAccounts();
+            $this->assertActiveAccountCodes([$depositAccount], 'deposit_account');
             $totalAmount = round((float) $payments->sum('amount'), 2);
 
             $batch = AccountingDepositBatch::query()->create([
@@ -1000,7 +1075,8 @@ class AccountingRuntimeService
         $expenseAccount = trim((string) ($data['expense_account'] ?? '5200 Operating Expense')) ?: '5200 Operating Expense';
         $payableAccount = trim((string) ($data['payable_account'] ?? '2000 Accounts Payable')) ?: '2000 Accounts Payable';
         $taxAccount = trim((string) ($data['tax_account'] ?? $taxRate?->input_tax_account ?? '1410 VAT Input Receivable')) ?: '1410 VAT Input Receivable';
-        $this->ensureAccountsFromCodes([$expenseAccount, $payableAccount, $taxAccount]);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes($taxAmount > 0 ? [$expenseAccount, $payableAccount, $taxAccount] : [$expenseAccount, $payableAccount], 'vendor_bill_accounts');
 
         return AccountingVendorBill::query()->create([
             'supplier_id' => $data['supplier_id'] ?? null,
@@ -1041,7 +1117,8 @@ class AccountingRuntimeService
         $amount = round((float) $bill->amount, 2);
         $taxAmount = round((float) $bill->tax_amount, 2);
         $expenseAmount = round($amount - $taxAmount, 2);
-        $this->ensureAccountsFromCodes([$bill->expense_account, $bill->payable_account, $bill->tax_account]);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes($taxAmount > 0 ? [$bill->expense_account, $bill->payable_account, $bill->tax_account] : [$bill->expense_account, $bill->payable_account], 'vendor_bill_accounts');
 
         return DB::transaction(function () use ($bill, $entryDate, $amount, $taxAmount, $expenseAmount, $createdBy): JournalEntry {
             $entry = JournalEntry::query()->create([
@@ -1127,7 +1204,8 @@ class AccountingRuntimeService
 
         $cashAccount = trim((string) ($data['cash_account'] ?? '1010 Bank Account')) ?: '1010 Bank Account';
         $payableAccount = $bill->payable_account ?: '2000 Accounts Payable';
-        $this->ensureAccountsFromCodes([$cashAccount, $payableAccount]);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes([$cashAccount, $payableAccount], 'cash_account');
 
         return DB::transaction(function () use ($data, $bill, $paymentDate, $amount, $remainingAmount, $cashAccount, $payableAccount, $createdBy): AccountingVendorBillPayment {
             $entry = JournalEntry::query()->create([
@@ -1302,7 +1380,13 @@ class AccountingRuntimeService
             ]);
         }
 
-        $this->ensureAccountsFromCodes([$outputTaxAccount]);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes([
+            $postingGroup?->receivable_account ?: '1100 Accounts Receivable',
+            $postingGroup?->labor_revenue_account ?: '4100 Service Labor Revenue',
+            $postingGroup?->parts_revenue_account ?: '4200 Parts Revenue',
+            $outputTaxAccount,
+        ], 'posting_accounts');
 
         return DB::transaction(function () use ($event, $postingGroup, $entryDate, $laborAmount, $partsAmount, $totalAmount, $taxAmount, $outputTaxAccount, $createdBy): JournalEntry {
             $entry = JournalEntry::query()->create([
@@ -1626,6 +1710,12 @@ class AccountingRuntimeService
         $entryDate = optional($movement->movement_date)->toDateString() ?: now()->toDateString();
         $this->assertPeriodOpen($entryDate, 'posting inventory valuation movements');
         $policy = $this->ensureDefaultPolicy();
+        $this->assertActiveAccountCodes([
+            $policy->inventory_asset_account,
+            $policy->inventory_adjustment_offset_account,
+            $policy->inventory_adjustment_expense_account,
+            $policy->cogs_account,
+        ], 'inventory_policy_accounts');
         $handoff = $this->workspaceIntegrationHandoffService->start([
             'integration_key' => 'parts-accounting',
             'event_name' => 'stock_movement.valued',
@@ -2096,26 +2186,61 @@ class AccountingRuntimeService
     protected function assertKnownAccounts(Collection $lines): void
     {
         $this->ensureDefaultAccounts();
-        $activeCodes = AccountingAccount::query()
-            ->where('is_active', true)
-            ->pluck('code')
-            ->all();
+        $this->assertActiveAccountCodes($lines->pluck('account_code')->all(), 'lines');
+    }
 
-        if ($activeCodes === []) {
+    protected function assertActiveAccountCodes(array $codes, string $field = 'accounts'): void
+    {
+        $normalizedCodes = collect($codes)
+            ->map(fn ($code): string => $this->normalizeAccountCode((string) $code))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($normalizedCodes->isEmpty()) {
             return;
         }
 
-        $unknownCodes = $lines
-            ->pluck('account_code')
-            ->unique()
+        $activeCodes = AccountingAccount::query()
+            ->where('is_active', true)
+            ->whereIn('code', $normalizedCodes->all())
+            ->pluck('code')
+            ->all();
+
+        $unknownCodes = $normalizedCodes
             ->reject(fn (string $code): bool => in_array($code, $activeCodes, true))
             ->values();
 
         if ($unknownCodes->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'lines' => 'Unknown or inactive account code: ' . $unknownCodes->implode(', '),
+                $field => 'Unknown or inactive account code: ' . $unknownCodes->implode(', '),
             ]);
         }
+    }
+
+    protected function assertValidNormalBalance(string $type, string $normalBalance): void
+    {
+        $expected = in_array($type, ['asset', 'expense'], true) ? 'debit' : 'credit';
+
+        if ($normalBalance !== $expected) {
+            throw ValidationException::withMessages([
+                'normal_balance' => ucfirst($type) . " accounts must have a {$expected} normal balance.",
+            ]);
+        }
+    }
+
+    protected function accountCodeIsUsed(string $code): bool
+    {
+        return DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entry_lines.account_code', $code)
+            ->whereIn('journal_entries.status', ['posted', 'reversed'])
+            ->exists();
+    }
+
+    protected function normalizeAccountCode(string $code): string
+    {
+        return trim(preg_replace('/\s+/', ' ', $code) ?? '');
     }
 
     protected function resolveAccountName(string $code, string $fallback): string

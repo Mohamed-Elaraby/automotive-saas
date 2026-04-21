@@ -342,22 +342,44 @@
                         <div class="card flex-fill">
                             <div class="card-header"><h5 class="card-title mb-0">Account Catalog</h5></div>
                             <div class="card-body">
+                                <form method="GET" action="{{ route('automotive.admin.modules.general-ledger') }}" class="mb-3">
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row g-2">
+                                        <div class="col-12"><input type="text" name="account_search" class="form-control form-control-sm" value="{{ request('account_search') }}" placeholder="Search accounts"></div>
+                                        <div class="col-6"><select name="account_type" class="form-select form-select-sm"><option value="">All types</option><option value="asset" @selected(request('account_type') === 'asset')>Asset</option><option value="liability" @selected(request('account_type') === 'liability')>Liability</option><option value="equity" @selected(request('account_type') === 'equity')>Equity</option><option value="revenue" @selected(request('account_type') === 'revenue')>Revenue</option><option value="expense" @selected(request('account_type') === 'expense')>Expense</option></select></div>
+                                        <div class="col-6"><select name="account_status" class="form-select form-select-sm"><option value="">All statuses</option><option value="active" @selected(request('account_status') === 'active')>Active</option><option value="inactive" @selected(request('account_status') === 'inactive')>Inactive</option></select></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-light mt-2">Filter Accounts</button>
+                                </form>
                                 <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.accounts.store', $workspaceQuery) }}">
                                     @csrf
                                     <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                     <div class="mb-2"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', '1150 Clearing Account') }}"></div>
                                     <div class="mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'Clearing Account') }}"></div>
                                     <div class="row">
-                                        <div class="col-6 mb-2"><label class="form-label">Type</label><select name="type" class="form-select"><option value="asset">Asset</option><option value="liability">Liability</option><option value="equity">Equity</option><option value="revenue">Revenue</option><option value="expense">Expense</option></select></div>
-                                        <div class="col-6 mb-2"><label class="form-label">Normal</label><select name="normal_balance" class="form-select"><option value="debit">Debit</option><option value="credit">Credit</option></select></div>
+                                        <div class="col-6 mb-2"><label class="form-label">Type</label><select name="type" class="form-select"><option value="asset" @selected(old('type') === 'asset')>Asset</option><option value="liability" @selected(old('type') === 'liability')>Liability</option><option value="equity" @selected(old('type') === 'equity')>Equity</option><option value="revenue" @selected(old('type') === 'revenue')>Revenue</option><option value="expense" @selected(old('type') === 'expense')>Expense</option></select></div>
+                                        <div class="col-6 mb-2"><label class="form-label">Normal</label><select name="normal_balance" class="form-select"><option value="debit" @selected(old('normal_balance') === 'debit')>Debit</option><option value="credit" @selected(old('normal_balance') === 'credit')>Credit</option></select></div>
                                     </div>
+                                    <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="account_is_active" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}><label class="form-check-label" for="account_is_active">Active</label></div>
                                     <button type="submit" class="btn btn-primary">Save Account</button>
                                 </form>
                                 <hr>
-                                @forelse(($moduleData['accounting_accounts'] ?? collect())->take(8) as $account)
-                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                                        <div><div class="fw-semibold">{{ $account->code }}</div><div class="text-muted small">{{ $account->name }}</div></div>
-                                        <span class="badge bg-light text-dark">{{ strtoupper($account->type) }}</span>
+                                @forelse(($moduleData['accounting_accounts'] ?? collect())->take(12) as $account)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-2">
+                                            <div><div class="fw-semibold">{{ $account->code }}</div><div class="text-muted small">{{ $account->name }}</div><div class="text-muted small">{{ ucfirst($account->normal_balance) }} normal balance</div></div>
+                                            <div class="text-end">
+                                                <span class="badge bg-light text-dark">{{ strtoupper($account->type) }}</span>
+                                                <span class="badge {{ $account->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $account->is_active ? 'ACTIVE' : 'INACTIVE' }}</span>
+                                            </div>
+                                        </div>
+                                        @if($account->is_active)
+                                            <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.accounts.deactivate', ['account' => $account->id] + $workspaceQuery) }}" class="mt-2">
+                                                @csrf
+                                                <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-warning">Deactivate</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 @empty
                                     <p class="text-muted mb-0">No accounting accounts are configured yet.</p>
@@ -894,7 +916,7 @@
                     <div class="card-header"><h5 class="card-title mb-0">Create Manual Journal Entry</h5></div>
                     <div class="card-body">
                         <datalist id="account-catalog-options">
-                            @foreach(($moduleData['accounting_accounts'] ?? collect()) as $account)
+                            @foreach(($moduleData['active_accounting_accounts'] ?? $moduleData['accounting_accounts'] ?? collect()) as $account)
                                 <option value="{{ $account->code }}">{{ $account->name }}</option>
                             @endforeach
                         </datalist>

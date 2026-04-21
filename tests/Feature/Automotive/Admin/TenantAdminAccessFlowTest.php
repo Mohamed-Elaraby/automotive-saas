@@ -543,7 +543,7 @@ class TenantAdminAccessFlowTest extends TestCase
             'code' => 'service_revenue',
             'name' => 'Service Revenue',
             'receivable_account' => '1100 Accounts Receivable',
-            'labor_revenue_account' => '4100 Labor Revenue',
+            'labor_revenue_account' => '4100 Service Labor Revenue',
             'parts_revenue_account' => '4200 Parts Revenue',
             'currency' => 'USD',
             'is_default' => '1',
@@ -1502,6 +1502,147 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_chart_of_accounts_hardening_blocks_unsafe_mutation_and_inactive_posting(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $invalidBalanceResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'code' => '2050 Invalid Liability',
+                'name' => 'Invalid Liability',
+                'type' => 'liability',
+                'normal_balance' => 'debit',
+            ]);
+        $invalidBalanceResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $invalidBalanceResponse->assertSessionHasErrors('normal_balance');
+
+        $accountResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => '1160 Posted Clearing',
+            'name' => 'Posted Clearing',
+            'type' => 'asset',
+            'normal_balance' => 'debit',
+        ]);
+        $accountResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $manualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-06-01',
+            'currency' => 'USD',
+            'memo' => 'Account hardening proof',
+            'lines' => [
+                ['account_code' => '1160 Posted Clearing', 'account_name' => 'Posted Clearing', 'debit' => 100, 'credit' => 0],
+                ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 100],
+            ],
+        ]);
+        $manualResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $account = DB::connection('tenant')->table('accounting_accounts')
+                ->where('code', '1160 Posted Clearing')
+                ->first();
+            $this->assertNotNull($account);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $unsafeUpdateResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'code' => '1160 Posted Clearing',
+                'name' => 'Changed Posted Clearing',
+                'type' => 'expense',
+                'normal_balance' => 'debit',
+            ]);
+        $unsafeUpdateResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $unsafeUpdateResponse->assertSessionHasErrors('code');
+
+        $deleteUsedResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->delete("http://{$domain}/automotive/admin/general-ledger/accounts/{$account->id}?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+            ]);
+        $deleteUsedResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $deleteUsedResponse->assertSessionHasErrors('account');
+
+        $deactivateResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/accounts/{$account->id}/deactivate?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $deactivateResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $inactiveManualResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'entry_date' => '2026-06-02',
+                'currency' => 'USD',
+                'memo' => 'Inactive account should fail',
+                'lines' => [
+                    ['account_code' => '1160 Posted Clearing', 'account_name' => 'Posted Clearing', 'debit' => 50, 'credit' => 0],
+                    ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 50],
+                ],
+            ]);
+        $inactiveManualResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $inactiveManualResponse->assertSessionHasErrors('lines');
+
+        $unusedAccountResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => '1170 Unused Clearing',
+            'name' => 'Unused Clearing',
+            'type' => 'asset',
+            'normal_balance' => 'debit',
+        ]);
+        $unusedAccountResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $unusedAccount = DB::connection('tenant')->table('accounting_accounts')
+                ->where('code', '1170 Unused Clearing')
+                ->first();
+            $this->assertNotNull($unusedAccount);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $deleteUnusedResponse = $this->delete("http://{$domain}/automotive/admin/general-ledger/accounts/{$unusedAccount->id}?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $deleteUnusedResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $filterResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&account_search=Posted&account_status=inactive&account_type=asset");
+        $filterResponse->assertOk();
+        $filterResponse->assertSee('Posted Clearing', false);
+        $filterResponse->assertSee('INACTIVE', false);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_accounts', [
+                'code' => '1160 Posted Clearing',
+                'is_active' => false,
+            ], 'tenant');
+            $this->assertDatabaseMissing('accounting_accounts', [
+                'code' => '1170 Unused Clearing',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'account_deactivated',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
@@ -1745,6 +1886,21 @@ class TenantAdminAccessFlowTest extends TestCase
             'email' => $email,
             'password' => $password,
         ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        foreach ([
+            ['1310 Workshop Inventory', 'Workshop Inventory', 'asset', 'debit'],
+            ['3910 Inventory Offset', 'Inventory Offset', 'equity', 'credit'],
+            ['5110 Inventory Shrinkage', 'Inventory Shrinkage', 'expense', 'debit'],
+            ['5010 Workshop COGS', 'Workshop COGS', 'expense', 'debit'],
+        ] as [$code, $name, $type, $normalBalance]) {
+            $this->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'code' => $code,
+                'name' => $name,
+                'type' => $type,
+                'normal_balance' => $normalBalance,
+            ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        }
 
         $policyResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/policies?workspace_product=accounting", [
             'workspace_product' => 'accounting',

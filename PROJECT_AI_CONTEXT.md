@@ -768,14 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Chart Of Accounts Management Hardening
+### Accounting Fiscal Period Lifecycle
 Recommended scope:
-- add stronger account catalog validation
-- support active/inactive account state safely
-- block deleting or mutating accounts used by posted journal lines unless through controlled deactivation
-- validate normal balance against account type
-- add account filtering/searching in General Ledger
-- keep posting refusal for inactive or unknown accounts
+- introduce or harden fiscal period lifecycle states
+- add close checklist summary in General Ledger
+- block period locking when close checklist items are incomplete unless a controlled override exists
+- keep no-silent-mutation rule after locked periods
+- keep `assertPeriodOpen` as the central posting guard
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -829,6 +828,12 @@ Current accounting foundations already completed:
   - financial report export
 - high-risk manual journals now require approval before posting
 - General Ledger exposes pending manual journal approvals
+- account catalog now blocks unsafe mutation of accounts used by posted journal lines
+- used accounts can be deactivated but not deleted
+- unused accounts can be deleted
+- normal balance is validated against account type
+- posting into inactive or unknown accounts is rejected
+- General Ledger exposes account catalog search/type/status filters
 - General Ledger now exposes posting-control summary state
 - integration readiness verification checks required accounting runtime tables
 
@@ -985,7 +990,56 @@ Acceptance criteria:
 
 ### Package 2 - Accounting Chart Of Accounts Management Hardening
 Status:
-- next package to start immediately
+- completed
+
+Completed behavior:
+- account catalog creation/update validates normal balance against account type:
+  - asset/expense require debit normal balance
+  - liability/equity/revenue require credit normal balance
+- account catalog supports active/inactive state through an explicit deactivation route
+- accounts used by posted/reversed journal lines cannot be renamed, reclassified, or deleted
+- unused accounts can be deleted
+- active account lists power posting forms and datalist options
+- General Ledger account catalog can be filtered by:
+  - search term
+  - account type
+  - active/inactive status
+- posting flows now reject inactive or unknown accounts instead of silently creating accounts:
+  - manual journals
+  - source accounting events
+  - inventory valuation posting
+  - vendor bill creation/posting
+  - vendor bill payments
+  - customer payments
+  - deposit batches
+  - posting groups
+  - inventory policies
+  - tax rates
+- default account bootstrapping remains idempotent for default accounts only
+- journals remain the source of truth; reports still derive from journal lines
+
+Important files changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `php -l routes/products/automotive/admin.php`
+  - result: passed
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='chart_of_accounts_hardening|configured_inventory_policy_accounts|account_catalog_period_locks'`
+  - result: 3 passed, 87 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|chart_of_accounts_hardening'`
+  - result: 10 passed, 358 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 25 passed, 609 assertions
 
 Goal:
 - make account catalog safe enough for real tenant usage
@@ -1016,7 +1070,7 @@ Acceptance criteria:
 
 ### Package 3 - Accounting Fiscal Period Lifecycle
 Status:
-- pending
+- next package to start immediately
 
 Goal:
 - turn period locks into a more complete accounting close lifecycle

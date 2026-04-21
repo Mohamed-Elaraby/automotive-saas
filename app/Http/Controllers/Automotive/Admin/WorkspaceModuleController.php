@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountingDepositBatch;
+use App\Models\AccountingAccount;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
 use App\Models\AccountingVendorBill;
@@ -329,6 +330,9 @@ class WorkspaceModuleController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
+            'account_search' => ['nullable', 'string', 'max:120'],
+            'account_type' => ['nullable', 'in:asset,liability,equity,revenue,expense'],
+            'account_status' => ['nullable', 'in:active,inactive'],
             'workspace_product' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -340,7 +344,8 @@ class WorkspaceModuleController extends Controller
                 'reviewable_accounting_events' => $this->accountingRuntimeService->getReviewableAccountingEvents(25),
                 'reviewable_inventory_movements' => $this->accountingRuntimeService->getReviewableInventoryMovements(25),
                 'posting_groups' => $this->accountingRuntimeService->getPostingGroups(),
-                'accounting_accounts' => $this->accountingRuntimeService->getAccounts(),
+                'accounting_accounts' => $this->accountingRuntimeService->getAccounts($filters),
+                'active_accounting_accounts' => $this->accountingRuntimeService->getAccounts(['account_status' => 'active']),
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
                 'accounting_period_lock_summary' => $this->accountingRuntimeService->periodLockSummary(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
@@ -410,6 +415,11 @@ class WorkspaceModuleController extends Controller
 
         try {
             $this->accountingRuntimeService->createPostingGroup($validated);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
         } catch (\Illuminate\Database\QueryException $exception) {
             return redirect()
                 ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
@@ -436,11 +446,54 @@ class WorkspaceModuleController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $this->accountingRuntimeService->createAccount($validated);
+        try {
+            $this->accountingRuntimeService->createAccount($validated);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
 
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Accounting account saved successfully.');
+    }
+
+    public function deactivateAccountingAccount(Request $request, AccountingAccount $account): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->accountingRuntimeService->deactivateAccount($account, auth('automotive_admin')->id());
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Accounting account {$account->code} deactivated successfully.");
+    }
+
+    public function destroyAccountingAccount(Request $request, AccountingAccount $account): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->deleteAccount($account, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Unused accounting account deleted successfully.');
     }
 
     public function storeAccountingPeriodLock(Request $request): RedirectResponse
@@ -485,7 +538,14 @@ class WorkspaceModuleController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $this->accountingRuntimeService->createPolicy($validated);
+        try {
+            $this->accountingRuntimeService->createPolicy($validated);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
 
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
@@ -508,7 +568,14 @@ class WorkspaceModuleController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $this->accountingRuntimeService->createTaxRate($validated);
+        try {
+            $this->accountingRuntimeService->createTaxRate($validated);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
 
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])

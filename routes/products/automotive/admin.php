@@ -146,6 +146,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.posting-groups.store');
                 Route::post('/general-ledger/accounts', [WorkspaceModuleController::class, 'storeAccountingAccount'])
                     ->name('modules.general-ledger.accounts.store');
+                Route::post('/general-ledger/accounts/{account}/deactivate', [WorkspaceModuleController::class, 'deactivateAccountingAccount'])
+                    ->name('modules.general-ledger.accounts.deactivate');
+                Route::delete('/general-ledger/accounts/{account}', [WorkspaceModuleController::class, 'destroyAccountingAccount'])
+                    ->name('modules.general-ledger.accounts.destroy');
                 Route::post('/general-ledger/period-locks', [WorkspaceModuleController::class, 'storeAccountingPeriodLock'])
                     ->name('modules.general-ledger.period-locks.store');
                 Route::post('/general-ledger/policies', [WorkspaceModuleController::class, 'storeAccountingPolicy'])
