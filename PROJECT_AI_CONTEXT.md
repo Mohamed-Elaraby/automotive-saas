@@ -2029,3 +2029,30 @@ Production Nginx note:
 - if browser requests for system pages load `/theme/...` from `https://seven-scapital.com`, the system app `.env`/asset host is wrong for the three-project split
 - if browser requests for frontend pages on `https://seven-scapital.com` load `/theme/...` and return `404`, fix the `saas` project assets because that host is not served by the system app
 - see `deploy/nginx/seven-scapital.conf.example` and `deploy/WORKSPACE_ROUTING_CHECKLIST.md`
+
+## 31) Missing Tenant Domain Handling
+Status:
+- completed
+- missing workspace domains now fail gracefully instead of rendering a production 500 page
+
+Current behavior:
+- if a request reaches a tenant workspace route on a host that is not mapped in the central `domains` table, the app returns:
+  - HTTP `404`
+  - body text: `Workspace not found`
+- JSON requests receive:
+  - HTTP `404`
+  - `{ "message": "Workspace not found." }`
+- this applies to cases such as intentionally deleting:
+  - `client_1.seven-scapital.com`
+  from the central `domains` table
+- missing real hostnames are still reportable for admin/error visibility; this change fixes the user-facing response, not the domain mapping itself
+
+Important files:
+- `app/Exceptions/Handler.php`
+- `tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php`
+  - result: 4 passed, 10 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php tests/Feature/Tenancy/TenantIdentificationNoiseFilteringTest.php tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
+  - result: 8 passed, 26 assertions

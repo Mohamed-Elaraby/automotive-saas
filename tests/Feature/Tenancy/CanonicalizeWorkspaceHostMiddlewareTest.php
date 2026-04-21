@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\Tenancy;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CanonicalizeWorkspaceHostMiddlewareTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_canonical_workspace_portal_path_redirects_guest_to_login_on_root_domain(): void
     {
         $response = $this->get('https://seven-scapital.com/workspace/portal');
@@ -27,5 +30,13 @@ class CanonicalizeWorkspaceHostMiddlewareTest extends TestCase
 
         $response->assertRedirect('https://demo.seven-scapital.com/workspace');
         $this->assertSame(308, $response->getStatusCode());
+    }
+
+    public function test_missing_tenant_workspace_domain_returns_not_found_instead_of_server_error(): void
+    {
+        $response = $this->get('https://missing-tenant.seven-scapital.com/workspace/admin/general-ledger?workspace_product=accounting');
+
+        $response->assertNotFound();
+        $response->assertSee('Workspace not found', false);
     }
 }

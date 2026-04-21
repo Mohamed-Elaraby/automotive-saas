@@ -26,6 +26,10 @@ class Handler extends ExceptionHandler
             $this->storeExceptionInDatabase($e);
             $this->storeExceptionNotification($e);
         });
+
+        $this->renderable(function (TenantCouldNotBeIdentifiedOnDomainException $e, Request $request) {
+            return $this->tenantDomainNotFoundResponse($request);
+        });
     }
 
     protected function context(): array
@@ -63,6 +67,38 @@ class Handler extends ExceptionHandler
     protected function unauthenticated($request, AuthenticationException $exception)
     {
         return parent::unauthenticated($request, $exception);
+    }
+
+    protected function tenantDomainNotFoundResponse(Request $request)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Workspace not found.',
+            ], 404);
+        }
+
+        return response(<<<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workspace Not Found</title>
+    <style>
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: Arial, sans-serif; color: #1f2937; background: #f8fafc; }
+        main { width: min(560px, calc(100% - 32px)); }
+        h1 { margin: 0 0 8px; font-size: 28px; }
+        p { margin: 0; color: #64748b; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Workspace not found</h1>
+        <p>This workspace domain is not connected to an active tenant. Check the workspace URL or contact the platform administrator.</p>
+    </main>
+</body>
+</html>
+HTML, 404);
     }
 
     protected function safeInput(?Request $request): array
