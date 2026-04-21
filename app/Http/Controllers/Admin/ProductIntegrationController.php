@@ -31,6 +31,10 @@ class ProductIntegrationController extends Controller
                 'description' => '',
                 'target_label' => '',
                 'target_route_slug' => '',
+                'events' => [],
+                'source_capabilities' => [],
+                'target_capabilities' => [],
+                'payload_schema' => [],
             ]);
         }
 
@@ -54,6 +58,10 @@ class ProductIntegrationController extends Controller
             'integrations.*.description' => ['nullable', 'string'],
             'integrations.*.target_label' => ['nullable', 'string', 'max:255'],
             'integrations.*.target_route_slug' => ['nullable', 'string', 'max:255'],
+            'integrations.*.events' => ['nullable', 'string'],
+            'integrations.*.source_capabilities' => ['nullable', 'string'],
+            'integrations.*.target_capabilities' => ['nullable', 'string'],
+            'integrations.*.payload_schema' => ['nullable', 'string'],
         ]);
 
         $integrations = collect($validated['integrations'] ?? [])
@@ -65,9 +73,13 @@ class ProductIntegrationController extends Controller
                     'description' => trim((string) ($integration['description'] ?? '')),
                     'target_label' => trim((string) ($integration['target_label'] ?? '')),
                     'target_route_slug' => trim((string) ($integration['target_route_slug'] ?? '')),
+                    'events' => $this->multilineList($integration['events'] ?? null),
+                    'source_capabilities' => $this->multilineList($integration['source_capabilities'] ?? null),
+                    'target_capabilities' => $this->multilineList($integration['target_capabilities'] ?? null),
+                    'payload_schema' => $this->payloadSchema($integration['payload_schema'] ?? null),
                 ];
             })
-            ->filter(fn (array $integration) => $integration['key'] !== '' || $integration['target_product_code'] !== '' || $integration['title'] !== '')
+            ->filter(fn (array $integration) => $integration['key'] !== '' || $integration['target_product_code'] !== '' || $integration['title'] !== '' || $integration['events'] !== [])
             ->values()
             ->all();
 
@@ -96,5 +108,40 @@ class ProductIntegrationController extends Controller
     protected function integrationSettingKey(Product $product): string
     {
         return 'workspace_products.integrations.' . $product->code;
+    }
+
+    protected function multilineList(?string $value): array
+    {
+        return collect(preg_split('/[\r\n,]+/', (string) $value) ?: [])
+            ->map(fn ($item): string => trim($item))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    protected function payloadSchema(?string $value): array
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+
+        return collect(preg_split('/[\r\n,]+/', $value) ?: [])
+            ->map(fn ($item): string => trim($item))
+            ->filter()
+            ->mapWithKeys(function (string $item): array {
+                [$field, $type] = array_pad(array_map('trim', explode(':', $item, 2)), 2, 'mixed');
+
+                return $field !== '' ? [$field => $type !== '' ? $type : 'mixed'] : [];
+            })
+            ->all();
     }
 }

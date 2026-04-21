@@ -54,6 +54,46 @@
                                 <hr>
                             @endif
 
+                            <h6 class="mb-3">Integration Governance</h6>
+                            <div class="list-group mb-3">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Contracts</span>
+                                    <span class="badge {{ ($integrationGovernance['summary']['contract_count'] ?? 0) > 0 ? 'bg-success' : 'bg-secondary' }}">{{ $integrationGovernance['summary']['contract_count'] ?? 0 }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Events</span>
+                                    <span class="badge {{ ($integrationGovernance['summary']['event_count'] ?? 0) > 0 ? 'bg-success' : 'bg-secondary' }}">{{ $integrationGovernance['summary']['event_count'] ?? 0 }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Blockers</span>
+                                    <span class="badge {{ ($integrationGovernance['summary']['blocking_count'] ?? 0) === 0 ? 'bg-success' : 'bg-danger' }}">{{ $integrationGovernance['summary']['blocking_count'] ?? 0 }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Warnings</span>
+                                    <span class="badge {{ ($integrationGovernance['summary']['warning_count'] ?? 0) === 0 ? 'bg-success' : 'bg-warning text-dark' }}">{{ $integrationGovernance['summary']['warning_count'] ?? 0 }}</span>
+                                </div>
+                            </div>
+
+                            @if(($integrationGovernance['warnings'] ?? []) !== [])
+                                <div class="alert alert-light">
+                                    <ul class="mb-0 ps-3">
+                                        @foreach($integrationGovernance['warnings'] as $warning)
+                                            <li>{{ $warning }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if(($integrationGovernance['contracts'] ?? []) !== [])
+                                <div class="small text-muted mb-3">
+                                    @foreach($integrationGovernance['contracts'] as $contract)
+                                        <div class="mb-1"><strong>{{ $contract['key'] ?: 'draft' }}</strong>: {{ implode(', ', $contract['events']) ?: 'No events' }}</div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <hr>
+
                             <h6 class="mb-2">Target Family</h6>
                             <div class="fw-semibold">{{ $draftFamilyKey }}</div>
                             <div class="small text-muted mt-2">

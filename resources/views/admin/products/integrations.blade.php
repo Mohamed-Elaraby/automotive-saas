@@ -71,6 +71,22 @@
                                         <label class="form-label">Description</label>
                                         <textarea name="integrations[{{ $index }}][description]" rows="3" class="form-control" placeholder="Describe the business connection between the two systems.">{{ old("integrations.{$index}.description", $integration['description']) }}</textarea>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Events</label>
+                                        <textarea name="integrations[{{ $index }}][events]" rows="3" class="form-control" placeholder="work_order.completed&#10;stock_movement.valued">{{ old("integrations.{$index}.events", implode("\n", (array) ($integration['events'] ?? []))) }}</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Payload Schema</label>
+                                        <textarea name="integrations[{{ $index }}][payload_schema]" rows="3" class="form-control" placeholder="work_order_id: integer&#10;total_amount: decimal">{{ old("integrations.{$index}.payload_schema", collect((array) ($integration['payload_schema'] ?? []))->map(fn ($type, $field) => $field.': '.$type)->implode("\n")) }}</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Source Capabilities</label>
+                                        <textarea name="integrations[{{ $index }}][source_capabilities]" rows="3" class="form-control" placeholder="workshop.work_order_completion">{{ old("integrations.{$index}.source_capabilities", implode("\n", (array) ($integration['source_capabilities'] ?? []))) }}</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Target Capabilities</label>
+                                        <textarea name="integrations[{{ $index }}][target_capabilities]" rows="3" class="form-control" placeholder="accounting.journal_posting">{{ old("integrations.{$index}.target_capabilities", implode("\n", (array) ($integration['target_capabilities'] ?? []))) }}</textarea>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach

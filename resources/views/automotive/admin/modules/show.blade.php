@@ -196,6 +196,13 @@
                                             <div class="text-end">
                                                 <span class="badge {{ $handoff->status === 'posted' ? 'bg-success' : ($handoff->status === 'failed' ? 'bg-danger' : ($handoff->status === 'skipped' ? 'bg-warning text-dark' : 'bg-info')) }}">{{ strtoupper($handoff->status) }}</span>
                                                 <div class="text-muted small mt-1">{{ optional($handoff->last_attempted_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                                @if(in_array($handoff->status, ['failed', 'skipped'], true))
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.integration-handoffs.retry', ['handoff' => $handoff->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Retry</button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>

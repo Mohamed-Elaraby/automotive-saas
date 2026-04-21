@@ -768,12 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Integration Contract Governance And Product Onboarding
+### Accounting Runtime Hardening And Exports
 Recommended scope:
-- add central admin validation for integration contracts before publishing a new product
-- add a product-onboarding checklist that verifies declared events, required capabilities, target products, and payload schema
-- add retry controls for failed tenant integration handoffs
-- add optional export/reporting after the integration governance layer is stable
+- add CSV/PDF export for journal entries, trial balance, and revenue summary
+- add stronger account catalog controls instead of free-text accounts only
+- add period close/lock guards for journal posting and reversal
+- add configurable inventory posting accounts per product/accounting policy
+- add audit timeline for journal posting, manual journal creation, and reversals
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -958,6 +959,69 @@ Verification:
 Integration phase status:
 - the foundational linking layer is now closed enough to safely onboard future systems through declared contracts instead of invisible custom service coupling
 - next integration work should focus on governance and admin validation, not adding product-specific runtime features
+
+## 15.6) Integration Contract Governance And Product Onboarding
+Status:
+- completed
+
+Why this package was needed:
+- after adding the tenant handoff log and runtime integration contracts, new products still needed central-admin governance before being approved for manifest sync/apply
+- the goal was to prevent future products from entering the runtime with vague integration notes that cannot be safely connected to existing systems
+
+Completed scope:
+- added `ProductIntegrationGovernanceService`
+- central product integration drafts now capture structured contract fields:
+  - events
+  - source capabilities
+  - target capabilities
+  - payload schema
+- integration drafts can still describe navigation, but manifest approval now validates runtime contract readiness
+- manifest sync approval is blocked when:
+  - integration intent exists in the experience draft but no structured contract exists
+  - a contract has no stable key
+  - a contract has no target product
+  - the target product does not exist
+  - a contract has no event names
+- manifest sync preview now shows an `Integration Governance` panel with:
+  - contract count
+  - event count
+  - blocker count
+  - warning count
+  - contract/event details
+- manifest apply queue now shows integration governance readiness before execution
+- generated manifest payload now includes contract fields under `integrations`
+- failed/skipped tenant integration handoffs can now be retried from General Ledger diagnostics
+- retry handlers currently cover:
+  - `automotive-accounting` / `work_order.completed`
+  - `parts-accounting` / `stock_movement.valued`
+
+Current behavior:
+- a new product can no longer be approved for manifest sync if it declares integration intent without executable contract data
+- central admin can see why the product is blocked before writeback/apply
+- tenant admins can retry failed/skipped integration handoffs after fixing the missing target product activation or runtime issue
+
+Important files added/changed:
+- `app/Services/Admin/ProductIntegrationGovernanceService.php`
+- `app/Services/Admin/ProductLifecycleService.php`
+- `app/Http/Controllers/Admin/ProductIntegrationController.php`
+- `app/Http/Controllers/Admin/ProductManifestSyncController.php`
+- `app/Http/Controllers/Admin/ProductManifestApplyQueueController.php`
+- `resources/views/admin/products/integrations.blade.php`
+- `resources/views/admin/products/manifest-sync.blade.php`
+- `resources/views/admin/products/manifest-apply-queue.blade.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `routes/products/automotive/admin.php`
+- `tests/Feature/Admin/ProductCrudTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php --filter='integration|manifest_sync|manifest_apply'`
+  - result: 8 passed, 90 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='skipped_handoff|workshop_operations_can_create_work_order|accounting_runtime'`
+  - result: 5 passed, 166 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 32 passed, 441 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

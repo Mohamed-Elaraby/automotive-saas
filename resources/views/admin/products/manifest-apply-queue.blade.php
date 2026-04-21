@@ -57,6 +57,32 @@
                                 </div>
                             @endif
 
+                            <h6 class="mb-3">Integration Governance</h6>
+                            <div class="list-group mb-4">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Contracts Ready</span>
+                                    <span class="badge {{ ($integrationGovernance['ready'] ?? false) ? 'bg-success' : 'bg-danger' }}">{{ ($integrationGovernance['ready'] ?? false) ? 'Ready' : 'Blocked' }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Contract Count</span>
+                                    <span class="badge bg-light text-dark">{{ $integrationGovernance['summary']['contract_count'] ?? 0 }}</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Event Count</span>
+                                    <span class="badge bg-light text-dark">{{ $integrationGovernance['summary']['event_count'] ?? 0 }}</span>
+                                </div>
+                            </div>
+
+                            @if(($integrationGovernance['blockers'] ?? []) !== [])
+                                <div class="alert alert-danger">
+                                    <ul class="mb-0 ps-3">
+                                        @foreach($integrationGovernance['blockers'] as $blocker)
+                                            <li>{{ $blocker }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
                             <h6 class="mb-2">Manifest Workflow</h6>
                             <div class="small text-muted mb-1">Status: <strong>{{ strtoupper((string) ($workflow['status'] ?? 'draft')) }}</strong></div>
                             <div class="small text-muted mb-1">Reviewed At: <strong>{{ $workflow['reviewed_at'] ?? '-' }}</strong></div>

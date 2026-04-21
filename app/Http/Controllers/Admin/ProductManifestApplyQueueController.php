@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductIntegrationGovernanceService;
 use App\Services\Admin\ProductLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,8 @@ class ProductManifestApplyQueueController extends Controller
 {
     public function __construct(
         protected AppSettingsService $settingsService,
-        protected ProductLifecycleService $lifecycleService
+        protected ProductLifecycleService $lifecycleService,
+        protected ProductIntegrationGovernanceService $integrationGovernanceService
     ) {
     }
 
@@ -23,12 +25,18 @@ class ProductManifestApplyQueueController extends Controller
         $workflow = $this->workflowState($product);
         $snapshot = $this->latestSnapshot($product);
         $queue = $this->queueState($product);
+        $integrationGovernance = $this->integrationGovernanceService->evaluate(
+            $product,
+            $this->experienceDraft($product),
+            $this->integrationDraft($product)
+        );
 
         return view('admin.products.manifest-apply-queue', [
             'product' => $product,
             'workflow' => $workflow,
             'latestSnapshot' => $snapshot,
             'queue' => $queue,
+            'integrationGovernance' => $integrationGovernance,
             'readiness' => [
                 'workflow_approved' => in_array((string) ($workflow['status'] ?? 'draft'), ['approved', 'applied'], true),
                 'snapshot_available' => $snapshot !== [],
@@ -147,6 +155,16 @@ class ProductManifestApplyQueueController extends Controller
     protected function latestSnapshot(Product $product): array
     {
         return (array) $this->settingsService->get('workspace_products.manifest_sync_snapshot.' . $product->code, []);
+    }
+
+    protected function experienceDraft(Product $product): array
+    {
+        return (array) $this->settingsService->get('workspace_products.experience.' . $product->code, []);
+    }
+
+    protected function integrationDraft(Product $product): array
+    {
+        return (array) $this->settingsService->get('workspace_products.integrations.' . $product->code, []);
     }
 
     protected function queueSettingKey(Product $product): string

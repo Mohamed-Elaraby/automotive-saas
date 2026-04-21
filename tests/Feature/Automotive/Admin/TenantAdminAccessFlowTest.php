@@ -1111,6 +1111,39 @@ class TenantAdminAccessFlowTest extends TestCase
             tenancy()->end();
             DB::purge('tenant');
         }
+
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $retryResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/integration-handoffs/{$handoff->id}/retry?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $retryResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $accountingEvent = DB::connection('tenant')->table('accounting_events')
+                ->where('reference_type', \App\Models\WorkOrder::class)
+                ->where('reference_id', $workOrder->id)
+                ->where('event_type', 'work_order_completed')
+                ->first();
+
+            $this->assertNotNull($accountingEvent);
+            $this->assertSame(150.0, (float) $accountingEvent->total_amount);
+
+            $retriedHandoff = DB::connection('tenant')->table('workspace_integration_handoffs')
+                ->where('id', $handoff->id)
+                ->first();
+
+            $this->assertSame('posted', $retriedHandoff->status);
+            $this->assertSame(2, (int) $retriedHandoff->attempts);
+            $this->assertSame(\App\Models\AccountingEvent::class, $retriedHandoff->target_type);
+            $this->assertSame((int) $accountingEvent->id, (int) $retriedHandoff->target_id);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
     }
 
     /**

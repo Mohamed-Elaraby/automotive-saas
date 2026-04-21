@@ -434,6 +434,10 @@ class ProductCrudTest extends TestCase
                         'description' => 'Retail invoices and revenue events flow into accounting.',
                         'target_label' => 'Open Accounting',
                         'target_route_slug' => 'general-ledger',
+                        'events' => "sale.completed\nsale.refunded",
+                        'source_capabilities' => 'retail.sales',
+                        'target_capabilities' => 'accounting.journal_posting',
+                        'payload_schema' => "sale_id: integer\ntotal_amount: decimal",
                     ],
                 ],
             ]);
@@ -453,6 +457,10 @@ class ProductCrudTest extends TestCase
         $this->assertCount(1, $payload);
         $this->assertSame('accounting', $payload[0]['target_product_code']);
         $this->assertSame('Open Accounting', $payload[0]['target_label']);
+        $this->assertSame(['sale.completed', 'sale.refunded'], $payload[0]['events']);
+        $this->assertSame(['retail.sales'], $payload[0]['source_capabilities']);
+        $this->assertSame(['accounting.journal_posting'], $payload[0]['target_capabilities']);
+        $this->assertSame(['sale_id' => 'integer', 'total_amount' => 'decimal'], $payload[0]['payload_schema']);
 
         $builderResponse = $this
             ->actingAs($admin, 'admin')
@@ -514,6 +522,10 @@ class ProductCrudTest extends TestCase
                     'description' => 'Retail invoices and revenue events flow into accounting.',
                     'target_label' => 'Open Accounting',
                     'target_route_slug' => 'general-ledger',
+                    'events' => ['sale.completed'],
+                    'source_capabilities' => ['retail.sales'],
+                    'target_capabilities' => ['accounting.journal_posting'],
+                    'payload_schema' => ['sale_id' => 'integer', 'total_amount' => 'decimal'],
                 ],
             ], JSON_UNESCAPED_SLASHES),
             'value_type' => 'json',
@@ -528,6 +540,8 @@ class ProductCrudTest extends TestCase
         $response->assertSee('perfume_retail', false);
         $response->assertSee('sales-pos', false);
         $response->assertSee('perfume-accounting', false);
+        $response->assertSee('Integration Governance', false);
+        $response->assertSee('sale.completed', false);
         $response->assertSee('automotive.admin.modules.general-ledger', false);
         $response->assertSee('Code Writeback Assistant', false);
         $response->assertSee('config/workspace_products.php', false);
@@ -630,6 +644,75 @@ class ProductCrudTest extends TestCase
             ->put(route('admin.products.manifest-sync.update', $product), [
                 'status' => 'approved',
                 'notes' => 'Try to approve early.',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.products.manifest-sync.show', $product))
+            ->assertSessionHas('error', 'Manifest sync cannot move to an approved state until all blockers are cleared.');
+
+        $this->assertDatabaseMissing('app_settings', [
+            'key' => 'workspace_products.manifest_sync_workflow.perfume_retail',
+        ]);
+    }
+
+    public function test_manifest_sync_approval_is_blocked_when_integration_contract_is_incomplete(): void
+    {
+        $admin = $this->createAdmin();
+
+        $product = Product::query()->create([
+            'code' => 'perfume_retail',
+            'name' => 'Perfume Retail Management',
+            'slug' => 'perfume-retail',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+
+        $accounting = Product::query()->create([
+            'code' => 'accounting',
+            'name' => 'Accounting System',
+            'slug' => 'accounting',
+            'is_active' => true,
+            'sort_order' => 3,
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.experience.perfume_retail',
+            'value' => json_encode([
+                'family_key' => 'perfume_retail',
+                'integrations' => ['accounting'],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.integrations.perfume_retail',
+            'value' => json_encode([
+                [
+                    'key' => 'perfume-accounting',
+                    'target_product_code' => $accounting->code,
+                    'title' => 'Sales can post into accounting',
+                    'target_label' => 'Open Accounting',
+                    'target_route_slug' => 'general-ledger',
+                ],
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $showResponse = $this
+            ->actingAs($admin, 'admin')
+            ->get(route('admin.products.manifest-sync.show', $product));
+
+        $showResponse->assertOk();
+        $showResponse->assertSee('Integration Governance', false);
+        $showResponse->assertSee('perfume-accounting needs at least one emitted or consumed event.', false);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->put(route('admin.products.manifest-sync.update', $product), [
+                'status' => 'approved',
+                'notes' => 'Try to approve incomplete contract.',
             ]);
 
         $response

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Admin\AppSettingsService;
+use App\Services\Admin\ProductIntegrationGovernanceService;
 use App\Services\Admin\ProductLifecycleService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,8 @@ class ProductManifestSyncController extends Controller
     public function __construct(
         protected AppSettingsService $settingsService,
         protected WorkspaceManifestService $workspaceManifestService,
-        protected ProductLifecycleService $lifecycleService
+        protected ProductLifecycleService $lifecycleService,
+        protected ProductIntegrationGovernanceService $integrationGovernanceService
     ) {
     }
 
@@ -26,6 +28,11 @@ class ProductManifestSyncController extends Controller
         $manifestData = $this->manifestDraftData($product);
         $workflow = $this->workflowState($product);
         $latestSnapshot = $this->latestSnapshot($product);
+        $integrationGovernance = $this->integrationGovernanceService->evaluate(
+            $product,
+            $this->experienceDraft($product),
+            $this->integrationDraft($product)
+        );
 
         return view('admin.products.manifest-sync', [
             'product' => $product,
@@ -42,6 +49,7 @@ class ProductManifestSyncController extends Controller
             'writebackPlan' => $this->writebackPlan($product, $manifestData, $workflow),
             'applyQueueRoute' => route('admin.products.manifest-apply-queue.show', $product),
             'validationBlockers' => $this->lifecycleService->manifestSyncBlockers($product),
+            'integrationGovernance' => $integrationGovernance,
             'executionPackageJson' => json_encode($this->writebackExecutionPackage($product, $manifestData), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
             'executionPackagePhp' => "<?php\n\nreturn " . var_export($this->writebackExecutionPackage($product, $manifestData), true) . ";\n",
         ]);
@@ -238,6 +246,10 @@ class ProductManifestSyncController extends Controller
                 ->map(fn (array $integration) => array_filter([
                     'key' => $integration['key'] ?? null,
                     'requires_family' => $integration['target_product_code'] ?? null,
+                    'events' => array_values((array) ($integration['events'] ?? [])),
+                    'source_capabilities' => array_values((array) ($integration['source_capabilities'] ?? [])),
+                    'target_capabilities' => array_values((array) ($integration['target_capabilities'] ?? [])),
+                    'payload_schema' => (array) ($integration['payload_schema'] ?? []),
                     'title' => $integration['title'] ?? null,
                     'description' => $integration['description'] ?? null,
                     'target_label' => $integration['target_label'] ?? null,

@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Auth;
 class ProductLifecycleService
 {
     public function __construct(
-        protected AppSettingsService $settingsService
+        protected AppSettingsService $settingsService,
+        protected ProductIntegrationGovernanceService $integrationGovernanceService
     ) {
     }
 
@@ -63,10 +64,16 @@ class ProductLifecycleService
         }
 
         $invalidTargets = $this->invalidIntegrationTargets($product, $integrationsDraft);
+        $integrationGovernance = $this->integrationGovernanceService->evaluate($product, $experienceDraft, $integrationsDraft);
 
         if ($invalidTargets !== []) {
             $manifestSyncBlockers[] = 'One or more integration targets do not exist in the product catalog: ' . implode(', ', $invalidTargets) . '.';
         }
+
+        $manifestSyncBlockers = array_values(array_unique(array_merge(
+            $manifestSyncBlockers,
+            $integrationGovernance['blockers']
+        )));
 
         $applyQueueBlockers = [];
 
@@ -82,6 +89,11 @@ class ProductLifecycleService
             $applyQueueBlockers[] = 'Assign an owner before moving execution into progress or done.';
         }
 
+        $applyQueueBlockers = array_values(array_unique(array_merge(
+            $applyQueueBlockers,
+            $integrationGovernance['blockers']
+        )));
+
         return [
             'publication' => [
                 'ready' => $publicationBlockers === [],
@@ -91,6 +103,7 @@ class ProductLifecycleService
                 'ready' => $manifestSyncBlockers === [],
                 'blockers' => $manifestSyncBlockers,
             ],
+            'integration_governance' => $integrationGovernance,
             'apply_queue' => [
                 'ready' => $applyQueueBlockers === [],
                 'blockers' => $applyQueueBlockers,

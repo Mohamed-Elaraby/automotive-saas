@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\StockMovement;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Models\WorkspaceIntegrationHandoff;
 use App\Services\Automotive\AccountingRuntimeService;
 use App\Services\Automotive\SupplierCatalogService;
 use App\Services\Automotive\WorkOrderAccountingHandoffService;
@@ -437,6 +438,41 @@ class WorkspaceModuleController extends Controller
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
             ->with('success', "Inventory valuation journal {$entry->journal_number} posted successfully.");
+    }
+
+    public function retryIntegrationHandoff(Request $request, WorkspaceIntegrationHandoff $handoff): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($handoff->status === 'posted') {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->with('error', 'Posted integration handoffs do not need retry.');
+        }
+
+        try {
+            if ($handoff->integration_key === 'automotive-accounting' && $handoff->source_type === WorkOrder::class) {
+                $workOrder = WorkOrder::query()->findOrFail($handoff->source_id);
+                $this->workOrderAccountingHandoffService->postCompletedWorkOrder($workOrder, auth('automotive_admin')->id());
+            } elseif ($handoff->integration_key === 'parts-accounting' && $handoff->source_type === StockMovement::class) {
+                $movement = StockMovement::query()->findOrFail($handoff->source_id);
+                $this->accountingRuntimeService->postInventoryMovement($movement, auth('automotive_admin')->id());
+            } else {
+                return redirect()
+                    ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                    ->with('error', 'No retry handler is registered for this integration handoff.');
+            }
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->with('error', 'Integration handoff retry failed: ' . $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Integration handoff retry executed successfully.');
     }
 
     public function storeManualJournalEntry(Request $request): RedirectResponse
