@@ -340,6 +340,7 @@ class WorkspaceModuleController extends Controller
                 'posting_groups' => $this->accountingRuntimeService->getPostingGroups(),
                 'accounting_accounts' => $this->accountingRuntimeService->getAccounts(),
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
+                'accounting_period_lock_summary' => $this->accountingRuntimeService->periodLockSummary(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),

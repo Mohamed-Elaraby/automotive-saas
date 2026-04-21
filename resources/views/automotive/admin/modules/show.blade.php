@@ -298,6 +298,45 @@
                     </div>
                 </div>
 
+                @php($periodLockSummary = $moduleData['accounting_period_lock_summary'] ?? [])
+                @php($currentPeriodLock = $periodLockSummary['current_lock'] ?? null)
+                @php($latestPeriodLock = $periodLockSummary['latest_lock'] ?? null)
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Posting Controls</h5></div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3 mb-3">
+                                <div class="text-muted small">Current Period</div>
+                                <h5 class="mb-0">
+                                    <span class="badge {{ ($periodLockSummary['current_status'] ?? 'open') === 'locked' ? 'bg-danger' : 'bg-success' }}">{{ strtoupper($periodLockSummary['current_status'] ?? 'open') }}</span>
+                                </h5>
+                                <div class="text-muted small">As of {{ $periodLockSummary['as_of_date'] ?? now()->toDateString() }}</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="text-muted small">Current Lock</div>
+                                @if($currentPeriodLock)
+                                    <h6 class="mb-0">{{ optional($currentPeriodLock->period_start)->format('Y-m-d') }} - {{ optional($currentPeriodLock->period_end)->format('Y-m-d') }}</h6>
+                                @else
+                                    <h6 class="mb-0">No active lock today</h6>
+                                @endif
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="text-muted small">Latest Lock</div>
+                                @if($latestPeriodLock)
+                                    <h6 class="mb-0">{{ optional($latestPeriodLock->period_start)->format('Y-m-d') }} - {{ optional($latestPeriodLock->period_end)->format('Y-m-d') }}</h6>
+                                @else
+                                    <h6 class="mb-0">No locked periods</h6>
+                                @endif
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="text-muted small">Locked Periods</div>
+                                <h5 class="mb-0">{{ (int) ($periodLockSummary['locked_periods_count'] ?? 0) }}</h5>
+                            </div>
+                        </div>
+                        <div class="text-muted small">{{ $periodLockSummary['posting_policy'] ?? 'Journals are the accounting source of truth.' }}</div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-xl-4 d-flex">
                         <div class="card flex-fill">

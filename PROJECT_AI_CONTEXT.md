@@ -768,11 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Fiscal Close And Posting Controls
+### Accounting Role Permissions And Approval Controls
 Recommended scope:
-- add stronger period close workflow around existing period locks
-- add posting-control checks for high-risk actions
-- expose close/lock status summaries in General Ledger
+- add explicit permission gates for posting, reversing, closing periods, and corrections
+- add approval workflow states for high-risk manual journals
+- expose pending approval queues inside General Ledger
+- keep fiscal close checks from the previous package enforced centrally
 - keep all corrections through explicit reversal/correction flows
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
@@ -1626,6 +1627,56 @@ Verification:
   - result: 8 passed, 299 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 25 passed, 533 assertions
+
+## 15.19) Accounting Fiscal Close And Posting Controls
+Status:
+- completed
+
+Why this package was needed:
+- Accounting had period locks, but the close workflow needed stronger posting controls and a clearer General Ledger status surface
+- closed periods must prevent risky accounting actions consistently while preserving journals as the source of truth
+
+Completed scope:
+- added `periodLockSummary()` to `AccountingRuntimeService`
+- General Ledger now shows a `Posting Controls` summary with:
+  - current period status as of today
+  - current lock, when today is inside a locked period
+  - latest locked period
+  - locked period count
+  - posting policy reminder that locked periods require reversal/correction entries in an open period
+- period lock creation now rejects overlapping locked periods
+- posting-control errors now explain the blocked operation:
+  - customer payments
+  - deposit batches and deposit corrections
+  - vendor bill posting
+  - vendor bill payments
+  - inventory valuation postings
+  - accounting event posting
+  - manual journal creation
+  - journal reversals
+  - customer payment voids
+- no unlock or silent mutation flow was added; corrections remain explicit through reversal/correction postings
+
+Important files changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports'`
+  - result: 1 passed, 35 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 8 passed, 309 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 25 passed, 543 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

@@ -62,7 +62,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $response = $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ]);
+            ]);
 
         $response->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
@@ -95,7 +95,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $loginResponse = $this->post("http://{$domain}/automotive/admin/login", [
             'email' => $email,
             'password' => $password,
-        ]);
+            ]);
 
         $loginResponse->assertRedirect("http://{$domain}/workspace/admin/dashboard");
 
@@ -1334,6 +1334,22 @@ class TenantAdminAccessFlowTest extends TestCase
         ]);
         $lockResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
 
+        $overlappingLockResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/period-locks?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'period_start' => '2026-04-15',
+                'period_end' => '2026-05-15',
+                'notes' => 'Overlapping close',
+            ]);
+        $overlappingLockResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $overlappingLockResponse->assertSessionHasErrors('period_start');
+
+        $controlsResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $controlsResponse->assertOk();
+        $controlsResponse->assertSee('Posting Controls', false);
+        $controlsResponse->assertSee('Latest Lock', false);
+        $controlsResponse->assertSee('Locked Periods', false);
+
         $lockedManualResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
             ->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
                 'workspace_product' => 'accounting',
@@ -1347,6 +1363,9 @@ class TenantAdminAccessFlowTest extends TestCase
             ]);
         $lockedManualResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
         $lockedManualResponse->assertSessionHasErrors('entry_date');
+        $lockedManualResponse->assertSessionHasErrors([
+            'entry_date' => 'Accounting period is locked for 2026-04-21; creating manual journal entries is not allowed. Use a reversal or correction entry in an open period.',
+        ]);
 
         $openManualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
             'workspace_product' => 'accounting',

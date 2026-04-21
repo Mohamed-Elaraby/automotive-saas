@@ -57,6 +57,36 @@ class AccountingRuntimeService
             ->get();
     }
 
+    public function periodLockSummary(?string $asOfDate = null): array
+    {
+        $date = Carbon::parse($asOfDate ?: now())->toDateString();
+
+        $currentLock = AccountingPeriodLock::query()
+            ->where('status', 'locked')
+            ->whereDate('period_start', '<=', $date)
+            ->whereDate('period_end', '>=', $date)
+            ->latest('period_end')
+            ->latest('id')
+            ->first();
+
+        $latestLock = AccountingPeriodLock::query()
+            ->where('status', 'locked')
+            ->latest('period_end')
+            ->latest('id')
+            ->first();
+
+        return [
+            'as_of_date' => $date,
+            'current_status' => $currentLock ? 'locked' : 'open',
+            'current_lock' => $currentLock,
+            'latest_lock' => $latestLock,
+            'locked_periods_count' => AccountingPeriodLock::query()
+                ->where('status', 'locked')
+                ->count(),
+            'posting_policy' => 'Journals are the accounting source of truth; locked periods require reversal or correction entries in an open period.',
+        ];
+    }
+
     public function getPolicies(): Collection
     {
         $this->ensureDefaultPolicy();
@@ -605,6 +635,18 @@ class AccountingRuntimeService
             ]);
         }
 
+        $overlapExists = AccountingPeriodLock::query()
+            ->where('status', 'locked')
+            ->whereDate('period_start', '<=', $end)
+            ->whereDate('period_end', '>=', $start)
+            ->exists();
+
+        if ($overlapExists) {
+            throw ValidationException::withMessages([
+                'period_start' => 'This accounting period overlaps an existing locked period.',
+            ]);
+        }
+
         $lock = AccountingPeriodLock::query()->create([
             'period_start' => $start,
             'period_end' => $end,
@@ -699,7 +741,7 @@ class AccountingRuntimeService
         }
 
         $paymentDate = Carbon::parse($data['payment_date'] ?? now()->toDateString())->toDateString();
-        $this->assertPeriodOpen($paymentDate);
+        $this->assertPeriodOpen($paymentDate, 'recording customer payments');
 
         $amount = round((float) $data['amount'], 2);
         $remainingAmount = $this->remainingAmountForEvent($event);
@@ -799,7 +841,7 @@ class AccountingRuntimeService
         }
 
         $depositDate = Carbon::parse($data['deposit_date'] ?? now()->toDateString())->toDateString();
-        $this->assertPeriodOpen($depositDate);
+        $this->assertPeriodOpen($depositDate, 'creating deposit batches');
 
         return DB::transaction(function () use ($data, $paymentIds, $depositDate, $createdBy): AccountingDepositBatch {
             $payments = AccountingPayment::query()
@@ -879,7 +921,7 @@ class AccountingRuntimeService
         }
 
         $correctionDate = now()->toDateString();
-        $this->assertPeriodOpen($correctionDate);
+        $this->assertPeriodOpen($correctionDate, 'correcting deposit batches');
 
         return DB::transaction(function () use ($batch, $data, $createdBy): AccountingDepositBatch {
             $lockedBatch = AccountingDepositBatch::query()
@@ -983,7 +1025,7 @@ class AccountingRuntimeService
         }
 
         $entryDate = optional($bill->bill_date)->toDateString() ?: now()->toDateString();
-        $this->assertPeriodOpen($entryDate);
+        $this->assertPeriodOpen($entryDate, 'posting vendor bills');
         $amount = round((float) $bill->amount, 2);
         $taxAmount = round((float) $bill->tax_amount, 2);
         $expenseAmount = round($amount - $taxAmount, 2);
@@ -1061,7 +1103,7 @@ class AccountingRuntimeService
         }
 
         $paymentDate = Carbon::parse($data['payment_date'] ?? now()->toDateString())->toDateString();
-        $this->assertPeriodOpen($paymentDate);
+        $this->assertPeriodOpen($paymentDate, 'recording vendor bill payments');
         $amount = round((float) ($data['amount'] ?? 0), 2);
         $remainingAmount = $this->remainingAmountForVendorBill($bill);
 
@@ -1167,7 +1209,7 @@ class AccountingRuntimeService
         }
 
         $entryDate = now()->toDateString();
-        $this->assertPeriodOpen($entryDate);
+        $this->assertPeriodOpen($entryDate, 'voiding customer payments');
         $amount = round((float) $payment->amount, 2);
 
         return DB::transaction(function () use ($payment, $amount, $entryDate, $createdBy): JournalEntry {
@@ -1229,7 +1271,7 @@ class AccountingRuntimeService
 
         $postingGroup = $this->resolvePostingGroup($postingGroupId);
         $entryDate = optional($event->event_date)->toDateString() ?: now()->toDateString();
-        $this->assertPeriodOpen($entryDate);
+        $this->assertPeriodOpen($entryDate, 'posting accounting events');
         $laborAmount = round((float) $event->labor_amount, 2);
         $partsAmount = round((float) $event->parts_amount, 2);
         $totalAmount = round((float) $event->total_amount, 2);
@@ -1341,7 +1383,7 @@ class AccountingRuntimeService
             ->filter(fn (array $line): bool => $line['account_code'] !== '' && ($line['debit'] > 0 || $line['credit'] > 0))
             ->values();
 
-        $this->assertPeriodOpen($data['entry_date'] ?? now()->toDateString());
+        $this->assertPeriodOpen($data['entry_date'] ?? now()->toDateString(), 'creating manual journal entries');
         $this->assertKnownAccounts($lines);
 
         if ($lines->count() < 2) {
@@ -1392,7 +1434,7 @@ class AccountingRuntimeService
     public function reverseJournalEntry(JournalEntry $entry, ?int $createdBy = null): JournalEntry
     {
         $entry->loadMissing('lines');
-        $this->assertPeriodOpen(now()->toDateString());
+        $this->assertPeriodOpen(now()->toDateString(), 'reversing journal entries');
 
         if ($entry->status !== 'posted') {
             throw ValidationException::withMessages([
@@ -1466,7 +1508,7 @@ class AccountingRuntimeService
         $movement->loadMissing(['product', 'branch']);
         $amount = $this->inventoryMovementValue($movement);
         $entryDate = optional($movement->movement_date)->toDateString() ?: now()->toDateString();
-        $this->assertPeriodOpen($entryDate);
+        $this->assertPeriodOpen($entryDate, 'posting inventory valuation movements');
         $policy = $this->ensureDefaultPolicy();
         $handoff = $this->workspaceIntegrationHandoffService->start([
             'integration_key' => 'parts-accounting',
@@ -1918,7 +1960,7 @@ class AccountingRuntimeService
         ]);
     }
 
-    protected function assertPeriodOpen(string $entryDate): void
+    protected function assertPeriodOpen(string $entryDate, string $operation = 'posting'): void
     {
         $date = Carbon::parse($entryDate)->toDateString();
 
@@ -1930,7 +1972,7 @@ class AccountingRuntimeService
 
         if ($lock) {
             throw ValidationException::withMessages([
-                'entry_date' => "Accounting period is locked for {$date}.",
+                'entry_date' => "Accounting period is locked for {$date}; {$operation} is not allowed. Use a reversal or correction entry in an open period.",
             ]);
         }
     }
