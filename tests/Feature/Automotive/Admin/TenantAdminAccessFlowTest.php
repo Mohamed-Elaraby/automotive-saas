@@ -781,6 +781,130 @@ class TenantAdminAccessFlowTest extends TestCase
         $voidedStatementResponse->assertSee('Open Balance', false);
     }
 
+    public function test_accounting_runtime_can_group_posted_payments_into_deposit_batch(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $eventId = DB::connection('tenant')->table('accounting_events')->insertGetId([
+                'event_type' => 'work_order_completed',
+                'reference_type' => \App\Models\WorkOrder::class,
+                'reference_id' => 21,
+                'status' => 'posted',
+                'event_date' => '2026-05-06',
+                'currency' => 'USD',
+                'labor_amount' => 90,
+                'parts_amount' => 0,
+                'total_amount' => 90,
+                'payload' => json_encode([
+                    'work_order_number' => 'WO-DEPOSIT-1',
+                    'title' => 'Deposit reconciliation work order',
+                    'customer_name' => 'Deposit Customer',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$eventId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_event_id' => $eventId,
+            'payment_date' => '2026-05-07',
+            'amount' => 90,
+            'method' => 'bank_transfer',
+            'payer_name' => 'Deposit Customer',
+            'reference' => 'BANK-DEP-001',
+            'currency' => 'USD',
+            'cash_account' => '1010 Bank Account',
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $payment = DB::connection('tenant')->table('accounting_payments')
+                ->where('accounting_event_id', $eventId)
+                ->first();
+
+            $this->assertNotNull($payment);
+            $this->assertSame('pending', $payment->reconciliation_status);
+            $this->assertNull($payment->deposit_batch_id);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Payment Reconciliation', false);
+        $ledgerResponse->assertSee('Create Deposit Batch', false);
+        $ledgerResponse->assertSee('BANK-DEP-001', false);
+        $ledgerResponse->assertSee('PENDING', false);
+
+        $depositResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/deposit-batches?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'payment_ids' => [$payment->id],
+            'deposit_date' => '2026-05-08',
+            'deposit_account' => '1010 Bank Account',
+            'currency' => 'USD',
+            'reference' => 'DEP-SLIP-001',
+            'notes' => 'Daily bank deposit.',
+        ]);
+
+        $depositResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $batch = DB::connection('tenant')->table('accounting_deposit_batches')->first();
+
+            $this->assertNotNull($batch);
+            $this->assertStringStartsWith('DEP-', $batch->deposit_number);
+            $this->assertSame('DEP-SLIP-001', $batch->reference);
+            $this->assertSame(90.0, (float) $batch->total_amount);
+            $this->assertSame(1, (int) $batch->payments_count);
+
+            $depositedPayment = DB::connection('tenant')->table('accounting_payments')->where('id', $payment->id)->first();
+            $this->assertSame((int) $batch->id, (int) $depositedPayment->deposit_batch_id);
+            $this->assertSame('deposited', $depositedPayment->reconciliation_status);
+            $this->assertNotNull($depositedPayment->reconciled_at);
+
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'payment_deposit_batch_posted',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $updatedLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&reconciliation_status=deposited");
+        $updatedLedgerResponse->assertOk();
+        $updatedLedgerResponse->assertSee('Recent Deposit Batches', false);
+        $updatedLedgerResponse->assertSee('DEP-SLIP-001', false);
+        $updatedLedgerResponse->assertSee('DEPOSITED', false);
+
+        $paymentsCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/payments?workspace_product=accounting&format=csv&reconciliation_status=deposited");
+        $paymentsCsv->assertOk();
+        $paymentsCsvContent = $paymentsCsv->streamedContent();
+        $this->assertStringContainsString('Reconciliation', $paymentsCsvContent);
+        $this->assertStringContainsString('deposited', $paymentsCsvContent);
+    }
+
+
     public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

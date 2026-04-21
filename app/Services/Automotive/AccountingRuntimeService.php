@@ -4,6 +4,7 @@ namespace App\Services\Automotive;
 
 use App\Models\AccountingAccount;
 use App\Models\AccountingAuditEntry;
+use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
@@ -100,7 +101,7 @@ class AccountingRuntimeService
     public function getRecentPayments(int $limit = 15): Collection
     {
         return AccountingPayment::query()
-            ->with(['accountingEvent', 'journalEntry', 'creator'])
+            ->with(['accountingEvent', 'journalEntry', 'depositBatch', 'creator'])
             ->latest('payment_date')
             ->latest('id')
             ->limit($limit)
@@ -110,8 +111,9 @@ class AccountingRuntimeService
     public function getPayments(array $filters = [], int $limit = 50): Collection
     {
         return AccountingPayment::query()
-            ->with(['accountingEvent', 'journalEntry', 'creator'])
+            ->with(['accountingEvent', 'journalEntry', 'depositBatch', 'creator'])
             ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(! empty($filters['reconciliation_status']), fn ($query) => $query->where('reconciliation_status', $filters['reconciliation_status']))
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
             ->when(! empty($filters['search']), function ($query) use ($filters) {
@@ -128,6 +130,49 @@ class AccountingRuntimeService
             ->latest('id')
             ->limit($limit)
             ->get();
+    }
+
+    public function getReconcilablePayments(int $limit = 50): Collection
+    {
+        return AccountingPayment::query()
+            ->with(['accountingEvent', 'journalEntry'])
+            ->where('status', 'posted')
+            ->where('reconciliation_status', 'pending')
+            ->whereNull('deposit_batch_id')
+            ->latest('payment_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function getDepositBatches(int $limit = 15): Collection
+    {
+        return AccountingDepositBatch::query()
+            ->with(['payments', 'creator'])
+            ->latest('deposit_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function paymentReconciliationSummary(): array
+    {
+        $payments = AccountingPayment::query()
+            ->selectRaw('COALESCE(reconciliation_status, ?) as reconciliation_status, COUNT(*) as payments_count, COALESCE(SUM(amount), 0) as total_amount', ['pending'])
+            ->where('status', 'posted')
+            ->groupBy('reconciliation_status')
+            ->get()
+            ->keyBy('reconciliation_status');
+
+        $pending = $payments->get('pending');
+        $deposited = $payments->get('deposited');
+
+        return [
+            'pending_count' => (int) ($pending?->payments_count ?? 0),
+            'pending_amount' => round((float) ($pending?->total_amount ?? 0), 2),
+            'deposited_count' => (int) ($deposited?->payments_count ?? 0),
+            'deposited_amount' => round((float) ($deposited?->total_amount ?? 0), 2),
+        ];
     }
 
     public function receivablesAging(): array
@@ -523,6 +568,7 @@ class AccountingRuntimeService
                 'cash_account' => $cashAccount,
                 'receivable_account' => $receivableAccount,
                 'status' => 'posted',
+                'reconciliation_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $createdBy,
                 'posted_at' => now(),
@@ -540,7 +586,91 @@ class AccountingRuntimeService
                 'amount' => $amount,
             ], $createdBy);
 
-            return $payment->load(['accountingEvent', 'journalEntry', 'creator']);
+        return $payment->load(['accountingEvent', 'journalEntry', 'creator']);
+        });
+    }
+
+    public function createDepositBatch(array $data, ?int $createdBy = null): AccountingDepositBatch
+    {
+        $paymentIds = collect($data['payment_ids'] ?? [])
+            ->map(fn ($id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($paymentIds->isEmpty()) {
+            throw ValidationException::withMessages([
+                'payment_ids' => 'Select at least one posted payment to deposit.',
+            ]);
+        }
+
+        $depositDate = Carbon::parse($data['deposit_date'] ?? now()->toDateString())->toDateString();
+        $this->assertPeriodOpen($depositDate);
+
+        return DB::transaction(function () use ($data, $paymentIds, $depositDate, $createdBy): AccountingDepositBatch {
+            $payments = AccountingPayment::query()
+                ->whereIn('id', $paymentIds->all())
+                ->lockForUpdate()
+                ->get();
+
+            if ($payments->count() !== $paymentIds->count()) {
+                throw ValidationException::withMessages([
+                    'payment_ids' => 'One or more selected payments could not be found.',
+                ]);
+            }
+
+            $invalidPayment = $payments->first(fn (AccountingPayment $payment): bool => $payment->status !== 'posted' || $payment->reconciliation_status !== 'pending' || $payment->deposit_batch_id !== null);
+
+            if ($invalidPayment) {
+                throw ValidationException::withMessages([
+                    'payment_ids' => "Payment {$invalidPayment->payment_number} is not available for deposit.",
+                ]);
+            }
+
+            $currencies = $payments->pluck('currency')->filter()->unique()->values();
+
+            if ($currencies->count() > 1) {
+                throw ValidationException::withMessages([
+                    'payment_ids' => 'Deposit batches cannot mix currencies.',
+                ]);
+            }
+
+            $currency = strtoupper((string) ($data['currency'] ?? $currencies->first() ?: 'USD'));
+            $depositAccount = trim((string) ($data['deposit_account'] ?? '1010 Bank Account')) ?: '1010 Bank Account';
+            $this->ensureAccountsFromCodes([$depositAccount]);
+            $totalAmount = round((float) $payments->sum('amount'), 2);
+
+            $batch = AccountingDepositBatch::query()->create([
+                'deposit_number' => $this->nextJournalNumber('DEP'),
+                'deposit_date' => $depositDate,
+                'deposit_account' => $depositAccount,
+                'currency' => $currency,
+                'total_amount' => $totalAmount,
+                'payments_count' => $payments->count(),
+                'status' => 'posted',
+                'reference' => $data['reference'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            AccountingPayment::query()
+                ->whereIn('id', $payments->pluck('id')->all())
+                ->update([
+                    'deposit_batch_id' => $batch->id,
+                    'reconciliation_status' => 'deposited',
+                    'reconciled_by' => $createdBy,
+                    'reconciled_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            $this->recordAudit('payment_deposit_batch_posted', $batch, "Deposit batch {$batch->deposit_number} posted.", [
+                'payment_ids' => $payments->pluck('id')->all(),
+                'payments_count' => $payments->count(),
+                'total_amount' => $totalAmount,
+            ], $createdBy);
+
+            return $batch->load(['payments', 'creator']);
         });
     }
 
@@ -551,6 +681,12 @@ class AccountingRuntimeService
         if ($payment->status !== 'posted') {
             throw ValidationException::withMessages([
                 'payment' => 'Only posted payments can be voided.',
+            ]);
+        }
+
+        if ($payment->deposit_batch_id !== null || $payment->reconciliation_status === 'deposited') {
+            throw ValidationException::withMessages([
+                'payment' => 'Deposited payments cannot be voided until the deposit is corrected.',
             ]);
         }
 

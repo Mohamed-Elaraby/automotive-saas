@@ -319,6 +319,7 @@ class WorkspaceModuleController extends Controller
     {
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void'],
+            'reconciliation_status' => ['nullable', 'in:pending,deposited'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -338,6 +339,9 @@ class WorkspaceModuleController extends Controller
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
                 'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
+                'reconcilable_payments' => $this->accountingRuntimeService->getReconcilablePayments(25),
+                'recent_deposit_batches' => $this->accountingRuntimeService->getDepositBatches(10),
+                'payment_reconciliation_summary' => $this->accountingRuntimeService->paymentReconciliationSummary(),
                 'receivables_aging' => $this->accountingRuntimeService->receivablesAging(),
                 'statement_customers' => $this->accountingRuntimeService->statementCustomerNames(),
                 'journal_filters' => $filters,
@@ -469,6 +473,7 @@ class WorkspaceModuleController extends Controller
 
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void'],
+            'reconciliation_status' => ['nullable', 'in:pending,deposited'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -514,17 +519,19 @@ class WorkspaceModuleController extends Controller
                 ])
                 ->all();
         } else {
-            $headers = ['Payment Number', 'Payment Date', 'Status', 'Payer', 'Method', 'Reference', 'Amount', 'Currency', 'Journal Entry'];
+            $headers = ['Payment Number', 'Payment Date', 'Status', 'Reconciliation', 'Payer', 'Method', 'Reference', 'Amount', 'Currency', 'Deposit Batch', 'Journal Entry'];
             $rows = $this->accountingRuntimeService->getPayments($filters, 500)
                 ->map(fn (AccountingPayment $payment): array => [
                     $payment->payment_number,
                     optional($payment->payment_date)->format('Y-m-d'),
                     $payment->status,
+                    $payment->reconciliation_status,
                     $payment->payer_name,
                     $payment->method,
                     $payment->reference,
                     (string) $payment->amount,
                     $payment->currency,
+                    $payment->depositBatch?->deposit_number,
                     $payment->journalEntry?->journal_number,
                 ])
                 ->all();
@@ -663,6 +670,36 @@ class WorkspaceModuleController extends Controller
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
             ->with('success', "Payment {$payment->payment_number} recorded successfully.");
+    }
+
+    public function storeAccountingDepositBatch(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'payment_ids' => ['required', 'array', 'min:1'],
+            'payment_ids.*' => ['integer', 'exists:accounting_payments,id'],
+            'deposit_date' => ['required', 'date'],
+            'deposit_account' => ['nullable', 'string', 'max:120'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $batch = $this->accountingRuntimeService->createDepositBatch(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Deposit batch {$batch->deposit_number} posted successfully.");
     }
 
     public function voidAccountingPayment(Request $request, AccountingPayment $payment): RedirectResponse

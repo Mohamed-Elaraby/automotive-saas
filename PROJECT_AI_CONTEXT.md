@@ -768,12 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Payment Reconciliation And Bank Deposits
+### Accounting Bank Reconciliation Reports And Deposit Corrections
 Recommended scope:
-- add payment reconciliation workflow for received customer payments
-- allow grouping posted cash/bank payments into deposit batches
-- track reconciliation status without changing posted journal truth
-- add simple reconciliation filters and audit trail entries
+- add printable bank reconciliation report by deposit account and date range
+- add deposit batch detail screen
+- add controlled deposit correction / reversal workflow
+- make deposited payment correction explicit instead of allowing silent payment voids
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1320,6 +1320,57 @@ Verification:
   - result: 6 passed, 157 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 23 passed, 391 assertions
+
+## 15.13) Accounting Payment Reconciliation And Bank Deposits
+Status:
+- completed
+
+Why this package was needed:
+- customer payments could be posted and reported, but Accounting had no operational control step to show which received payments had already been deposited/reconciled
+- this package adds a lightweight bank-deposit workflow without rewriting historical payment journals
+
+Completed scope:
+- added tenant table `accounting_deposit_batches`
+- added reconciliation fields to `accounting_payments`:
+  - `deposit_batch_id`
+  - `reconciliation_status`
+  - `reconciled_by`
+  - `reconciled_at`
+- added `AccountingDepositBatch` model
+- General Ledger now shows:
+  - Payment Reconciliation summary
+  - pending vs deposited payment totals
+  - recent deposit batches
+  - Create Deposit Batch form
+  - reconciliation status filter
+- posted payments now start as `pending`
+- deposit batch creation:
+  - requires at least one selected posted pending payment
+  - blocks voided/already deposited payments
+  - blocks mixed-currency batches
+  - writes a `DEP-*` deposit batch record
+  - marks selected payments as `deposited`
+  - records `payment_deposit_batch_posted` audit entry
+- deposited payments cannot be voided through the old payment-void action; correction must happen through a future explicit deposit correction flow
+- payments CSV/print exports now include reconciliation and deposit batch fields
+- integration readiness verification now requires the new `accounting_deposit_batches` tenant table
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_040000_create_accounting_deposit_batches_table.php`
+- `app/Models/AccountingDepositBatch.php`
+- `app/Models/AccountingPayment.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 7 passed, 188 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 24 passed, 422 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
