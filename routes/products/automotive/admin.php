@@ -152,6 +152,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.accounts.destroy');
                 Route::post('/general-ledger/period-locks', [WorkspaceModuleController::class, 'storeAccountingPeriodLock'])
                     ->name('modules.general-ledger.period-locks.store');
+                Route::post('/general-ledger/period-locks/closing', [WorkspaceModuleController::class, 'startAccountingPeriodClose'])
+                    ->name('modules.general-ledger.period-locks.closing');
+                Route::post('/general-ledger/period-locks/{period}/archive', [WorkspaceModuleController::class, 'archiveAccountingPeriod'])
+                    ->name('modules.general-ledger.period-locks.archive');
                 Route::post('/general-ledger/policies', [WorkspaceModuleController::class, 'storeAccountingPolicy'])
                     ->name('modules.general-ledger.policies.store');
                 Route::post('/general-ledger/tax-rates', [WorkspaceModuleController::class, 'storeAccountingTaxRate'])

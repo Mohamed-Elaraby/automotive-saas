@@ -1643,6 +1643,146 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_fiscal_period_lifecycle_blocks_close_until_checklist_is_ready_or_overridden(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            DB::connection('tenant')->table('accounting_events')->insert([
+                'event_type' => 'work_order_completed',
+                'reference_type' => \App\Models\WorkOrder::class,
+                'reference_id' => 77,
+                'status' => 'posted',
+                'event_date' => '2026-07-10',
+                'currency' => 'USD',
+                'labor_amount' => 200,
+                'parts_amount' => 0,
+                'total_amount' => 200,
+                'payload' => json_encode([
+                    'work_order_number' => 'WO-CLOSE-1',
+                    'title' => 'Unposted close blocker',
+                    'customer_name' => 'Close Customer',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Close Readiness', false);
+        $ledgerResponse->assertSee('Start Close Review', false);
+
+        $closingResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks/closing?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => '2026-07-01',
+            'period_end' => '2026-07-31',
+            'notes' => 'July close review',
+        ]);
+        $closingResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $period = DB::connection('tenant')->table('accounting_period_locks')
+                ->where('status', 'closing')
+                ->first();
+
+            $this->assertNotNull($period);
+            $this->assertSame('closing', $period->status);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'period_close_started',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $blockedLockResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/period-locks?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'period_start' => '2026-07-01',
+                'period_end' => '2026-07-31',
+                'notes' => 'Block without override',
+            ]);
+        $blockedLockResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $blockedLockResponse->assertSessionHasErrors('close_checklist');
+
+        $overrideLockResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => '2026-07-01',
+            'period_end' => '2026-07-31',
+            'allow_lock_override' => 1,
+            'lock_override_reason' => 'Controller approved cutoff with known open item',
+            'notes' => 'July locked with override',
+        ]);
+        $overrideLockResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $lockedPeriod = DB::connection('tenant')->table('accounting_period_locks')
+                ->where('status', 'locked')
+                ->first();
+
+            $this->assertSame('locked', $lockedPeriod->status);
+            $this->assertSame(1, (int) $lockedPeriod->lock_override);
+            $this->assertStringContainsString('known open item', $lockedPeriod->lock_override_reason);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'period_locked',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $lockedManualResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'entry_date' => '2026-07-15',
+                'currency' => 'USD',
+                'memo' => 'Locked July entry',
+                'lines' => [
+                    ['account_code' => '1100 Accounts Receivable', 'account_name' => 'Accounts Receivable', 'debit' => 25, 'credit' => 0],
+                    ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 25],
+                ],
+            ]);
+        $lockedManualResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $lockedManualResponse->assertSessionHasErrors('entry_date');
+
+        $archiveResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks/{$lockedPeriod->id}/archive?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $archiveResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $archivedPeriod = DB::connection('tenant')->table('accounting_period_locks')
+                ->where('id', $lockedPeriod->id)
+                ->first();
+
+            $this->assertSame('archived', $archivedPeriod->status);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'period_archived',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

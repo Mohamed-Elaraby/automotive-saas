@@ -768,13 +768,14 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Fiscal Period Lifecycle
+### Accounting Bank Accounts And Cash Management
 Recommended scope:
-- introduce or harden fiscal period lifecycle states
-- add close checklist summary in General Ledger
-- block period locking when close checklist items are incomplete unless a controlled override exists
-- keep no-silent-mutation rule after locked periods
-- keep `assertPeriodOpen` as the central posting guard
+- add bank/cash account setup linked to chart of accounts
+- make customer payments choose a configured bank/cash account
+- make vendor payments choose a configured bank/cash account
+- make deposit batches post or reconcile into configured bank accounts
+- show bank account balances from posted journal lines
+- prepare for future bank statement reconciliation without implementing bank feeds yet
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -834,6 +835,14 @@ Current accounting foundations already completed:
 - normal balance is validated against account type
 - posting into inactive or unknown accounts is rejected
 - General Ledger exposes account catalog search/type/status filters
+- accounting periods now support lifecycle states:
+  - open
+  - closing
+  - locked
+  - archived
+- General Ledger exposes fiscal close readiness checklist
+- period locking is blocked when checklist blockers exist unless a controlled override is recorded
+- archived periods continue to block posting through `assertPeriodOpen`
 - General Ledger now exposes posting-control summary state
 - integration readiness verification checks required accounting runtime tables
 
@@ -1070,7 +1079,68 @@ Acceptance criteria:
 
 ### Package 3 - Accounting Fiscal Period Lifecycle
 Status:
-- next package to start immediately
+- completed
+
+Completed behavior:
+- `accounting_period_locks` now carries fiscal close lifecycle metadata:
+  - `closing_started_by`
+  - `closing_started_at`
+  - `close_checklist`
+  - `lock_override`
+  - `lock_override_reason`
+  - `archived_by`
+  - `archived_at`
+- supported period lifecycle states now include:
+  - `open` as implicit state when no period record exists
+  - `closing`
+  - `locked`
+  - `archived`
+- General Ledger now shows close readiness for the current period
+- close checklist includes blockers for:
+  - unposted accounting events
+  - unposted inventory valuation movements
+  - draft vendor bills
+  - open receivables
+  - unreconciled customer payments
+  - unapproved manual journals
+- tenant users can start a close review before locking a period
+- period locking is blocked when close checklist blockers exist
+- period locking can proceed only with an explicit controlled override and override reason
+- locked periods can be archived
+- `assertPeriodOpen` now treats both `locked` and `archived` periods as closed to posting
+- audit entries are recorded for:
+  - `period_close_started`
+  - `period_locked`
+  - `period_archived`
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_100000_add_fiscal_close_lifecycle_to_accounting_period_locks_table.php`
+- `app/Models/AccountingPeriodLock.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `php -l app/Models/AccountingPeriodLock.php`
+  - result: passed
+- `php -l database/migrations/tenant/2026_04_21_100000_add_fiscal_close_lifecycle_to_accounting_period_locks_table.php`
+  - result: passed
+- `php -l routes/products/automotive/admin.php`
+  - result: passed
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='fiscal_period_lifecycle|account_catalog_period_locks'`
+  - result: 2 passed, 63 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|fiscal_period_lifecycle|chart_of_accounts_hardening'`
+  - result: 11 passed, 386 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 26 passed, 637 assertions
 
 Goal:
 - turn period locks into a more complete accounting close lifecycle
@@ -1099,7 +1169,7 @@ Acceptance criteria:
 
 ### Package 4 - Accounting Bank Accounts And Cash Management
 Status:
-- pending
+- next package to start immediately
 
 Goal:
 - make cash and bank handling explicit instead of free-text cash account fields only

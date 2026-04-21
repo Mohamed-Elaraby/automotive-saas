@@ -75,7 +75,7 @@ class AccountingRuntimeService
         $date = Carbon::parse($asOfDate ?: now())->toDateString();
 
         $currentLock = AccountingPeriodLock::query()
-            ->where('status', 'locked')
+            ->whereIn('status', ['locked', 'archived'])
             ->whereDate('period_start', '<=', $date)
             ->whereDate('period_end', '>=', $date)
             ->latest('period_end')
@@ -83,18 +83,27 @@ class AccountingRuntimeService
             ->first();
 
         $latestLock = AccountingPeriodLock::query()
-            ->where('status', 'locked')
+            ->whereIn('status', ['locked', 'archived'])
+            ->latest('period_end')
+            ->latest('id')
+            ->first();
+
+        $activeClose = AccountingPeriodLock::query()
+            ->where('status', 'closing')
+            ->whereDate('period_start', '<=', $date)
+            ->whereDate('period_end', '>=', $date)
             ->latest('period_end')
             ->latest('id')
             ->first();
 
         return [
             'as_of_date' => $date,
-            'current_status' => $currentLock ? 'locked' : 'open',
+            'current_status' => $currentLock ? $currentLock->status : ($activeClose ? 'closing' : 'open'),
             'current_lock' => $currentLock,
+            'active_close' => $activeClose,
             'latest_lock' => $latestLock,
             'locked_periods_count' => AccountingPeriodLock::query()
-                ->where('status', 'locked')
+                ->whereIn('status', ['locked', 'archived'])
                 ->count(),
             'posting_policy' => 'Journals are the accounting source of truth; locked periods require reversal or correction entries in an open period.',
         ];
@@ -713,17 +722,18 @@ class AccountingRuntimeService
 
     public function createPeriodLock(array $data, ?int $createdBy = null): AccountingPeriodLock
     {
-        $start = Carbon::parse($data['period_start'])->toDateString();
-        $end = Carbon::parse($data['period_end'])->toDateString();
+        [$start, $end] = $this->normalizePeriodRange($data);
+        $checklist = $this->periodCloseChecklist($start, $end);
+        $override = ! empty($data['allow_lock_override']);
 
-        if ($end < $start) {
+        if (! $checklist['ready'] && ! $override) {
             throw ValidationException::withMessages([
-                'period_end' => 'Period end date must be on or after period start date.',
+                'close_checklist' => 'This accounting period is not ready to lock. Resolve the close checklist blockers or use a controlled override.',
             ]);
         }
 
         $overlapExists = AccountingPeriodLock::query()
-            ->where('status', 'locked')
+            ->whereIn('status', ['locked', 'archived'])
             ->whereDate('period_start', '<=', $end)
             ->whereDate('period_end', '>=', $start)
             ->exists();
@@ -734,21 +744,201 @@ class AccountingRuntimeService
             ]);
         }
 
-        $lock = AccountingPeriodLock::query()->create([
-            'period_start' => $start,
-            'period_end' => $end,
-            'status' => 'locked',
-            'locked_by' => $createdBy,
-            'locked_at' => now(),
-            'notes' => $data['notes'] ?? null,
-        ]);
+        $lock = DB::transaction(function () use ($data, $start, $end, $createdBy, $checklist, $override): AccountingPeriodLock {
+            $lock = AccountingPeriodLock::query()
+                ->where('status', 'closing')
+                ->whereDate('period_start', $start)
+                ->whereDate('period_end', $end)
+                ->latest('id')
+                ->first();
+
+            $payload = [
+                'period_start' => $start,
+                'period_end' => $end,
+                'status' => 'locked',
+                'locked_by' => $createdBy,
+                'locked_at' => now(),
+                'notes' => $data['notes'] ?? null,
+                'close_checklist' => $checklist,
+                'lock_override' => $override,
+                'lock_override_reason' => $override ? ($data['lock_override_reason'] ?? null) : null,
+            ];
+
+            if ($lock) {
+                $lock->forceFill($payload)->save();
+
+                return $lock->refresh();
+            }
+
+            return AccountingPeriodLock::query()->create($payload);
+        });
 
         $this->recordAudit('period_locked', $lock, "Accounting period {$start} to {$end} locked.", [
             'period_start' => $start,
             'period_end' => $end,
+            'close_ready' => $checklist['ready'],
+            'blockers_count' => $checklist['blockers_count'],
+            'lock_override' => $override,
         ], $createdBy);
 
         return $lock;
+    }
+
+    public function beginPeriodClose(array $data, ?int $createdBy = null): AccountingPeriodLock
+    {
+        [$start, $end] = $this->normalizePeriodRange($data);
+
+        $overlapExists = AccountingPeriodLock::query()
+            ->whereIn('status', ['locked', 'archived'])
+            ->whereDate('period_start', '<=', $end)
+            ->whereDate('period_end', '>=', $start)
+            ->exists();
+
+        if ($overlapExists) {
+            throw ValidationException::withMessages([
+                'period_start' => 'This accounting period overlaps an existing locked or archived period.',
+            ]);
+        }
+
+        $checklist = $this->periodCloseChecklist($start, $end);
+
+        $period = AccountingPeriodLock::query()->updateOrCreate(
+            [
+                'period_start' => $start,
+                'period_end' => $end,
+                'status' => 'closing',
+            ],
+            [
+                'closing_started_by' => $createdBy,
+                'closing_started_at' => now(),
+                'notes' => $data['notes'] ?? null,
+                'close_checklist' => $checklist,
+            ]
+        );
+
+        $this->recordAudit('period_close_started', $period, "Accounting period {$start} to {$end} close review started.", [
+            'period_start' => $start,
+            'period_end' => $end,
+            'close_ready' => $checklist['ready'],
+            'blockers_count' => $checklist['blockers_count'],
+        ], $createdBy);
+
+        return $period->refresh();
+    }
+
+    public function archivePeriod(AccountingPeriodLock $period, ?int $createdBy = null): AccountingPeriodLock
+    {
+        if ($period->status !== 'locked') {
+            throw ValidationException::withMessages([
+                'period' => 'Only locked accounting periods can be archived.',
+            ]);
+        }
+
+        $period->forceFill([
+            'status' => 'archived',
+            'archived_by' => $createdBy,
+            'archived_at' => now(),
+        ])->save();
+
+        $this->recordAudit('period_archived', $period, "Accounting period {$period->period_start->toDateString()} to {$period->period_end->toDateString()} archived.", [
+            'period_start' => $period->period_start->toDateString(),
+            'period_end' => $period->period_end->toDateString(),
+        ], $createdBy);
+
+        return $period->refresh();
+    }
+
+    public function periodCloseChecklist(?string $periodStart = null, ?string $periodEnd = null): array
+    {
+        $start = Carbon::parse($periodStart ?: now()->startOfMonth())->toDateString();
+        $end = Carbon::parse($periodEnd ?: now()->endOfMonth())->toDateString();
+
+        $unpostedEvents = AccountingEvent::query()
+            ->leftJoin('journal_entries', 'journal_entries.accounting_event_id', '=', 'accounting_events.id')
+            ->whereNull('journal_entries.id')
+            ->whereDate('accounting_events.event_date', '>=', $start)
+            ->whereDate('accounting_events.event_date', '<=', $end)
+            ->count();
+
+        $unpostedInventoryMovements = StockMovement::query()
+            ->with('product')
+            ->leftJoin('journal_entries', function ($join) {
+                $join->on('journal_entries.source_id', '=', 'stock_movements.id')
+                    ->where('journal_entries.source_type', '=', StockMovement::class);
+            })
+            ->whereNull('journal_entries.id')
+            ->whereIn('stock_movements.type', ['opening', 'adjustment_in', 'adjustment_out'])
+            ->whereDate('stock_movements.movement_date', '>=', $start)
+            ->whereDate('stock_movements.movement_date', '<=', $end)
+            ->select('stock_movements.*')
+            ->get()
+            ->filter(fn (StockMovement $movement): bool => $this->inventoryMovementValue($movement) > 0)
+            ->count();
+
+        $draftVendorBills = AccountingVendorBill::query()
+            ->where('status', 'draft')
+            ->whereDate('bill_date', '>=', $start)
+            ->whereDate('bill_date', '<=', $end)
+            ->count();
+
+        $openReceivables = $this->receivablesInPeriod($start, $end);
+        $unreconciledPayments = AccountingPayment::query()
+            ->where('status', 'posted')
+            ->where('reconciliation_status', 'pending')
+            ->whereDate('payment_date', '>=', $start)
+            ->whereDate('payment_date', '<=', $end)
+            ->count();
+
+        $unapprovedManualJournals = JournalEntry::query()
+            ->where('source_type', 'manual')
+            ->whereIn('status', ['pending_approval', 'approved'])
+            ->whereDate('entry_date', '>=', $start)
+            ->whereDate('entry_date', '<=', $end)
+            ->count();
+
+        $items = [
+            'unposted_accounting_events' => [
+                'label' => 'Unposted accounting events',
+                'count' => $unpostedEvents,
+                'blocking' => $unpostedEvents > 0,
+            ],
+            'unposted_inventory_movements' => [
+                'label' => 'Unposted inventory movements',
+                'count' => $unpostedInventoryMovements,
+                'blocking' => $unpostedInventoryMovements > 0,
+            ],
+            'draft_vendor_bills' => [
+                'label' => 'Draft vendor bills',
+                'count' => $draftVendorBills,
+                'blocking' => $draftVendorBills > 0,
+            ],
+            'open_receivables' => [
+                'label' => 'Open receivables',
+                'count' => $openReceivables['count'],
+                'amount' => $openReceivables['amount'],
+                'blocking' => $openReceivables['count'] > 0,
+            ],
+            'unreconciled_payments' => [
+                'label' => 'Unreconciled payments',
+                'count' => $unreconciledPayments,
+                'blocking' => $unreconciledPayments > 0,
+            ],
+            'unapproved_manual_journals' => [
+                'label' => 'Unapproved manual journals',
+                'count' => $unapprovedManualJournals,
+                'blocking' => $unapprovedManualJournals > 0,
+            ],
+        ];
+
+        $blockers = collect($items)->filter(fn (array $item): bool => $item['blocking'])->values();
+
+        return [
+            'period_start' => $start,
+            'period_end' => $end,
+            'items' => $items,
+            'ready' => $blockers->isEmpty(),
+            'blockers_count' => $blockers->count(),
+        ];
     }
 
     public function createPolicy(array $data): AccountingPolicy
@@ -2166,12 +2356,52 @@ class AccountingRuntimeService
         ]);
     }
 
+    protected function normalizePeriodRange(array $data): array
+    {
+        $start = Carbon::parse($data['period_start'])->toDateString();
+        $end = Carbon::parse($data['period_end'])->toDateString();
+
+        if ($end < $start) {
+            throw ValidationException::withMessages([
+                'period_end' => 'Period end date must be on or after period start date.',
+            ]);
+        }
+
+        return [$start, $end];
+    }
+
+    protected function receivablesInPeriod(string $start, string $end): array
+    {
+        $events = AccountingEvent::query()
+            ->whereIn('status', ['journal_posted', 'paid'])
+            ->whereDate('event_date', '>=', $start)
+            ->whereDate('event_date', '<=', $end)
+            ->get();
+
+        $count = 0;
+        $amount = 0.0;
+
+        foreach ($events as $event) {
+            $openAmount = $this->remainingAmountForEvent($event);
+
+            if ($openAmount > 0) {
+                $count++;
+                $amount += $openAmount;
+            }
+        }
+
+        return [
+            'count' => $count,
+            'amount' => round($amount, 2),
+        ];
+    }
+
     protected function assertPeriodOpen(string $entryDate, string $operation = 'posting'): void
     {
         $date = Carbon::parse($entryDate)->toDateString();
 
         $lock = AccountingPeriodLock::query()
-            ->where('status', 'locked')
+            ->whereIn('status', ['locked', 'archived'])
             ->whereDate('period_start', '<=', $date)
             ->whereDate('period_end', '>=', $date)
             ->first();

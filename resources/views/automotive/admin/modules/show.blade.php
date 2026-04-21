@@ -300,7 +300,9 @@
 
                 @php($periodLockSummary = $moduleData['accounting_period_lock_summary'] ?? [])
                 @php($currentPeriodLock = $periodLockSummary['current_lock'] ?? null)
+                @php($activeClosePeriod = $periodLockSummary['active_close'] ?? null)
                 @php($latestPeriodLock = $periodLockSummary['latest_lock'] ?? null)
+                @php($closeChecklist = $moduleData['accounting_close_checklist'] ?? [])
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Posting Controls</h5></div>
                     <div class="card-body">
@@ -316,6 +318,8 @@
                                 <div class="text-muted small">Current Lock</div>
                                 @if($currentPeriodLock)
                                     <h6 class="mb-0">{{ optional($currentPeriodLock->period_start)->format('Y-m-d') }} - {{ optional($currentPeriodLock->period_end)->format('Y-m-d') }}</h6>
+                                @elseif($activeClosePeriod)
+                                    <h6 class="mb-0">{{ optional($activeClosePeriod->period_start)->format('Y-m-d') }} - {{ optional($activeClosePeriod->period_end)->format('Y-m-d') }}</h6>
                                 @else
                                     <h6 class="mb-0">No active lock today</h6>
                                 @endif
@@ -334,6 +338,24 @@
                             </div>
                         </div>
                         <div class="text-muted small">{{ $periodLockSummary['posting_policy'] ?? 'Journals are the accounting source of truth.' }}</div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <div>
+                                <h6 class="mb-0">Close Readiness</h6>
+                                <div class="text-muted small">{{ $closeChecklist['period_start'] ?? now()->startOfMonth()->toDateString() }} - {{ $closeChecklist['period_end'] ?? now()->endOfMonth()->toDateString() }}</div>
+                            </div>
+                            <span class="badge {{ ($closeChecklist['ready'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($closeChecklist['ready'] ?? false) ? 'READY' : 'BLOCKED' }}</span>
+                        </div>
+                        <div class="row">
+                            @foreach(($closeChecklist['items'] ?? []) as $item)
+                                <div class="col-md-4 mb-2">
+                                    <div class="d-flex justify-content-between border rounded p-2">
+                                        <span class="small">{{ $item['label'] ?? 'Checklist item' }}</span>
+                                        <span class="badge {{ ($item['blocking'] ?? false) ? 'bg-warning text-dark' : 'bg-success' }}">{{ (int) ($item['count'] ?? 0) }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
 
@@ -391,6 +413,16 @@
                         <div class="card flex-fill">
                             <div class="card-header"><h5 class="card-title mb-0">Period Locks</h5></div>
                             <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.closing', $workspaceQuery) }}" class="mb-3">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-6 mb-2"><label class="form-label">Close Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                        <div class="col-6 mb-2"><label class="form-label">Close End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                    </div>
+                                    <div class="mb-2"><label class="form-label">Close Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                    <button type="submit" class="btn btn-outline-primary">Start Close Review</button>
+                                </form>
                                 <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.store', $workspaceQuery) }}">
                                     @csrf
                                     <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
@@ -399,13 +431,25 @@
                                         <div class="col-6 mb-2"><label class="form-label">End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
                                     </div>
                                     <div class="mb-2"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                    <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="period_lock_override" name="allow_lock_override" value="1" {{ old('allow_lock_override') ? 'checked' : '' }}><label class="form-check-label" for="period_lock_override">Controlled override</label></div>
+                                    <div class="mb-2"><label class="form-label">Override Reason</label><input type="text" name="lock_override_reason" class="form-control" value="{{ old('lock_override_reason') }}"></div>
                                     <button type="submit" class="btn btn-primary">Lock Period</button>
                                 </form>
                                 <hr>
                                 @forelse(($moduleData['accounting_period_locks'] ?? collect()) as $lock)
                                     <div class="border-bottom pb-2 mb-2">
                                         <div class="fw-semibold">{{ optional($lock->period_start)->format('Y-m-d') }} → {{ optional($lock->period_end)->format('Y-m-d') }}</div>
-                                        <div class="text-muted small">{{ strtoupper($lock->status) }} · {{ optional($lock->locked_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                        <div class="text-muted small">{{ strtoupper($lock->status) }} · {{ optional($lock->locked_at ?: $lock->closing_started_at ?: $lock->archived_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                        @if($lock->lock_override)
+                                            <div class="text-warning small">Override: {{ $lock->lock_override_reason ?: 'No reason recorded' }}</div>
+                                        @endif
+                                        @if($lock->status === 'locked')
+                                            <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.archive', ['period' => $lock->id] + $workspaceQuery) }}" class="mt-2">
+                                                @csrf
+                                                <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">Archive</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 @empty
                                     <p class="text-muted mb-0">No locked accounting periods yet.</p>

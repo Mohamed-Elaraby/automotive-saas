@@ -7,6 +7,7 @@ use App\Models\AccountingDepositBatch;
 use App\Models\AccountingAccount;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
+use App\Models\AccountingPeriodLock;
 use App\Models\AccountingVendorBill;
 use App\Models\AccountingVendorBillPayment;
 use App\Models\JournalEntry;
@@ -348,6 +349,7 @@ class WorkspaceModuleController extends Controller
                 'active_accounting_accounts' => $this->accountingRuntimeService->getAccounts(['account_status' => 'active']),
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
                 'accounting_period_lock_summary' => $this->accountingRuntimeService->periodLockSummary(),
+                'accounting_close_checklist' => $this->accountingRuntimeService->periodCloseChecklist(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
@@ -504,6 +506,8 @@ class WorkspaceModuleController extends Controller
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'period_start' => ['required', 'date'],
             'period_end' => ['required', 'date'],
+            'allow_lock_override' => ['nullable', 'boolean'],
+            'lock_override_reason' => ['nullable', 'string', 'max:2000'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -519,6 +523,52 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Accounting period locked successfully.');
+    }
+
+    public function startAccountingPeriodClose(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::PERIODS_LOCK);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'period_start' => ['required', 'date'],
+            'period_end' => ['required', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->beginPeriodClose($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Accounting period close review started successfully.');
+    }
+
+    public function archiveAccountingPeriod(Request $request, AccountingPeriodLock $period): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::PERIODS_LOCK);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->archivePeriod($period, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Accounting period archived successfully.');
     }
 
     public function storeAccountingPolicy(Request $request): RedirectResponse
