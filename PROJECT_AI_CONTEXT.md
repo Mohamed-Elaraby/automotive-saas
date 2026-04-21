@@ -768,13 +768,14 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Role Permissions And Approval Controls
+### Accounting Chart Of Accounts Management Hardening
 Recommended scope:
-- add explicit permission gates for posting, reversing, closing periods, and corrections
-- add approval workflow states for high-risk manual journals
-- expose pending approval queues inside General Ledger
-- keep fiscal close checks from the previous package enforced centrally
-- keep all corrections through explicit reversal/correction flows
+- add stronger account catalog validation
+- support active/inactive account state safely
+- block deleting or mutating accounts used by posted journal lines unless through controlled deactivation
+- validate normal balance against account type
+- add account filtering/searching in General Ledger
+- keep posting refusal for inactive or unknown accounts
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -815,6 +816,19 @@ Current accounting foundations already completed:
 - period locks exist
 - fiscal close posting controls now block posting inside locked periods
 - overlapping period locks are rejected
+- accounting permission gates now protect sensitive actions:
+  - manual journal create/post/approve
+  - source event posting
+  - inventory valuation posting
+  - vendor bill posting
+  - vendor and customer payments
+  - deposit batch creation/correction
+  - journal reversal
+  - period locking
+  - account and tax management
+  - financial report export
+- high-risk manual journals now require approval before posting
+- General Ledger exposes pending manual journal approvals
 - General Ledger now exposes posting-control summary state
 - integration readiness verification checks required accounting runtime tables
 
@@ -863,7 +877,62 @@ The following packages should be completed in order to finish the accounting sys
 
 ### Package 1 - Accounting Role Permissions And Approval Controls
 Status:
-- next package to start immediately
+- completed
+
+Completed behavior:
+- tenant users can now carry `accounting_role` and explicit `accounting_permissions`
+- users with `accounting_permissions = null` keep legacy full accounting access for backwards compatibility
+- users with an explicit empty permission set are blocked from sensitive accounting actions
+- General Ledger controller actions now enforce permissions for:
+  - manual journal creation/posting/approval
+  - source accounting event posting
+  - inventory valuation posting
+  - vendor bill posting and vendor bill payments
+  - customer payment recording/voiding
+  - deposit batch creation/correction
+  - journal reversal
+  - period locking
+  - account/policy management
+  - tax-rate management
+  - report exports
+- manual journals over the approval threshold, or explicitly marked for approval, are created as `pending_approval` and are not posted
+- approved manual journals are posted only through the explicit post-approved workflow
+- rejected manual journals remain unposted
+- pending approval queue is visible in General Ledger
+- journal detail pages expose approval/rejection/post-approved actions when the user has permission
+- audit entries are recorded for:
+  - `manual_journal_submitted_for_approval`
+  - `manual_journal_approved`
+  - `manual_journal_rejected`
+  - `manual_journal_posted_after_approval`
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_090000_add_accounting_permissions_and_journal_approval_controls.php`
+- `app/Services/Automotive/AccountingPermissionService.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `app/Models/User.php`
+- `app/Models/JournalEntry.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/journal-entry-show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `php -l app/Services/Automotive/AccountingPermissionService.php`
+  - result: passed
+- `php -l database/migrations/tenant/2026_04_21_090000_add_accounting_permissions_and_journal_approval_controls.php`
+  - result: passed
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='high_risk_manual_journals|requires_permissions'`
+  - result: 2 passed, 36 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 24 passed, 566 assertions
 
 Goal:
 - add explicit authority boundaries before adding more accounting power
@@ -916,7 +985,7 @@ Acceptance criteria:
 
 ### Package 2 - Accounting Chart Of Accounts Management Hardening
 Status:
-- pending after approvals package
+- next package to start immediately
 
 Goal:
 - make account catalog safe enough for real tenant usage

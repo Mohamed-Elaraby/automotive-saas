@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'accounting_role',
+        'accounting_permissions',
     ];
 
     /**
@@ -41,6 +43,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'accounting_permissions' => 'array',
     ];
 
     public function tenants()

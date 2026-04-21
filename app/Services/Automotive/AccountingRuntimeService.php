@@ -554,6 +554,18 @@ class AccountingRuntimeService
             ->get();
     }
 
+    public function getPendingManualJournalApprovals(int $limit = 25): Collection
+    {
+        return JournalEntry::query()
+            ->with(['lines', 'creator'])
+            ->where('source_type', 'manual')
+            ->where('status', 'pending_approval')
+            ->latest('approval_submitted_at')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
     public function getReviewableAccountingEvents(int $limit = 25): Collection
     {
         return AccountingEvent::query()
@@ -1401,19 +1413,27 @@ class AccountingRuntimeService
             ]);
         }
 
-        return DB::transaction(function () use ($data, $lines, $debitTotal, $creditTotal, $createdBy): JournalEntry {
+        $isHighRisk = $this->isHighRiskManualJournal($debitTotal, $data);
+        $status = $isHighRisk ? 'pending_approval' : 'posted';
+        $now = now();
+
+        return DB::transaction(function () use ($data, $lines, $debitTotal, $creditTotal, $createdBy, $isHighRisk, $status, $now): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'journal_number' => $this->nextJournalNumber('MJE'),
                 'source_type' => 'manual',
                 'source_id' => null,
-                'status' => 'posted',
+                'status' => $status,
+                'approval_status' => $isHighRisk ? 'pending_approval' : null,
+                'risk_level' => $isHighRisk ? 'high' : 'normal',
                 'entry_date' => $data['entry_date'] ?? now()->toDateString(),
                 'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
                 'debit_total' => $debitTotal,
                 'credit_total' => $creditTotal,
                 'memo' => $data['memo'] ?? 'Manual journal entry',
                 'created_by' => $createdBy,
-                'posted_at' => now(),
+                'approval_submitted_by' => $isHighRisk ? $createdBy : null,
+                'approval_submitted_at' => $isHighRisk ? $now : null,
+                'posted_at' => $isHighRisk ? null : $now,
             ]);
 
             foreach ($lines as $line) {
@@ -1422,12 +1442,108 @@ class AccountingRuntimeService
                 ]);
             }
 
-            $this->recordAudit('manual_journal_created', $entry, "Manual journal {$entry->journal_number} created.", [
+            $this->recordAudit(
+                $isHighRisk ? 'manual_journal_submitted_for_approval' : 'manual_journal_created',
+                $entry,
+                $isHighRisk
+                    ? "Manual journal {$entry->journal_number} submitted for approval."
+                    : "Manual journal {$entry->journal_number} created.",
+                [
                 'debit_total' => $debitTotal,
                 'credit_total' => $creditTotal,
+                'risk_level' => $entry->risk_level,
             ], $createdBy);
 
             return $entry->load(['lines', 'postingGroup', 'creator']);
+        });
+    }
+
+    public function approveManualJournalEntry(JournalEntry $entry, ?int $approvedBy = null, ?string $notes = null): JournalEntry
+    {
+        $entry->loadMissing('lines');
+
+        if ($entry->source_type !== 'manual' || $entry->status !== 'pending_approval') {
+            throw ValidationException::withMessages([
+                'journal_entry' => 'Only pending manual journals can be approved.',
+            ]);
+        }
+
+        if ($entry->created_by && $approvedBy && (int) $entry->created_by === (int) $approvedBy) {
+            throw ValidationException::withMessages([
+                'journal_entry' => 'Manual journals must be approved by a different accounting user.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($entry, $approvedBy, $notes): JournalEntry {
+            $entry->forceFill([
+                'status' => 'approved',
+                'approval_status' => 'approved',
+                'approved_by' => $approvedBy,
+                'approved_at' => now(),
+                'approval_notes' => $notes,
+            ])->save();
+
+            $this->recordAudit('manual_journal_approved', $entry, "Manual journal {$entry->journal_number} approved.", [
+                'debit_total' => $entry->debit_total,
+                'credit_total' => $entry->credit_total,
+            ], $approvedBy);
+
+            return $entry->refresh()->load(['lines', 'postingGroup', 'creator']);
+        });
+    }
+
+    public function rejectManualJournalEntry(JournalEntry $entry, ?int $rejectedBy = null, ?string $notes = null): JournalEntry
+    {
+        if ($entry->source_type !== 'manual' || ! in_array($entry->status, ['pending_approval', 'approved'], true)) {
+            throw ValidationException::withMessages([
+                'journal_entry' => 'Only pending or approved manual journals can be rejected.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($entry, $rejectedBy, $notes): JournalEntry {
+            $entry->forceFill([
+                'status' => 'rejected',
+                'approval_status' => 'rejected',
+                'rejected_by' => $rejectedBy,
+                'rejected_at' => now(),
+                'approval_notes' => $notes,
+            ])->save();
+
+            $this->recordAudit('manual_journal_rejected', $entry, "Manual journal {$entry->journal_number} rejected.", [
+                'debit_total' => $entry->debit_total,
+                'credit_total' => $entry->credit_total,
+            ], $rejectedBy);
+
+            return $entry->refresh()->load(['lines', 'postingGroup', 'creator']);
+        });
+    }
+
+    public function postApprovedManualJournalEntry(JournalEntry $entry, ?int $postedBy = null): JournalEntry
+    {
+        $entry->loadMissing('lines');
+
+        if ($entry->source_type !== 'manual' || $entry->status !== 'approved') {
+            throw ValidationException::withMessages([
+                'journal_entry' => 'Only approved manual journals can be posted.',
+            ]);
+        }
+
+        $this->assertPeriodOpen(optional($entry->entry_date)->toDateString() ?: now()->toDateString(), 'posting approved manual journal entries');
+
+        return DB::transaction(function () use ($entry, $postedBy): JournalEntry {
+            $entry->forceFill([
+                'status' => 'posted',
+                'approval_status' => 'posted',
+                'posted_at' => now(),
+            ])->save();
+
+            $this->recordAudit('manual_journal_posted_after_approval', $entry, "Approved manual journal {$entry->journal_number} posted.", [
+                'debit_total' => $entry->debit_total,
+                'credit_total' => $entry->credit_total,
+                'approved_by' => $entry->approved_by,
+            ], $postedBy);
+
+            return $entry->refresh()->load(['lines', 'postingGroup', 'creator']);
         });
     }
 
@@ -2051,6 +2167,13 @@ class AccountingRuntimeService
             'created_by' => $createdBy,
             'created_at' => now(),
         ]);
+    }
+
+    protected function isHighRiskManualJournal(float $debitTotal, array $data): bool
+    {
+        $threshold = (float) config('accounting.manual_journal_approval_threshold', 5000);
+
+        return ! empty($data['requires_approval']) || ($threshold > 0 && $debitTotal >= $threshold);
     }
 
     protected function nextJournalNumber(string $prefix = 'JE'): string

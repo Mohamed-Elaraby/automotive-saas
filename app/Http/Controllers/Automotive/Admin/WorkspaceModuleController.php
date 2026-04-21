@@ -15,6 +15,7 @@ use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Models\WorkspaceIntegrationHandoff;
 use App\Services\Automotive\AccountingRuntimeService;
+use App\Services\Automotive\AccountingPermissionService;
 use App\Services\Automotive\SupplierCatalogService;
 use App\Services\Automotive\WorkOrderAccountingHandoffService;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
@@ -44,7 +45,8 @@ class WorkspaceModuleController extends Controller
         protected SupplierCatalogService $supplierCatalogService,
         protected WorkshopWorkOrderService $workshopWorkOrderService,
         protected WorkOrderAccountingHandoffService $workOrderAccountingHandoffService,
-        protected AccountingRuntimeService $accountingRuntimeService
+        protected AccountingRuntimeService $accountingRuntimeService,
+        protected AccountingPermissionService $accountingPermissionService
     ) {
     }
 
@@ -321,7 +323,7 @@ class WorkspaceModuleController extends Controller
     public function generalLedger(Request $request): View
     {
         $filters = $request->validate([
-            'status' => ['nullable', 'in:posted,reversed,void'],
+            'status' => ['nullable', 'in:pending_approval,approved,posted,reversed,rejected,void'],
             'reconciliation_status' => ['nullable', 'in:pending,deposited'],
             'vendor_bill_status' => ['nullable', 'in:draft,posted,partial,paid,void'],
             'date_from' => ['nullable', 'date'],
@@ -360,6 +362,8 @@ class WorkspaceModuleController extends Controller
                 'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
                 'revenue_summary' => $this->accountingRuntimeService->revenueSummary($filters),
                 'accounting_audit_entries' => $this->accountingRuntimeService->getAuditEntries(30),
+                'pending_manual_journal_approvals' => $this->accountingRuntimeService->getPendingManualJournalApprovals(25),
+                'accounting_permissions' => $this->accountingPermissionMatrix(),
                 'integration_contracts' => $this->workspaceIntegrationContractService->contracts(),
                 'recent_integration_handoffs' => $this->workspaceIntegrationHandoffService->recent(25),
             ]
@@ -376,18 +380,22 @@ class WorkspaceModuleController extends Controller
         $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
         $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
         $journalEntry->load(['lines', 'postingGroup', 'creator', 'accountingEvent']);
+        $accountingPermissions = $this->accountingPermissionMatrix();
 
         return view('automotive.admin.modules.journal-entry-show', compact(
             'journalEntry',
             'workspaceProducts',
             'focusedWorkspaceProduct',
             'workspaceQuery',
-            'workspaceIntegrations'
+            'workspaceIntegrations',
+            'accountingPermissions'
         ));
     }
 
     public function storeAccountingPostingGroup(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:80'],
@@ -416,6 +424,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingAccount(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:120'],
@@ -435,6 +445,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingPeriodLock(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::PERIODS_LOCK);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'period_start' => ['required', 'date'],
@@ -458,6 +470,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingPolicy(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:80'],
@@ -480,6 +494,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingTaxRate(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::TAX_RATES_MANAGE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:80'],
@@ -501,6 +517,8 @@ class WorkspaceModuleController extends Controller
 
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::REPORTS_EXPORT);
+
         abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation', 'profit-and-loss', 'balance-sheet', 'tax-summary'], true), 404);
 
         $filters = $request->validate([
@@ -634,6 +652,8 @@ class WorkspaceModuleController extends Controller
 
     public function postAccountingEvent(Request $request, AccountingEvent $accountingEvent): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::SOURCE_EVENTS_POST);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'posting_group_id' => ['nullable', 'integer', 'exists:accounting_posting_groups,id'],
@@ -688,6 +708,8 @@ class WorkspaceModuleController extends Controller
 
     public function postInventoryMovement(Request $request, StockMovement $stockMovement): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::INVENTORY_MOVEMENTS_POST);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
         ]);
@@ -714,6 +736,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingPayment(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'accounting_event_id' => ['required', 'integer', 'exists:accounting_events,id'],
@@ -749,6 +773,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingDepositBatch(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::DEPOSIT_BATCHES_CREATE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'payment_ids' => ['required', 'array', 'min:1'],
@@ -815,6 +841,8 @@ class WorkspaceModuleController extends Controller
 
     public function postAccountingVendorBill(Request $request, AccountingVendorBill $vendorBill): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::VENDOR_BILLS_POST);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
         ]);
@@ -841,6 +869,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingVendorBillPayment(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::VENDOR_BILL_PAYMENTS_RECORD);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'accounting_vendor_bill_id' => ['required', 'integer', 'exists:accounting_vendor_bills,id'],
@@ -895,6 +925,8 @@ class WorkspaceModuleController extends Controller
 
     public function correctAccountingDepositBatch(Request $request, AccountingDepositBatch $depositBatch): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::DEPOSIT_BATCHES_CORRECT);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'correction_reason' => ['nullable', 'string', 'max:2000'],
@@ -926,6 +958,8 @@ class WorkspaceModuleController extends Controller
 
     public function voidAccountingPayment(Request $request, AccountingPayment $payment): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
         ]);
@@ -986,11 +1020,14 @@ class WorkspaceModuleController extends Controller
 
     public function storeManualJournalEntry(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_CREATE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'entry_date' => ['required', 'date'],
             'currency' => ['nullable', 'string', 'size:3'],
             'memo' => ['nullable', 'string', 'max:2000'],
+            'requires_approval' => ['nullable', 'boolean'],
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.account_code' => ['nullable', 'string', 'max:120'],
             'lines.*.account_name' => ['nullable', 'string', 'max:255'],
@@ -998,6 +1035,14 @@ class WorkspaceModuleController extends Controller
             'lines.*.credit' => ['nullable', 'numeric', 'min:0'],
             'lines.*.memo' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $debitTotal = round((float) collect($validated['lines'] ?? [])->sum(fn (array $line): float => (float) ($line['debit'] ?? 0)), 2);
+        $threshold = (float) config('accounting.manual_journal_approval_threshold', 5000);
+        $willRequireApproval = ! empty($validated['requires_approval']) || ($threshold > 0 && $debitTotal >= $threshold);
+
+        if (! $willRequireApproval) {
+            $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_POST);
+        }
 
         try {
             $entry = $this->accountingRuntimeService->createManualJournalEntry(
@@ -1016,11 +1061,15 @@ class WorkspaceModuleController extends Controller
                 'journalEntry' => $entry->id,
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
-            ->with('success', "Manual journal entry {$entry->journal_number} posted successfully.");
+            ->with('success', $entry->status === 'pending_approval'
+                ? "Manual journal entry {$entry->journal_number} submitted for approval."
+                : "Manual journal entry {$entry->journal_number} posted successfully.");
     }
 
     public function reverseJournalEntry(Request $request, JournalEntry $journalEntry): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::JOURNALS_REVERSE);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
         ]);
@@ -1045,6 +1094,100 @@ class WorkspaceModuleController extends Controller
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
             ->with('success', "Reversal journal entry {$reversal->journal_number} posted successfully.");
+    }
+
+    public function approveManualJournalEntry(Request $request, JournalEntry $journalEntry): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_APPROVE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'approval_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->approveManualJournalEntry(
+                $journalEntry,
+                auth('automotive_admin')->id(),
+                $validated['approval_notes'] ?? null
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                    'journalEntry' => $journalEntry->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+                ])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Manual journal entry {$entry->journal_number} approved.");
+    }
+
+    public function rejectManualJournalEntry(Request $request, JournalEntry $journalEntry): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_APPROVE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'approval_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->rejectManualJournalEntry(
+                $journalEntry,
+                auth('automotive_admin')->id(),
+                $validated['approval_notes'] ?? null
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                    'journalEntry' => $journalEntry->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+                ])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Manual journal entry {$entry->journal_number} rejected.");
+    }
+
+    public function postApprovedManualJournalEntry(Request $request, JournalEntry $journalEntry): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_POST);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->postApprovedManualJournalEntry(
+                $journalEntry,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                    'journalEntry' => $journalEntry->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+                ])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Approved manual journal entry {$entry->journal_number} posted successfully.");
     }
 
     protected function showManifestModule(
@@ -1084,5 +1227,33 @@ class WorkspaceModuleController extends Controller
             'workspaceIntegrations',
             'moduleData'
         ));
+    }
+
+    protected function authorizeAccounting(string $permission): void
+    {
+        abort_unless($this->accountingPermissionService->can(auth('automotive_admin')->user(), $permission), 403);
+    }
+
+    protected function accountingPermissionMatrix(): array
+    {
+        $user = auth('automotive_admin')->user();
+
+        return [
+            'manual_journals_create' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_CREATE),
+            'manual_journals_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_POST),
+            'manual_journals_approve' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_APPROVE),
+            'source_events_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::SOURCE_EVENTS_POST),
+            'inventory_movements_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::INVENTORY_MOVEMENTS_POST),
+            'vendor_bills_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILLS_POST),
+            'vendor_bill_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILL_PAYMENTS_RECORD),
+            'customer_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD),
+            'deposit_batches_create' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CREATE),
+            'deposit_batches_correct' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CORRECT),
+            'journals_reverse' => $this->accountingPermissionService->can($user, AccountingPermissionService::JOURNALS_REVERSE),
+            'periods_lock' => $this->accountingPermissionService->can($user, AccountingPermissionService::PERIODS_LOCK),
+            'accounts_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::ACCOUNTS_MANAGE),
+            'tax_rates_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::TAX_RATES_MANAGE),
+            'reports_export' => $this->accountingPermissionService->can($user, AccountingPermissionService::REPORTS_EXPORT),
+        ];
     }
 }

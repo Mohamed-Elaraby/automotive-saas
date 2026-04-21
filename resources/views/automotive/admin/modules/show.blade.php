@@ -534,6 +534,8 @@
                     </div>
                 </div>
 
+                @php($accountingPermissions = $moduleData['accounting_permissions'] ?? [])
+
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Accounting Event Review</h5></div>
                     <div class="card-body">
@@ -548,18 +550,20 @@
                                     </div>
                                     <div class="text-end">
                                         <div class="fw-semibold mb-2">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div>
-                                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.accounting-events.post', ['accountingEvent' => $event->id] + $workspaceQuery) }}">
-                                            @csrf
-                                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                            @if(($moduleData['posting_groups'] ?? collect())->isNotEmpty())
-                                                <select name="posting_group_id" class="form-select form-select-sm mb-2">
-                                                    @foreach(($moduleData['posting_groups'] ?? collect()) as $group)
-                                                        <option value="{{ $group->id }}" @selected($group->is_default)>{{ $group->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            @endif
-                                            <button type="submit" class="btn btn-sm btn-primary">Post To Journal</button>
-                                        </form>
+                                        @if($accountingPermissions['source_events_post'] ?? true)
+                                            <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.accounting-events.post', ['accountingEvent' => $event->id] + $workspaceQuery) }}">
+                                                @csrf
+                                                <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                @if(($moduleData['posting_groups'] ?? collect())->isNotEmpty())
+                                                    <select name="posting_group_id" class="form-select form-select-sm mb-2">
+                                                        @foreach(($moduleData['posting_groups'] ?? collect()) as $group)
+                                                            <option value="{{ $group->id }}" @selected($group->is_default)>{{ $group->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                @endif
+                                                <button type="submit" class="btn btn-sm btn-primary">Post To Journal</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -584,11 +588,13 @@
                                     </div>
                                     <div class="text-end">
                                         <div class="fw-semibold mb-2">{{ number_format($movementValue, 2) }} USD</div>
-                                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.inventory-movements.post', ['stockMovement' => $movement->id] + $workspaceQuery) }}">
-                                            @csrf
-                                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                            <button type="submit" class="btn btn-sm btn-primary">Post Inventory Valuation</button>
-                                        </form>
+                                        @if($accountingPermissions['inventory_movements_post'] ?? true)
+                                            <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.inventory-movements.post', ['stockMovement' => $movement->id] + $workspaceQuery) }}">
+                                                @csrf
+                                                <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                <button type="submit" class="btn btn-sm btn-primary">Post Inventory Valuation</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -649,11 +655,13 @@
                                                 @if($bill->journal_entry_id)
                                                     <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $bill->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
                                                 @elseif($bill->status === 'draft')
+                                                    @if($accountingPermissions['vendor_bills_post'] ?? true)
                                                     <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bills.post', ['vendorBill' => $bill->id] + $workspaceQuery) }}" class="mt-2">
                                                         @csrf
                                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                                         <button type="submit" class="btn btn-sm btn-primary">Post To Payables</button>
                                                     </form>
+                                                    @endif
                                                 @endif
                                             </div>
                                         </div>
@@ -844,6 +852,45 @@
                 </div>
 
                 <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Manual Journal Approvals</h5></div>
+                    <div class="card-body">
+                        @forelse(($moduleData['pending_manual_journal_approvals'] ?? collect()) as $entry)
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <h6 class="mb-1">{{ $entry->journal_number }}</h6>
+                                        <div class="text-muted small">{{ $entry->memo ?: 'Manual journal pending approval' }}</div>
+                                        <div class="text-muted small">{{ optional($entry->entry_date)->format('Y-m-d') }} · Submitted {{ optional($entry->approval_submitted_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                        <div class="text-muted small">Created by {{ $entry->creator?->name ?: 'System user' }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-warning text-dark">PENDING APPROVAL</span>
+                                        <div class="fw-semibold mt-1">{{ number_format((float) $entry->debit_total, 2) }} {{ $entry->currency }}</div>
+                                        <div class="d-flex gap-2 mt-2 justify-content-end flex-wrap">
+                                            <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $entry->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Detail</a>
+                                            @if($accountingPermissions['manual_journals_approve'] ?? true)
+                                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.approve', ['journalEntry' => $entry->id] + $workspaceQuery) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                </form>
+                                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.reject', ['journalEntry' => $entry->id] + $workspaceQuery) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-muted mb-0">No high-risk manual journals are pending approval.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Create Manual Journal Entry</h5></div>
                     <div class="card-body">
                         <datalist id="account-catalog-options">
@@ -875,7 +922,11 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <button type="submit" class="btn btn-primary">Post Manual Journal</button>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="manual_journal_requires_approval" name="requires_approval" value="1" {{ old('requires_approval') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="manual_journal_requires_approval">Submit for approval</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Create Manual Journal</button>
                         </form>
                     </div>
                 </div>

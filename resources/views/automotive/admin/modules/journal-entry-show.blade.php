@@ -40,7 +40,25 @@
                     <div class="card flex-fill">
                         <div class="card-header"><h5 class="card-title mb-0">Journal Actions</h5></div>
                         <div class="card-body">
-                            @if($journalEntry->status === 'posted' && $journalEntry->source_type !== 'journal_reversal')
+                            @if($journalEntry->status === 'pending_approval' && ($accountingPermissions['manual_journals_approve'] ?? true))
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.approve', ['journalEntry' => $journalEntry->id] + $workspaceQuery) }}" class="mb-2">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? 'accounting' }}">
+                                    <textarea name="approval_notes" class="form-control mb-2" rows="2" placeholder="Approval notes"></textarea>
+                                    <button type="submit" class="btn btn-success w-100">Approve Manual Journal</button>
+                                </form>
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.reject', ['journalEntry' => $journalEntry->id] + $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? 'accounting' }}">
+                                    <button type="submit" class="btn btn-outline-danger w-100">Reject Manual Journal</button>
+                                </form>
+                            @elseif($journalEntry->status === 'approved' && ($accountingPermissions['manual_journals_post'] ?? true))
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.post-approved', ['journalEntry' => $journalEntry->id] + $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? 'accounting' }}">
+                                    <button type="submit" class="btn btn-primary w-100">Post Approved Journal</button>
+                                </form>
+                            @elseif($journalEntry->status === 'posted' && $journalEntry->source_type !== 'journal_reversal' && ($accountingPermissions['journals_reverse'] ?? true))
                                 <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.reverse', ['journalEntry' => $journalEntry->id] + $workspaceQuery) }}">
                                     @csrf
                                     <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? 'accounting' }}">

@@ -1307,6 +1307,201 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_runtime_requires_permissions_for_sensitive_actions(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            DB::connection('tenant')->table('users')
+                ->where('email', $email)
+                ->update([
+                    'accounting_role' => 'viewer',
+                    'accounting_permissions' => json_encode([]),
+                ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $lockResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => '2026-05-01',
+            'period_end' => '2026-05-31',
+        ]);
+        $lockResponse->assertForbidden();
+
+        $manualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-05-21',
+            'currency' => 'USD',
+            'memo' => 'Unauthorized manual journal',
+            'lines' => [
+                ['account_code' => '1100 Accounts Receivable', 'account_name' => 'Accounts Receivable', 'debit' => 150, 'credit' => 0],
+                ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 150],
+            ],
+        ]);
+        $manualResponse->assertForbidden();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseMissing('accounting_period_locks', [
+                'period_start' => '2026-05-01',
+            ], 'tenant');
+            $this->assertDatabaseMissing('journal_entries', [
+                'memo' => 'Unauthorized manual journal',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
+    public function test_high_risk_manual_journals_require_approval_before_posting(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+        $approverEmail = 'approver-' . uniqid() . '@example.test';
+        $approverPassword = 'secret-pass';
+
+        tenancy()->initialize($tenant);
+
+        try {
+            DB::connection('tenant')->table('users')
+                ->where('email', $email)
+                ->update([
+                    'accounting_role' => 'journal_creator',
+                    'accounting_permissions' => json_encode([
+                        'accounting.manual_journals.create',
+                    ]),
+                ]);
+
+            User::query()->create([
+                'name' => 'Accounting Approver',
+                'email' => $approverEmail,
+                'password' => bcrypt($approverPassword),
+                'accounting_role' => 'controller',
+                'accounting_permissions' => [
+                    'accounting.manual_journals.approve',
+                    'accounting.manual_journals.post',
+                    'accounting.reports.export',
+                    'accounting.journals.reverse',
+                ],
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $manualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-05-21',
+            'currency' => 'USD',
+            'memo' => 'High-risk accrual',
+            'lines' => [
+                ['account_code' => '1100 Accounts Receivable', 'account_name' => 'Accounts Receivable', 'debit' => 6000, 'credit' => 0],
+                ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 6000],
+            ],
+        ]);
+        $manualResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('memo', 'High-risk accrual')
+                ->first();
+
+            $this->assertNotNull($journal);
+            $this->assertSame('pending_approval', $journal->status);
+            $this->assertSame('pending_approval', $journal->approval_status);
+            $this->assertSame('high', $journal->risk_level);
+            $this->assertNull($journal->posted_at);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'manual_journal_submitted_for_approval',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $detailBeforeApproval = $this->get("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting");
+        $detailBeforeApproval->assertOk();
+        $detailBeforeApproval->assertSee('PENDING_APPROVAL', false);
+        $detailBeforeApproval->assertDontSee('Reverse Journal Entry', false);
+
+        $postBeforeApproval = $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}/post-approved?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $postBeforeApproval->assertForbidden();
+
+        Auth::guard('automotive_admin')->logout();
+        $this->flushSession();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $approverEmail,
+            'password' => $approverPassword,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Manual Journal Approvals', false);
+        $ledgerResponse->assertSee('High-risk accrual', false);
+
+        $controllerPostBeforeApproval = $this->from("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}/post-approved?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+            ]);
+        $controllerPostBeforeApproval->assertRedirect("http://{$domain}/workspace/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting");
+        $controllerPostBeforeApproval->assertSessionHasErrors('journal_entry');
+
+        $approveResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}/approve?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'approval_notes' => 'Reviewed by controller',
+        ]);
+        $approveResponse->assertRedirect();
+
+        $postApprovedResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}/post-approved?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $postApprovedResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $postedJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('id', $journal->id)
+                ->first();
+
+            $this->assertSame('posted', $postedJournal->status);
+            $this->assertSame('posted', $postedJournal->approval_status);
+            $this->assertNotNull($postedJournal->approved_at);
+            $this->assertNotNull($postedJournal->posted_at);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'manual_journal_approved',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'manual_journal_posted_after_approval',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

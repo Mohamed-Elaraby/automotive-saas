@@ -14,12 +14,21 @@ class JournalEntry extends Model
         'source_type',
         'source_id',
         'status',
+        'approval_status',
+        'risk_level',
         'entry_date',
         'currency',
         'debit_total',
         'credit_total',
         'memo',
         'created_by',
+        'approval_submitted_by',
+        'approval_submitted_at',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'approval_notes',
         'posted_at',
     ];
 
@@ -27,6 +36,9 @@ class JournalEntry extends Model
         'entry_date' => 'date',
         'debit_total' => 'decimal:2',
         'credit_total' => 'decimal:2',
+        'approval_submitted_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'posted_at' => 'datetime',
     ];
 
