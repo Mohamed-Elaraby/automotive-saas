@@ -902,6 +902,51 @@ class TenantAdminAccessFlowTest extends TestCase
         $paymentsCsvContent = $paymentsCsv->streamedContent();
         $this->assertStringContainsString('Reconciliation', $paymentsCsvContent);
         $this->assertStringContainsString('deposited', $paymentsCsvContent);
+
+        $bankReconciliationReport = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/bank-reconciliation?workspace_product=accounting&format=print&status=posted");
+        $bankReconciliationReport->assertOk();
+        $bankReconciliationReport->assertSee('Bank Reconciliation Report', false);
+        $bankReconciliationReport->assertSee('DEP-SLIP-001', false);
+
+        $depositDetailResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting");
+        $depositDetailResponse->assertOk();
+        $depositDetailResponse->assertSee('Deposit Batch', false);
+        $depositDetailResponse->assertSee('Correct Deposit Batch', false);
+        $depositDetailResponse->assertSee('BANK-DEP-001', false);
+
+        $correctionResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}/correct?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'correction_reason' => 'Bank slip entered against the wrong date.',
+        ]);
+
+        $correctionResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $correctedBatch = DB::connection('tenant')->table('accounting_deposit_batches')->where('id', $batch->id)->first();
+
+            $this->assertSame('corrected', $correctedBatch->status);
+            $this->assertSame('Bank slip entered against the wrong date.', $correctedBatch->correction_reason);
+            $this->assertNotNull($correctedBatch->corrected_at);
+
+            $pendingPayment = DB::connection('tenant')->table('accounting_payments')->where('id', $payment->id)->first();
+            $this->assertNull($pendingPayment->deposit_batch_id);
+            $this->assertSame('pending', $pendingPayment->reconciliation_status);
+            $this->assertNull($pendingPayment->reconciled_at);
+
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'deposit_batch_corrected',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $correctedDetailResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/deposit-batches/{$batch->id}?workspace_product=accounting");
+        $correctedDetailResponse->assertOk();
+        $correctedDetailResponse->assertSee('CORRECTED', false);
+        $correctedDetailResponse->assertSee('Bank slip entered against the wrong date.', false);
     }
 
 

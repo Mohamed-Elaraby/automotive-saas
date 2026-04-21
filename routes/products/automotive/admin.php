@@ -170,6 +170,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.payments.store');
                 Route::post('/general-ledger/deposit-batches', [WorkspaceModuleController::class, 'storeAccountingDepositBatch'])
                     ->name('modules.general-ledger.deposit-batches.store');
+                Route::get('/general-ledger/deposit-batches/{depositBatch}', [WorkspaceModuleController::class, 'showAccountingDepositBatch'])
+                    ->name('modules.general-ledger.deposit-batches.show');
+                Route::post('/general-ledger/deposit-batches/{depositBatch}/correct', [WorkspaceModuleController::class, 'correctAccountingDepositBatch'])
+                    ->name('modules.general-ledger.deposit-batches.correct');
                 Route::post('/general-ledger/payments/{payment}/void', [WorkspaceModuleController::class, 'voidAccountingPayment'])
                     ->name('modules.general-ledger.payments.void');
                 Route::post('/general-ledger/integration-handoffs/{handoff}/retry', [WorkspaceModuleController::class, 'retryIntegrationHandoff'])

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
 use App\Models\JournalEntry;
@@ -469,11 +470,12 @@ class WorkspaceModuleController extends Controller
 
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
     {
-        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments'], true), 404);
+        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation'], true), 404);
 
         $filters = $request->validate([
-            'status' => ['nullable', 'in:posted,reversed,void'],
+            'status' => ['nullable', 'in:posted,reversed,void,corrected'],
             'reconciliation_status' => ['nullable', 'in:pending,deposited'],
+            'deposit_account' => ['nullable', 'string', 'max:120'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -484,6 +486,12 @@ class WorkspaceModuleController extends Controller
 
         $headers = [];
         $rows = [];
+
+        if ($report === 'bank-reconciliation') {
+            $reportData = $this->accountingRuntimeService->bankReconciliationReport($filters);
+
+            return view('automotive.admin.modules.accounting-bank-reconciliation-print', compact('reportData'));
+        }
 
         if ($report === 'journal-entries') {
             $headers = ['Journal Number', 'Entry Date', 'Status', 'Memo', 'Currency', 'Debit Total', 'Credit Total'];
@@ -700,6 +708,57 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', "Deposit batch {$batch->deposit_number} posted successfully.");
+    }
+
+    public function showAccountingDepositBatch(Request $request, AccountingDepositBatch $depositBatch): View
+    {
+        $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) tenant()->id);
+        $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+            $workspaceProducts,
+            $request->query('workspace_product', 'accounting')
+        );
+        $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+        $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
+        $depositBatch = $this->accountingRuntimeService->depositBatchDetail($depositBatch);
+
+        return view('automotive.admin.modules.accounting-deposit-batch-show', compact(
+            'depositBatch',
+            'workspaceProducts',
+            'focusedWorkspaceProduct',
+            'workspaceQuery',
+            'workspaceIntegrations'
+        ));
+    }
+
+    public function correctAccountingDepositBatch(Request $request, AccountingDepositBatch $depositBatch): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'correction_reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $correctedBatch = $this->accountingRuntimeService->correctDepositBatch(
+                $depositBatch,
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger.deposit-batches.show', [
+                    'depositBatch' => $depositBatch->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+                ])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.deposit-batches.show', [
+                'depositBatch' => $correctedBatch->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Deposit batch {$correctedBatch->deposit_number} corrected successfully.");
     }
 
     public function voidAccountingPayment(Request $request, AccountingPayment $payment): RedirectResponse

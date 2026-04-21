@@ -148,11 +148,43 @@ class AccountingRuntimeService
     public function getDepositBatches(int $limit = 15): Collection
     {
         return AccountingDepositBatch::query()
-            ->with(['payments', 'creator'])
+            ->with(['payments', 'creator', 'corrector'])
             ->latest('deposit_date')
             ->latest('id')
             ->limit($limit)
             ->get();
+    }
+
+    public function depositBatchDetail(AccountingDepositBatch $batch): AccountingDepositBatch
+    {
+        return $batch->load([
+            'payments.accountingEvent',
+            'payments.journalEntry',
+            'creator',
+            'corrector',
+        ]);
+    }
+
+    public function bankReconciliationReport(array $filters = []): array
+    {
+        $batches = AccountingDepositBatch::query()
+            ->with(['payments', 'creator', 'corrector'])
+            ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(! empty($filters['deposit_account']), fn ($query) => $query->where('deposit_account', $filters['deposit_account']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('deposit_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('deposit_date', '<=', $filters['date_to']))
+            ->orderBy('deposit_date')
+            ->orderBy('id')
+            ->get();
+
+        return [
+            'filters' => $filters,
+            'batches' => $batches,
+            'posted_count' => $batches->where('status', 'posted')->count(),
+            'corrected_count' => $batches->where('status', 'corrected')->count(),
+            'posted_total' => round((float) $batches->where('status', 'posted')->sum('total_amount'), 2),
+            'corrected_total' => round((float) $batches->where('status', 'corrected')->sum('total_amount'), 2),
+        ];
     }
 
     public function paymentReconciliationSummary(): array
@@ -671,6 +703,59 @@ class AccountingRuntimeService
             ], $createdBy);
 
             return $batch->load(['payments', 'creator']);
+        });
+    }
+
+    public function correctDepositBatch(AccountingDepositBatch $batch, array $data = [], ?int $createdBy = null): AccountingDepositBatch
+    {
+        $batch->loadMissing('payments');
+
+        if ($batch->status !== 'posted') {
+            throw ValidationException::withMessages([
+                'deposit_batch' => 'Only posted deposit batches can be corrected.',
+            ]);
+        }
+
+        $correctionDate = now()->toDateString();
+        $this->assertPeriodOpen($correctionDate);
+
+        return DB::transaction(function () use ($batch, $data, $createdBy): AccountingDepositBatch {
+            $lockedBatch = AccountingDepositBatch::query()
+                ->whereKey($batch->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedBatch->status !== 'posted') {
+                throw ValidationException::withMessages([
+                    'deposit_batch' => 'Only posted deposit batches can be corrected.',
+                ]);
+            }
+
+            AccountingPayment::query()
+                ->where('deposit_batch_id', $lockedBatch->id)
+                ->where('reconciliation_status', 'deposited')
+                ->update([
+                    'deposit_batch_id' => null,
+                    'reconciliation_status' => 'pending',
+                    'reconciled_by' => null,
+                    'reconciled_at' => null,
+                    'updated_at' => now(),
+                ]);
+
+            $lockedBatch->forceFill([
+                'status' => 'corrected',
+                'corrected_by' => $createdBy,
+                'corrected_at' => now(),
+                'correction_reason' => $data['correction_reason'] ?? null,
+            ])->save();
+
+            $this->recordAudit('deposit_batch_corrected', $lockedBatch, "Deposit batch {$lockedBatch->deposit_number} corrected.", [
+                'deposit_batch_id' => $lockedBatch->id,
+                'total_amount' => (float) $lockedBatch->total_amount,
+                'correction_reason' => $lockedBatch->correction_reason,
+            ], $createdBy);
+
+            return $lockedBatch->load(['payments.accountingEvent', 'payments.journalEntry', 'creator', 'corrector']);
         });
     }
 

@@ -768,12 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Bank Reconciliation Reports And Deposit Corrections
+### Accounting Vendor Bills And Payables Foundation
 Recommended scope:
-- add printable bank reconciliation report by deposit account and date range
-- add deposit batch detail screen
-- add controlled deposit correction / reversal workflow
-- make deposited payment correction explicit instead of allowing silent payment voids
+- add vendor bill runtime model and tenant table
+- create payables review list inside General Ledger
+- post vendor bills into Accounts Payable and expense/inventory accounts
+- add basic bill status lifecycle and audit trail
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1371,6 +1371,53 @@ Verification:
   - result: 7 passed, 188 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 24 passed, 422 assertions
+
+## 15.14) Accounting Bank Reconciliation Reports And Deposit Corrections
+Status:
+- completed
+
+Why this package was needed:
+- deposit batches could group posted payments, but Accounting still needed a way to inspect a batch, print a bank reconciliation report, and correct an incorrectly created batch without silently changing payment journals
+
+Completed scope:
+- added correction metadata to `accounting_deposit_batches`:
+  - `corrected_by`
+  - `corrected_at`
+  - `correction_reason`
+- added printable Bank Reconciliation Report from General Ledger exports:
+  - filters by status, account, and date range
+  - shows posted/corrected counts and totals
+  - lists deposit number, date, account, status, reference, payment count, and amount
+- added deposit batch detail screen:
+  - batch status and totals
+  - attached payment list
+  - posted/corrected metadata
+  - controlled correction action
+- deposit correction now:
+  - only works for posted deposit batches
+  - marks the batch as `corrected`
+  - restores attached payments to `pending`
+  - clears `deposit_batch_id`, `reconciled_by`, and `reconciled_at`
+  - records `deposit_batch_corrected` audit entry
+- deposited payment voids remain blocked; correction is now explicit at the deposit batch level
+- journals and payment entries remain unchanged as the accounting source of truth
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_050000_add_correction_fields_to_accounting_deposit_batches_table.php`
+- `app/Models/AccountingDepositBatch.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-bank-reconciliation-print.blade.php`
+- `resources/views/automotive/admin/modules/accounting-deposit-batch-show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 7 passed, 207 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 24 passed, 441 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

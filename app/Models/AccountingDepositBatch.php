@@ -16,14 +16,18 @@ class AccountingDepositBatch extends Model
         'status',
         'reference',
         'notes',
+        'correction_reason',
         'created_by',
+        'corrected_by',
         'posted_at',
+        'corrected_at',
     ];
 
     protected $casts = [
         'deposit_date' => 'date',
         'total_amount' => 'decimal:2',
         'posted_at' => 'datetime',
+        'corrected_at' => 'datetime',
     ];
 
     public function payments()
@@ -34,5 +38,10 @@ class AccountingDepositBatch extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function corrector()
+    {
+        return $this->belongsTo(User::class, 'corrected_by');
     }
 }

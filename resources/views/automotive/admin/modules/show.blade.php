@@ -161,6 +161,7 @@
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">Export Payments CSV</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payments</a>
+                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Bank Reconciliation</a>
                         </div>
                     </div>
                 </div>
@@ -213,7 +214,7 @@
                                 <div class="text-muted small">Recent Deposit Batches</div>
                                 @forelse(($moduleData['recent_deposit_batches'] ?? collect())->take(3) as $batch)
                                     <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
-                                        <span>{{ $batch->deposit_number }} · {{ optional($batch->deposit_date)->format('Y-m-d') }}{{ $batch->reference ? ' · '.$batch->reference : '' }}</span>
+                                        <a href="{{ route('automotive.admin.modules.general-ledger.deposit-batches.show', ['depositBatch' => $batch->id] + $workspaceQuery) }}">{{ $batch->deposit_number }} · {{ optional($batch->deposit_date)->format('Y-m-d') }}{{ $batch->reference ? ' · '.$batch->reference : '' }}</a>
                                         <span>{{ number_format((float) $batch->total_amount, 2) }} {{ $batch->currency }}</span>
                                     </div>
                                 @empty
