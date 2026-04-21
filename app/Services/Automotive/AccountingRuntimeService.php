@@ -11,6 +11,7 @@ use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
 use App\Models\AccountingVendorBill;
+use App\Models\AccountingVendorBillPayment;
 use App\Models\JournalEntry;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
@@ -159,7 +160,7 @@ class AccountingRuntimeService
     public function getVendorBills(array $filters = [], int $limit = 25): Collection
     {
         return AccountingVendorBill::query()
-            ->with(['supplier', 'journalEntry', 'creator', 'poster'])
+            ->with(['supplier', 'journalEntry', 'payments', 'creator', 'poster'])
             ->when(! empty($filters['vendor_bill_status']), fn ($query) => $query->where('status', $filters['vendor_bill_status']))
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('bill_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('bill_date', '<=', $filters['date_to']))
@@ -176,24 +177,101 @@ class AccountingRuntimeService
             ->latest('bill_date')
             ->latest('id')
             ->limit($limit)
-            ->get();
+            ->get()
+            ->map(function (AccountingVendorBill $bill): AccountingVendorBill {
+                $paidAmount = $this->paidAmountForVendorBill($bill->id);
+                $bill->setAttribute('paid_amount', $paidAmount);
+                $bill->setAttribute('open_amount', max(0, round((float) $bill->amount - $paidAmount, 2)));
+
+                return $bill;
+            });
     }
 
     public function payablesSummary(): array
     {
-        $bills = AccountingVendorBill::query()
-            ->selectRaw('status, COUNT(*) as bills_count, COALESCE(SUM(amount), 0) as total_amount')
-            ->groupBy('status')
-            ->get()
-            ->keyBy('status');
-        $draft = $bills->get('draft');
-        $posted = $bills->get('posted');
+        $bills = $this->getVendorBills([], 500);
+        $draft = $bills->where('status', 'draft');
+        $open = $bills->whereIn('status', ['posted', 'partial']);
+        $paid = $bills->where('status', 'paid');
 
         return [
-            'draft_count' => (int) ($draft?->bills_count ?? 0),
-            'draft_amount' => round((float) ($draft?->total_amount ?? 0), 2),
-            'posted_count' => (int) ($posted?->bills_count ?? 0),
-            'posted_amount' => round((float) ($posted?->total_amount ?? 0), 2),
+            'draft_count' => $draft->count(),
+            'draft_amount' => round((float) $draft->sum('amount'), 2),
+            'open_count' => $open->filter(fn (AccountingVendorBill $bill): bool => (float) $bill->getAttribute('open_amount') > 0)->count(),
+            'open_amount' => round((float) $open->sum('open_amount'), 2),
+            'paid_count' => $paid->count(),
+            'paid_amount' => round((float) $paid->sum('amount'), 2),
+        ];
+    }
+
+    public function getOpenVendorBills(int $limit = 25): Collection
+    {
+        return $this->getVendorBills([], 500)
+            ->filter(fn (AccountingVendorBill $bill): bool => in_array($bill->status, ['posted', 'partial'], true) && (float) $bill->getAttribute('open_amount') > 0)
+            ->sortByDesc('bill_date')
+            ->take($limit)
+            ->values();
+    }
+
+    public function getVendorBillPayments(array $filters = [], int $limit = 25): Collection
+    {
+        return AccountingVendorBillPayment::query()
+            ->with(['vendorBill', 'journalEntry', 'creator'])
+            ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
+            ->when(! empty($filters['search']), function ($query) use ($filters) {
+                $search = '%' . trim((string) $filters['search']) . '%';
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('payment_number', 'like', $search)
+                        ->orWhere('reference', 'like', $search)
+                        ->orWhere('method', 'like', $search)
+                        ->orWhereHas('vendorBill', function ($query) use ($search) {
+                            $query->where('supplier_name', 'like', $search)
+                                ->orWhere('bill_number', 'like', $search)
+                                ->orWhere('reference', 'like', $search);
+                        });
+                });
+            })
+            ->latest('payment_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ;
+    }
+
+    public function payablesAging(): array
+    {
+        $buckets = [
+            'current' => ['label' => 'Current', 'amount' => 0.0, 'count' => 0],
+            '1_30' => ['label' => '1-30 Days', 'amount' => 0.0, 'count' => 0],
+            '31_60' => ['label' => '31-60 Days', 'amount' => 0.0, 'count' => 0],
+            '61_90' => ['label' => '61-90 Days', 'amount' => 0.0, 'count' => 0],
+            'over_90' => ['label' => 'Over 90 Days', 'amount' => 0.0, 'count' => 0],
+        ];
+
+        $this->getOpenVendorBills(500)->each(function (AccountingVendorBill $bill) use (&$buckets): void {
+            $dueDate = Carbon::parse($bill->due_date ?: $bill->bill_date ?: now())->startOfDay();
+            $age = $dueDate->isFuture() ? 0 : $dueDate->diffInDays(now()->startOfDay());
+            $bucket = match (true) {
+                $age === 0 => 'current',
+                $age <= 30 => '1_30',
+                $age <= 60 => '31_60',
+                $age <= 90 => '61_90',
+                default => 'over_90',
+            };
+
+            $buckets[$bucket]['amount'] = round($buckets[$bucket]['amount'] + (float) $bill->getAttribute('open_amount'), 2);
+            $buckets[$bucket]['count']++;
+        });
+
+        $totalOpen = round(collect($buckets)->sum('amount'), 2);
+
+        return [
+            'buckets' => $buckets,
+            'total_open' => $totalOpen,
+            'overdue_total' => round($totalOpen - $buckets['current']['amount'], 2),
         ];
     }
 
@@ -902,6 +980,97 @@ class AccountingRuntimeService
         });
     }
 
+    public function recordVendorBillPayment(array $data, ?int $createdBy = null): AccountingVendorBillPayment
+    {
+        $bill = AccountingVendorBill::query()->findOrFail((int) $data['accounting_vendor_bill_id']);
+
+        if (! in_array($bill->status, ['posted', 'partial'], true)) {
+            throw ValidationException::withMessages([
+                'accounting_vendor_bill_id' => 'Payments can only be recorded for posted vendor bills.',
+            ]);
+        }
+
+        $paymentDate = Carbon::parse($data['payment_date'] ?? now()->toDateString())->toDateString();
+        $this->assertPeriodOpen($paymentDate);
+        $amount = round((float) ($data['amount'] ?? 0), 2);
+        $remainingAmount = $this->remainingAmountForVendorBill($bill);
+
+        if ($amount <= 0 || $amount > $remainingAmount) {
+            throw ValidationException::withMessages([
+                'amount' => 'Vendor payment amount must be greater than zero and cannot exceed the open payable amount.',
+            ]);
+        }
+
+        $cashAccount = trim((string) ($data['cash_account'] ?? '1010 Bank Account')) ?: '1010 Bank Account';
+        $payableAccount = $bill->payable_account ?: '2000 Accounts Payable';
+        $this->ensureAccountsFromCodes([$cashAccount, $payableAccount]);
+
+        return DB::transaction(function () use ($data, $bill, $paymentDate, $amount, $remainingAmount, $cashAccount, $payableAccount, $createdBy): AccountingVendorBillPayment {
+            $entry = JournalEntry::query()->create([
+                'journal_number' => $this->nextJournalNumber('VPAY'),
+                'source_type' => AccountingVendorBillPayment::class,
+                'source_id' => null,
+                'status' => 'posted',
+                'entry_date' => $paymentDate,
+                'currency' => strtoupper((string) ($data['currency'] ?? $bill->currency ?: 'USD')),
+                'debit_total' => $amount,
+                'credit_total' => $amount,
+                'memo' => 'Vendor payment for ' . $bill->bill_number,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $payableAccount,
+                'account_name' => $this->resolveAccountName($payableAccount, 'Accounts Payable'),
+                'line_type' => 'debit',
+                'debit' => $amount,
+                'credit' => 0,
+                'memo' => 'Payable settled by vendor payment.',
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $cashAccount,
+                'account_name' => $this->resolveAccountName($cashAccount, 'Bank Account'),
+                'line_type' => 'credit',
+                'debit' => 0,
+                'credit' => $amount,
+                'memo' => 'Cash or bank paid to vendor.',
+            ]);
+
+            $payment = AccountingVendorBillPayment::query()->create([
+                'accounting_vendor_bill_id' => $bill->id,
+                'journal_entry_id' => $entry->id,
+                'payment_number' => $this->nextJournalNumber('VPMT'),
+                'payment_date' => $paymentDate,
+                'method' => $data['method'] ?? 'bank_transfer',
+                'reference' => $data['reference'] ?? null,
+                'currency' => strtoupper((string) ($data['currency'] ?? $bill->currency ?: 'USD')),
+                'amount' => $amount,
+                'cash_account' => $cashAccount,
+                'payable_account' => $payableAccount,
+                'status' => 'posted',
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->forceFill(['source_id' => $payment->id])->save();
+
+            $bill->forceFill([
+                'status' => round($remainingAmount - $amount, 2) <= 0 ? 'paid' : 'partial',
+            ])->save();
+
+            $this->recordAudit('vendor_bill_payment_recorded', $payment, "Vendor payment {$payment->payment_number} recorded.", [
+                'accounting_vendor_bill_id' => $bill->id,
+                'journal_entry_id' => $entry->id,
+                'amount' => $amount,
+            ], $createdBy);
+
+            return $payment->load(['vendorBill', 'journalEntry', 'creator']);
+        });
+    }
+
     public function voidCustomerPayment(AccountingPayment $payment, ?int $createdBy = null): JournalEntry
     {
         $payment->loadMissing(['accountingEvent', 'journalEntry']);
@@ -1536,6 +1705,19 @@ class AccountingRuntimeService
     protected function remainingAmountForEvent(AccountingEvent $event): float
     {
         return max(0, round((float) $event->total_amount - $this->paidAmountForEvent($event->id), 2));
+    }
+
+    protected function paidAmountForVendorBill(int $billId): float
+    {
+        return round((float) AccountingVendorBillPayment::query()
+            ->where('accounting_vendor_bill_id', $billId)
+            ->where('status', 'posted')
+            ->sum('amount'), 2);
+    }
+
+    protected function remainingAmountForVendorBill(AccountingVendorBill $bill): float
+    {
+        return max(0, round((float) $bill->amount - $this->paidAmountForVendorBill($bill->id), 2));
     }
 
     protected function recordAudit(string $eventType, Model $auditable, string $description, array $payload = [], ?int $createdBy = null): void

@@ -4,37 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class AccountingVendorBill extends Model
+class AccountingVendorBillPayment extends Model
 {
     protected $fillable = [
-        'supplier_id',
+        'accounting_vendor_bill_id',
         'journal_entry_id',
-        'bill_number',
-        'bill_date',
-        'due_date',
-        'supplier_name',
+        'payment_number',
+        'payment_date',
+        'method',
         'reference',
         'currency',
         'amount',
-        'expense_account',
+        'cash_account',
         'payable_account',
         'status',
         'notes',
         'created_by',
-        'posted_by',
         'posted_at',
     ];
 
     protected $casts = [
-        'bill_date' => 'date',
-        'due_date' => 'date',
+        'payment_date' => 'date',
         'amount' => 'decimal:2',
         'posted_at' => 'datetime',
     ];
 
-    public function supplier()
+    public function vendorBill()
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(AccountingVendorBill::class, 'accounting_vendor_bill_id');
     }
 
     public function journalEntry()
@@ -42,18 +39,8 @@ class AccountingVendorBill extends Model
         return $this->belongsTo(JournalEntry::class);
     }
 
-    public function payments()
-    {
-        return $this->hasMany(AccountingVendorBillPayment::class);
-    }
-
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function poster()
-    {
-        return $this->belongsTo(User::class, 'posted_by');
     }
 }

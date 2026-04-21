@@ -1044,6 +1044,99 @@ class TenantAdminAccessFlowTest extends TestCase
         $journalDetailResponse->assertOk();
         $journalDetailResponse->assertSee('Vendor bill', false);
         $journalDetailResponse->assertSee('Accounts Payable', false);
+
+        $payablesResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $payablesResponse->assertOk();
+        $payablesResponse->assertSee('Pay Vendor Bill', false);
+        $payablesResponse->assertSee('Payables Aging', false);
+        $payablesResponse->assertSee('Open 240.00 USD', false);
+
+        $partialPaymentResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bill-payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_vendor_bill_id' => $bill->id,
+            'payment_date' => '2026-05-10',
+            'amount' => 100,
+            'method' => 'bank_transfer',
+            'reference' => 'VEND-PAY-001',
+            'currency' => 'USD',
+            'cash_account' => '1010 Bank Account',
+        ]);
+
+        $partialPaymentResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $partiallyPaidBill = DB::connection('tenant')->table('accounting_vendor_bills')->where('id', $bill->id)->first();
+            $this->assertSame('partial', $partiallyPaidBill->status);
+
+            $vendorPayment = DB::connection('tenant')->table('accounting_vendor_bill_payments')
+                ->where('accounting_vendor_bill_id', $bill->id)
+                ->first();
+
+            $this->assertNotNull($vendorPayment);
+            $this->assertStringStartsWith('VPMT-', $vendorPayment->payment_number);
+            $this->assertSame(100.0, (float) $vendorPayment->amount);
+            $this->assertSame('VEND-PAY-001', $vendorPayment->reference);
+
+            $paymentJournal = DB::connection('tenant')->table('journal_entries')->where('id', $vendorPayment->journal_entry_id)->first();
+            $this->assertStringStartsWith('VPAY-', $paymentJournal->journal_number);
+            $this->assertSame(100.0, (float) $paymentJournal->debit_total);
+            $this->assertSame(100.0, (float) $paymentJournal->credit_total);
+
+            $paymentLines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $paymentJournal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertSame('2000 Accounts Payable', $paymentLines[0]->account_code);
+            $this->assertSame(100.0, (float) $paymentLines[0]->debit);
+            $this->assertSame('1010 Bank Account', $paymentLines[1]->account_code);
+            $this->assertSame(100.0, (float) $paymentLines[1]->credit);
+
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'vendor_bill_payment_recorded',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $partialLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&vendor_bill_status=partial");
+        $partialLedgerResponse->assertOk();
+        $partialLedgerResponse->assertSee('PARTIAL', false);
+        $partialLedgerResponse->assertSee('Paid 100.00', false);
+        $partialLedgerResponse->assertSee('Open 140.00', false);
+        $partialLedgerResponse->assertSee('Recent Vendor Payments', false);
+
+        $finalPaymentResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bill-payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_vendor_bill_id' => $bill->id,
+            'payment_date' => '2026-05-11',
+            'amount' => 140,
+            'method' => 'bank_transfer',
+            'reference' => 'VEND-PAY-002',
+            'currency' => 'USD',
+            'cash_account' => '1010 Bank Account',
+        ]);
+
+        $finalPaymentResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $paidBill = DB::connection('tenant')->table('accounting_vendor_bills')->where('id', $bill->id)->first();
+            $this->assertSame('paid', $paidBill->status);
+            $this->assertSame(240.0, (float) DB::connection('tenant')->table('accounting_vendor_bill_payments')->where('accounting_vendor_bill_id', $bill->id)->sum('amount'));
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $paidLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&vendor_bill_status=paid");
+        $paidLedgerResponse->assertOk();
+        $paidLedgerResponse->assertSee('PAID', false);
+        $paidLedgerResponse->assertSee('Paid 240.00', false);
     }
 
 

@@ -768,12 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Vendor Bill Payments And Payables Settlement
+### Accounting Financial Statements Foundation
 Recommended scope:
-- record vendor bill payments from cash/bank accounts
-- settle posted Accounts Payable bills partially or fully
-- create balanced payment journals that debit Accounts Payable and credit cash/bank
-- add payable aging/payment reporting basics
+- add Profit And Loss report from posted journal lines
+- add Balance Sheet report from asset/liability/equity accounts
+- add print views and CSV exports for financial statements
+- keep reports journal-driven and date-filtered
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1465,6 +1465,63 @@ Verification:
   - result: 8 passed, 240 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 25 passed, 474 assertions
+
+## 15.16) Accounting Vendor Bill Payments And Payables Settlement
+Status:
+- completed
+
+Why this package was needed:
+- vendor bills could be posted into Accounts Payable, but there was no workflow to pay suppliers and settle those payables
+- this completes the first practical vendor-side accounting cycle:
+  - vendor bill created
+  - bill posted to AP
+  - vendor payment recorded
+  - AP reduced
+  - cash/bank reduced
+
+Completed scope:
+- added tenant table `accounting_vendor_bill_payments`
+- added `AccountingVendorBillPayment` model
+- `AccountingVendorBill` now relates to vendor bill payments
+- General Ledger now shows:
+  - Pay Vendor Bill form
+  - Recent Vendor Payments
+  - Payables Aging
+  - paid/open amount on each bill in Payables Review
+- vendor bill payment recording:
+  - only accepts bills in `posted` or `partial` status
+  - blocks overpayment above the bill open amount
+  - supports partial and full settlement
+  - creates a `VPAY-*` journal entry
+  - debits Accounts Payable
+  - credits selected cash/bank account
+  - creates a `VPMT-*` vendor payment record
+  - marks the bill `partial` after partial payment
+  - marks the bill `paid` after full settlement
+  - records `vendor_bill_payment_recorded` audit entry
+- Payables Summary now tracks:
+  - draft bills
+  - open payables
+  - paid bills
+- Payables Aging now mirrors receivables aging buckets for open vendor bills
+- integration readiness verification now requires `accounting_vendor_bill_payments`
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_070000_create_accounting_vendor_bill_payments_table.php`
+- `app/Models/AccountingVendorBillPayment.php`
+- `app/Models/AccountingVendorBill.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 8 passed, 269 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 25 passed, 503 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

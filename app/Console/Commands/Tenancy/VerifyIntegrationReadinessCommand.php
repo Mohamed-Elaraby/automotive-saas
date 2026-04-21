@@ -36,6 +36,7 @@ class VerifyIntegrationReadinessCommand extends Command
         'accounting_payments',
         'accounting_deposit_batches',
         'accounting_vendor_bills',
+        'accounting_vendor_bill_payments',
         'work_orders',
         'work_order_lines',
         'stock_movements',

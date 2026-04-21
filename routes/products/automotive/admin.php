@@ -178,6 +178,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.vendor-bills.store');
                 Route::post('/general-ledger/vendor-bills/{vendorBill}/post', [WorkspaceModuleController::class, 'postAccountingVendorBill'])
                     ->name('modules.general-ledger.vendor-bills.post');
+                Route::post('/general-ledger/vendor-bill-payments', [WorkspaceModuleController::class, 'storeAccountingVendorBillPayment'])
+                    ->name('modules.general-ledger.vendor-bill-payments.store');
                 Route::post('/general-ledger/payments/{payment}/void', [WorkspaceModuleController::class, 'voidAccountingPayment'])
                     ->name('modules.general-ledger.payments.void');
                 Route::post('/general-ledger/integration-handoffs/{handoff}/retry', [WorkspaceModuleController::class, 'retryIntegrationHandoff'])

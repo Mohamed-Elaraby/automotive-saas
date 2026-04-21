@@ -7,6 +7,7 @@ use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
 use App\Models\AccountingVendorBill;
+use App\Models\AccountingVendorBillPayment;
 use App\Models\JournalEntry;
 use App\Models\Customer;
 use App\Models\StockMovement;
@@ -322,7 +323,7 @@ class WorkspaceModuleController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void'],
             'reconciliation_status' => ['nullable', 'in:pending,deposited'],
-            'vendor_bill_status' => ['nullable', 'in:draft,posted,paid,void'],
+            'vendor_bill_status' => ['nullable', 'in:draft,posted,partial,paid,void'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -347,6 +348,9 @@ class WorkspaceModuleController extends Controller
                 'payment_reconciliation_summary' => $this->accountingRuntimeService->paymentReconciliationSummary(),
                 'vendor_bills' => $this->accountingRuntimeService->getVendorBills($filters, 15),
                 'payables_summary' => $this->accountingRuntimeService->payablesSummary(),
+                'open_vendor_bills' => $this->accountingRuntimeService->getOpenVendorBills(25),
+                'recent_vendor_bill_payments' => $this->accountingRuntimeService->getVendorBillPayments($filters, 15),
+                'payables_aging' => $this->accountingRuntimeService->payablesAging(),
                 'receivables_aging' => $this->accountingRuntimeService->receivablesAging(),
                 'statement_customers' => $this->accountingRuntimeService->statementCustomerNames(),
                 'journal_filters' => $filters,
@@ -771,6 +775,40 @@ class WorkspaceModuleController extends Controller
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
             ->with('success', "Vendor bill journal {$entry->journal_number} posted successfully.");
+    }
+
+    public function storeAccountingVendorBillPayment(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'accounting_vendor_bill_id' => ['required', 'integer', 'exists:accounting_vendor_bills,id'],
+            'payment_date' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'method' => ['required', 'in:cash,bank_transfer,card,check,other'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'cash_account' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $payment = $this->accountingRuntimeService->recordVendorBillPayment(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $payment->journal_entry_id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Vendor payment {$payment->payment_number} recorded successfully.");
     }
 
     public function showAccountingDepositBatch(Request $request, AccountingDepositBatch $depositBatch): View

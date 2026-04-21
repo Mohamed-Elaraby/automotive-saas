@@ -149,7 +149,7 @@
                                 <div class="col-md-3 mb-3"><label class="form-label">Search</label><input type="text" name="search" class="form-control" value="{{ $journalFilters['search'] ?? '' }}" placeholder="Journal, memo, account"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Any</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>Posted</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>Reversed</option><option value="void" @selected(($journalFilters['status'] ?? '') === 'void')>Void</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Reconciliation</label><select name="reconciliation_status" class="form-select"><option value="">Any</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>Pending</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>Deposited</option></select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Vendor Bills</label><select name="vendor_bill_status" class="form-select"><option value="">Any</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>Draft</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>Posted</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Vendor Bills</label><select name="vendor_bill_status" class="form-select"><option value="">Any</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>Draft</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>Posted</option><option value="partial" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'partial')>Partial</option><option value="paid" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'paid')>Paid</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
                                 <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
@@ -226,14 +226,33 @@
                     </div>
                 </div>
 
-                @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'posted_count' => 0, 'posted_amount' => 0])
+                @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'open_count' => 0, 'open_amount' => 0, 'paid_count' => 0, 'paid_amount' => 0])
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Payables Summary</h5></div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-3 mb-3"><div class="text-muted small">Draft Bills</div><h5 class="mb-0">{{ $payablesSummary['draft_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['draft_amount'], 2) }}</div></div>
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Posted Payables</div><h5 class="mb-0">{{ $payablesSummary['posted_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['posted_amount'], 2) }}</div></div>
-                            <div class="col-md-6 mb-3"><div class="text-muted small">Posting Rule</div><p class="mb-0">Vendor bills debit the selected expense or inventory account and credit Accounts Payable.</p></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">Open Payables</div><h5 class="mb-0">{{ $payablesSummary['open_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['open_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">Paid Bills</div><h5 class="mb-0">{{ $payablesSummary['paid_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['paid_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">Posting Rule</div><p class="mb-0">Bills credit Accounts Payable; payments debit Accounts Payable.</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                @php($payablesAging = $moduleData['payables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Payables Aging</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Total Open</div><h5 class="mb-0">{{ number_format((float) ($payablesAging['total_open'] ?? 0), 2) }}</h5></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Overdue</div><h5 class="mb-0">{{ number_format((float) ($payablesAging['overdue_total'] ?? 0), 2) }}</h5></div>
+                            @foreach(($payablesAging['buckets'] ?? []) as $bucket)
+                                <div class="col-md-2 mb-3">
+                                    <div class="text-muted small">{{ $bucket['label'] }}</div>
+                                    <h5 class="mb-0">{{ number_format((float) $bucket['amount'], 2) }}</h5>
+                                    <div class="text-muted small">{{ $bucket['count'] }} open</div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -537,6 +556,7 @@
                                                 <div class="text-muted small">{{ $bill->supplier_name ?: $bill->supplier?->name ?: 'Vendor bill' }} · {{ $bill->reference ?: 'No reference' }}</div>
                                                 <div class="text-muted small">{{ optional($bill->bill_date)->format('Y-m-d') }}{{ $bill->due_date ? ' · Due '.optional($bill->due_date)->format('Y-m-d') : '' }}</div>
                                                 <div class="text-muted small">{{ $bill->expense_account }} → {{ $bill->payable_account }}</div>
+                                                <div class="text-muted small">Paid {{ number_format((float) $bill->getAttribute('paid_amount'), 2) }} · Open {{ number_format((float) $bill->getAttribute('open_amount'), 2) }}</div>
                                             </div>
                                             <div class="text-end">
                                                 <span class="badge {{ $bill->status === 'posted' ? 'bg-success' : 'bg-warning text-dark' }}">{{ strtoupper($bill->status) }}</span>
@@ -555,6 +575,71 @@
                                     </div>
                                 @empty
                                     <p class="text-muted mb-0">No vendor bills have been created yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Pay Vendor Bill</h5></div>
+                            <div class="card-body">
+                                @if(($moduleData['open_vendor_bills'] ?? collect())->isEmpty())
+                                    <p class="text-muted mb-0">No open vendor bills are ready for payment.</p>
+                                @else
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bill-payments.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="mb-3">
+                                            <label class="form-label">Vendor Bill</label>
+                                            <select name="accounting_vendor_bill_id" class="form-select">
+                                                @foreach(($moduleData['open_vendor_bills'] ?? collect()) as $bill)
+                                                    <option value="{{ $bill->id }}">{{ $bill->bill_number }} · {{ $bill->supplier_name ?: 'Vendor' }} · Open {{ number_format((float) $bill->getAttribute('open_amount'), 2) }} {{ $bill->currency }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3"><label class="form-label">Payment Date</label><input type="date" name="payment_date" class="form-control" value="{{ old('payment_date', now()->toDateString()) }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Amount</label><input type="number" step="0.01" min="0.01" name="amount" class="form-control" value="{{ old('amount') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Method</label><select name="method" class="form-select"><option value="bank_transfer">Bank Transfer</option><option value="cash">Cash</option><option value="card">Card</option><option value="check">Check</option><option value="other">Other</option></select></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3"><label class="form-label">Cash/Bank Account</label><input type="text" name="cash_account" list="account-catalog-options" class="form-control" value="{{ old('cash_account', '1010 Bank Account') }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                        </div>
+                                        <input type="hidden" name="currency" value="USD">
+                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">Record Vendor Payment</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Recent Vendor Payments</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['recent_vendor_bill_payments'] ?? collect()) as $payment)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $payment->payment_number }}</h6>
+                                                <div class="text-muted small">{{ $payment->vendorBill?->supplier_name ?: 'Vendor payment' }} · {{ ucfirst(str_replace('_', ' ', $payment->method)) }}</div>
+                                                <div class="text-muted small">{{ optional($payment->payment_date)->format('Y-m-d') }} · {{ $payment->cash_account }} → {{ $payment->payable_account }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $payment->status === 'posted' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($payment->status) }}</span>
+                                                <div class="fw-semibold">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</div>
+                                                @if($payment->journal_entry_id)
+                                                    <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $payment->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No vendor payments have been recorded yet.</p>
                                 @endforelse
                             </div>
                         </div>
