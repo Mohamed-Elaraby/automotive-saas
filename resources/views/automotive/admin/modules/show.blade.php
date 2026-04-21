@@ -157,7 +157,27 @@
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries'] + $workspaceQuery + $journalFilters) }}">Export Journal CSV</a>
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance'] + $workspaceQuery + $journalFilters) }}">Export Trial Balance CSV</a>
                             <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">Export Revenue CSV</a>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">Export Payments CSV</a>
                             <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
+                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payments</a>
+                        </div>
+                    </div>
+                </div>
+
+                @php($aging = $moduleData['receivables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Receivables Aging</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Total Open</div><h5 class="mb-0">{{ number_format((float) ($aging['total_open'] ?? 0), 2) }}</h5></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">Overdue</div><h5 class="mb-0">{{ number_format((float) ($aging['overdue_total'] ?? 0), 2) }}</h5></div>
+                            @foreach(($aging['buckets'] ?? []) as $bucket)
+                                <div class="col-md-2 mb-3">
+                                    <div class="text-muted small">{{ $bucket['label'] }}</div>
+                                    <h5 class="mb-0">{{ number_format((float) $bucket['amount'], 2) }}</h5>
+                                    <div class="text-muted small">{{ $bucket['count'] }} open</div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -473,9 +493,17 @@
                                                 <div class="text-muted small">{{ optional($payment->payment_date)->format('Y-m-d') }} · {{ $payment->cash_account }} → {{ $payment->receivable_account }}</div>
                                             </div>
                                             <div class="text-end">
+                                                <span class="badge {{ $payment->status === 'posted' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($payment->status) }}</span>
                                                 <div class="fw-semibold">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</div>
                                                 @if($payment->journal_entry_id)
                                                     <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $payment->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                @endif
+                                                @if($payment->status === 'posted')
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.payments.void', ['payment' => $payment->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Void Payment</button>
+                                                    </form>
                                                 @endif
                                             </div>
                                         </div>

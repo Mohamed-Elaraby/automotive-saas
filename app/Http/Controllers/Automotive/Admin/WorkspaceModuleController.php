@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountingEvent;
+use App\Models\AccountingPayment;
 use App\Models\JournalEntry;
 use App\Models\Customer;
 use App\Models\StockMovement;
@@ -317,7 +318,7 @@ class WorkspaceModuleController extends Controller
     public function generalLedger(Request $request): View
     {
         $filters = $request->validate([
-            'status' => ['nullable', 'in:posted,reversed'],
+            'status' => ['nullable', 'in:posted,reversed,void'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -336,7 +337,8 @@ class WorkspaceModuleController extends Controller
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
-                'recent_accounting_payments' => $this->accountingRuntimeService->getRecentPayments(15),
+                'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
+                'receivables_aging' => $this->accountingRuntimeService->receivablesAging(),
                 'journal_filters' => $filters,
                 'recent_journal_entries' => $this->accountingRuntimeService->getJournalEntries($filters, 25),
                 'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
@@ -462,10 +464,10 @@ class WorkspaceModuleController extends Controller
 
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
     {
-        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary'], true), 404);
+        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments'], true), 404);
 
         $filters = $request->validate([
-            'status' => ['nullable', 'in:posted,reversed'],
+            'status' => ['nullable', 'in:posted,reversed,void'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -501,13 +503,28 @@ class WorkspaceModuleController extends Controller
                     (string) $row->balance,
                 ])
                 ->all();
-        } else {
+        } elseif ($report === 'revenue-summary') {
             $headers = ['Account Code', 'Account Name', 'Revenue Total'];
             $rows = $this->accountingRuntimeService->revenueSummary($filters)
                 ->map(fn ($row): array => [
                     $row->account_code,
                     $row->account_name,
                     (string) $row->revenue_total,
+                ])
+                ->all();
+        } else {
+            $headers = ['Payment Number', 'Payment Date', 'Status', 'Payer', 'Method', 'Reference', 'Amount', 'Currency', 'Journal Entry'];
+            $rows = $this->accountingRuntimeService->getPayments($filters, 500)
+                ->map(fn (AccountingPayment $payment): array => [
+                    $payment->payment_number,
+                    optional($payment->payment_date)->format('Y-m-d'),
+                    $payment->status,
+                    $payment->payer_name,
+                    $payment->method,
+                    $payment->reference,
+                    (string) $payment->amount,
+                    $payment->currency,
+                    $payment->journalEntry?->journal_number,
                 ])
                 ->all();
         }
@@ -616,6 +633,31 @@ class WorkspaceModuleController extends Controller
                 'workspace_product' => $validated['workspace_product'] ?: 'accounting',
             ])
             ->with('success', "Payment {$payment->payment_number} recorded successfully.");
+    }
+
+    public function voidAccountingPayment(Request $request, AccountingPayment $payment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->voidCustomerPayment(
+                $payment,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Payment void journal {$entry->journal_number} posted successfully.");
     }
 
     public function retryIntegrationHandoff(Request $request, WorkspaceIntegrationHandoff $handoff): RedirectResponse

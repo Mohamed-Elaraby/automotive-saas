@@ -768,13 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Receivables Aging And Payment Reporting
+### Accounting Customer Statements And Invoice Documents
 Recommended scope:
-- add A/R aging buckets for unpaid and partially paid accounting events
-- add payment list filters and CSV/print export
-- add payment reversal/void workflow with reversing journal
-- add dashboard totals for open receivables, collected amount, and overdue buckets
-- keep this inside Accounting runtime; do not reopen integration architecture unless a real blocker appears
+- generate customer-facing invoice/statement views from posted accounting events
+- add printable customer statement showing invoices, payments, voids, and open balance
+- add invoice number display and downloadable print view
+- keep journals as the accounting source of truth
+- do not reopen integration architecture unless a real blocker appears
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -1232,6 +1232,49 @@ Verification:
   - result: 6 passed, 130 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 23 passed, 364 assertions
+
+## 15.11) Accounting Receivables Aging And Payment Reporting
+Status:
+- completed
+
+Why this package was needed:
+- after adding customer payments, Accounting still needed visibility into open receivables, payment exports, and payment correction handling
+- this keeps the receivables workflow usable without adding another product or reopening integration work
+
+Completed scope:
+- added A/R aging summary inside General Ledger:
+  - total open
+  - overdue total
+  - current
+  - 1-30 days
+  - 31-60 days
+  - 61-90 days
+  - over 90 days
+- payment list now supports the existing date/search filter inputs
+- added payments CSV export and print-friendly report:
+  - `general-ledger/exports/payments?format=csv`
+  - `general-ledger/exports/payments?format=print`
+- added payment void workflow:
+  - only posted payments can be voided
+  - void creates a `PVOID-*` reversing journal
+  - void debits Accounts Receivable
+  - void credits the original cash/bank account
+  - original payment status becomes `void`
+  - fully paid accounting event reopens to `journal_posted`
+  - audit entry `customer_payment_voided` is recorded
+
+Important files changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 6 passed, 145 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 23 passed, 379 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

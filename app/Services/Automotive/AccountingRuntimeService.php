@@ -107,6 +107,62 @@ class AccountingRuntimeService
             ->get();
     }
 
+    public function getPayments(array $filters = [], int $limit = 50): Collection
+    {
+        return AccountingPayment::query()
+            ->with(['accountingEvent', 'journalEntry', 'creator'])
+            ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
+            ->when(! empty($filters['search']), function ($query) use ($filters) {
+                $search = '%' . trim((string) $filters['search']) . '%';
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('payment_number', 'like', $search)
+                        ->orWhere('payer_name', 'like', $search)
+                        ->orWhere('reference', 'like', $search)
+                        ->orWhere('method', 'like', $search);
+                });
+            })
+            ->latest('payment_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function receivablesAging(): array
+    {
+        $buckets = [
+            'current' => ['label' => 'Current', 'amount' => 0.0, 'count' => 0],
+            '1_30' => ['label' => '1-30 Days', 'amount' => 0.0, 'count' => 0],
+            '31_60' => ['label' => '31-60 Days', 'amount' => 0.0, 'count' => 0],
+            '61_90' => ['label' => '61-90 Days', 'amount' => 0.0, 'count' => 0],
+            'over_90' => ['label' => 'Over 90 Days', 'amount' => 0.0, 'count' => 0],
+        ];
+
+        $this->getReceivableEvents(500)->each(function (AccountingEvent $event) use (&$buckets): void {
+            $age = max(0, Carbon::parse($event->event_date ?: now())->startOfDay()->diffInDays(now()->startOfDay()));
+            $bucket = match (true) {
+                $age === 0 => 'current',
+                $age <= 30 => '1_30',
+                $age <= 60 => '31_60',
+                $age <= 90 => '61_90',
+                default => 'over_90',
+            };
+
+            $buckets[$bucket]['amount'] = round($buckets[$bucket]['amount'] + (float) $event->getAttribute('open_amount'), 2);
+            $buckets[$bucket]['count']++;
+        });
+
+        $totalOpen = round(collect($buckets)->sum('amount'), 2);
+
+        return [
+            'buckets' => $buckets,
+            'total_open' => $totalOpen,
+            'overdue_total' => round($totalOpen - $buckets['current']['amount'], 2),
+        ];
+    }
+
     public function getRecentJournalEntries(int $limit = 15): Collection
     {
         return JournalEntry::query()
@@ -367,6 +423,78 @@ class AccountingRuntimeService
             ], $createdBy);
 
             return $payment->load(['accountingEvent', 'journalEntry', 'creator']);
+        });
+    }
+
+    public function voidCustomerPayment(AccountingPayment $payment, ?int $createdBy = null): JournalEntry
+    {
+        $payment->loadMissing(['accountingEvent', 'journalEntry']);
+
+        if ($payment->status !== 'posted') {
+            throw ValidationException::withMessages([
+                'payment' => 'Only posted payments can be voided.',
+            ]);
+        }
+
+        if (JournalEntry::query()
+            ->where('source_type', 'payment_void')
+            ->where('source_id', $payment->id)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'payment' => 'This payment already has a void journal entry.',
+            ]);
+        }
+
+        $entryDate = now()->toDateString();
+        $this->assertPeriodOpen($entryDate);
+        $amount = round((float) $payment->amount, 2);
+
+        return DB::transaction(function () use ($payment, $amount, $entryDate, $createdBy): JournalEntry {
+            $entry = JournalEntry::query()->create([
+                'accounting_event_id' => $payment->accounting_event_id,
+                'journal_number' => $this->nextJournalNumber('PVOID'),
+                'source_type' => 'payment_void',
+                'source_id' => $payment->id,
+                'status' => 'posted',
+                'entry_date' => $entryDate,
+                'currency' => $payment->currency ?: 'USD',
+                'debit_total' => $amount,
+                'credit_total' => $amount,
+                'memo' => 'Void payment ' . $payment->payment_number,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $payment->receivable_account,
+                'account_name' => $this->resolveAccountName($payment->receivable_account, 'Accounts Receivable'),
+                'line_type' => 'debit',
+                'debit' => $amount,
+                'credit' => 0,
+                'memo' => 'Restore receivable from voided payment.',
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $payment->cash_account,
+                'account_name' => $this->resolveAccountName($payment->cash_account, 'Cash On Hand'),
+                'line_type' => 'credit',
+                'debit' => 0,
+                'credit' => $amount,
+                'memo' => 'Reverse cash receipt from voided payment.',
+            ]);
+
+            $payment->forceFill(['status' => 'void'])->save();
+
+            if ($payment->accountingEvent && $payment->accountingEvent->status === 'paid') {
+                $payment->accountingEvent->forceFill(['status' => 'journal_posted'])->save();
+            }
+
+            $this->recordAudit('customer_payment_voided', $payment, "Customer payment {$payment->payment_number} voided.", [
+                'void_journal_entry_id' => $entry->id,
+                'amount' => $amount,
+            ], $createdBy);
+
+            return $entry->load(['lines', 'creator']);
         });
     }
 

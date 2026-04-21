@@ -651,6 +651,8 @@ class TenantAdminAccessFlowTest extends TestCase
         $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
         $ledgerResponse->assertOk();
         $ledgerResponse->assertSee('Record Customer Payment', false);
+        $ledgerResponse->assertSee('Receivables Aging', false);
+        $ledgerResponse->assertSee('Export Payments CSV', false);
         $ledgerResponse->assertSee('WO-PAYMENT-1', false);
         $ledgerResponse->assertSee('Open 150.00 USD', false);
 
@@ -710,9 +712,55 @@ class TenantAdminAccessFlowTest extends TestCase
             DB::purge('tenant');
         }
 
+        $paymentsCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/payments?workspace_product=accounting&format=csv");
+        $paymentsCsv->assertOk();
+        $paymentsCsvContent = $paymentsCsv->streamedContent();
+        $this->assertStringContainsString('Payment Number', $paymentsCsvContent);
+        $this->assertStringContainsString('RCPT-001', $paymentsCsvContent);
+
         $detailResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting");
         $detailResponse->assertOk();
         $detailResponse->assertSee('Customer payment for WO-PAYMENT-1', false);
+
+        $voidResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/payments/{$payment->id}/void?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $voidResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $voidedPayment = DB::connection('tenant')->table('accounting_payments')->where('id', $payment->id)->first();
+            $this->assertSame('void', $voidedPayment->status);
+
+            $event = DB::connection('tenant')->table('accounting_events')->where('id', $eventId)->first();
+            $this->assertSame('journal_posted', $event->status);
+
+            $voidJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', 'payment_void')
+                ->where('source_id', $payment->id)
+                ->first();
+
+            $this->assertNotNull($voidJournal);
+            $this->assertStringStartsWith('PVOID-', $voidJournal->journal_number);
+
+            $voidLines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $voidJournal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertSame('1100 Accounts Receivable', $voidLines[0]->account_code);
+            $this->assertSame(150.0, (float) $voidLines[0]->debit);
+            $this->assertSame('1000 Cash On Hand', $voidLines[1]->account_code);
+            $this->assertSame(150.0, (float) $voidLines[1]->credit);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'customer_payment_voided',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
     }
 
     public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void
