@@ -144,8 +144,16 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger');
                 Route::post('/general-ledger/posting-groups', [WorkspaceModuleController::class, 'storeAccountingPostingGroup'])
                     ->name('modules.general-ledger.posting-groups.store');
+                Route::post('/general-ledger/manual-journal-entries', [WorkspaceModuleController::class, 'storeManualJournalEntry'])
+                    ->name('modules.general-ledger.manual-journal-entries.store');
+                Route::get('/general-ledger/journal-entries/{journalEntry}', [WorkspaceModuleController::class, 'showJournalEntry'])
+                    ->name('modules.general-ledger.journal-entries.show');
+                Route::post('/general-ledger/journal-entries/{journalEntry}/reverse', [WorkspaceModuleController::class, 'reverseJournalEntry'])
+                    ->name('modules.general-ledger.journal-entries.reverse');
                 Route::post('/general-ledger/accounting-events/{accountingEvent}/post', [WorkspaceModuleController::class, 'postAccountingEvent'])
                     ->name('modules.general-ledger.accounting-events.post');
+                Route::post('/general-ledger/inventory-movements/{stockMovement}/post', [WorkspaceModuleController::class, 'postInventoryMovement'])
+                    ->name('modules.general-ledger.inventory-movements.post');
             });
         });
     });

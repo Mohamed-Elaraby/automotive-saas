@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Automotive\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountingEvent;
+use App\Models\JournalEntry;
 use App\Models\Customer;
+use App\Models\StockMovement;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Services\Automotive\AccountingRuntimeService;
@@ -13,6 +15,8 @@ use App\Services\Automotive\WorkOrderAccountingHandoffService;
 use App\Services\Automotive\WorkshopPartsIntegrationService;
 use App\Services\Automotive\WorkshopWorkOrderService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
+use App\Services\Tenancy\WorkspaceIntegrationContractService;
+use App\Services\Tenancy\WorkspaceIntegrationHandoffService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -28,6 +32,8 @@ class WorkspaceModuleController extends Controller
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
         protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
+        protected WorkspaceIntegrationContractService $workspaceIntegrationContractService,
+        protected WorkspaceIntegrationHandoffService $workspaceIntegrationHandoffService,
         protected WorkshopPartsIntegrationService $workshopPartsIntegrationService,
         protected SupplierCatalogService $supplierCatalogService,
         protected WorkshopWorkOrderService $workshopWorkOrderService,
@@ -251,10 +257,7 @@ class WorkspaceModuleController extends Controller
         try {
             $updatedWorkOrder = $this->workshopWorkOrderService->updateStatus($workOrder, $validated['status']);
 
-            if (
-                $validated['status'] === 'completed'
-                && $this->workOrderAccountingHandoffService->shouldPostForTenant((string) tenant()->id)
-            ) {
+            if ($validated['status'] === 'completed') {
                 $this->workOrderAccountingHandoffService->postCompletedWorkOrder($updatedWorkOrder, auth('automotive_admin')->id());
             }
         } catch (ValidationException $exception) {
@@ -311,16 +314,50 @@ class WorkspaceModuleController extends Controller
 
     public function generalLedger(Request $request): View
     {
+        $filters = $request->validate([
+            'status' => ['nullable', 'in:posted,reversed'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'search' => ['nullable', 'string', 'max:120'],
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
         return $this->showManifestModule(
             $request,
             'general-ledger',
             fn () => [
                 'recent_accounting_events' => $this->workshopWorkOrderService->getRecentAccountingEvents(25),
                 'reviewable_accounting_events' => $this->accountingRuntimeService->getReviewableAccountingEvents(25),
+                'reviewable_inventory_movements' => $this->accountingRuntimeService->getReviewableInventoryMovements(25),
                 'posting_groups' => $this->accountingRuntimeService->getPostingGroups(),
-                'recent_journal_entries' => $this->accountingRuntimeService->getRecentJournalEntries(15),
+                'journal_filters' => $filters,
+                'recent_journal_entries' => $this->accountingRuntimeService->getJournalEntries($filters, 25),
+                'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
+                'revenue_summary' => $this->accountingRuntimeService->revenueSummary($filters),
+                'integration_contracts' => $this->workspaceIntegrationContractService->contracts(),
+                'recent_integration_handoffs' => $this->workspaceIntegrationHandoffService->recent(25),
             ]
         );
+    }
+
+    public function showJournalEntry(Request $request, JournalEntry $journalEntry): View
+    {
+        $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) tenant()->id);
+        $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+            $workspaceProducts,
+            $request->query('workspace_product', 'accounting')
+        );
+        $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+        $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
+        $journalEntry->load(['lines', 'postingGroup', 'creator', 'accountingEvent']);
+
+        return view('automotive.admin.modules.journal-entry-show', compact(
+            'journalEntry',
+            'workspaceProducts',
+            'focusedWorkspaceProduct',
+            'workspaceQuery',
+            'workspaceIntegrations'
+        ));
     }
 
     public function storeAccountingPostingGroup(Request $request): RedirectResponse
@@ -374,6 +411,95 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', "Journal entry {$entry->journal_number} posted successfully.");
+    }
+
+    public function postInventoryMovement(Request $request, StockMovement $stockMovement): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->postInventoryMovement(
+                $stockMovement,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Inventory valuation journal {$entry->journal_number} posted successfully.");
+    }
+
+    public function storeManualJournalEntry(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'entry_date' => ['required', 'date'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'memo' => ['nullable', 'string', 'max:2000'],
+            'lines' => ['required', 'array', 'min:2'],
+            'lines.*.account_code' => ['nullable', 'string', 'max:120'],
+            'lines.*.account_name' => ['nullable', 'string', 'max:255'],
+            'lines.*.debit' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.credit' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.memo' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->createManualJournalEntry(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Manual journal entry {$entry->journal_number} posted successfully.");
+    }
+
+    public function reverseJournalEntry(Request $request, JournalEntry $journalEntry): RedirectResponse
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $reversal = $this->accountingRuntimeService->reverseJournalEntry(
+                $journalEntry,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                    'journalEntry' => $journalEntry->id,
+                    'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+                ])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $reversal->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Reversal journal entry {$reversal->journal_number} posted successfully.");
     }
 
     protected function showManifestModule(

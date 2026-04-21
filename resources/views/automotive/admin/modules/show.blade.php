@@ -133,10 +133,78 @@
             @elseif(($page ?? '') === 'workshop-work-orders')
                 <div class="card"><div class="card-header"><h5 class="card-title mb-0">Work Orders Table</h5></div><div class="card-body">@forelse(($moduleData['recent_work_orders'] ?? collect()) as $workOrder)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ $workOrder->work_order_number }}</h6><div class="text-muted small">{{ $workOrder->title }}</div><div class="text-muted small">{{ $workOrder->customer?->name ?: 'No customer' }}{{ $workOrder->vehicle ? ' · '.$workOrder->vehicle->make.' '.$workOrder->vehicle->model : '' }}</div></div><div class="text-end"><span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper(str_replace('_', ' ', $workOrder->status)) }}</span><div class="mt-2"><a href="{{ route('automotive.admin.modules.workshop-operations.work-orders.show', ['workOrder' => $workOrder->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Record</a></div></div></div></div>@empty<p class="text-muted mb-0">No work orders have been created yet.</p>@endforelse</div></div>
             @elseif(($page ?? '') === 'general-ledger')
+                @php($journalFilters = $moduleData['journal_filters'] ?? [])
                 <div class="row">
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Posting Groups</div><h4 class="mb-1">{{ ($moduleData['posting_groups'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Account mapping rules available for journal posting.</p></div></div></div>
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Events To Review</div><h4 class="mb-1">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Accounting events not yet posted to journal.</p></div></div></div>
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Journal Entries</div><h4 class="mb-1">{{ ($moduleData['recent_journal_entries'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Posted accounting entries in this workspace.</p></div></div></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Journal Filters</h5></div>
+                    <div class="card-body">
+                        <form method="GET" action="{{ route('automotive.admin.modules.general-ledger') }}">
+                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                            <div class="row align-items-end">
+                                <div class="col-md-3 mb-3"><label class="form-label">Search</label><input type="text" name="search" class="form-control" value="{{ $journalFilters['search'] ?? '' }}" placeholder="Journal, memo, account"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Any</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>Posted</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>Reversed</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
+                                <div class="col-md-3 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply Filters</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Integration Contracts</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['integration_contracts'] ?? collect()) as $contract)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $contract['title'] }}</h6>
+                                                <div class="text-muted small">{{ $contract['source_family'] }} → {{ $contract['target_family'] }}</div>
+                                                <div class="text-muted small">{{ implode(', ', $contract['events']) ?: 'No events declared' }}</div>
+                                            </div>
+                                            <span class="badge bg-primary-subtle text-primary border">{{ $contract['key'] }}</span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No integration contracts are declared yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Integration Handoff Diagnostics</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['recent_integration_handoffs'] ?? collect()) as $handoff)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between align-items-start gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $handoff->event_name }}</h6>
+                                                <div class="text-muted small">{{ $handoff->source_product }} → {{ $handoff->target_product ?: 'No target' }}</div>
+                                                <div class="text-muted small">{{ $handoff->integration_key }} · Attempts {{ $handoff->attempts }}</div>
+                                                @if($handoff->error_message)
+                                                    <div class="text-danger small">{{ $handoff->error_message }}</div>
+                                                @endif
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $handoff->status === 'posted' ? 'bg-success' : ($handoff->status === 'failed' ? 'bg-danger' : ($handoff->status === 'skipped' ? 'bg-warning text-dark' : 'bg-info')) }}">{{ strtoupper($handoff->status) }}</span>
+                                                <div class="text-muted small mt-1">{{ optional($handoff->last_attempted_at)->format('Y-m-d H:i') ?: '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No integration handoffs have been recorded yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="row">
@@ -227,6 +295,110 @@
                 </div>
 
                 <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Inventory Valuation Review</h5></div>
+                    <div class="card-body">
+                        @forelse(($moduleData['reviewable_inventory_movements'] ?? collect()) as $movement)
+                            @php($movementValue = round((float) $movement->quantity * (float) ($movement->product?->cost_price ?? 0), 2))
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <h6 class="mb-1">{{ $movement->product?->name ?: 'Stock Item' }}</h6>
+                                        <div class="text-muted small">{{ strtoupper($movement->type) }} · {{ $movement->branch?->name ?: 'Branch' }}</div>
+                                        <div class="text-muted small">Qty {{ rtrim(rtrim((string) $movement->quantity, '0'), '.') }} × Cost {{ number_format((float) ($movement->product?->cost_price ?? 0), 2) }}</div>
+                                        <div class="text-muted small">{{ $movement->notes ?: 'Inventory movement' }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-semibold mb-2">{{ number_format($movementValue, 2) }} USD</div>
+                                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.inventory-movements.post', ['stockMovement' => $movement->id] + $workspaceQuery) }}">
+                                            @csrf
+                                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                            <button type="submit" class="btn btn-sm btn-primary">Post Inventory Valuation</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-muted mb-0">No valued inventory movements are waiting for accounting posting.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Create Manual Journal Entry</h5></div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.manual-journal-entries.store', $workspaceQuery) }}">
+                            @csrf
+                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                            <div class="row">
+                                <div class="col-md-3 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Currency</label><input type="text" name="currency" maxlength="3" class="form-control" value="{{ old('currency', 'USD') }}"></div>
+                                <div class="col-md-7 mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo') }}" placeholder="Adjustment, accrual, correction"></div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead><tr><th>Account Code</th><th>Account Name</th><th>Line Memo</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr></thead>
+                                    <tbody>
+                                    @for($lineIndex = 0; $lineIndex < 4; $lineIndex++)
+                                        <tr>
+                                            <td><input type="text" name="lines[{{ $lineIndex }}][account_code]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_code") }}"></td>
+                                            <td><input type="text" name="lines[{{ $lineIndex }}][account_name]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_name") }}"></td>
+                                            <td><input type="text" name="lines[{{ $lineIndex }}][memo]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.memo") }}"></td>
+                                            <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][debit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.debit") }}"></td>
+                                            <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][credit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.credit") }}"></td>
+                                        </tr>
+                                    @endfor
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post Manual Journal</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Trial Balance</h5></div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead><tr><th>Account</th><th>Name</th><th class="text-end">Debit</th><th class="text-end">Credit</th><th class="text-end">Balance</th></tr></thead>
+                                        <tbody>
+                                        @forelse(($moduleData['trial_balance'] ?? collect()) as $row)
+                                            <tr>
+                                                <td>{{ $row->account_code }}</td>
+                                                <td>{{ $row->account_name ?: '-' }}</td>
+                                                <td class="text-end">{{ number_format((float) $row->debit_total, 2) }}</td>
+                                                <td class="text-end">{{ number_format((float) $row->credit_total, 2) }}</td>
+                                                <td class="text-end">{{ number_format((float) $row->balance, 2) }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="5" class="text-muted">No posted journal lines are available yet.</td></tr>
+                                        @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Revenue Summary</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['revenue_summary'] ?? collect()) as $row)
+                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                        <div><div class="fw-semibold">{{ $row->account_code }}</div><div class="text-muted small">{{ $row->account_name ?: 'Revenue account' }}</div></div>
+                                        <div class="fw-semibold">{{ number_format((float) $row->revenue_total, 2) }}</div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No revenue lines have been posted yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Recent Journal Entries</h5></div>
                     <div class="card-body">
                         @forelse(($moduleData['recent_journal_entries'] ?? collect()) as $entry)
@@ -240,6 +412,9 @@
                                     <div class="text-end">
                                         <span class="badge bg-success">{{ strtoupper($entry->status) }}</span>
                                         <div class="fw-semibold mt-1">{{ number_format((float) $entry->debit_total, 2) }} {{ $entry->currency }}</div>
+                                        <div class="mt-2">
+                                            <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $entry->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Detail</a>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="table-responsive mt-2">

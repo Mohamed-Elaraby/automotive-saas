@@ -768,13 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Runtime Expansion
+### Integration Contract Governance And Product Onboarding
 Recommended scope:
-- add journal entry detail pages and filters
-- add journal reversal / void workflow
-- add manual journal entry creation
-- add accounting reports such as trial balance and revenue summary
-- connect inventory valuation events from Spare Parts into accounting posting
+- add central admin validation for integration contracts before publishing a new product
+- add a product-onboarding checklist that verifies declared events, required capabilities, target products, and payload schema
+- add retry controls for failed tenant integration handoffs
+- add optional export/reporting after the integration governance layer is stable
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -834,6 +833,131 @@ Verification:
   - result: 1 passed, 12 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
   - result: 13 passed, 208 assertions
+
+## 15.4) Accounting Runtime Expansion
+Status:
+- completed
+
+Completed scope:
+- journal entry detail pages
+- journal entry filters by status, date range, and search term
+- journal reversal workflow
+- manual journal entry creation
+- accounting reports inside General Ledger:
+  - Trial Balance
+  - Revenue Summary
+- inventory valuation review/posting from Spare Parts stock movements into accounting journals
+
+Current behavior:
+- General Ledger now shows journal filters and uses them for:
+  - journal list
+  - trial balance
+  - revenue summary
+- manual journal entries can be posted from General Ledger when debit and credit totals balance
+- each journal entry has a detail page showing:
+  - status
+  - date
+  - totals
+  - source
+  - posting group
+  - journal lines
+- posted non-reversal journals can be reversed from the detail page
+- reversal creates a new `REV-*` journal entry with debit/credit lines swapped and marks the original journal as `reversed`
+- Spare Parts inventory movements with positive valuation can be reviewed from General Ledger and posted into accounting:
+  - `opening` and `adjustment_in` debit `1300 Inventory Asset` and credit `3900 Inventory Adjustment Offset`
+  - `adjustment_out` credits `1300 Inventory Asset`
+  - workshop-linked `adjustment_out` debits `5000 Cost Of Goods Sold`
+  - non-workshop `adjustment_out` debits `5100 Inventory Adjustment Expense`
+
+Important files changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/journal-entry-show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_runtime`
+  - result: 3 passed, 66 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 15 passed, 248 assertions
+- syntax checks passed for:
+  - `app/Services/Automotive/AccountingRuntimeService.php`
+  - `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - `routes/products/automotive/admin.php`
+  - `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+## 15.5) Workspace Integration Contract Hardening
+Status:
+- completed
+
+Why this package was needed:
+- the current product integrations were functionally working, but they were still too service-specific
+- before adding new systems, the workspace needed a reusable integration contract layer so a future product can declare:
+  - what events it emits
+  - what target product/family it integrates with
+  - what capabilities are required
+  - what payload shape is expected
+  - how handoff status is tracked and diagnosed
+
+Completed scope:
+- added a tenant-level `workspace_integration_handoffs` table to record integration attempts
+- added a reusable `WorkspaceIntegrationHandoff` model
+- added `WorkspaceIntegrationContractService` to read declared integration contracts from `config/workspace_products.php`
+- added `WorkspaceIntegrationHandoffService` for:
+  - idempotency key generation
+  - pending/posted/skipped/failed statuses
+  - attempt count
+  - source and target references
+  - diagnostic error messages
+- extended manifest integration definitions with:
+  - event names
+  - source capabilities
+  - target capabilities
+  - payload schema hints
+- work-order completion now records an `automotive-accounting` handoff for `work_order.completed`
+- if Accounting is not active, work-order completion records a `skipped` handoff instead of failing silently
+- inventory valuation posting now records a `parts-accounting` handoff for `stock_movement.valued`
+- General Ledger now exposes:
+  - Integration Contracts
+  - Integration Handoff Diagnostics
+
+Current integration contracts:
+- `automotive-parts`
+  - event: `work_order.consume_part`
+  - source: `automotive_service`
+  - target: `parts_inventory`
+- `automotive-accounting`
+  - event: `work_order.completed`
+  - source: `automotive_service`
+  - target: `accounting`
+- `parts-accounting`
+  - event: `stock_movement.valued`
+  - source: `parts_inventory`
+  - target: `accounting`
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_010000_create_workspace_integration_handoffs_table.php`
+- `app/Models/WorkspaceIntegrationHandoff.php`
+- `app/Services/Tenancy/WorkspaceIntegrationContractService.php`
+- `app/Services/Tenancy/WorkspaceIntegrationHandoffService.php`
+- `app/Services/Automotive/WorkOrderAccountingHandoffService.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `config/workspace_products.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|skipped_handoff|workshop_operations_can_create_work_order'`
+  - result: 5 passed, 158 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 16 passed, 272 assertions
+
+Integration phase status:
+- the foundational linking layer is now closed enough to safely onboard future systems through declared contracts instead of invisible custom service coupling
+- next integration work should focus on governance and admin validation, not adding product-specific runtime features
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

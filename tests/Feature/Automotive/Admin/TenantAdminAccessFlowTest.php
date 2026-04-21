@@ -608,6 +608,197 @@ class TenantAdminAccessFlowTest extends TestCase
         $postedLedgerResponse->assertSee('JOURNAL POSTED', false);
     }
 
+    public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $manualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-04-21',
+            'currency' => 'USD',
+            'memo' => 'Manual revenue adjustment',
+            'lines' => [
+                [
+                    'account_code' => '1100 Accounts Receivable',
+                    'account_name' => 'Accounts Receivable',
+                    'debit' => 150,
+                    'credit' => 0,
+                    'memo' => 'Manual debit',
+                ],
+                [
+                    'account_code' => '4100 Service Revenue',
+                    'account_name' => 'Service Revenue',
+                    'debit' => 0,
+                    'credit' => 150,
+                    'memo' => 'Manual revenue',
+                ],
+            ],
+        ]);
+
+        $manualResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', 'manual')
+                ->first();
+
+            $this->assertNotNull($journal);
+            $this->assertSame('posted', $journal->status);
+            $this->assertSame(150.0, (float) $journal->debit_total);
+            $this->assertSame(150.0, (float) $journal->credit_total);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $detailResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}?workspace_product=accounting");
+        $detailResponse->assertOk();
+        $detailResponse->assertSee('Journal Entry Overview', false);
+        $detailResponse->assertSee('Manual revenue adjustment', false);
+        $detailResponse->assertSee('Reverse Journal Entry', false);
+
+        $filteredLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&search=Manual&status=posted&date_from=2026-04-01&date_to=2026-04-30");
+        $filteredLedgerResponse->assertOk();
+        $filteredLedgerResponse->assertSee('Journal Filters', false);
+        $filteredLedgerResponse->assertSee('Trial Balance', false);
+        $filteredLedgerResponse->assertSee('Revenue Summary', false);
+        $filteredLedgerResponse->assertSee('Manual revenue adjustment', false);
+        $filteredLedgerResponse->assertSee('4100 Service Revenue', false);
+
+        $reverseResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$journal->id}/reverse?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $reverseResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $original = DB::connection('tenant')->table('journal_entries')->where('id', $journal->id)->first();
+            $reversal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', 'journal_reversal')
+                ->where('source_id', $journal->id)
+                ->first();
+
+            $this->assertSame('reversed', $original->status);
+            $this->assertNotNull($reversal);
+            $this->assertSame(150.0, (float) $reversal->debit_total);
+            $this->assertSame(150.0, (float) $reversal->credit_total);
+
+            $reversalLines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $reversal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertSame(150.0, (float) $reversalLines[0]->credit);
+            $this->assertSame(150.0, (float) $reversalLines[1]->debit);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
+    public function test_accounting_runtime_can_post_inventory_valuation_movements(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        [$branchId, $productId] = $this->seedTenantStock($tenant, [
+            [
+                'branch' => ['name' => 'Main Branch', 'code' => 'MAIN'],
+                'product' => ['name' => 'Oil Filter', 'sku' => 'OF-VAL'],
+                'quantity' => 5,
+            ],
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $movementId = DB::connection('tenant')->table('stock_movements')->insertGetId([
+                'branch_id' => $branchId,
+                'product_id' => $productId,
+                'type' => 'adjustment_out',
+                'quantity' => 2,
+                'reference_type' => null,
+                'reference_id' => null,
+                'notes' => 'Inventory count correction',
+                'created_by' => null,
+                'movement_date' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Inventory Valuation Review', false);
+        $ledgerResponse->assertSee('Oil Filter', false);
+        $ledgerResponse->assertSee('Post Inventory Valuation', false);
+
+        $postResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/inventory-movements/{$movementId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $postResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', \App\Models\StockMovement::class)
+                ->where('source_id', $movementId)
+                ->first();
+
+            $this->assertNotNull($journal);
+            $this->assertStringStartsWith('INV-', $journal->journal_number);
+            $this->assertSame(20.0, (float) $journal->debit_total);
+            $this->assertSame(20.0, (float) $journal->credit_total);
+
+            $lines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $journal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertCount(2, $lines);
+            $this->assertSame('5100 Inventory Adjustment Expense', $lines[0]->account_code);
+            $this->assertSame(20.0, (float) $lines[0]->debit);
+            $this->assertSame('1300 Inventory Asset', $lines[1]->account_code);
+            $this->assertSame(20.0, (float) $lines[1]->credit);
+
+            $handoff = DB::connection('tenant')->table('workspace_integration_handoffs')
+                ->where('integration_key', 'parts-accounting')
+                ->where('event_name', 'stock_movement.valued')
+                ->where('source_type', \App\Models\StockMovement::class)
+                ->where('source_id', $movementId)
+                ->first();
+
+            $this->assertNotNull($handoff);
+            $this->assertSame('posted', $handoff->status);
+            $this->assertSame(\App\Models\JournalEntry::class, $handoff->target_type);
+            $this->assertSame((int) $journal->id, (int) $handoff->target_id);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_workshop_operations_can_create_work_order_and_consume_spare_parts_stock(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
@@ -809,6 +1000,18 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertNotNull($accountingEvent);
             $this->assertSame('posted', $accountingEvent->status);
             $this->assertSame(190.0, (float) $accountingEvent->total_amount);
+
+            $handoff = DB::connection('tenant')->table('workspace_integration_handoffs')
+                ->where('integration_key', 'automotive-accounting')
+                ->where('event_name', 'work_order.completed')
+                ->where('source_type', \App\Models\WorkOrder::class)
+                ->where('source_id', $workOrder->id)
+                ->first();
+
+            $this->assertNotNull($handoff);
+            $this->assertSame('posted', $handoff->status);
+            $this->assertSame(\App\Models\AccountingEvent::class, $handoff->target_type);
+            $this->assertSame((int) $accountingEvent->id, (int) $handoff->target_id);
         } finally {
             tenancy()->end();
             DB::purge('tenant');
@@ -827,8 +1030,87 @@ class TenantAdminAccessFlowTest extends TestCase
         $generalLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
         $generalLedgerResponse->assertOk();
         $generalLedgerResponse->assertSee('Accounting Events Ledger', false);
+        $generalLedgerResponse->assertSee('Integration Contracts', false);
+        $generalLedgerResponse->assertSee('Integration Handoff Diagnostics', false);
+        $generalLedgerResponse->assertSee('work_order.completed', false);
+        $generalLedgerResponse->assertSee('POSTED', false);
         $generalLedgerResponse->assertSee($workOrder->work_order_number, false);
         $generalLedgerResponse->assertSee('190.00', false);
+    }
+
+    public function test_completed_work_order_records_skipped_handoff_when_accounting_is_not_active(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $branchId = DB::connection('tenant')->table('branches')->insertGetId([
+                'name' => 'Main Branch',
+                'code' => 'MAIN',
+                'phone' => null,
+                'email' => null,
+                'address' => null,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'branch_id' => $branchId,
+            'title' => 'Standalone service work order',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $workOrder = DB::connection('tenant')->table('work_orders')->latest('id')->first();
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/labor-lines?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'description' => 'Inspection labor',
+            'quantity' => 1,
+            'unit_price' => 150,
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/status?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'status' => 'completed',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertFalse(DB::connection('tenant')->table('accounting_events')->exists());
+
+            $handoff = DB::connection('tenant')->table('workspace_integration_handoffs')
+                ->where('integration_key', 'automotive-accounting')
+                ->where('event_name', 'work_order.completed')
+                ->where('source_type', \App\Models\WorkOrder::class)
+                ->where('source_id', $workOrder->id)
+                ->first();
+
+            $this->assertNotNull($handoff);
+            $this->assertSame('skipped', $handoff->status);
+            $this->assertStringContainsString('Accounting product is not active', $handoff->error_message);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
     }
 
     /**

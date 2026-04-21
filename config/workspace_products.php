@@ -117,6 +117,14 @@ return [
                 [
                     'key' => 'automotive-parts',
                     'requires_family' => 'parts_inventory',
+                    'events' => ['work_order.consume_part'],
+                    'source_capabilities' => ['workshop.work_order_operations'],
+                    'target_capabilities' => ['inventory.stock_movements'],
+                    'payload_schema' => [
+                        'work_order_id' => 'integer',
+                        'stock_item_id' => 'integer',
+                        'quantity' => 'decimal',
+                    ],
                     'title' => 'Workshop uses spare-parts stock',
                     'description' => 'Service operations can consume stock items, transfers, and inventory visibility from the Spare Parts workspace without duplicating inventory modules inside Automotive.',
                     'target_label' => 'Open Spare Parts',
@@ -125,6 +133,15 @@ return [
                 [
                     'key' => 'automotive-accounting',
                     'requires_family' => 'accounting',
+                    'events' => ['work_order.completed'],
+                    'source_capabilities' => ['workshop.work_order_completion'],
+                    'target_capabilities' => ['accounting.event_review', 'accounting.journal_posting'],
+                    'payload_schema' => [
+                        'work_order_id' => 'integer',
+                        'labor_amount' => 'decimal',
+                        'parts_amount' => 'decimal',
+                        'total_amount' => 'decimal',
+                    ],
                     'title' => 'Workshop can hand off financial events',
                     'description' => 'Labor, service revenue, and future workshop costs can flow into Accounting instead of living in a separate isolated product.',
                     'target_label' => 'Open Accounting',
@@ -282,6 +299,15 @@ return [
                 [
                     'key' => 'parts-accounting',
                     'requires_family' => 'accounting',
+                    'events' => ['stock_movement.valued'],
+                    'source_capabilities' => ['inventory.stock_movements', 'inventory.valuation'],
+                    'target_capabilities' => ['accounting.journal_posting'],
+                    'payload_schema' => [
+                        'stock_movement_id' => 'integer',
+                        'quantity' => 'decimal',
+                        'unit_cost' => 'decimal',
+                        'valuation_amount' => 'decimal',
+                    ],
                     'title' => 'Inventory can flow into accounting',
                     'description' => 'Purchasing, valuation, and stock costs can later be posted into Accounting without duplicating inventory controls there.',
                     'target_label' => 'Open Accounting',
