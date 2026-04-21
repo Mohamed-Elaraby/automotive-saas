@@ -7,11 +7,18 @@ use App\Models\Inventory;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class TenantSparePartsDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! Schema::hasTable('branches') || ! Schema::hasTable('products')) {
+            $this->command?->warn('TenantSparePartsDemoSeeder skipped: tenant runtime tables are not available on this connection.');
+
+            return;
+        }
+
         $branch = Branch::query()->firstOrCreate(
             ['code' => 'MAIN'],
             [

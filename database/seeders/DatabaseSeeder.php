@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PlanSeeder::class);
         $this->call(ReferenceDataSeeder::class);
         $this->call(CentralAdminSeeder::class);
-        $this->call(TenantSparePartsDemoSeeder::class);
 
 // \App\Models\User::factory(10)->create();
 
