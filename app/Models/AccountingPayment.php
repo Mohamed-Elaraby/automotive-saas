@@ -10,6 +10,7 @@ class AccountingPayment extends Model
         'accounting_event_id',
         'journal_entry_id',
         'deposit_batch_id',
+        'accounting_bank_account_id',
         'payment_number',
         'payment_date',
         'payer_name',
@@ -48,6 +49,11 @@ class AccountingPayment extends Model
     public function depositBatch()
     {
         return $this->belongsTo(AccountingDepositBatch::class, 'deposit_batch_id');
+    }
+
+    public function bankAccount()
+    {
+        return $this->belongsTo(AccountingBankAccount::class, 'accounting_bank_account_id');
     }
 
     public function creator()

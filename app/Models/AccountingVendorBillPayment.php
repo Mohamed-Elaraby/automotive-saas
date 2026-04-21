@@ -9,6 +9,7 @@ class AccountingVendorBillPayment extends Model
     protected $fillable = [
         'accounting_vendor_bill_id',
         'journal_entry_id',
+        'accounting_bank_account_id',
         'payment_number',
         'payment_date',
         'method',
@@ -37,6 +38,11 @@ class AccountingVendorBillPayment extends Model
     public function journalEntry()
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function bankAccount()
+    {
+        return $this->belongsTo(AccountingBankAccount::class, 'accounting_bank_account_id');
     }
 
     public function creator()

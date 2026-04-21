@@ -1783,6 +1783,122 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_bank_accounts_control_cash_activity_and_show_journal_balances(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $eventId = DB::connection('tenant')->table('accounting_events')->insertGetId([
+                'event_type' => 'work_order_completed',
+                'reference_type' => \App\Models\WorkOrder::class,
+                'reference_id' => 88,
+                'status' => 'posted',
+                'event_date' => '2026-08-10',
+                'currency' => 'USD',
+                'labor_amount' => 300,
+                'parts_amount' => 0,
+                'total_amount' => 300,
+                'payload' => json_encode([
+                    'work_order_number' => 'WO-BANK-1',
+                    'title' => 'Bank account cash management',
+                    'customer_name' => 'Bank Customer',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => '1020 Operating Bank',
+            'name' => 'Operating Bank',
+            'type' => 'asset',
+            'normal_balance' => 'debit',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $bankAccountResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/bank-accounts?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'name' => 'Operating Bank Account',
+            'type' => 'bank',
+            'account_code' => '1020 Operating Bank',
+            'currency' => 'USD',
+            'reference' => 'BANK-1020',
+            'is_default_receipt' => 1,
+            'is_default_payment' => 1,
+        ]);
+        $bankAccountResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$eventId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $bankAccount = DB::connection('tenant')->table('accounting_bank_accounts')
+                ->where('account_code', '1020 Operating Bank')
+                ->first();
+            $this->assertNotNull($bankAccount);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $paymentResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_event_id' => $eventId,
+            'payment_date' => '2026-08-11',
+            'amount' => 300,
+            'method' => 'bank_transfer',
+            'payer_name' => 'Bank Customer',
+            'reference' => 'BANK-RCPT-001',
+            'currency' => 'USD',
+            'accounting_bank_account_id' => $bankAccount->id,
+        ]);
+        $paymentResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $payment = DB::connection('tenant')->table('accounting_payments')
+                ->where('accounting_event_id', $eventId)
+                ->first();
+
+            $this->assertNotNull($payment);
+            $this->assertSame((int) $bankAccount->id, (int) $payment->accounting_bank_account_id);
+            $this->assertSame('1020 Operating Bank', $payment->cash_account);
+
+            $bankLine = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $payment->journal_entry_id)
+                ->where('account_code', '1020 Operating Bank')
+                ->first();
+
+            $this->assertNotNull($bankLine);
+            $this->assertSame(300.0, (float) $bankLine->debit);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Bank & Cash Accounts', false);
+        $ledgerResponse->assertSee('Operating Bank Account', false);
+        $ledgerResponse->assertSee('1020 Operating Bank', false);
+        $ledgerResponse->assertSee('300.00 USD', false);
+    }
+
     public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

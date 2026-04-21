@@ -768,14 +768,17 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Bank Accounts And Cash Management
+### Accounting Reconciliation Workflow Completion
 Recommended scope:
-- add bank/cash account setup linked to chart of accounts
-- make customer payments choose a configured bank/cash account
-- make vendor payments choose a configured bank/cash account
-- make deposit batches post or reconcile into configured bank accounts
-- show bank account balances from posted journal lines
-- prepare for future bank statement reconciliation without implementing bank feeds yet
+- add reconciliation status tracking for bank/cash activity
+- allow marking deposit batches as reconciled
+- allow matching payment/deposit records to bank account/date/reference
+- add reconciliation summary:
+  - unreconciled receipts
+  - unreconciled vendor payments
+  - unreconciled deposits
+  - reconciled totals by period
+- add reversal/correction behavior for reconciled records
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -845,12 +848,16 @@ Current accounting foundations already completed:
 - archived periods continue to block posting through `assertPeriodOpen`
 - General Ledger now exposes posting-control summary state
 - integration readiness verification checks required accounting runtime tables
+- bank/cash accounts are controlled tenant records linked to account catalog codes
+- customer payments, vendor payments, and deposit batches now select configured active bank/cash accounts
+- bank/cash account balances shown in General Ledger are derived from posted journal lines
 
 Important accounting runtime tables currently expected in tenant DB:
 - `accounting_posting_groups`
 - `journal_entries`
 - `journal_entry_lines`
 - `accounting_accounts`
+- `accounting_bank_accounts`
 - `accounting_period_locks`
 - `accounting_policies`
 - `accounting_audit_entries`
@@ -1169,23 +1176,49 @@ Acceptance criteria:
 
 ### Package 4 - Accounting Bank Accounts And Cash Management
 Status:
-- next package to start immediately
+- completed
 
 Goal:
 - make cash and bank handling explicit instead of free-text cash account fields only
 
-Required scope:
-- add bank/cash account setup linked to chart of accounts
-- customer payments choose a configured bank/cash account
-- vendor payments choose a configured bank/cash account
-- deposit batches post or reconcile into configured bank accounts
-- show bank account balances from posted journal lines
-- prepare for future bank statement reconciliation without implementing bank feeds yet
-
-Acceptance criteria:
+Completed behavior:
 - cash/bank accounts are controlled tenant records
-- payment and deposit workflows cannot post to arbitrary unknown cash accounts
-- bank balances are journal-derived
+- each bank/cash account is linked to an active account catalog code
+- default Cash On Hand and Bank Account records are created when needed for legacy-safe operation
+- customer payments choose a configured bank/cash account and post the cash side to that account code
+- vendor payments choose a configured bank/cash account and post the cash side to that account code
+- deposit batches choose a configured bank/cash account and keep the selected account relationship
+- payment and deposit workflows no longer accept arbitrary unknown cash account strings from the UI
+- General Ledger shows Bank & Cash Accounts plus Cash Balances
+- displayed cash/bank balances are calculated from posted journal lines, keeping journals as source of truth
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php`
+- `app/Models/AccountingBankAccount.php`
+- `app/Models/AccountingPayment.php`
+- `app/Models/AccountingDepositBatch.php`
+- `app/Models/AccountingVendorBillPayment.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `routes/products/automotive/admin.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `php -l app/Models/AccountingBankAccount.php`
+  - result: passed
+- `php -l database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php`
+  - result: passed
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='bank_accounts_control|record_customer_payment|deposit_batch|vendor_bill_to_payables'`
+  - result: 4 passed, 215 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 27 passed, 657 assertions
 
 ### Package 5 - Accounting Reconciliation Workflow Completion
 Status:

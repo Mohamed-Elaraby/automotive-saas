@@ -8,6 +8,7 @@ class AccountingDepositBatch extends Model
 {
     protected $fillable = [
         'deposit_number',
+        'accounting_bank_account_id',
         'deposit_date',
         'deposit_account',
         'currency',
@@ -33,6 +34,11 @@ class AccountingDepositBatch extends Model
     public function payments()
     {
         return $this->hasMany(AccountingPayment::class, 'deposit_batch_id');
+    }
+
+    public function bankAccount()
+    {
+        return $this->belongsTo(AccountingBankAccount::class, 'accounting_bank_account_id');
     }
 
     public function creator()

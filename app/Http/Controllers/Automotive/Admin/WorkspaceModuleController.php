@@ -352,6 +352,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_close_checklist' => $this->accountingRuntimeService->periodCloseChecklist(),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
+                'accounting_bank_accounts' => $this->accountingRuntimeService->getBankAccounts(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
                 'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
                 'reconcilable_payments' => $this->accountingRuntimeService->getReconcilablePayments(25),
@@ -632,6 +633,37 @@ class WorkspaceModuleController extends Controller
             ->with('success', 'Tax rate saved successfully.');
     }
 
+    public function storeAccountingBankAccount(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'in:cash,bank,wallet,card_processor'],
+            'account_code' => ['required', 'string', 'max:120'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'is_default_receipt' => ['nullable', 'boolean'],
+            'is_default_payment' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->createBankAccount($validated);
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Bank or cash account saved successfully.');
+    }
+
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
     {
         $this->authorizeAccounting(AccountingPermissionService::REPORTS_EXPORT);
@@ -864,7 +896,7 @@ class WorkspaceModuleController extends Controller
             'payer_name' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:120'],
             'currency' => ['nullable', 'string', 'size:3'],
-            'cash_account' => ['nullable', 'string', 'max:120'],
+            'accounting_bank_account_id' => ['nullable', 'integer', 'exists:accounting_bank_accounts,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -897,7 +929,7 @@ class WorkspaceModuleController extends Controller
             'payment_ids' => ['required', 'array', 'min:1'],
             'payment_ids.*' => ['integer', 'exists:accounting_payments,id'],
             'deposit_date' => ['required', 'date'],
-            'deposit_account' => ['nullable', 'string', 'max:120'],
+            'accounting_bank_account_id' => ['nullable', 'integer', 'exists:accounting_bank_accounts,id'],
             'currency' => ['nullable', 'string', 'size:3'],
             'reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -996,7 +1028,7 @@ class WorkspaceModuleController extends Controller
             'method' => ['required', 'in:cash,bank_transfer,card,check,other'],
             'reference' => ['nullable', 'string', 'max:120'],
             'currency' => ['nullable', 'string', 'size:3'],
-            'cash_account' => ['nullable', 'string', 'max:120'],
+            'accounting_bank_account_id' => ['nullable', 'integer', 'exists:accounting_bank_accounts,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

@@ -360,6 +360,59 @@
                 </div>
 
                 <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Bank & Cash Accounts</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.bank-accounts.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-7 mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'Operating Bank Account') }}"></div>
+                                        <div class="col-md-5 mb-2"><label class="form-label">Type</label><select name="type" class="form-select"><option value="bank">Bank</option><option value="cash">Cash</option><option value="wallet">Wallet</option><option value="card_processor">Card Processor</option></select></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-7 mb-2"><label class="form-label">Ledger Account</label><input type="text" name="account_code" list="account-catalog-options" class="form-control" value="{{ old('account_code', '1010 Bank Account') }}"></div>
+                                        <div class="col-md-5 mb-2"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                    </div>
+                                    <input type="hidden" name="currency" value="USD">
+                                    <div class="d-flex flex-wrap gap-3 mb-2">
+                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="bank_default_receipt" name="is_default_receipt" value="1" {{ old('is_default_receipt') ? 'checked' : '' }}><label class="form-check-label" for="bank_default_receipt">Default receipt</label></div>
+                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="bank_default_payment" name="is_default_payment" value="1" {{ old('is_default_payment', '1') ? 'checked' : '' }}><label class="form-check-label" for="bank_default_payment">Default payment</label></div>
+                                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="bank_is_active" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}><label class="form-check-label" for="bank_is_active">Active</label></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Bank Account</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Cash Balances</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['accounting_bank_accounts'] ?? collect()) as $bankAccount)
+                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2 gap-3">
+                                        <div>
+                                            <div class="fw-semibold">{{ $bankAccount->name }}</div>
+                                            <div class="text-muted small">{{ $bankAccount->account_code }} · {{ strtoupper(str_replace('_', ' ', $bankAccount->type)) }}</div>
+                                            <div class="text-muted small">{{ $bankAccount->reference ?: 'No reference' }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge {{ $bankAccount->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $bankAccount->is_active ? 'ACTIVE' : 'INACTIVE' }}</span>
+                                            @if($bankAccount->is_default_receipt)<span class="badge bg-primary">RECEIPTS</span>@endif
+                                            @if($bankAccount->is_default_payment)<span class="badge bg-info">PAYMENTS</span>@endif
+                                            <div class="fw-semibold mt-1">{{ number_format((float) $bankAccount->getAttribute('journal_balance'), 2) }} {{ $bankAccount->currency }}</div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No bank or cash accounts have been configured yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
                     <div class="col-xl-4 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header"><h5 class="card-title mb-0">Account Catalog</h5></div>
@@ -765,7 +818,7 @@
                                             <div class="col-md-4 mb-3"><label class="form-label">Method</label><select name="method" class="form-select"><option value="bank_transfer">Bank Transfer</option><option value="cash">Cash</option><option value="card">Card</option><option value="check">Check</option><option value="other">Other</option></select></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-6 mb-3"><label class="form-label">Cash/Bank Account</label><input type="text" name="cash_account" list="account-catalog-options" class="form-control" value="{{ old('cash_account', '1010 Bank Account') }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">Bank/Cash Account</label><select name="accounting_bank_account_id" class="form-select">@foreach(($moduleData['accounting_bank_accounts'] ?? collect())->where('is_active', true) as $bankAccount)<option value="{{ $bankAccount->id }}" @selected($bankAccount->is_default_payment)>{{ $bankAccount->name }} · {{ $bankAccount->account_code }}</option>@endforeach</select></div>
                                             <div class="col-md-6 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
                                         </div>
                                         <input type="hidden" name="currency" value="USD">
@@ -831,7 +884,7 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-5 mb-3"><label class="form-label">Payer Name</label><input type="text" name="payer_name" class="form-control" value="{{ old('payer_name') }}"></div>
-                                            <div class="col-md-4 mb-3"><label class="form-label">Cash/Bank Account</label><input type="text" name="cash_account" list="account-catalog-options" class="form-control" value="{{ old('cash_account', '1000 Cash On Hand') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Bank/Cash Account</label><select name="accounting_bank_account_id" class="form-select">@foreach(($moduleData['accounting_bank_accounts'] ?? collect())->where('is_active', true) as $bankAccount)<option value="{{ $bankAccount->id }}" @selected($bankAccount->is_default_receipt)>{{ $bankAccount->name }} · {{ $bankAccount->account_code }}</option>@endforeach</select></div>
                                             <div class="col-md-3 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
                                         </div>
                                         <input type="hidden" name="currency" value="USD">
@@ -854,7 +907,7 @@
                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                         <div class="row">
                                             <div class="col-md-4 mb-3"><label class="form-label">Deposit Date</label><input type="date" name="deposit_date" class="form-control" value="{{ old('deposit_date', now()->toDateString()) }}"></div>
-                                            <div class="col-md-4 mb-3"><label class="form-label">Deposit Account</label><input type="text" name="deposit_account" list="account-catalog-options" class="form-control" value="{{ old('deposit_account', '1010 Bank Account') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Deposit Account</label><select name="accounting_bank_account_id" class="form-select">@foreach(($moduleData['accounting_bank_accounts'] ?? collect())->where('is_active', true) as $bankAccount)<option value="{{ $bankAccount->id }}" @selected($bankAccount->is_default_receipt)>{{ $bankAccount->name }} · {{ $bankAccount->account_code }}</option>@endforeach</select></div>
                                             <div class="col-md-4 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
                                         </div>
                                         <input type="hidden" name="currency" value="USD">

@@ -4,6 +4,7 @@ namespace App\Services\Automotive;
 
 use App\Models\AccountingAccount;
 use App\Models\AccountingAuditEntry;
+use App\Models\AccountingBankAccount;
 use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
 use App\Models\AccountingPayment;
@@ -129,6 +130,58 @@ class AccountingRuntimeService
             ->get();
     }
 
+    public function getBankAccounts(): Collection
+    {
+        $this->ensureDefaultBankAccounts();
+
+        $balances = $this->bankAccountBalances();
+
+        return AccountingBankAccount::query()
+            ->orderByDesc('is_default_receipt')
+            ->orderByDesc('is_default_payment')
+            ->orderBy('name')
+            ->get()
+            ->map(function (AccountingBankAccount $account) use ($balances): AccountingBankAccount {
+                $account->setAttribute('journal_balance', round((float) ($balances[$account->account_code] ?? 0), 2));
+
+                return $account;
+            });
+    }
+
+    public function createBankAccount(array $data): AccountingBankAccount
+    {
+        $accountCode = $this->normalizeAccountCode((string) $data['account_code']);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes([$accountCode], 'account_code');
+
+        return DB::transaction(function () use ($data, $accountCode): AccountingBankAccount {
+            $isDefaultReceipt = ! empty($data['is_default_receipt']);
+            $isDefaultPayment = ! empty($data['is_default_payment']);
+
+            if ($isDefaultReceipt) {
+                AccountingBankAccount::query()->update(['is_default_receipt' => false]);
+            }
+
+            if ($isDefaultPayment) {
+                AccountingBankAccount::query()->update(['is_default_payment' => false]);
+            }
+
+            return AccountingBankAccount::query()->updateOrCreate(
+                ['account_code' => $accountCode],
+                [
+                    'name' => $data['name'],
+                    'type' => $data['type'],
+                    'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
+                    'reference' => $data['reference'] ?? null,
+                    'is_default_receipt' => $isDefaultReceipt,
+                    'is_default_payment' => $isDefaultPayment,
+                    'is_active' => ! array_key_exists('is_active', $data) || (bool) $data['is_active'],
+                    'notes' => $data['notes'] ?? null,
+                ]
+            );
+        });
+    }
+
     public function getAuditEntries(int $limit = 30): Collection
     {
         return AccountingAuditEntry::query()
@@ -166,7 +219,7 @@ class AccountingRuntimeService
     public function getRecentPayments(int $limit = 15): Collection
     {
         return AccountingPayment::query()
-            ->with(['accountingEvent', 'journalEntry', 'depositBatch', 'creator'])
+            ->with(['accountingEvent', 'journalEntry', 'depositBatch', 'bankAccount', 'creator'])
             ->latest('payment_date')
             ->latest('id')
             ->limit($limit)
@@ -176,7 +229,7 @@ class AccountingRuntimeService
     public function getPayments(array $filters = [], int $limit = 50): Collection
     {
         return AccountingPayment::query()
-            ->with(['accountingEvent', 'journalEntry', 'depositBatch', 'creator'])
+            ->with(['accountingEvent', 'journalEntry', 'depositBatch', 'bankAccount', 'creator'])
             ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
             ->when(! empty($filters['reconciliation_status']), fn ($query) => $query->where('reconciliation_status', $filters['reconciliation_status']))
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
@@ -213,7 +266,7 @@ class AccountingRuntimeService
     public function getDepositBatches(int $limit = 15): Collection
     {
         return AccountingDepositBatch::query()
-            ->with(['payments', 'creator', 'corrector'])
+            ->with(['payments', 'bankAccount', 'creator', 'corrector'])
             ->latest('deposit_date')
             ->latest('id')
             ->limit($limit)
@@ -279,7 +332,7 @@ class AccountingRuntimeService
     public function getVendorBillPayments(array $filters = [], int $limit = 25): Collection
     {
         return AccountingVendorBillPayment::query()
-            ->with(['vendorBill', 'journalEntry', 'creator'])
+            ->with(['vendorBill', 'journalEntry', 'bankAccount', 'creator'])
             ->when(! empty($filters['status']), fn ($query) => $query->where('status', $filters['status']))
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('payment_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('payment_date', '<=', $filters['date_to']))
@@ -1028,12 +1081,13 @@ class AccountingRuntimeService
         }
 
         $postingGroup = $this->resolvePostingGroup();
-        $cashAccount = trim((string) ($data['cash_account'] ?? '1000 Cash On Hand')) ?: '1000 Cash On Hand';
+        $bankAccount = $this->resolveBankAccount($data['accounting_bank_account_id'] ?? null, 'receipt');
+        $cashAccount = $bankAccount->account_code;
         $receivableAccount = $postingGroup?->receivable_account ?: '1100 Accounts Receivable';
         $this->ensureDefaultAccounts();
         $this->assertActiveAccountCodes([$cashAccount, $receivableAccount], 'cash_account');
 
-        return DB::transaction(function () use ($data, $event, $paymentDate, $amount, $remainingAmount, $cashAccount, $receivableAccount, $createdBy): AccountingPayment {
+        return DB::transaction(function () use ($data, $event, $paymentDate, $amount, $remainingAmount, $bankAccount, $cashAccount, $receivableAccount, $createdBy): AccountingPayment {
             $entry = JournalEntry::query()->create([
                 'accounting_event_id' => $event->id,
                 'journal_number' => $this->nextJournalNumber('PAY'),
@@ -1070,6 +1124,7 @@ class AccountingRuntimeService
             $payment = AccountingPayment::query()->create([
                 'accounting_event_id' => $event->id,
                 'journal_entry_id' => $entry->id,
+                'accounting_bank_account_id' => $bankAccount->id,
                 'payment_number' => $this->nextJournalNumber('PMT'),
                 'payment_date' => $paymentDate,
                 'payer_name' => $data['payer_name'] ?? data_get($event->payload, 'customer_name'),
@@ -1098,7 +1153,7 @@ class AccountingRuntimeService
                 'amount' => $amount,
             ], $createdBy);
 
-        return $payment->load(['accountingEvent', 'journalEntry', 'creator']);
+        return $payment->load(['accountingEvent', 'journalEntry', 'bankAccount', 'creator']);
         });
     }
 
@@ -1148,12 +1203,14 @@ class AccountingRuntimeService
             }
 
             $currency = strtoupper((string) ($data['currency'] ?? $currencies->first() ?: 'USD'));
-            $depositAccount = trim((string) ($data['deposit_account'] ?? '1010 Bank Account')) ?: '1010 Bank Account';
+            $bankAccount = $this->resolveBankAccount($data['accounting_bank_account_id'] ?? null, 'receipt');
+            $depositAccount = $bankAccount->account_code;
             $this->ensureDefaultAccounts();
             $this->assertActiveAccountCodes([$depositAccount], 'deposit_account');
             $totalAmount = round((float) $payments->sum('amount'), 2);
 
             $batch = AccountingDepositBatch::query()->create([
+                'accounting_bank_account_id' => $bankAccount->id,
                 'deposit_number' => $this->nextJournalNumber('DEP'),
                 'deposit_date' => $depositDate,
                 'deposit_account' => $depositAccount,
@@ -1183,7 +1240,7 @@ class AccountingRuntimeService
                 'total_amount' => $totalAmount,
             ], $createdBy);
 
-            return $batch->load(['payments', 'creator']);
+            return $batch->load(['payments', 'bankAccount', 'creator']);
         });
     }
 
@@ -1392,12 +1449,13 @@ class AccountingRuntimeService
             ]);
         }
 
-        $cashAccount = trim((string) ($data['cash_account'] ?? '1010 Bank Account')) ?: '1010 Bank Account';
+        $bankAccount = $this->resolveBankAccount($data['accounting_bank_account_id'] ?? null, 'payment');
+        $cashAccount = $bankAccount->account_code;
         $payableAccount = $bill->payable_account ?: '2000 Accounts Payable';
         $this->ensureDefaultAccounts();
         $this->assertActiveAccountCodes([$cashAccount, $payableAccount], 'cash_account');
 
-        return DB::transaction(function () use ($data, $bill, $paymentDate, $amount, $remainingAmount, $cashAccount, $payableAccount, $createdBy): AccountingVendorBillPayment {
+        return DB::transaction(function () use ($data, $bill, $paymentDate, $amount, $remainingAmount, $bankAccount, $cashAccount, $payableAccount, $createdBy): AccountingVendorBillPayment {
             $entry = JournalEntry::query()->create([
                 'journal_number' => $this->nextJournalNumber('VPAY'),
                 'source_type' => AccountingVendorBillPayment::class,
@@ -1433,6 +1491,7 @@ class AccountingRuntimeService
             $payment = AccountingVendorBillPayment::query()->create([
                 'accounting_vendor_bill_id' => $bill->id,
                 'journal_entry_id' => $entry->id,
+                'accounting_bank_account_id' => $bankAccount->id,
                 'payment_number' => $this->nextJournalNumber('VPMT'),
                 'payment_date' => $paymentDate,
                 'method' => $data['method'] ?? 'bank_transfer',
@@ -1459,7 +1518,7 @@ class AccountingRuntimeService
                 'amount' => $amount,
             ], $createdBy);
 
-            return $payment->load(['vendorBill', 'journalEntry', 'creator']);
+            return $payment->load(['vendorBill', 'journalEntry', 'bankAccount', 'creator']);
         });
     }
 
@@ -2354,6 +2413,84 @@ class AccountingRuntimeService
             'is_default' => true,
             'is_active' => true,
         ]);
+    }
+
+    protected function ensureDefaultBankAccounts(): void
+    {
+        $this->ensureDefaultAccounts();
+
+        if (! AccountingBankAccount::query()->where('account_code', '1000 Cash On Hand')->exists()) {
+            AccountingBankAccount::query()->create([
+                'name' => 'Cash On Hand',
+                'type' => 'cash',
+                'account_code' => '1000 Cash On Hand',
+                'currency' => 'USD',
+                'is_default_receipt' => true,
+                'is_default_payment' => false,
+                'is_active' => true,
+            ]);
+        }
+
+        if (! AccountingBankAccount::query()->where('account_code', '1010 Bank Account')->exists()) {
+            AccountingBankAccount::query()->create([
+                'name' => 'Bank Account',
+                'type' => 'bank',
+                'account_code' => '1010 Bank Account',
+                'currency' => 'USD',
+                'is_default_receipt' => false,
+                'is_default_payment' => true,
+                'is_active' => true,
+            ]);
+        }
+    }
+
+    protected function resolveBankAccount(null|int|string $bankAccountId = null, string $purpose = 'receipt'): AccountingBankAccount
+    {
+        $this->ensureDefaultBankAccounts();
+
+        $query = AccountingBankAccount::query()->where('is_active', true);
+
+        if ($bankAccountId) {
+            $account = (clone $query)->find((int) $bankAccountId);
+
+            if (! $account) {
+                throw ValidationException::withMessages([
+                    'accounting_bank_account_id' => 'Select an active configured bank or cash account.',
+                ]);
+            }
+
+            return $account;
+        }
+
+        $account = (clone $query)
+            ->when($purpose === 'payment', fn ($query) => $query->orderByDesc('is_default_payment'))
+            ->when($purpose !== 'payment', fn ($query) => $query->orderByDesc('is_default_receipt'))
+            ->orderBy('id')
+            ->first();
+
+        if (! $account) {
+            throw ValidationException::withMessages([
+                'accounting_bank_account_id' => 'Configure an active bank or cash account before recording cash activity.',
+            ]);
+        }
+
+        return $account;
+    }
+
+    protected function bankAccountBalances(): array
+    {
+        return DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->join('accounting_bank_accounts', 'accounting_bank_accounts.account_code', '=', 'journal_entry_lines.account_code')
+            ->where('journal_entries.status', 'posted')
+            ->groupBy('journal_entry_lines.account_code')
+            ->select([
+                'journal_entry_lines.account_code',
+                DB::raw('SUM(journal_entry_lines.debit - journal_entry_lines.credit) as balance'),
+            ])
+            ->pluck('balance', 'account_code')
+            ->map(fn ($value): float => round((float) $value, 2))
+            ->all();
     }
 
     protected function normalizePeriodRange(array $data): array
