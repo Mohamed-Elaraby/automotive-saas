@@ -778,6 +778,444 @@ Recommended scope:
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
+## 15.2.1) Accounting System Current State Before Next Chat
+This section is the detailed handoff for continuing accounting work in a fresh AI session.
+
+The accounting product is now a real tenant runtime module, not only a placeholder integration target.
+It is still intentionally scoped inside the shared tenant workspace and must keep integrating with the
+other subscribed products through the workspace integration contract layer.
+
+Current accounting foundations already completed:
+- runtime General Ledger module exists inside Tenant Admin
+- accounting product can be activated beside automotive service and parts inventory
+- work-order completion can create accounting handoff events
+- General Ledger can review and post accounting events into journals
+- journal entries and journal lines are tenant-owned records
+- posting groups map source revenue/receivable accounts
+- manual journal entries can be created when balanced
+- posted journals can be reversed through explicit reversal entries
+- trial balance is journal-driven
+- revenue summary is journal-driven
+- profit and loss statement is journal-driven
+- balance sheet is journal-driven
+- tax/VAT settings exist
+- tax summary is journal-driven
+- customer receivables workflow exists
+- customer payments settle posted receivables
+- payment deposit batches support reconciliation grouping
+- deposit batch corrections use explicit correction logic
+- vendor bill workflow exists
+- vendor bill posting creates AP journal entries
+- vendor bill payments settle payables
+- payables aging exists
+- receivables aging exists
+- account catalog exists
+- accounting policies exist for inventory accounting
+- inventory movements from parts inventory can be posted into accounting
+- period locks exist
+- fiscal close posting controls now block posting inside locked periods
+- overlapping period locks are rejected
+- General Ledger now exposes posting-control summary state
+- integration readiness verification checks required accounting runtime tables
+
+Important accounting runtime tables currently expected in tenant DB:
+- `accounting_posting_groups`
+- `journal_entries`
+- `journal_entry_lines`
+- `accounting_accounts`
+- `accounting_period_locks`
+- `accounting_policies`
+- `accounting_audit_entries`
+- `accounting_payments`
+- `accounting_deposit_batches`
+- `accounting_vendor_bills`
+- `accounting_vendor_bill_payments`
+- `accounting_tax_rates`
+- plus cross-product handoff/runtime tables already used by the workspace integration layer
+
+Important accounting source-of-truth rule:
+- journals remain the accounting source of truth
+- financial statements must be calculated from posted journal lines
+- reports must not create side ledgers that can drift from journals
+- corrections after posting must happen by reversal/correction entries, not silent mutation
+- fiscal close must block risky posting actions inside locked periods
+
+Important cross-product integration state:
+- `automotive_service -> accounting` is active through `work_order.completed`
+- `parts_inventory -> accounting` is active through `stock_movement.valued`
+- accounting can receive source events and turn them into journal entries
+- the integration architecture is considered closed enough for now
+- do not reopen integration architecture unless a concrete blocker appears
+- future products must integrate by registering contracts/events and posting handoffs, not by hardcoding into accounting
+
+Known production/deployment notes from this work phase:
+- `php artisan route:cache` must not be used
+- after deploying accounting migrations, run central migrations and tenant migrations separately:
+  - `php artisan migrate --force`
+  - `php artisan tenants:migrate --force`
+- verify tenant readiness with:
+  - `php artisan tenancy:verify-integration-readiness --tenant=TENANT_ID`
+- if tenant domain is intentionally missing, the app should return a controlled 404 instead of a raw tenant-identification 500
+- spareparts production app may require PHP 7.4 FPM separately from this Laravel 10 workspace; do not assume all three deployed apps use the same PHP runtime
+
+## 15.2.2) Accounting Completion Roadmap
+The following packages should be completed in order to finish the accounting system to a production-ready level.
+
+### Package 1 - Accounting Role Permissions And Approval Controls
+Status:
+- next package to start immediately
+
+Goal:
+- add explicit authority boundaries before adding more accounting power
+- prevent every tenant admin from being able to post, reverse, close, or correct sensitive accounting records without permission
+
+Required scope:
+- define accounting capability checks for:
+  - creating manual journals
+  - posting source events
+  - posting inventory valuation movements
+  - posting vendor bills
+  - recording vendor bill payments
+  - recording customer payments
+  - creating deposit batches
+  - correcting deposit batches
+  - reversing journal entries
+  - locking accounting periods
+  - managing account catalog
+  - managing tax rates
+  - exporting financial reports
+- add an approval state for high-risk manual journals:
+  - draft
+  - pending approval
+  - approved
+  - posted
+  - rejected or void where appropriate
+- require approval before posting high-risk manual journals
+- keep low-risk source postings configurable if possible, but do not overbuild roles before checking current user/permission model
+- expose pending approvals inside General Ledger
+- add audit entries for:
+  - submitted for approval
+  - approved
+  - rejected
+  - posted after approval
+- tests must prove unauthorized or unapproved posting is blocked
+
+Files likely involved:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `routes/products/automotive/admin.php`
+- tenant migrations for approval fields/table if needed
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Acceptance criteria:
+- high-risk manual journals cannot be posted until approved
+- period lock creation requires the appropriate control path
+- reversal/correction flows are still explicit
+- existing accounting tests keep passing
+
+### Package 2 - Accounting Chart Of Accounts Management Hardening
+Status:
+- pending after approvals package
+
+Goal:
+- make account catalog safe enough for real tenant usage
+
+Required scope:
+- add stronger account catalog validation:
+  - unique account code
+  - active/inactive state
+  - block deletion of accounts used by posted journal lines
+  - allow deactivation instead of deletion
+  - validate normal balance against account type
+- add account categories or statement grouping if needed:
+  - asset
+  - liability
+  - equity
+  - revenue
+  - expense
+  - contra accounts if supported
+- add UI for filtering/searching accounts
+- keep default account bootstrapping idempotent
+- ensure posting refuses inactive or unknown accounts
+- update tests to cover inactive account posting rejection
+
+Acceptance criteria:
+- tenant cannot break historical journals by deleting used accounts
+- posting into inactive accounts is blocked
+- chart of accounts remains usable for reports
+
+### Package 3 - Accounting Fiscal Period Lifecycle
+Status:
+- pending
+
+Goal:
+- turn period locks into a more complete accounting close lifecycle
+
+Required scope:
+- introduce fiscal periods if needed:
+  - open
+  - closing
+  - locked
+  - archived
+- add close checklist summary:
+  - unposted accounting events
+  - unposted inventory movements
+  - draft vendor bills
+  - unpaid/open receivables summary
+  - open deposit batches or unreconciled payments
+  - unapproved manual journals
+- block period locking if required close checklist items are incomplete, unless explicitly allowed by a controlled override
+- keep no-silent-mutation rule after locked period
+- expose close readiness inside General Ledger
+
+Acceptance criteria:
+- user can see why a period is not ready to lock
+- locked periods remain protected by `assertPeriodOpen`
+- close flow does not bypass reversal/correction rules
+
+### Package 4 - Accounting Bank Accounts And Cash Management
+Status:
+- pending
+
+Goal:
+- make cash and bank handling explicit instead of free-text cash account fields only
+
+Required scope:
+- add bank/cash account setup linked to chart of accounts
+- customer payments choose a configured bank/cash account
+- vendor payments choose a configured bank/cash account
+- deposit batches post or reconcile into configured bank accounts
+- show bank account balances from posted journal lines
+- prepare for future bank statement reconciliation without implementing bank feeds yet
+
+Acceptance criteria:
+- cash/bank accounts are controlled tenant records
+- payment and deposit workflows cannot post to arbitrary unknown cash accounts
+- bank balances are journal-derived
+
+### Package 5 - Accounting Reconciliation Workflow Completion
+Status:
+- pending
+
+Goal:
+- complete reconciliation beyond basic deposit batching
+
+Required scope:
+- add reconciliation status tracking for bank/cash activity
+- allow marking deposit batches as reconciled
+- allow matching payment/deposit records to bank account/date/reference
+- add reconciliation summary:
+  - unreconciled receipts
+  - unreconciled vendor payments
+  - unreconciled deposits
+  - reconciled totals by period
+- add reversal/correction behavior for reconciled records
+
+Acceptance criteria:
+- finance user can tell what cash activity has not been reconciled
+- reconciled activity is harder to modify directly
+- reports remain journal-driven
+
+### Package 6 - Accounting AR Invoicing Foundation
+Status:
+- pending
+
+Goal:
+- separate formal customer invoicing from source accounting events where needed
+
+Required scope:
+- decide whether work-order completion should directly produce accounting events only or also produce tenant invoices
+- if invoices are added:
+  - create invoice table
+  - invoice number
+  - customer
+  - issue date
+  - due date
+  - lines
+  - tax
+  - status
+  - journal posting relation
+- support customer statement output from invoices/payments/journal state
+- preserve existing work-order accounting handoff behavior
+
+Acceptance criteria:
+- customer-facing invoices can exist without breaking current work-order accounting events
+- invoice posting creates balanced journals
+- invoice payments continue settling receivables
+
+### Package 7 - Accounting AP Enhancements
+Status:
+- pending
+
+Goal:
+- make vendor bills/payables practical beyond the current minimal workflow
+
+Required scope:
+- add vendor/supplier selection integration when parts supplier catalog is active
+- support bill attachments metadata if existing file system patterns allow it
+- support bill due-date reminders or aging filters
+- support credit notes or vendor bill adjustments through explicit correction entries
+- block direct mutation of posted/paid bills except controlled correction flows
+
+Acceptance criteria:
+- vendor bills can be tied to known suppliers
+- posted AP records cannot be silently rewritten
+- payables aging remains accurate
+
+### Package 8 - Accounting Inventory Costing Controls
+Status:
+- pending
+
+Goal:
+- strengthen inventory accounting from parts movements
+
+Required scope:
+- validate valuation source for stock movements
+- define supported costing method for now:
+  - current implementation uses available movement value based on stock item cost context
+  - do not imply FIFO/weighted average unless implemented
+- add clear policy UI labels for inventory asset, COGS, adjustment, and offset accounts
+- add tests for movement types that should and should not post
+- ensure parts inventory and accounting remain decoupled through integration handoffs
+
+Acceptance criteria:
+- inventory journals are predictable
+- unsupported valuation cases are skipped or blocked with clear reason
+- readiness command still proves parts-accounting integration requirements
+
+### Package 9 - Accounting Report Export Polish
+Status:
+- pending
+
+Goal:
+- make all accounting reports usable by finance users
+
+Required scope:
+- unify CSV export headers and date filters
+- add printable views where missing
+- verify:
+  - journal entries
+  - trial balance
+  - revenue summary
+  - tax summary
+  - profit and loss
+  - balance sheet
+  - receivables aging
+  - payables aging
+  - reconciliation summary
+- add date range indicators to print views
+- keep exports read-only
+
+Acceptance criteria:
+- every major accounting report can be exported or printed
+- report totals match posted journal lines or source-specific summaries where explicitly documented
+
+### Package 10 - Accounting Audit Trail And Compliance Review
+Status:
+- pending
+
+Goal:
+- make accounting activity traceable and reviewable
+
+Required scope:
+- standardize audit event names and payloads
+- expose audit filters:
+  - event type
+  - actor
+  - date range
+  - source model
+- audit high-risk events:
+  - posting
+  - reversal
+  - approval
+  - rejection
+  - period lock
+  - payment void
+  - deposit correction
+  - tax/account policy changes
+- ensure audit entries do not become the accounting source of truth; they are evidence/logging only
+
+Acceptance criteria:
+- finance/admin users can review who did what and when
+- tests cover important audit event creation
+
+### Package 11 - Accounting Data Quality And Readiness Command Expansion
+Status:
+- pending
+
+Goal:
+- make deployment and tenant readiness checks detect accounting misconfiguration before users hit runtime errors
+
+Required scope:
+- expand `tenancy:verify-integration-readiness` accounting checks:
+  - required tables
+  - default accounts
+  - default posting group
+  - default accounting policy
+  - default tax rate
+  - integration handoff tables
+  - active accounting workspace product
+- add warnings for:
+  - missing default accounts
+  - inactive required accounts
+  - overlapping period locks
+  - unposted handoffs older than a threshold if feasible
+- keep command safe to run in production
+
+Acceptance criteria:
+- readiness command can be used before production release
+- command reports actionable failures
+
+### Package 12 - Accounting UX Consolidation And Navigation
+Status:
+- pending
+
+Goal:
+- make the General Ledger screen manageable after many accounting features have been added
+
+Required scope:
+- split General Ledger UI into clearer sections or tabs if local layout patterns support it
+- keep critical dashboards visible:
+  - posting queue
+  - approvals
+  - period close
+  - financial reports
+  - receivables
+  - payables
+  - tax
+  - audit
+- avoid creating marketing/landing pages
+- do not introduce unrelated theme rewrites
+- ensure mobile and desktop layout remains usable
+
+Acceptance criteria:
+- accounting UI remains usable as features grow
+- no cards inside cards
+- no unrelated frontend redesign
+
+### Package 13 - Accounting End-To-End Production Acceptance
+Status:
+- final accounting hardening package
+
+Goal:
+- prove the whole accounting workflow works as one system before calling accounting complete
+
+Required end-to-end scenarios:
+- automotive work order completed -> accounting event -> journal posted -> receivable created -> customer payment recorded -> deposit batch created -> reconciliation state visible
+- parts stock movement valued -> accounting handoff -> inventory journal posted -> report totals updated
+- vendor bill created -> bill posted -> AP created -> vendor payment recorded -> payables aging updated
+- tax configured -> taxable vendor bill or revenue event posted -> tax summary updated
+- manual journal submitted -> approved -> posted -> financial statements updated
+- posted journal reversed in open period -> financial statements updated
+- closed period blocks posting and requires correction/reversal in an open period
+
+Acceptance criteria:
+- full accounting runtime tests pass
+- integration readiness command passes with a real tenant
+- UI steps are documented for production smoke testing
+- `PROJECT_AI_CONTEXT.md` is updated one final time with accounting completion status
+
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
 - completed
