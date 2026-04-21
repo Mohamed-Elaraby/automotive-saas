@@ -153,7 +153,9 @@ class WorkspaceManifestService
 
     protected function dynamicFamilies(): array
     {
-        if (! Schema::hasTable('app_settings')) {
+        $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
+
+        if (! Schema::connection($centralConnection)->hasTable('app_settings')) {
             return [];
         }
 

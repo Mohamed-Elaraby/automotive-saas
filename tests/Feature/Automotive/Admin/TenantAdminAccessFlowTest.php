@@ -1321,6 +1321,125 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_new_product_can_use_declared_integration_contract_without_product_specific_runtime_code(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $qualityProduct = Product::query()->create([
+            'code' => 'quality_control',
+            'name' => 'Quality Control System',
+            'slug' => 'quality-control-system',
+            'is_active' => true,
+            'sort_order' => 4,
+        ]);
+
+        $qualityPlan = Plan::query()->create([
+            'product_id' => $qualityProduct->id,
+            'name' => 'Quality Pro',
+            'slug' => 'quality-pro-' . uniqid(),
+            'price' => 59,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $qualityProduct->id,
+            'plan_id' => $qualityPlan->id,
+            'status' => 'active',
+            'gateway' => null,
+        ]);
+
+        \App\Models\AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.manifest_writeback_package.quality_control',
+            'value' => json_encode([
+                'family_key' => 'quality_control',
+                'mode' => 'add',
+                'family_payload' => [
+                    'aliases' => ['quality', 'inspection'],
+                    'experience' => ['title' => 'Quality control workspace'],
+                    'sidebar_section' => [
+                        'key' => 'quality-control',
+                        'title' => 'Quality Control',
+                        'items' => [
+                            [
+                                'key' => 'quality.inspections',
+                                'label' => 'Inspections',
+                                'route' => 'automotive.admin.dashboard',
+                            ],
+                        ],
+                    ],
+                    'integrations' => [
+                        [
+                            'key' => 'quality-accounting',
+                            'requires_family' => 'accounting',
+                            'title' => 'Quality can hand off inspection charges',
+                            'description' => 'Inspection charges can flow into accounting using the shared handoff layer.',
+                            'target_label' => 'Open Accounting',
+                            'target_route' => 'automotive.admin.modules.general-ledger',
+                            'events' => ['inspection.completed'],
+                            'source_capabilities' => ['quality.inspections'],
+                            'target_capabilities' => ['accounting.journal_posting'],
+                            'payload_schema' => ['inspection_id' => 'integer', 'total_amount' => 'decimal'],
+                        ],
+                    ],
+                ],
+                'captured_at' => now()->toDateTimeString(),
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard");
+        $dashboardResponse->assertOk();
+        $dashboardResponse->assertSee('Quality Control', false);
+        $dashboardResponse->assertSee('Quality Control System', false);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $handoff = app(\App\Services\Tenancy\WorkspaceIntegrationHandoffService::class)->start([
+                'integration_key' => 'quality-accounting',
+                'event_name' => 'inspection.completed',
+                'source_product' => 'quality_control',
+                'target_product' => 'accounting',
+                'source_type' => 'quality.inspection',
+                'source_id' => 501,
+                'payload' => [
+                    'inspection_id' => 501,
+                    'total_amount' => 75,
+                ],
+            ]);
+
+            $this->assertSame('pending', $handoff->status);
+            $this->assertSame('quality-accounting', $handoff->integration_key);
+            $this->assertSame('inspection.completed', $handoff->event_name);
+            $this->assertSame('quality_control', $handoff->source_product);
+            $this->assertSame('accounting', $handoff->target_product);
+
+            $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+            app(\App\Services\Tenancy\WorkspaceIntegrationHandoffService::class)->start([
+                'integration_key' => 'quality-accounting',
+                'event_name' => 'inspection.cancelled',
+                'source_product' => 'quality_control',
+                'target_product' => 'accounting',
+                'source_type' => 'quality.inspection',
+                'source_id' => 502,
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     /**
      * @return array{0: Tenant, 1: string, 2: string, 3: string}
      */

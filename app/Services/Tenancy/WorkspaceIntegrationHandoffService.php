@@ -5,11 +5,19 @@ namespace App\Services\Tenancy;
 use App\Models\WorkspaceIntegrationHandoff;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WorkspaceIntegrationHandoffService
 {
+    public function __construct(
+        protected WorkspaceIntegrationContractService $workspaceIntegrationContractService
+    ) {
+    }
+
     public function start(array $envelope, ?int $createdBy = null): WorkspaceIntegrationHandoff
     {
+        $this->assertContractAllowsEnvelope($envelope);
+
         $idempotencyKey = $this->idempotencyKey($envelope);
 
         return DB::transaction(function () use ($envelope, $createdBy, $idempotencyKey): WorkspaceIntegrationHandoff {
@@ -94,5 +102,22 @@ class WorkspaceIntegrationHandoffService
             (string) ($envelope['source_type'] ?? ''),
             (string) ($envelope['source_id'] ?? ''),
         ]);
+    }
+
+    protected function assertContractAllowsEnvelope(array $envelope): void
+    {
+        foreach (['integration_key', 'event_name', 'source_product', 'target_product'] as $field) {
+            if (blank((string) ($envelope[$field] ?? ''))) {
+                throw ValidationException::withMessages([
+                    $field => "Integration handoff envelope is missing {$field}.",
+                ]);
+            }
+        }
+
+        if (! $this->workspaceIntegrationContractService->findForEnvelope($envelope)) {
+            throw ValidationException::withMessages([
+                'integration_key' => 'No active workspace integration contract matches this handoff envelope.',
+            ]);
+        }
     }
 }

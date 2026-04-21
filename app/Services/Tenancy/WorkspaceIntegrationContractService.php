@@ -13,8 +13,10 @@ class WorkspaceIntegrationContractService
 
     public function contracts(): Collection
     {
-        return collect(config('workspace_products.families', []))
-            ->flatMap(function (array $definition, string $sourceFamily): array {
+        return collect($this->workspaceManifestService->familyKeys())
+            ->flatMap(function (string $sourceFamily): array {
+                $definition = $this->workspaceManifestService->familyDefinition($sourceFamily);
+
                 return collect((array) ($definition['integrations'] ?? []))
                     ->map(function (array $integration) use ($sourceFamily): array {
                         return $this->normalizeContract($sourceFamily, $integration);
@@ -38,9 +40,35 @@ class WorkspaceIntegrationContractService
             ->values();
     }
 
+    public function findForEnvelope(array $envelope): ?array
+    {
+        $integrationKey = trim((string) ($envelope['integration_key'] ?? ''));
+        $eventName = trim((string) ($envelope['event_name'] ?? ''));
+        $sourceFamily = $this->workspaceManifestService->resolveFamilyFromText((string) ($envelope['source_product'] ?? ''));
+        $targetFamily = trim((string) ($envelope['target_product'] ?? '')) !== ''
+            ? $this->workspaceManifestService->resolveFamilyFromText((string) $envelope['target_product'])
+            : '';
+
+        return $this->contracts()
+            ->first(function (array $contract) use ($integrationKey, $eventName, $sourceFamily, $targetFamily): bool {
+                if ($contract['key'] !== $integrationKey || $contract['source_family'] !== $sourceFamily) {
+                    return false;
+                }
+
+                if ($contract['events'] !== [] && ! in_array($eventName, $contract['events'], true)) {
+                    return false;
+                }
+
+                return $targetFamily !== '' && $contract['target_family'] === $targetFamily;
+            });
+    }
+
     protected function normalizeContract(string $sourceFamily, array $integration): array
     {
-        $targetFamily = trim((string) ($integration['target_family'] ?? $integration['requires_family'] ?? ''));
+        $targetFamilyText = trim((string) ($integration['target_family'] ?? $integration['requires_family'] ?? ''));
+        $targetFamily = $targetFamilyText !== ''
+            ? $this->workspaceManifestService->resolveFamilyFromText($targetFamilyText)
+            : '';
 
         return [
             'key' => trim((string) ($integration['key'] ?? '')),

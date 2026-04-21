@@ -4,6 +4,7 @@ namespace Tests\Feature\Tenancy;
 
 use App\Models\AppSetting;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
+use App\Services\Tenancy\WorkspaceIntegrationContractService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -131,5 +132,73 @@ class WorkspaceRuntimeConsumptionTest extends TestCase
         $this->assertSame('Accounting System', $integrationItems[0]['target_product_name']);
         $this->assertSame('accounting', $integrationItems[0]['target_product_code']);
         $this->assertSame(['workspace_product' => 'accounting'], $integrationItems[0]['target_params']);
+    }
+
+    public function test_dynamic_writeback_products_are_included_in_integration_contract_registry(): void
+    {
+        AppSetting::query()->create([
+            'group_key' => 'workspace_products',
+            'key' => 'workspace_products.manifest_writeback_package.quality_control',
+            'value' => json_encode([
+                'family_key' => 'quality_control',
+                'mode' => 'add',
+                'family_payload' => [
+                    'aliases' => ['quality', 'inspection'],
+                    'experience' => [
+                        'title' => 'Quality control workspace',
+                    ],
+                    'runtime_modules' => [
+                        'inspection-center' => [
+                            'family' => 'quality_control',
+                            'focus_code' => 'quality_control',
+                            'title' => 'Inspection Center',
+                            'description' => 'Review inspections before financial handoff.',
+                        ],
+                    ],
+                    'integrations' => [
+                        [
+                            'key' => 'quality-accounting',
+                            'requires_family' => 'accounting',
+                            'title' => 'Quality costs can hand off to accounting',
+                            'description' => 'Inspection charges can move into accounting workflows.',
+                            'target_label' => 'Open Accounting',
+                            'target_route' => 'automotive.admin.modules.general-ledger',
+                            'events' => ['inspection.completed'],
+                            'source_capabilities' => ['quality.inspections'],
+                            'target_capabilities' => ['accounting.journal_posting'],
+                            'payload_schema' => ['inspection_id' => 'integer', 'total_amount' => 'decimal'],
+                        ],
+                    ],
+                ],
+                'captured_at' => now()->toDateTimeString(),
+            ], JSON_UNESCAPED_SLASHES),
+            'value_type' => 'json',
+        ]);
+
+        $contracts = app(WorkspaceIntegrationContractService::class);
+
+        $contract = $contracts->find('quality-accounting');
+
+        $this->assertNotNull($contract);
+        $this->assertSame('quality_control', $contract['source_family']);
+        $this->assertSame('accounting', $contract['target_family']);
+        $this->assertSame(['inspection.completed'], $contract['events']);
+        $this->assertSame(['quality.inspections'], $contract['source_capabilities']);
+        $this->assertSame(['accounting.journal_posting'], $contract['target_capabilities']);
+
+        $matchingEnvelope = $contracts->findForEnvelope([
+            'integration_key' => 'quality-accounting',
+            'event_name' => 'inspection.completed',
+            'source_product' => 'quality_control',
+            'target_product' => 'accounting',
+        ]);
+
+        $this->assertNotNull($matchingEnvelope);
+        $this->assertNull($contracts->findForEnvelope([
+            'integration_key' => 'quality-accounting',
+            'event_name' => 'unknown.completed',
+            'source_product' => 'quality_control',
+            'target_product' => 'accounting',
+        ]));
     }
 }

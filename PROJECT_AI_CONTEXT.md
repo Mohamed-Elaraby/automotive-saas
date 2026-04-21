@@ -768,13 +768,16 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### New Product Onboarding Dry Run
+### Post-Integration Stabilization And Deployment Verification
 Recommended scope:
-- create a small non-production sample product through the existing product builder / manifest flow
-- declare its runtime modules, capabilities, and integration contracts without custom product-specific shortcuts
-- run manifest sync/apply and confirm tenant workspace activation behaves like current products
-- prove it can emit or receive at least one integration handoff through the existing contract/handoff layer
-- document the exact checklist required before any real new product is added
+- deploy/run tenant migrations for the latest accounting and integration control tables
+- verify production tenant workspaces can still open Dashboard, Workshop Operations, General Ledger, and Spare Parts paths
+- verify real production handoff flows:
+  - `automotive_service -> parts_inventory`
+  - `automotive_service -> accounting`
+  - `parts_inventory -> accounting`
+- verify one dry-run dynamic product manifest package can be read by the runtime contract registry
+- only after this verification, start normal product feature work again
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -1065,6 +1068,60 @@ Verification:
   - result: 5 passed, 104 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
   - result: 18 passed, 314 assertions
+
+## 15.8) Integration Closure Certification
+Status:
+- completed
+- the integration phase is now closed at code level for the current architecture
+
+Why this package was needed:
+- the user explicitly wanted to close the linking layer before adding product features
+- previous integration work added contracts and handoff diagnostics, but one important gap remained:
+  - dynamic writeback products were consumable by `WorkspaceManifestService`
+  - but `WorkspaceIntegrationContractService` only read static `config/workspace_products.php`
+  - this meant a future product could appear in the workspace manifest while its integration contracts were invisible to the contract registry
+
+Completed scope:
+- `WorkspaceManifestService` now checks central `app_settings` using the central connection even while tenant tenancy is initialized
+- `WorkspaceIntegrationContractService` now builds the contract registry from all manifest families:
+  - static config families
+  - dynamic writeback package families
+- contract target family normalization now resolves product codes/aliases through the workspace manifest resolver
+- `WorkspaceIntegrationHandoffService` now rejects handoff envelopes unless they match an active declared integration contract
+- added proof that a new product family (`quality_control`) can:
+  - be added through a dynamic manifest writeback package
+  - appear in tenant dashboard/runtime product visibility
+  - declare an integration contract to Accounting
+  - create a handoff through the shared handoff service without product-specific runtime code
+  - reject an undeclared event for the same integration key
+
+Current closed integration guarantees:
+- current product links remain covered:
+  - `automotive_service -> parts_inventory`
+  - `automotive_service -> accounting`
+  - `parts_inventory -> accounting`
+- future products must declare structured integration contracts before handoffs can be recorded
+- dynamic product manifests and static config manifests now feed the same runtime contract registry
+- handoff diagnostics remain tenant-level and reusable across current/future products
+
+Important files changed:
+- `app/Services/Tenancy/WorkspaceManifestService.php`
+- `app/Services/Tenancy/WorkspaceIntegrationContractService.php`
+- `app/Services/Tenancy/WorkspaceIntegrationHandoffService.php`
+- `tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='dynamic_writeback|new_product_can_use|workshop_operations_can_create_work_order|skipped_handoff|accounting_runtime_can_post_inventory'`
+  - result: 5 passed, 135 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php --filter='integration|manifest_sync|manifest_apply'`
+  - result: 8 passed, 90 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 21 passed, 345 assertions
+
+Integration closure note:
+- do not add new product features until production verification confirms the deployed environment has the same migrations/config/runtime behavior
+- after production verification passes, normal feature work can resume product by product
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
