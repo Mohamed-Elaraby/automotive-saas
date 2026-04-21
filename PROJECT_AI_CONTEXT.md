@@ -768,16 +768,14 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Post-Integration Stabilization And Deployment Verification
+### Run Production Integration Verification
 Recommended scope:
-- deploy/run tenant migrations for the latest accounting and integration control tables
-- verify production tenant workspaces can still open Dashboard, Workshop Operations, General Ledger, and Spare Parts paths
-- verify real production handoff flows:
-  - `automotive_service -> parts_inventory`
-  - `automotive_service -> accounting`
-  - `parts_inventory -> accounting`
-- verify one dry-run dynamic product manifest package can be read by the runtime contract registry
-- only after this verification, start normal product feature work again
+- deploy the latest code to the system app
+- run central and tenant migrations
+- run `php artisan tenancy:verify-integration-readiness`
+- run `php artisan tenancy:verify-integration-readiness --tenant=TENANT_ID` against a tenant with Automotive, Parts Inventory, and Accounting active
+- complete the UI smoke test in `deploy/INTEGRATION_VERIFICATION_CHECKLIST.md`
+- after this passes on production, normal product feature work can resume
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:
@@ -1122,6 +1120,53 @@ Verification:
 Integration closure note:
 - do not add new product features until production verification confirms the deployed environment has the same migrations/config/runtime behavior
 - after production verification passes, normal feature work can resume product by product
+
+## 15.9) Post-Integration Stabilization And Deployment Verification Tooling
+Status:
+- completed locally
+- production verification still must be run on the server after deploy
+
+Why this package was needed:
+- code-level integration closure was complete, but deployment still needed a repeatable verification gate
+- relying on manual page checks alone can miss tenant migration gaps, missing product activation, or contract registry drift
+
+Completed scope:
+- added `tenancy:verify-integration-readiness`
+- command verifies:
+  - required integration contracts exist:
+    - `automotive-parts`
+    - `automotive-accounting`
+    - `parts-accounting`
+  - tenant runtime tables exist when `--tenant=TENANT_ID` is supplied
+  - tenant has active workspace products for:
+    - `automotive_service`
+    - `parts_inventory`
+    - `accounting`
+  - handoff table is readable
+- added production checklist:
+  - `deploy/INTEGRATION_VERIFICATION_CHECKLIST.md`
+- added tests for:
+  - contract-only verification
+  - full tenant verification
+  - failure when required workspace products are missing
+
+Important files added/changed:
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `app/Console/Kernel.php`
+- `deploy/INTEGRATION_VERIFICATION_CHECKLIST.md`
+- `tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 3 passed, 13 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php tests/Feature/Tenancy/WorkspaceRuntimeConsumptionTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='verify|dynamic_writeback|new_product_can_use|workshop_operations_can_create_work_order|skipped_handoff|accounting_runtime_can_post_inventory'`
+  - result: 8 passed, 148 assertions
+
+Production command:
+- contract-only:
+  - `php artisan tenancy:verify-integration-readiness`
+- full tenant verification:
+  - `php artisan tenancy:verify-integration-readiness --tenant=TENANT_ID`
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:
