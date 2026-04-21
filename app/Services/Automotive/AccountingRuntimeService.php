@@ -1514,6 +1514,83 @@ class AccountingRuntimeService
             ->get();
     }
 
+    public function profitAndLoss(array $filters = []): array
+    {
+        $rows = $this->statementRows(['revenue', 'expense'], ['4', '5'], $filters)
+            ->map(function ($row) {
+                $type = $row->account_type ?: (Str::startsWith($row->account_code, '4') ? 'revenue' : 'expense');
+                $amount = $type === 'revenue'
+                    ? round((float) $row->credit_total - (float) $row->debit_total, 2)
+                    : round((float) $row->debit_total - (float) $row->credit_total, 2);
+
+                $row->statement_type = $type;
+                $row->amount = $amount;
+
+                return $row;
+            });
+
+        $revenues = $rows->where('statement_type', 'revenue')->values();
+        $expenses = $rows->where('statement_type', 'expense')->values();
+        $revenueTotal = round((float) $revenues->sum('amount'), 2);
+        $expenseTotal = round((float) $expenses->sum('amount'), 2);
+
+        return [
+            'title' => 'Profit And Loss',
+            'filters' => $filters,
+            'sections' => [
+                ['label' => 'Revenue', 'rows' => $revenues, 'total' => $revenueTotal],
+                ['label' => 'Expenses', 'rows' => $expenses, 'total' => $expenseTotal],
+            ],
+            'summary' => [
+                'Revenue Total' => $revenueTotal,
+                'Expense Total' => $expenseTotal,
+                'Net Income' => round($revenueTotal - $expenseTotal, 2),
+            ],
+        ];
+    }
+
+    public function balanceSheet(array $filters = []): array
+    {
+        $rows = $this->statementRows(['asset', 'liability', 'equity'], ['1', '2', '3'], $filters)
+            ->map(function ($row) {
+                $type = $row->account_type ?: match (true) {
+                    Str::startsWith($row->account_code, '2') => 'liability',
+                    Str::startsWith($row->account_code, '3') => 'equity',
+                    default => 'asset',
+                };
+                $amount = $type === 'asset'
+                    ? round((float) $row->debit_total - (float) $row->credit_total, 2)
+                    : round((float) $row->credit_total - (float) $row->debit_total, 2);
+
+                $row->statement_type = $type;
+                $row->amount = $amount;
+
+                return $row;
+            });
+
+        $assets = $rows->where('statement_type', 'asset')->values();
+        $liabilities = $rows->where('statement_type', 'liability')->values();
+        $equity = $rows->where('statement_type', 'equity')->values();
+        $assetTotal = round((float) $assets->sum('amount'), 2);
+        $liabilityTotal = round((float) $liabilities->sum('amount'), 2);
+        $equityTotal = round((float) $equity->sum('amount'), 2);
+
+        return [
+            'title' => 'Balance Sheet',
+            'filters' => $filters,
+            'sections' => [
+                ['label' => 'Assets', 'rows' => $assets, 'total' => $assetTotal],
+                ['label' => 'Liabilities', 'rows' => $liabilities, 'total' => $liabilityTotal],
+                ['label' => 'Equity', 'rows' => $equity, 'total' => $equityTotal],
+            ],
+            'summary' => [
+                'Asset Total' => $assetTotal,
+                'Liabilities And Equity' => round($liabilityTotal + $equityTotal, 2),
+                'Difference' => round($assetTotal - $liabilityTotal - $equityTotal, 2),
+            ],
+        ];
+    }
+
     protected function resolvePostingGroup(?int $postingGroupId = null): ?AccountingPostingGroup
     {
         if ($postingGroupId) {
@@ -1554,6 +1631,35 @@ class AccountingRuntimeService
         ]);
 
         return $group;
+    }
+
+    protected function statementRows(array $accountTypes, array $codePrefixes, array $filters = []): Collection
+    {
+        return DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->leftJoin('accounting_accounts', 'accounting_accounts.code', '=', 'journal_entry_lines.account_code')
+            ->where('journal_entries.status', 'posted')
+            ->where(function ($query) use ($accountTypes, $codePrefixes) {
+                $query->whereIn('accounting_accounts.type', $accountTypes);
+
+                foreach ($codePrefixes as $prefix) {
+                    $query->orWhere('journal_entry_lines.account_code', 'like', $prefix . '%');
+                }
+            })
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('journal_entries.entry_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('journal_entries.entry_date', '<=', $filters['date_to']))
+            ->groupBy('journal_entry_lines.account_code', 'journal_entry_lines.account_name', 'accounting_accounts.type')
+            ->orderBy('journal_entry_lines.account_code')
+            ->select([
+                'journal_entry_lines.account_code',
+                'journal_entry_lines.account_name',
+                'accounting_accounts.type as account_type',
+                DB::raw('SUM(journal_entry_lines.debit) as debit_total'),
+                DB::raw('SUM(journal_entry_lines.credit) as credit_total'),
+            ])
+            ->get()
+            ->filter(fn ($row): bool => round(abs((float) $row->debit_total - (float) $row->credit_total), 2) > 0)
+            ->values();
     }
 
     protected function ensureDefaultAccounts(): void

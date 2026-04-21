@@ -1137,6 +1137,30 @@ class TenantAdminAccessFlowTest extends TestCase
         $paidLedgerResponse->assertOk();
         $paidLedgerResponse->assertSee('PAID', false);
         $paidLedgerResponse->assertSee('Paid 240.00', false);
+
+        $profitAndLossPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/profit-and-loss?workspace_product=accounting&format=print");
+        $profitAndLossPrint->assertOk();
+        $profitAndLossPrint->assertSee('Profit And Loss', false);
+        $profitAndLossPrint->assertSee('Operating Expense', false);
+        $profitAndLossPrint->assertSee('Net Income', false);
+
+        $profitAndLossCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/profit-and-loss?workspace_product=accounting&format=csv");
+        $profitAndLossCsv->assertOk();
+        $profitAndLossContent = $profitAndLossCsv->streamedContent();
+        $this->assertStringContainsString('Operating Expense', $profitAndLossContent);
+        $this->assertStringContainsString('Net Income', $profitAndLossContent);
+
+        $balanceSheetPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/balance-sheet?workspace_product=accounting&format=print");
+        $balanceSheetPrint->assertOk();
+        $balanceSheetPrint->assertSee('Balance Sheet', false);
+        $balanceSheetPrint->assertSee('Bank Account', false);
+        $balanceSheetPrint->assertSee('Difference', false);
+
+        $balanceSheetCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/balance-sheet?workspace_product=accounting&format=csv");
+        $balanceSheetCsv->assertOk();
+        $balanceSheetContent = $balanceSheetCsv->streamedContent();
+        $this->assertStringContainsString('Bank Account', $balanceSheetContent);
+        $this->assertStringContainsString('Difference', $balanceSheetContent);
     }
 
 

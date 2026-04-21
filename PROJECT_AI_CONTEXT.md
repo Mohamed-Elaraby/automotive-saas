@@ -768,12 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Financial Statements Foundation
+### Accounting Tax And VAT Foundation
 Recommended scope:
-- add Profit And Loss report from posted journal lines
-- add Balance Sheet report from asset/liability/equity accounts
-- add print views and CSV exports for financial statements
-- keep reports journal-driven and date-filtered
+- add tax/VAT account defaults and configurable tax rates
+- add basic tax fields to customer revenue and vendor bill workflows where appropriate
+- create tax summary report from posted journals/documents
+- keep tax reporting journal-driven and date-filtered
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1522,6 +1522,50 @@ Verification:
   - result: 8 passed, 269 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 25 passed, 503 assertions
+
+## 15.17) Accounting Financial Statements Foundation
+Status:
+- completed
+
+Why this package was needed:
+- Accounting had journal entries, trial balance, revenue/payment reports, receivables, payables, and reconciliation, but still lacked formal financial statement outputs
+- this package adds journal-driven statement reports without creating a separate reporting ledger
+
+Completed scope:
+- added Profit And Loss report from posted journal lines
+- added Balance Sheet report from posted journal lines
+- reports are date-filtered using the existing General Ledger filters:
+  - `date_from`
+  - `date_to`
+- Profit And Loss:
+  - groups revenue accounts from account type `revenue` / code prefix `4`
+  - groups expense accounts from account type `expense` / code prefix `5`
+  - calculates revenue total, expense total, and net income
+- Balance Sheet:
+  - groups assets from account type `asset` / code prefix `1`
+  - groups liabilities from account type `liability` / code prefix `2`
+  - groups equity from account type `equity` / code prefix `3`
+  - calculates asset total, liabilities/equity total, and difference
+- General Ledger exports now include:
+  - `profit-and-loss` CSV
+  - `balance-sheet` CSV
+  - printable P&L
+  - printable Balance Sheet
+- financial statement print view is generic and section-based
+- reports stay journal-driven and do not alter accounting records
+
+Important files added/changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-financial-statement-print.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 8 passed, 283 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 25 passed, 517 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

@@ -478,7 +478,7 @@ class WorkspaceModuleController extends Controller
 
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse
     {
-        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation'], true), 404);
+        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation', 'profit-and-loss', 'balance-sheet'], true), 404);
 
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void,corrected'],
@@ -501,7 +501,27 @@ class WorkspaceModuleController extends Controller
             return view('automotive.admin.modules.accounting-bank-reconciliation-print', compact('reportData'));
         }
 
-        if ($report === 'journal-entries') {
+        if (in_array($report, ['profit-and-loss', 'balance-sheet'], true)) {
+            $statement = $report === 'profit-and-loss'
+                ? $this->accountingRuntimeService->profitAndLoss($filters)
+                : $this->accountingRuntimeService->balanceSheet($filters);
+
+            if ($format === 'print') {
+                return view('automotive.admin.modules.accounting-financial-statement-print', compact('statement'));
+            }
+
+            $headers = ['Section', 'Account Code', 'Account Name', 'Amount'];
+            $rows = collect($statement['sections'])
+                ->flatMap(fn (array $section) => $section['rows']->map(fn ($row): array => [
+                    $section['label'],
+                    $row->account_code,
+                    $row->account_name,
+                    (string) $row->amount,
+                ]))
+                ->push(['Summary', '', ''])
+                ->merge(collect($statement['summary'])->map(fn ($amount, $label): array => ['Summary', '', $label, (string) $amount]))
+                ->all();
+        } elseif ($report === 'journal-entries') {
             $headers = ['Journal Number', 'Entry Date', 'Status', 'Memo', 'Currency', 'Debit Total', 'Credit Total'];
             $rows = $this->accountingRuntimeService->getJournalEntries($filters, 500)
                 ->map(fn (JournalEntry $entry): array => [
