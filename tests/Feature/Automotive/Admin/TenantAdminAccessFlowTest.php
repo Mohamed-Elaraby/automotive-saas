@@ -722,6 +722,19 @@ class TenantAdminAccessFlowTest extends TestCase
         $detailResponse->assertOk();
         $detailResponse->assertSee('Customer payment for WO-PAYMENT-1', false);
 
+        $invoiceResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$eventId}/invoice?workspace_product=accounting");
+        $invoiceResponse->assertOk();
+        $invoiceResponse->assertSee('Invoice INV-', false);
+        $invoiceResponse->assertSee('Payment Customer', false);
+        $invoiceResponse->assertSee('Paid Amount', false);
+        $invoiceResponse->assertSee('150.00', false);
+
+        $statementResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/customer-statement?workspace_product=accounting&customer=Payment%20Customer");
+        $statementResponse->assertOk();
+        $statementResponse->assertSee('Customer Statement', false);
+        $statementResponse->assertSee('WO-PAYMENT-1', false);
+        $statementResponse->assertSee('Payment', false);
+
         $voidResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/payments/{$payment->id}/void?workspace_product=accounting", [
             'workspace_product' => 'accounting',
         ]);
@@ -761,6 +774,11 @@ class TenantAdminAccessFlowTest extends TestCase
             tenancy()->end();
             DB::purge('tenant');
         }
+
+        $voidedStatementResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/customer-statement?workspace_product=accounting&customer=Payment%20Customer");
+        $voidedStatementResponse->assertOk();
+        $voidedStatementResponse->assertSee('Voided Payment', false);
+        $voidedStatementResponse->assertSee('Open Balance', false);
     }
 
     public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void

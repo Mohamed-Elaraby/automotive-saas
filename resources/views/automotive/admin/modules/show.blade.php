@@ -182,6 +182,25 @@
                     </div>
                 </div>
 
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Customer Statements</h5></div>
+                    <div class="card-body">
+                        @if(($moduleData['statement_customers'] ?? collect())->isEmpty())
+                            <p class="text-muted mb-0">No customers are ready for statement printing yet.</p>
+                        @else
+                            <div class="row">
+                                @foreach(($moduleData['statement_customers'] ?? collect())->take(6) as $statementCustomer)
+                                    <div class="col-md-4 mb-2">
+                                        <a class="btn btn-outline-light w-100 text-start" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.customer-statement', ['customer' => $statementCustomer] + $workspaceQuery) }}">
+                                            {{ $statementCustomer }}
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-xl-4 d-flex">
                         <div class="card flex-fill">
@@ -656,7 +675,7 @@
                     </div>
                 </div>
 
-                <div class="card"><div class="card-header"><h5 class="card-title mb-0">Accounting Events Ledger</h5></div><div class="card-body">@forelse(($moduleData['recent_accounting_events'] ?? collect()) as $event)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }}</h6><div class="text-muted small">{{ data_get($event->payload, 'title', $event->event_type) }}</div><div class="text-muted small">{{ data_get($event->payload, 'customer_name', 'No customer') }}{{ data_get($event->payload, 'vehicle') ? ' · '.data_get($event->payload, 'vehicle') : '' }}</div></div><div class="text-end"><div class="fw-semibold">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div><div class="text-muted small">Labor {{ number_format((float) $event->labor_amount, 2) }} · Parts {{ number_format((float) $event->parts_amount, 2) }}</div><span class="badge {{ $event->status === 'journal_posted' ? 'bg-success' : 'bg-info' }} mt-1">{{ strtoupper(str_replace('_', ' ', $event->status)) }}</span></div></div></div>@empty<p class="text-muted mb-0">No local accounting events have been posted yet.</p>@endforelse</div></div>
+                <div class="card"><div class="card-header"><h5 class="card-title mb-0">Accounting Events Ledger</h5></div><div class="card-body">@forelse(($moduleData['recent_accounting_events'] ?? collect()) as $event)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ data_get($event->payload, 'work_order_number', 'Accounting Event') }}</h6><div class="text-muted small">{{ data_get($event->payload, 'title', $event->event_type) }}</div><div class="text-muted small">{{ data_get($event->payload, 'customer_name', 'No customer') }}{{ data_get($event->payload, 'vehicle') ? ' · '.data_get($event->payload, 'vehicle') : '' }}</div>@if(in_array($event->status, ['journal_posted', 'paid'], true))<div class="mt-2"><a class="btn btn-sm btn-outline-light" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.accounting-events.invoice', ['accountingEvent' => $event->id] + $workspaceQuery) }}">Print Invoice</a></div>@endif</div><div class="text-end"><div class="fw-semibold">{{ number_format((float) $event->total_amount, 2) }} {{ $event->currency }}</div><div class="text-muted small">Labor {{ number_format((float) $event->labor_amount, 2) }} · Parts {{ number_format((float) $event->parts_amount, 2) }}</div><span class="badge {{ $event->status === 'journal_posted' ? 'bg-success' : 'bg-info' }} mt-1">{{ strtoupper(str_replace('_', ' ', $event->status)) }}</span></div></div></div>@empty<p class="text-muted mb-0">No local accounting events have been posted yet.</p>@endforelse</div></div>
             @elseif(($page ?? '') === 'supplier-catalog')
                 <div class="row">
                     <div class="col-xl-4 d-flex">

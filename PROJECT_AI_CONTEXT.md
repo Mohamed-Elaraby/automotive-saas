@@ -768,11 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Customer Statements And Invoice Documents
+### Accounting Payment Reconciliation And Bank Deposits
 Recommended scope:
-- generate customer-facing invoice/statement views from posted accounting events
-- add printable customer statement showing invoices, payments, voids, and open balance
-- add invoice number display and downloadable print view
+- add payment reconciliation workflow for received customer payments
+- allow grouping posted cash/bank payments into deposit batches
+- track reconciliation status without changing posted journal truth
+- add simple reconciliation filters and audit trail entries
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1275,6 +1276,50 @@ Verification:
   - result: 6 passed, 145 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
   - result: 23 passed, 379 assertions
+
+## 15.12) Accounting Customer Statements And Invoice Documents
+Status:
+- completed
+
+Why this package was needed:
+- Accounting could post revenue, collect payments, age receivables, and void payments, but it still lacked customer-facing accounting documents
+- this package gives the tenant an operational way to print invoice documents and customer statements from posted accounting data without inventing a separate invoicing ledger
+
+Completed scope:
+- General Ledger now exposes invoice print links for accounting events that are `journal_posted` or `paid`
+- invoice documents are generated from the posted accounting event, its journal entry, work-order revenue payload, and related payments
+- invoice view shows:
+  - invoice number
+  - customer
+  - source reference
+  - labor and parts lines
+  - subtotal / total
+  - paid amount
+  - open amount
+  - related payment records
+- General Ledger now exposes customer statement links for customers with posted receivable events or payments
+- customer statement view shows:
+  - invoice rows as debits
+  - posted payment rows as credits
+  - voided payment rows as debit corrections
+  - running balance
+  - total debits / credits / open balance
+- journals and payment records remain the source of truth; documents are printable views over existing accounting runtime data
+
+Important files added/changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-invoice-print.blade.php`
+- `resources/views/automotive/admin/modules/accounting-statement-print.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime'`
+  - result: 6 passed, 157 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 23 passed, 391 assertions
 
 ## 16) How Future AI Sessions Should Work
 When starting from this file:

@@ -339,6 +339,7 @@ class WorkspaceModuleController extends Controller
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
                 'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
                 'receivables_aging' => $this->accountingRuntimeService->receivablesAging(),
+                'statement_customers' => $this->accountingRuntimeService->statementCustomerNames(),
                 'journal_filters' => $filters,
                 'recent_journal_entries' => $this->accountingRuntimeService->getJournalEntries($filters, 25),
                 'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
@@ -572,6 +573,35 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', "Journal entry {$entry->journal_number} posted successfully.");
+    }
+
+    public function showAccountingInvoice(Request $request, AccountingEvent $accountingEvent): View
+    {
+        $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) tenant()->id);
+        $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
+            $workspaceProducts,
+            $request->query('workspace_product', 'accounting')
+        );
+        $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
+        $document = $this->accountingRuntimeService->invoiceDocument($accountingEvent);
+
+        return view('automotive.admin.modules.accounting-invoice-print', compact(
+            'accountingEvent',
+            'document',
+            'workspaceQuery'
+        ));
+    }
+
+    public function showCustomerStatement(Request $request): View
+    {
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'customer' => ['required', 'string', 'max:255'],
+        ]);
+
+        $statement = $this->accountingRuntimeService->customerStatement($validated['customer']);
+
+        return view('automotive.admin.modules.accounting-statement-print', compact('statement'));
     }
 
     public function postInventoryMovement(Request $request, StockMovement $stockMovement): RedirectResponse

@@ -160,6 +160,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.journal-entries.reverse');
                 Route::post('/general-ledger/accounting-events/{accountingEvent}/post', [WorkspaceModuleController::class, 'postAccountingEvent'])
                     ->name('modules.general-ledger.accounting-events.post');
+                Route::get('/general-ledger/accounting-events/{accountingEvent}/invoice', [WorkspaceModuleController::class, 'showAccountingInvoice'])
+                    ->name('modules.general-ledger.accounting-events.invoice');
+                Route::get('/general-ledger/customer-statement', [WorkspaceModuleController::class, 'showCustomerStatement'])
+                    ->name('modules.general-ledger.customer-statement');
                 Route::post('/general-ledger/inventory-movements/{stockMovement}/post', [WorkspaceModuleController::class, 'postInventoryMovement'])
                     ->name('modules.general-ledger.inventory-movements.post');
                 Route::post('/general-ledger/payments', [WorkspaceModuleController::class, 'storeAccountingPayment'])

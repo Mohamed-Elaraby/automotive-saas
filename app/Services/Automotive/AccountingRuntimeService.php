@@ -163,6 +163,124 @@ class AccountingRuntimeService
         ];
     }
 
+    public function statementCustomerNames(): Collection
+    {
+        $eventNames = AccountingEvent::query()
+            ->whereIn('status', ['journal_posted', 'paid'])
+            ->latest('id')
+            ->limit(500)
+            ->get()
+            ->map(fn (AccountingEvent $event): string => trim((string) data_get($event->payload, 'customer_name', '')));
+
+        $paymentNames = AccountingPayment::query()
+            ->latest('id')
+            ->limit(500)
+            ->pluck('payer_name')
+            ->map(fn ($name): string => trim((string) $name));
+
+        return $eventNames
+            ->merge($paymentNames)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
+    public function invoiceDocument(AccountingEvent $event): array
+    {
+        $payments = AccountingPayment::query()
+            ->with('journalEntry')
+            ->where('accounting_event_id', $event->id)
+            ->latest('payment_date')
+            ->latest('id')
+            ->get();
+        $paidAmount = $this->paidAmountForEvent($event->id);
+
+        return [
+            'invoice_number' => 'INV-' . str_pad((string) $event->id, 6, '0', STR_PAD_LEFT),
+            'event' => $event,
+            'journal_entry' => JournalEntry::query()
+                ->where('accounting_event_id', $event->id)
+                ->where('source_type', $event->reference_type)
+                ->where('source_id', $event->reference_id)
+                ->first(),
+            'lines' => collect([
+                [
+                    'description' => 'Labor / service revenue',
+                    'amount' => round((float) $event->labor_amount, 2),
+                ],
+                [
+                    'description' => 'Parts revenue',
+                    'amount' => round((float) $event->parts_amount, 2),
+                ],
+            ])->filter(fn (array $line): bool => $line['amount'] > 0)->values(),
+            'payments' => $payments,
+            'paid_amount' => $paidAmount,
+            'open_amount' => max(0, round((float) $event->total_amount - $paidAmount, 2)),
+        ];
+    }
+
+    public function customerStatement(string $customerName): array
+    {
+        $customerName = trim($customerName);
+        $events = AccountingEvent::query()
+            ->whereIn('status', ['journal_posted', 'paid'])
+            ->latest('event_date')
+            ->limit(500)
+            ->get()
+            ->filter(fn (AccountingEvent $event): bool => strcasecmp((string) data_get($event->payload, 'customer_name', ''), $customerName) === 0)
+            ->values();
+        $eventIds = $events->pluck('id')->all();
+        $payments = AccountingPayment::query()
+            ->whereIn('accounting_event_id', $eventIds ?: [0])
+            ->orderBy('payment_date')
+            ->orderBy('id')
+            ->get();
+
+        $rows = collect();
+
+        foreach ($events as $event) {
+            $rows->push([
+                'date' => optional($event->event_date)->toDateString() ?: now()->toDateString(),
+                'type' => 'Invoice',
+                'reference' => 'INV-' . str_pad((string) $event->id, 6, '0', STR_PAD_LEFT),
+                'description' => trim((string) data_get($event->payload, 'work_order_number', '') . ' ' . (string) data_get($event->payload, 'title', $event->event_type)),
+                'debit' => round((float) $event->total_amount, 2),
+                'credit' => 0.0,
+            ]);
+        }
+
+        foreach ($payments as $payment) {
+            $isVoid = $payment->status === 'void';
+            $rows->push([
+                'date' => optional($payment->payment_date)->toDateString() ?: now()->toDateString(),
+                'type' => $isVoid ? 'Voided Payment' : 'Payment',
+                'reference' => $payment->payment_number,
+                'description' => trim(ucfirst(str_replace('_', ' ', $payment->method)) . ' ' . ($payment->reference ?: '')),
+                'debit' => $isVoid ? round((float) $payment->amount, 2) : 0.0,
+                'credit' => $isVoid ? 0.0 : round((float) $payment->amount, 2),
+            ]);
+        }
+
+        $balance = 0.0;
+        $statementRows = $rows
+            ->sortBy([['date', 'asc'], ['type', 'asc']])
+            ->values()
+            ->map(function (array $row) use (&$balance): array {
+                $balance = round($balance + $row['debit'] - $row['credit'], 2);
+
+                return $row + ['balance' => $balance];
+            });
+
+        return [
+            'customer_name' => $customerName,
+            'rows' => $statementRows,
+            'debit_total' => round((float) $statementRows->sum('debit'), 2),
+            'credit_total' => round((float) $statementRows->sum('credit'), 2),
+            'open_balance' => $balance,
+        ];
+    }
+
     public function getRecentJournalEntries(int $limit = 15): Collection
     {
         return JournalEntry::query()
