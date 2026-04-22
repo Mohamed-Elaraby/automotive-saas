@@ -674,7 +674,19 @@ class WorkspaceModuleController extends Controller
     {
         $this->authorizeAccounting(AccountingPermissionService::REPORTS_EXPORT);
 
-        abort_unless(in_array($report, ['journal-entries', 'trial-balance', 'revenue-summary', 'payments', 'bank-reconciliation', 'profit-and-loss', 'balance-sheet', 'tax-summary'], true), 404);
+        abort_unless(in_array($report, [
+            'journal-entries',
+            'trial-balance',
+            'revenue-summary',
+            'payments',
+            'bank-reconciliation',
+            'reconciliation-summary',
+            'profit-and-loss',
+            'balance-sheet',
+            'tax-summary',
+            'receivables-aging',
+            'payables-aging',
+        ], true), 404);
 
         $filters = $request->validate([
             'status' => ['nullable', 'in:posted,reversed,void,corrected'],
@@ -694,10 +706,27 @@ class WorkspaceModuleController extends Controller
         if ($report === 'bank-reconciliation') {
             $reportData = $this->accountingRuntimeService->bankReconciliationReport($filters);
 
-            return view('automotive.admin.modules.accounting-bank-reconciliation-print', compact('reportData'));
-        }
+            if ($format === 'print') {
+                return view('automotive.admin.modules.accounting-bank-reconciliation-print', compact('reportData'));
+            }
 
-        if (in_array($report, ['profit-and-loss', 'balance-sheet'], true)) {
+            [$headers, $rows] = $this->bankReconciliationExportRows($reportData);
+        } elseif ($report === 'reconciliation-summary') {
+            $summary = $this->accountingRuntimeService->paymentReconciliationSummary();
+            $headers = ['Metric', 'Count', 'Amount', 'Period Start', 'Period End'];
+            $rows = [
+                ['Unreconciled Receipts', (string) $summary['pending_count'], (string) $summary['pending_amount'], $summary['period_start'], $summary['period_end']],
+                ['Unreconciled Deposits', (string) $summary['deposited_count'], (string) $summary['deposited_amount'], $summary['period_start'], $summary['period_end']],
+                ['Unreconciled Vendor Payments', (string) $summary['vendor_payment_count'], (string) $summary['vendor_payment_amount'], $summary['period_start'], $summary['period_end']],
+                ['Reconciled Period Net Amount', '', (string) $summary['reconciled_period_amount'], $summary['period_start'], $summary['period_end']],
+            ];
+        } elseif ($report === 'receivables-aging') {
+            $aging = $this->accountingRuntimeService->receivablesAging();
+            [$headers, $rows] = $this->agingExportRows($aging);
+        } elseif ($report === 'payables-aging') {
+            $aging = $this->accountingRuntimeService->payablesAging();
+            [$headers, $rows] = $this->agingExportRows($aging);
+        } elseif (in_array($report, ['profit-and-loss', 'balance-sheet'], true)) {
             $statement = $report === 'profit-and-loss'
                 ? $this->accountingRuntimeService->profitAndLoss($filters)
                 : $this->accountingRuntimeService->balanceSheet($filters);
@@ -714,7 +743,6 @@ class WorkspaceModuleController extends Controller
                     $row->account_name,
                     (string) $row->amount,
                 ]))
-                ->push(['Summary', '', ''])
                 ->merge(collect($statement['summary'])->map(fn ($amount, $label): array => ['Summary', '', $label, (string) $amount]))
                 ->all();
         } elseif ($report === 'tax-summary') {
@@ -786,7 +814,7 @@ class WorkspaceModuleController extends Controller
         }
 
         if ($format === 'print') {
-            $title = $report === 'tax-summary' ? 'Tax Summary' : ucfirst(str_replace('-', ' ', $report));
+            $title = $this->accountingReportTitle($report);
 
             return view('automotive.admin.modules.accounting-report-print', compact('title', 'headers', 'rows', 'filters'));
         }
@@ -803,6 +831,93 @@ class WorkspaceModuleController extends Controller
 
             fclose($output);
         }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    protected function accountingReportTitle(string $report): string
+    {
+        return match ($report) {
+            'profit-and-loss' => 'Profit And Loss',
+            'tax-summary' => 'Tax Summary',
+            'receivables-aging' => 'Receivables Aging',
+            'payables-aging' => 'Payables Aging',
+            'reconciliation-summary' => 'Reconciliation Summary',
+            default => str($report)->replace('-', ' ')->title()->toString(),
+        };
+    }
+
+    protected function agingExportRows(array $aging): array
+    {
+        $headers = ['Bucket', 'Open Count', 'Open Amount', 'Total Open', 'Overdue Total'];
+        $rows = collect($aging['buckets'] ?? [])
+            ->map(fn (array $bucket): array => [
+                $bucket['label'] ?? '',
+                (string) ($bucket['count'] ?? 0),
+                (string) ($bucket['amount'] ?? 0),
+                (string) ($aging['total_open'] ?? 0),
+                (string) ($aging['overdue_total'] ?? 0),
+            ])
+            ->values()
+            ->all();
+
+        return [$headers, $rows];
+    }
+
+    protected function bankReconciliationExportRows(array $reportData): array
+    {
+        $headers = ['Section', 'Number', 'Date', 'Account', 'Status', 'Reference', 'Bank Match', 'Count', 'Amount', 'Currency'];
+        $rows = [];
+
+        foreach ($reportData['batches'] as $batch) {
+            $rows[] = [
+                'Deposit Batch',
+                $batch->deposit_number,
+                optional($batch->deposit_date)->format('Y-m-d'),
+                $batch->deposit_account,
+                trim(strtoupper((string) $batch->status) . ' / ' . strtoupper((string) ($batch->reconciliation_status ?: 'pending'))),
+                $batch->reference,
+                trim((optional($batch->bank_reconciliation_date)->format('Y-m-d') ?: '-') . ($batch->bank_reference ? ' ' . $batch->bank_reference : '')),
+                (string) $batch->payments_count,
+                (string) $batch->total_amount,
+                $batch->currency,
+            ];
+        }
+
+        foreach ($reportData['direct_receipts'] as $payment) {
+            $rows[] = [
+                'Direct Receipt',
+                $payment->payment_number,
+                optional($payment->payment_date)->format('Y-m-d'),
+                $payment->cash_account,
+                strtoupper((string) ($payment->reconciliation_status ?: 'pending')),
+                $payment->reference,
+                trim((optional($payment->bank_reconciliation_date)->format('Y-m-d') ?: '-') . ($payment->bank_reference ? ' ' . $payment->bank_reference : '')),
+                '',
+                (string) $payment->amount,
+                $payment->currency,
+            ];
+        }
+
+        foreach ($reportData['vendor_payments'] as $payment) {
+            $rows[] = [
+                'Vendor Payment',
+                $payment->payment_number,
+                optional($payment->payment_date)->format('Y-m-d'),
+                $payment->cash_account,
+                strtoupper((string) ($payment->reconciliation_status ?: 'pending')),
+                $payment->reference,
+                trim((optional($payment->bank_reconciliation_date)->format('Y-m-d') ?: '-') . ($payment->bank_reference ? ' ' . $payment->bank_reference : '')),
+                '',
+                (string) $payment->amount,
+                $payment->currency,
+            ];
+        }
+
+        $rows[] = ['Summary', 'Posted Batches', '', '', '', '', '', (string) $reportData['posted_count'], (string) $reportData['posted_total'], ''];
+        $rows[] = ['Summary', 'Reconciled Batches', '', '', '', '', '', (string) $reportData['reconciled_count'], (string) $reportData['reconciled_total'], ''];
+        $rows[] = ['Summary', 'Direct Receipts Total', '', '', '', '', '', '', (string) $reportData['direct_receipts_total'], ''];
+        $rows[] = ['Summary', 'Vendor Payments Total', '', '', '', '', '', '', (string) $reportData['vendor_payments_total'], ''];
+
+        return [$headers, $rows];
     }
 
     public function postAccountingEvent(Request $request, AccountingEvent $accountingEvent): RedirectResponse

@@ -24,7 +24,16 @@
     <div class="header">
         <div>
             <h1>Bank Reconciliation Report</h1>
-            <div class="muted">Deposit batches by account and date range</div>
+            <div class="muted">
+                Deposit batches, direct receipts, and vendor payments
+                · Period {{ data_get($reportData, 'filters.date_from') ?: 'Beginning' }} to {{ data_get($reportData, 'filters.date_to') ?: now()->toDateString() }}
+                @if(data_get($reportData, 'filters.reconciliation_status'))
+                    · Reconciliation {{ strtoupper(data_get($reportData, 'filters.reconciliation_status')) }}
+                @endif
+                @if(data_get($reportData, 'filters.deposit_account'))
+                    · Account {{ data_get($reportData, 'filters.deposit_account') }}
+                @endif
+            </div>
         </div>
         <div class="right">
             <strong>{{ now()->format('Y-m-d H:i') }}</strong>

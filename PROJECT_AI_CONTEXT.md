@@ -768,22 +768,24 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Report Export Polish
+### Accounting Audit Trail And Compliance Review
 Recommended scope:
-- unify CSV export headers and date filters
-- add printable views where missing
-- verify:
-  - journal entries
-  - trial balance
-  - revenue summary
-  - tax summary
-  - profit and loss
-  - balance sheet
-  - receivables aging
-  - payables aging
-  - reconciliation summary
-- add date range indicators to print views
-- keep exports read-only
+- standardize audit event names and payloads
+- expose audit filters:
+  - event type
+  - actor
+  - date range
+  - source model
+- audit high-risk events:
+  - posting
+  - reversal
+  - approval
+  - rejection
+  - period lock
+  - payment void
+  - deposit correction
+  - tax/account policy changes
+- ensure audit entries do not become the accounting source of truth; they are evidence/logging only
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1463,7 +1465,7 @@ Verification:
 
 ### Package 9 - Accounting Report Export Polish
 Status:
-- pending
+- completed
 
 Goal:
 - make all accounting reports usable by finance users
@@ -1487,6 +1489,47 @@ Required scope:
 Acceptance criteria:
 - every major accounting report can be exported or printed
 - report totals match posted journal lines or source-specific summaries where explicitly documented
+
+Completed behavior:
+- General Ledger export controller now supports CSV and print coverage for:
+  - journal entries
+  - trial balance
+  - revenue summary
+  - tax summary
+  - profit and loss
+  - balance sheet
+  - customer payments
+  - receivables aging
+  - payables aging
+  - bank reconciliation
+  - reconciliation summary
+- bank reconciliation now supports CSV export in addition to print
+- receivables aging, payables aging, and reconciliation summary have read-only CSV/print routes
+- report titles are normalized for print views
+- financial statement CSV rows now keep consistent `Section, Account Code, Account Name, Amount` columns
+- bank reconciliation print now shows period, reconciliation status, and account filters
+- General Ledger export toolbar includes the new export/print actions
+- reports remain read-only and continue to derive accounting totals from posted journal lines or documented source-specific summaries
+
+Important files changed:
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/accounting-bank-reconciliation-print.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/accounting-bank-reconciliation-print.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='exports_reports|reconciliation_workflow'`
+  - result: 2 passed, 98 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|exports_reports|vendor_bill_to_payables|reconciliation_workflow|invoice'`
+  - result: 11 passed, 434 assertions
 
 ### Package 10 - Accounting Audit Trail And Compliance Review
 Status:

@@ -2551,7 +2551,45 @@ class TenantAdminAccessFlowTest extends TestCase
 
         $printResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/journal-entries?workspace_product=accounting&format=print");
         $printResponse->assertOk();
-        $printResponse->assertSee('Journal entries', false);
+        $printResponse->assertSee('Journal Entries', false);
+        $printResponse->assertSee('Generated', false);
+
+        $trialPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/trial-balance?workspace_product=accounting&format=print&date_from=2026-05-01&date_to=2026-05-31");
+        $trialPrint->assertOk();
+        $trialPrint->assertSee('Trial Balance', false);
+        $trialPrint->assertSee('Period 2026-05-01 to 2026-05-31', false);
+
+        $revenuePrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/revenue-summary?workspace_product=accounting&format=print");
+        $revenuePrint->assertOk();
+        $revenuePrint->assertSee('Revenue Summary', false);
+
+        $receivablesAgingCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/receivables-aging?workspace_product=accounting&format=csv");
+        $receivablesAgingCsv->assertOk();
+        $receivablesAgingContent = $receivablesAgingCsv->streamedContent();
+        $this->assertStringContainsString('Bucket,"Open Count","Open Amount","Total Open","Overdue Total"', $receivablesAgingContent);
+        $this->assertStringContainsString('Current', $receivablesAgingContent);
+
+        $payablesAgingPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/payables-aging?workspace_product=accounting&format=print");
+        $payablesAgingPrint->assertOk();
+        $payablesAgingPrint->assertSee('Payables Aging', false);
+        $payablesAgingPrint->assertSee('Overdue Total', false);
+
+        $bankCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/bank-reconciliation?workspace_product=accounting&format=csv&date_from=2026-05-01&date_to=2026-05-31");
+        $bankCsv->assertOk();
+        $bankContent = $bankCsv->streamedContent();
+        $this->assertStringContainsString('Section,Number,Date,Account,Status,Reference,"Bank Match",Count,Amount,Currency', $bankContent);
+        $this->assertStringContainsString('Posted Batches', $bankContent);
+
+        $bankPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/bank-reconciliation?workspace_product=accounting&format=print&date_from=2026-05-01&date_to=2026-05-31");
+        $bankPrint->assertOk();
+        $bankPrint->assertSee('Bank Reconciliation Report', false);
+        $bankPrint->assertSee('Period 2026-05-01 to 2026-05-31', false);
+
+        $reconciliationSummaryCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/reconciliation-summary?workspace_product=accounting&format=csv");
+        $reconciliationSummaryCsv->assertOk();
+        $reconciliationSummaryContent = $reconciliationSummaryCsv->streamedContent();
+        $this->assertStringContainsString('Metric,Count,Amount,"Period Start","Period End"', $reconciliationSummaryContent);
+        $this->assertStringContainsString('Unreconciled Receipts', $reconciliationSummaryContent);
 
         tenancy()->initialize($tenant);
 
