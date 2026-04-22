@@ -768,18 +768,21 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Data Quality And Readiness Command Expansion
+### Accounting UX Consolidation And Navigation
 Recommended scope:
-- expand `tenancy:verify-integration-readiness` accounting checks:
-  - required tables
-  - default accounts
-  - default posting group
-  - default accounting policy
-  - default tax rate
-  - integration handoff tables
-  - active accounting workspace product
-- add actionable warnings for missing or inactive accounting setup
-- keep the command safe to run in production
+- split General Ledger UI into clearer sections or tabs if local layout patterns support it
+- keep critical dashboards visible:
+  - posting queue
+  - approvals
+  - period close
+  - financial reports
+  - receivables
+  - payables
+  - tax
+  - audit
+- avoid creating marketing/landing pages
+- do not introduce unrelated theme rewrites
+- ensure mobile and desktop layout remains usable
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -820,6 +823,7 @@ Current accounting foundations already completed:
 - period locks exist
 - General Ledger includes an accounting audit timeline with filters by event type, actor, source model, and date range
 - audit entries are compliance evidence only; journal entries and journal lines remain the accounting source of truth
+- `tenancy:verify-integration-readiness` now checks accounting runtime tables, active workspace products, default accounts, default posting group, default accounting policy, default tax rate, period lock overlaps, and stale integration handoffs
 - fiscal close posting controls now block posting inside locked periods
 - overlapping period locks are rejected
 - accounting permission gates now protect sensitive actions:
@@ -1591,7 +1595,7 @@ Verification:
 
 ### Package 11 - Accounting Data Quality And Readiness Command Expansion
 Status:
-- pending
+- completed
 
 Goal:
 - make deployment and tenant readiness checks detect accounting misconfiguration before users hit runtime errors
@@ -1615,6 +1619,28 @@ Required scope:
 Acceptance criteria:
 - readiness command can be used before production release
 - command reports actionable failures
+
+Completed implementation:
+- expanded `tenancy:verify-integration-readiness` with required accounting runtime tables, including bank accounts, invoices, invoice lines, and vendor bill adjustments
+- added required default account checks for all current accounting workflows
+- added active default posting group, accounting policy, and tax rate checks
+- added active accounting workspace product verification
+- added actionable warnings for inactive required accounts, overlapping locked/archived accounting periods, and stale pending/failed/retrying handoffs
+- kept the command read-only and safe for production verification
+- kept journal entries and journal lines as accounting source of truth; readiness checks do not derive balances from audit entries
+
+Files changed:
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 5 passed, 24 assertions
 
 ### Package 12 - Accounting UX Consolidation And Navigation
 Status:
