@@ -2986,3 +2986,32 @@ Verification:
   - result: 1 passed, 6 assertions
   - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
   - result: 39 passed, 218 assertions
+
+Follow-up provisioning fix:
+- Accounting workspace provisioning could fail on retry when a tenant migration partially created `accounting_bank_accounts` but the tenant `migrations` row was not recorded
+- `database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php` is now resumable:
+  - skips creating `accounting_bank_accounts` if it already exists
+  - skips adding `accounting_bank_account_id` foreign columns if already present
+- Central admin product subscription details now include a `Retry Provisioning` action for active/trialing/grace product subscriptions
+- retry provisioning re-runs tenant provisioning and marks the product subscription active when successful, without requiring a new payment
+
+Additional files changed:
+- `database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php`
+- `app/Http/Controllers/Admin/TenantController.php`
+- `routes/admin/tenants.php`
+- `resources/views/admin/tenants/product-subscription-show.blade.php`
+- `tests/Feature/Admin/Tenants/AdminTenantProductSubscriptionShowTest.php`
+- `tests/Feature/Admin/Tenants/AdminTenantProductSubscriptionStripeSyncTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Additional verification:
+- `php -l app/Http/Controllers/Admin/TenantController.php`
+  - result: no syntax errors
+- `php -l routes/admin/tenants.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='bank_account_migration_can_resume|accounting_bank_accounts_control'`
+  - result: 2 passed, 26 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/Tenants/AdminTenantProductSubscriptionShowTest.php tests/Feature/Admin/Tenants/AdminTenantProductSubscriptionStripeSyncTest.php --filter='details_and_diagnostics|retry_failed_product_subscription_provisioning'`
+  - result: 2 passed, 28 assertions

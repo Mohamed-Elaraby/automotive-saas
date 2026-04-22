@@ -16,6 +16,7 @@ Route::prefix('admin')
                 Route::post('/product-subscriptions/bulk-sync-stripe', [TenantController::class, 'bulkSyncProductSubscriptionsFromStripe'])->name('product-subscriptions.bulk-sync-stripe');
                 Route::get('/product-subscriptions/{subscriptionId}', [TenantController::class, 'showProductSubscription'])->name('product-subscriptions.show');
                 Route::post('/product-subscriptions/{subscriptionId}/sync-stripe', [TenantController::class, 'syncProductSubscriptionFromStripe'])->name('product-subscriptions.sync-stripe');
+                Route::post('/product-subscriptions/{subscriptionId}/retry-provisioning', [TenantController::class, 'retryProductSubscriptionProvisioning'])->name('product-subscriptions.retry-provisioning');
                 Route::get('/{tenantId}', [TenantController::class, 'show'])->name('show');
 
                 Route::post('/{tenantId}/impersonate', [TenantController::class, 'impersonate'])->name('impersonate');

@@ -61,6 +61,14 @@
                             </button>
                         </form>
                     @endif
+                    @if(in_array((string) ($subscription['status'] ?? ''), ['active', 'trialing', 'past_due'], true))
+                        <form method="POST" action="{{ route('admin.tenants.product-subscriptions.retry-provisioning', $subscription['id']) }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-warning">
+                                Retry Provisioning
+                            </button>
+                        </form>
+                    @endif
                     @if(!empty($subscription['legacy_subscription_id']))
                         <a href="{{ route('admin.subscriptions.show', $subscription['legacy_subscription_id']) }}" class="btn btn-primary">Open Legacy Subscription</a>
                     @endif

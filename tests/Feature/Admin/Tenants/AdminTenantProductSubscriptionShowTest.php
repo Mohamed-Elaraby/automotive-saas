@@ -123,5 +123,6 @@ class AdminTenantProductSubscriptionShowTest extends TestCase
         $response->assertSee('success', false);
         $response->assertSee(route('admin.subscriptions.show', $legacySubscription->id), false);
         $response->assertSee('Open Legacy Subscription', false);
+        $response->assertSee('Retry Provisioning', false);
     }
 }

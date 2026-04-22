@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
+use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Services\Billing\AdminTenantProductSubscriptionStripeSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -108,6 +109,79 @@ class AdminTenantProductSubscriptionStripeSyncTest extends TestCase
 
         $this->assertDatabaseHas('admin_activity_logs', [
             'action' => 'tenant.product_subscription.synced_from_stripe',
+            'subject_type' => 'tenant_product_subscription',
+            'subject_id' => (string) $subscription->id,
+            'tenant_id' => $tenant->id,
+        ]);
+    }
+
+    public function test_admin_can_retry_failed_product_subscription_provisioning(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Central Admin',
+            'email' => 'admin-tps-retry-provisioning-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => 'tenant-product-sub-retry-' . uniqid(),
+            'data' => ['company_name' => 'Retry Tenant'],
+        ]);
+
+        $product = Product::query()->create([
+            'code' => 'accounting_retry',
+            'name' => 'Accounting Retry',
+            'slug' => 'accounting-retry',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $plan = Plan::query()->create([
+            'product_id' => $product->id,
+            'name' => 'Accounting Retry Plan',
+            'slug' => 'accounting-retry-plan-' . uniqid(),
+            'price' => 199,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+        ]);
+
+        $subscription = TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => 'stripe',
+            'gateway_customer_id' => 'cus_retry_provisioning',
+            'gateway_subscription_id' => 'sub_retry_provisioning',
+            'activation_status' => 'failed',
+            'provisioning_status' => 'failed',
+            'activation_error' => 'Table already exists.',
+        ]);
+
+        $provisionService = Mockery::mock(ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldReceive('ensureProvisioned')
+            ->once()
+            ->with($tenant->id);
+        $this->app->instance(ProvisionTenantWorkspaceService::class, $provisionService);
+
+        $response = $this
+            ->actingAs($admin, 'admin')
+            ->post(route('admin.tenants.product-subscriptions.retry-provisioning', $subscription->id));
+
+        $response
+            ->assertRedirect(route('admin.tenants.product-subscriptions.show', $subscription->id))
+            ->assertSessionHas('success', 'Product subscription provisioning was retried successfully.');
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'id' => $subscription->id,
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
+            'activation_error' => null,
+        ]);
+
+        $this->assertDatabaseHas('admin_activity_logs', [
+            'action' => 'tenant.product_subscription.provisioning_retried',
             'subject_type' => 'tenant_product_subscription',
             'subject_id' => (string) $subscription->id,
             'tenant_id' => $tenant->id,

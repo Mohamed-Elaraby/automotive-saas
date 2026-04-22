@@ -9,7 +9,10 @@ use App\Models\TenantProductSubscription;
 use App\Services\Admin\AdminActivityLogger;
 use App\Services\Admin\AdminTenantLifecycleService;
 use App\Services\Admin\TenantImpersonationService;
+use App\Services\Automotive\ProvisionTenantWorkspaceService;
 use App\Services\Billing\AdminTenantProductSubscriptionStripeSyncService;
+use App\Services\Tenancy\WorkspaceProductActivationService;
+use App\Support\Billing\SubscriptionStatuses;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -527,6 +530,60 @@ public function syncProductSubscriptionFromStripe(
         return redirect()
             ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
             ->with('error', 'Unable to sync the product subscription from Stripe right now.');
+    }
+}
+
+public function retryProductSubscriptionProvisioning(
+    int $subscriptionId,
+    ProvisionTenantWorkspaceService $provisionTenantWorkspaceService,
+    WorkspaceProductActivationService $workspaceProductActivationService
+): RedirectResponse {
+    $subscription = TenantProductSubscription::query()->find($subscriptionId);
+
+    if (! $subscription) {
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('error', 'The product subscription record was not found.');
+    }
+
+    if (! in_array((string) $subscription->status, SubscriptionStatuses::accessAllowedStatuses(), true)) {
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('error', 'Only active, trialing, or grace-period product subscriptions can be provisioned.');
+    }
+
+    try {
+        $workspaceProductActivationService->markProvisioning($subscription, 'admin_retry_provisioning');
+        $provisionTenantWorkspaceService->ensureProvisioned((string) $subscription->tenant_id);
+        $workspaceProductActivationService->markActive($subscription->fresh(), 'admin_retry_provisioning');
+
+        $this->activityLogger->log(
+            action: 'tenant.product_subscription.provisioning_retried',
+            subjectType: 'tenant_product_subscription',
+            subjectId: $subscription->id,
+            tenantId: (string) $subscription->tenant_id,
+            contextPayload: [
+                'source' => 'admin.product_subscription.retry_provisioning',
+                'product_id' => $subscription->product_id,
+                'plan_id' => $subscription->plan_id,
+            ]
+        );
+
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('success', 'Product subscription provisioning was retried successfully.');
+    } catch (Throwable $exception) {
+        $workspaceProductActivationService->markFailed(
+            $subscription->fresh(),
+            $exception,
+            'admin_retry_provisioning'
+        );
+
+        report($exception);
+
+        return redirect()
+            ->route('admin.tenants.product-subscriptions.show', $subscriptionId)
+            ->with('error', 'Product subscription provisioning retry failed: ' . $exception->getMessage());
     }
 }
 

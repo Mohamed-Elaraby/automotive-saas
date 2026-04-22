@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Database\Models\Domain;
 use Tests\TestCase;
 
@@ -2033,6 +2034,45 @@ class TenantAdminAccessFlowTest extends TestCase
         $ledgerResponse->assertSee('Operating Bank Account', false);
         $ledgerResponse->assertSee('1020 Operating Bank', false);
         $ledgerResponse->assertSee('300.00 USD', false);
+    }
+
+    public function test_accounting_bank_account_migration_can_resume_when_table_already_exists(): void
+    {
+        [$tenant] = $this->prepareTenantWorkspace('active');
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertTrue(Schema::connection('tenant')->hasTable('accounting_bank_accounts'));
+
+            DB::connection('tenant')
+                ->table('migrations')
+                ->where('migration', '2026_04_21_110000_create_accounting_bank_accounts_table')
+                ->delete();
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant->id],
+            '--force' => true,
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertTrue(Schema::connection('tenant')->hasTable('accounting_bank_accounts'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_payments', 'accounting_bank_account_id'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_deposit_batches', 'accounting_bank_account_id'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_vendor_bill_payments', 'accounting_bank_account_id'));
+            $this->assertDatabaseHas('migrations', [
+                'migration' => '2026_04_21_110000_create_accounting_bank_accounts_table',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
     }
 
     public function test_accounting_reconciliation_workflow_matches_cash_activity_and_blocks_direct_corrections(): void
