@@ -2992,11 +2992,14 @@ Follow-up provisioning fix:
 - `database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php` is now resumable:
   - skips creating `accounting_bank_accounts` if it already exists
   - skips adding `accounting_bank_account_id` foreign columns if already present
+- AP enhancement provisioning could fail on MySQL because the generated foreign key name `accounting_vendor_bill_adjustments_accounting_vendor_bill_id_foreign` exceeded the identifier length limit
+- `database/migrations/tenant/2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills.php` now uses short explicit foreign key names and is resumable when attachment columns or the adjustments table already exist
 - Central admin product subscription details now include a `Retry Provisioning` action for active/trialing/grace product subscriptions
 - retry provisioning re-runs tenant provisioning and marks the product subscription active when successful, without requiring a new payment
 
 Additional files changed:
 - `database/migrations/tenant/2026_04_21_110000_create_accounting_bank_accounts_table.php`
+- `database/migrations/tenant/2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills.php`
 - `app/Http/Controllers/Admin/TenantController.php`
 - `routes/admin/tenants.php`
 - `resources/views/admin/tenants/product-subscription-show.blade.php`
@@ -3015,3 +3018,7 @@ Additional verification:
   - result: 2 passed, 26 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/Tenants/AdminTenantProductSubscriptionShowTest.php tests/Feature/Admin/Tenants/AdminTenantProductSubscriptionStripeSyncTest.php --filter='details_and_diagnostics|retry_failed_product_subscription_provisioning'`
   - result: 2 passed, 28 assertions
+- `php -l database/migrations/tenant/2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='ap_enhancement_migration_can_resume|bank_account_migration_can_resume|ap_enhancements'`
+  - result: 3 passed, 46 assertions

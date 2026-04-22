@@ -2075,6 +2075,46 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_ap_enhancement_migration_can_resume_when_columns_already_exist(): void
+    {
+        [$tenant] = $this->prepareTenantWorkspace('active');
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertTrue(Schema::connection('tenant')->hasTable('accounting_vendor_bill_adjustments'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_vendor_bills', 'attachment_name'));
+
+            DB::connection('tenant')
+                ->table('migrations')
+                ->where('migration', '2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills')
+                ->delete();
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant->id],
+            '--force' => true,
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertTrue(Schema::connection('tenant')->hasTable('accounting_vendor_bill_adjustments'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_vendor_bills', 'attachment_name'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_vendor_bills', 'attachment_reference'));
+            $this->assertTrue(Schema::connection('tenant')->hasColumn('accounting_vendor_bills', 'attachment_url'));
+            $this->assertDatabaseHas('migrations', [
+                'migration' => '2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_accounting_reconciliation_workflow_matches_cash_activity_and_blocks_direct_corrections(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
