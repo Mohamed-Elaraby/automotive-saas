@@ -1737,7 +1737,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
             ->once()
             ->with(Mockery::on(function (array $payload) use ($plan, $profile, $user): bool {
                 return ($payload['tenant_id'] ?? null) === $profile->subdomain
-                    && ($payload['subscription_row_id'] ?? null) === null
+                    && (int) ($payload['subscription_row_id'] ?? 0) > 0
                     && ($payload['plan_id'] ?? null) === $plan->id
                     && ($payload['stripe_price_id'] ?? null) === $plan->stripe_price_id
                     && ($payload['customer_email'] ?? null) === $user->email;
@@ -1761,10 +1761,17 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $this->assertTrue($result['ok']);
         $this->assertSame('https://checkout.stripe.test/session/reserved', $result['checkout_url']);
         $this->assertSame($profile->subdomain, $result['tenant_id']);
-        $this->assertNull($result['subscription_id']);
-        $this->assertDatabaseMissing('subscriptions', [
+        $this->assertIsInt($result['subscription_id']);
+        $this->assertDatabaseHas('subscriptions', [
             'tenant_id' => $profile->subdomain,
             'gateway_checkout_session_id' => 'cs_reserved_new',
+            'status' => 'past_due',
+        ]);
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => $profile->subdomain,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_reserved_new',
+            'status' => 'past_due',
         ]);
     }
 
@@ -1808,7 +1815,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
             ->once()
             ->withArgs(function (array $payload) use ($plan, $profile, $user, $otherProduct): bool {
                 return ($payload['tenant_id'] ?? null) === $profile->subdomain
-                    && ($payload['subscription_row_id'] ?? null) === null
+                    && (int) ($payload['subscription_row_id'] ?? 0) > 0
                     && ($payload['plan_id'] ?? null) === $plan->id
                     && ($payload['stripe_price_id'] ?? null) === $plan->stripe_price_id
                     && ($payload['customer_email'] ?? null) === $user->email
@@ -1833,6 +1840,20 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $this->assertTrue($result['ok']);
         $this->assertSame('https://checkout.stripe.test/session/accounting-first', $result['checkout_url']);
         $this->assertSame($profile->subdomain, $result['tenant_id']);
+        $this->assertIsInt($result['subscription_id']);
+        $this->assertDatabaseHas('subscriptions', [
+            'tenant_id' => $profile->subdomain,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_accounting_first',
+            'status' => 'past_due',
+        ]);
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => $profile->subdomain,
+            'product_id' => $otherProduct->id,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_accounting_first',
+            'status' => 'past_due',
+        ]);
     }
 
     public function test_automotive_portal_does_not_inherit_live_legacy_subscription_from_another_first_product(): void
@@ -2255,8 +2276,10 @@ class CustomerPortalBillingOptionsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Products Catalog', false);
-        $response->assertSee('Open Product Workspace', false);
-        $this->assertSame(2, substr_count($response->getContent(), 'Open Product Workspace'));
+        $response->assertSee('Open My Workspace', false);
+        $response->assertSee('Workspace Ready', false);
+        $this->assertSame(2, substr_count($response->getContent(), 'Workspace Ready'));
+        $response->assertDontSee('Open Product Workspace', false);
         $response->assertDontSee('Manage Product', false);
         $response->assertSee('ACTIVE', false);
         $response->assertSee('This product is already attached to your workspace.', false);
@@ -2395,6 +2418,151 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $portalResponse->assertDontSee('Go to My Workspace', false);
         $portalResponse->assertDontSee('Open Product Workspace', false);
         $portalResponse->assertDontSee('Open Workspace Login', false);
+    }
+
+    public function test_checkout_success_syncs_stripe_session_for_first_accounting_checkout_before_webhook_arrives(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Portal Accounting Return User',
+            'email' => 'portal-accounting-return-' . uniqid() . '@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $profile = CustomerOnboardingProfile::query()->create([
+            'user_id' => $user->id,
+            'company_name' => 'Portal Accounting Return Co',
+            'subdomain' => 'portal-accounting-return-' . uniqid(),
+            'base_host' => 'seven-scapital.com',
+        ]);
+
+        $accountingProduct = Product::query()->firstOrCreate(
+            ['code' => 'accounting'],
+            [
+                'name' => 'Accounting System',
+                'slug' => 'accounting',
+                'description' => 'Manage journals, ledgers, vouchers, and financial operations.',
+                'is_active' => true,
+            ]
+        );
+
+        $accountingProduct->forceFill([
+            'name' => 'Accounting System',
+            'slug' => 'accounting',
+            'is_active' => true,
+        ])->save();
+
+        $plan = $this->createPlan('Accounting Return Pro', 'accounting-return-pro-' . uniqid(), 'monthly', 299, $accountingProduct->id);
+
+        $gateway = Mockery::mock(PaymentGatewayInterface::class);
+        $gateway->shouldReceive('retrieveCheckoutSession')
+            ->once()
+            ->with('cs_accounting_return')
+            ->andReturn([
+                'success' => true,
+                'gateway' => 'stripe',
+                'session' => [
+                    'id' => 'cs_accounting_return',
+                    'mode' => 'subscription',
+                    'payment_status' => 'paid',
+                    'customer' => 'cus_accounting_return',
+                    'subscription' => 'sub_accounting_return',
+                    'metadata' => [
+                        'tenant_id' => $profile->subdomain,
+                        'plan_id' => (string) $plan->id,
+                        'product_scope' => 'accounting',
+                    ],
+                ],
+            ]);
+
+        $manager = Mockery::mock(PaymentGatewayManager::class);
+        $manager->shouldReceive('driver')
+            ->once()
+            ->with('stripe')
+            ->andReturn($gateway);
+        $this->app->instance(PaymentGatewayManager::class, $manager);
+
+        $syncService = Mockery::mock(\App\Services\Billing\StripeSubscriptionSyncService::class);
+        $syncService->shouldReceive('syncByGatewaySubscriptionId')
+            ->once()
+            ->with('sub_accounting_return')
+            ->andReturnUsing(function () {
+                return Subscription::query()
+                    ->where('gateway_subscription_id', 'sub_accounting_return')
+                    ->first();
+            });
+        $this->app->instance(\App\Services\Billing\StripeSubscriptionSyncService::class, $syncService);
+
+        $provisionService = Mockery::mock(\App\Services\Automotive\ProvisionTenantWorkspaceService::class);
+        $provisionService->shouldReceive('ensureProvisioned')
+            ->once()
+            ->with($profile->subdomain)
+            ->andReturnUsing(function (string $tenantId) use ($profile, $user): void {
+                Tenant::query()->firstOrCreate(
+                    ['id' => $tenantId],
+                    ['data' => ['company_name' => $profile->company_name]]
+                );
+
+                Domain::query()->firstOrCreate([
+                    'domain' => $tenantId . '.seven-scapital.com',
+                    'tenant_id' => $tenantId,
+                ]);
+
+                DB::table('tenant_users')->updateOrInsert(
+                    [
+                        'tenant_id' => $tenantId,
+                        'user_id' => $user->id,
+                    ],
+                    [
+                        'role' => 'owner',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+            });
+        $this->app->instance(\App\Services\Automotive\ProvisionTenantWorkspaceService::class, $provisionService);
+
+        $response = $this->actingAs($user, 'web')
+            ->get(route('automotive.portal.checkout.success', [
+                'product' => 'accounting',
+                'session_id' => 'cs_accounting_return',
+            ]));
+
+        $response->assertRedirect(route('automotive.portal', ['product' => 'accounting']));
+        $response->assertSessionHas('success', 'Your payment was completed and your workspace is ready.');
+
+        $this->assertDatabaseHas('subscriptions', [
+            'tenant_id' => $profile->subdomain,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_accounting_return',
+            'gateway_subscription_id' => 'sub_accounting_return',
+            'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('tenant_product_subscriptions', [
+            'tenant_id' => $profile->subdomain,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $plan->id,
+            'gateway_checkout_session_id' => 'cs_accounting_return',
+            'gateway_subscription_id' => 'sub_accounting_return',
+            'status' => 'active',
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
+        ]);
+
+        $portalResponse = $this->actingAs($user, 'web')
+            ->withSession([
+                'success' => 'Your payment was completed and your workspace is ready.',
+                'checkout_completed' => true,
+                'checkout_completed_product' => 'accounting',
+            ])
+            ->get(route('automotive.portal', ['product' => 'accounting']));
+
+        $portalResponse->assertOk();
+        $portalResponse->assertSee('Open My Workspace', false);
+        $portalResponse->assertSee($profile->subdomain . '.seven-scapital.com/workspace', false);
+        $portalResponse->assertSee('Workspace Ready', false);
+        $portalResponse->assertDontSee('Your account is ready. Choose how you want to continue', false);
+        $portalResponse->assertDontSee('Not Available Yet', false);
     }
 
     public function test_checkout_success_returns_to_portal_with_pending_handoff_message_when_workspace_access_is_not_ready_yet(): void

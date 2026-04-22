@@ -72,7 +72,7 @@ public function createRenewalSession(array $payload): array
                     'quantity' => 1,
                 ],
             ],
-            'success_url' => $payload['success_url'] . '?session_id={CHECKOUT_SESSION_ID}',
+            'success_url' => $this->appendSessionPlaceholder((string) $payload['success_url']),
             'cancel_url' => $payload['cancel_url'],
             'client_reference_id' => (string) ($payload['tenant_id'] ?? ''),
             'customer_email' => $payload['customer_email'] ?? null,
@@ -130,5 +130,55 @@ public function createRenewalSession(array $payload): array
             'message' => 'Unable to start Stripe checkout right now. Please verify billing configuration.',
         ];
     }
+}
+
+public function retrieveCheckoutSession(string $sessionId): array
+{
+    if ($sessionId === '') {
+        return [
+            'success' => false,
+            'gateway' => 'stripe',
+            'message' => 'Checkout session id is missing.',
+        ];
+    }
+
+    try {
+        $session = $this->stripe->checkout->sessions->retrieve($sessionId, []);
+
+        return [
+            'success' => true,
+            'gateway' => 'stripe',
+            'session' => method_exists($session, 'toArray') ? $session->toArray() : (array) $session,
+        ];
+    } catch (ApiErrorException $e) {
+        Log::warning('Stripe API error while retrieving checkout session', [
+            'message' => $e->getMessage(),
+            'checkout_session_id' => $sessionId,
+        ]);
+
+        return [
+            'success' => false,
+            'gateway' => 'stripe',
+            'message' => 'Stripe checkout session could not be retrieved.',
+        ];
+    } catch (Throwable $e) {
+        Log::warning('Unexpected Stripe billing error while retrieving checkout session', [
+            'message' => $e->getMessage(),
+            'checkout_session_id' => $sessionId,
+        ]);
+
+        return [
+            'success' => false,
+            'gateway' => 'stripe',
+            'message' => 'Unable to retrieve Stripe checkout session right now.',
+        ];
+    }
+}
+
+protected function appendSessionPlaceholder(string $successUrl): string
+{
+    $separator = str_contains($successUrl, '?') ? '&' : '?';
+
+    return $successUrl . $separator . 'session_id={CHECKOUT_SESSION_ID}';
 }
 }

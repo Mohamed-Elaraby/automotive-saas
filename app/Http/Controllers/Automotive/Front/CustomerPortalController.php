@@ -13,6 +13,8 @@ use App\Services\Admin\AppSettingsService;
 use App\Services\Automotive\StartAdditionalProductCheckoutService;
 use App\Services\Automotive\StartPaidCheckoutService;
 use App\Services\Automotive\StartTrialService;
+use App\Services\Billing\PaymentGatewayManager;
+use App\Services\Billing\StripeWebhookSyncService;
 use App\Services\Billing\BillingPlanCatalogService;
 use App\Services\Notifications\AdminNotificationService;
 use App\Services\Tenancy\WorkspaceHostResolver;
@@ -41,7 +43,9 @@ class CustomerPortalController extends Controller
         protected BillingPlanCatalogService $billingPlanCatalogService,
         protected AdminNotificationService $adminNotificationService,
         protected WorkspaceHostResolver $workspaceHostResolver,
-        protected WorkspaceProductActivationService $workspaceProductActivationService
+        protected WorkspaceProductActivationService $workspaceProductActivationService,
+        protected PaymentGatewayManager $paymentGatewayManager,
+        protected StripeWebhookSyncService $stripeWebhookSyncService
     ) {
     }
 
@@ -317,7 +321,7 @@ class CustomerPortalController extends Controller
         return redirect()->away((string) $result['checkout_url']);
     }
 
-    public function checkoutSuccess(): RedirectResponse
+    public function checkoutSuccess(Request $request): RedirectResponse
     {
         $user = Auth::guard('web')->user();
 
@@ -327,8 +331,11 @@ class CustomerPortalController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        [$productSlug, $sessionId] = $this->checkoutReturnContext($request);
+
+        $this->syncReturnedCheckoutSession($sessionId);
+
         $workspaceAccess = $this->workspaceAccessContextForUser($user, $profile);
-        $productSlug = request()->query('product');
 
         return redirect()
             ->route('automotive.portal', array_filter(['product' => $productSlug]))
@@ -340,6 +347,52 @@ class CustomerPortalController extends Controller
             )
             ->with('checkout_completed', true)
             ->with('checkout_completed_product', $productSlug);
+    }
+
+    protected function checkoutReturnContext(Request $request): array
+    {
+        $productSlug = (string) $request->query('product', '');
+        $sessionId = (string) $request->query('session_id', '');
+
+        if ($sessionId === '' && str_contains($productSlug, '?session_id=')) {
+            [$productSlug, $sessionId] = explode('?session_id=', $productSlug, 2);
+        }
+
+        if ($sessionId !== '' && str_contains($sessionId, '&')) {
+            $sessionId = Str::before($sessionId, '&');
+        }
+
+        return [
+            trim($productSlug),
+            trim($sessionId),
+        ];
+    }
+
+    protected function syncReturnedCheckoutSession(string $sessionId): void
+    {
+        if ($sessionId === '') {
+            return;
+        }
+
+        try {
+            $gateway = $this->paymentGatewayManager->driver('stripe');
+            $result = $gateway->retrieveCheckoutSession($sessionId);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return;
+        }
+
+        if (! ($result['success'] ?? false) || empty($result['session']) || ! is_array($result['session'])) {
+            return;
+        }
+
+        $this->stripeWebhookSyncService->handleEvent((object) [
+            'type' => 'checkout.session.completed',
+            'data' => (object) [
+                'object' => (object) $result['session'],
+            ],
+        ]);
     }
 
     public function checkoutCancel(): RedirectResponse

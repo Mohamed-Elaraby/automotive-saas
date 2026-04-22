@@ -2944,6 +2944,9 @@ Status:
 
 Current behavior:
 - checkout success now always returns the customer to the portal instead of redirecting directly to the tenant workspace
+- Stripe success URLs now append `session_id` with `&` when the success URL already has a query string such as `?product=accounting`
+- returning from Stripe with `session_id` now triggers the same checkout-session sync path used by the Stripe webhook, so first paid products such as Accounting can create the subscription, provision the workspace, attach the tenant user, and activate the product immediately even if the webhook is delayed
+- first paid checkout now creates a pending local subscription before redirecting to Stripe, including non-Automotive first products, so the portal has a local handoff record instead of showing `NOT STARTED`
 - when workspace access is ready, the portal shows one clear primary `Open My Workspace` CTA at the top of the profile page
 - duplicate workspace-entry buttons were removed from:
   - checkout success message
@@ -2954,6 +2957,10 @@ Current behavior:
 - tenant admin header now includes a clear `Customer Portal` button/link so users can return from the workspace to the portal
 
 Important files changed:
+- `app/Contracts/Billing/PaymentGatewayInterface.php`
+- `app/Services/Billing/Gateways/StripePaymentGateway.php`
+- `app/Services/Billing/Gateways/NullPaymentGateway.php`
+- `app/Services/Automotive/StartPaidCheckoutService.php`
 - `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
 - `resources/views/automotive/portal/index.blade.php`
 - `resources/views/automotive/admin/layouts/adminLayout/partials/header.blade.php`
@@ -2963,7 +2970,19 @@ Important files changed:
 Verification:
 - default `php artisan test ...` was attempted but the local default database connection tried to reach unavailable MySQL database `automotive_local`
 - targeted tests passed with SQLite override:
+  - `php -l app/Services/Billing/Gateways/StripePaymentGateway.php`
+  - result: no syntax errors
+  - `php -l app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+  - result: no syntax errors
+  - `php -l app/Services/Automotive/StartPaidCheckoutService.php`
+  - result: no syntax errors
   - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='checkout_success|workspace_login'`
   - result: 3 passed, 25 assertions
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='reserved_tenant|non_automotive_first_product|checkout_success'`
+  - result: 5 passed, 41 assertions
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Billing/StripeWebhookSyncServiceTest.php --filter='checkout_session_completed'`
+  - result: 4 passed, 24 assertions
   - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/BillingPageTest.php --filter='canonical'`
   - result: 1 passed, 6 assertions
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+  - result: 39 passed, 218 assertions

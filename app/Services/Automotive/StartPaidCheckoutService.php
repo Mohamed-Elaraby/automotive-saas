@@ -98,7 +98,11 @@ class StartPaidCheckoutService
             );
         } else {
             $tenantId = $reservedTenantId;
-            $subscription = null;
+            $subscription = $this->resolveSubscriptionModel(
+                null,
+                $tenantId,
+                (int) $plan->id
+            );
         }
 
         try {

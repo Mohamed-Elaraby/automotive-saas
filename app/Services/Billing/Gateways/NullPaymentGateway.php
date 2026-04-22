@@ -16,4 +16,13 @@ class NullPaymentGateway implements PaymentGatewayInterface
             'payload' => $payload,
         ];
     }
+
+    public function retrieveCheckoutSession(string $sessionId): array
+    {
+        return [
+            'success' => false,
+            'gateway' => 'null',
+            'message' => 'No payment gateway is configured yet.',
+        ];
+    }
 }
