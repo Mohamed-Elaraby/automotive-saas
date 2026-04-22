@@ -34,6 +34,7 @@ The project started as an automotive-oriented SaaS, but current work has been pu
 - After every real code change, always provide:
   - what changed
   - how to test it in the UI
+  - whether new database tables were added and whether `php artisan migrate` is required
   - exact git commands:
     - `git add ...`
     - `git commit -m "..."`
@@ -768,12 +769,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 3 of 10: General Ledger UX Simplification
+### Professional Accounting Roadmap - Package 4 of 10: IFRS-Ready Chart Of Accounts And Mapping Layer
 Recommended scope:
-- improve the General Ledger screen for ordinary users by reducing visual overload
-- organize the current long General Ledger page into clearer task areas and primary actions
-- keep advanced accounting controls discoverable without making the first screen feel like a dense admin panel
-- preserve all existing accounting workflows and tests
+- add a stronger IFRS-ready account classification layer over the chart of accounts
+- map accounts to financial statement sections and report ordering
+- keep trial balance, P&L, and balance sheet journal-driven
+- avoid forcing one chart template on every tenant; preserve tenant customization
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -782,8 +783,8 @@ Recommended scope:
 Professional Accounting Roadmap progress:
 1. Standalone Accounting Product Readiness - completed
 2. First-Time Setup Wizard - completed
-3. General Ledger UX Simplification - next
-4. IFRS-Ready Chart Of Accounts And Mapping Layer - pending
+3. General Ledger UX Simplification - completed
+4. IFRS-Ready Chart Of Accounts And Mapping Layer - next
 5. Financial Statement Builder And Notes Foundation - pending
 6. Advanced Period Close And Adjustments - pending
 7. Tax/VAT Compliance Expansion - pending
@@ -3354,3 +3355,44 @@ Verification:
 
 Next package:
 - Package 3 of 10: General Ledger UX Simplification
+
+## 35) Professional Accounting Roadmap Package 3 - General Ledger UX Simplification
+Status:
+- completed
+- this is package 3 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- General Ledger now opens with a `Finance Command Center`
+- the first screen surfaces the main daily accounting areas as clear action cards:
+  - Setup
+  - Work Queue
+  - Money In
+  - Money Out
+  - Bank Review
+  - Reports
+- each card links directly to the relevant General Ledger section
+- the existing detailed workflows remain available below the command center
+- the first-time setup status is visible as `Setup Ready` or `Setup Needed`
+- no journals are created by this UX layer; journals remain the accounting source of truth
+
+Database note:
+- this package did not add new migrations or new tables
+- no `php artisan migrate` is required for this package
+
+Important files changed:
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=general_ledger_shows_simplified_command_center_for_accounting_users`
+  - result: 1 passed, 16 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='general_ledger_shows_simplified_command_center_for_accounting_users|accounting_first_time_setup_wizard_configures_defaults_idempotently|accounting_only_tenant_can_use_workspace_without_other_products|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 69 assertions
+
+Next package:
+- Package 4 of 10: IFRS-Ready Chart Of Accounts And Mapping Layer

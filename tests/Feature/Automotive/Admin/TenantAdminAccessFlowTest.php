@@ -369,6 +369,33 @@ class TenantAdminAccessFlowTest extends TestCase
         $readyLedgerResponse->assertSee('Completed', false);
     }
 
+    public function test_general_ledger_shows_simplified_command_center_for_accounting_users(): void
+    {
+        [, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $response = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+
+        $response->assertOk();
+        $response->assertSee('Finance Command Center', false);
+        $response->assertSee('Setup Needed', false);
+        $response->assertSee('Work Queue', false);
+        $response->assertSee('Money In', false);
+        $response->assertSee('Money Out', false);
+        $response->assertSee('Bank Review', false);
+        $response->assertSee('Run Reports', false);
+        $response->assertSee('href="#accounting-first-time-setup"', false);
+        $response->assertSee('href="#accounting-posting-queue"', false);
+        $response->assertSee('href="#accounting-receivables"', false);
+        $response->assertSee('href="#accounting-payables"', false);
+        $response->assertSee('href="#accounting-cash"', false);
+        $response->assertSee('href="#accounting-reports"', false);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

@@ -134,10 +134,91 @@
                 <div class="card"><div class="card-header"><h5 class="card-title mb-0">Work Orders Table</h5></div><div class="card-body">@forelse(($moduleData['recent_work_orders'] ?? collect()) as $workOrder)<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">{{ $workOrder->work_order_number }}</h6><div class="text-muted small">{{ $workOrder->title }}</div><div class="text-muted small">{{ $workOrder->customer?->name ?: 'No customer' }}{{ $workOrder->vehicle ? ' · '.$workOrder->vehicle->make.' '.$workOrder->vehicle->model : '' }}</div></div><div class="text-end"><span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper(str_replace('_', ' ', $workOrder->status)) }}</span><div class="mt-2"><a href="{{ route('automotive.admin.modules.workshop-operations.work-orders.show', ['workOrder' => $workOrder->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Record</a></div></div></div></div>@empty<p class="text-muted mb-0">No work orders have been created yet.</p>@endforelse</div></div>
             @elseif(($page ?? '') === 'general-ledger')
                 @php($journalFilters = $moduleData['journal_filters'] ?? [])
+                @php($setupSummary = $moduleData['accounting_setup_summary'] ?? ['profile' => null, 'items' => [], 'complete' => false])
+                @php($setupProfile = $setupSummary['profile'] ?? null)
+                @php($commandReceivables = $moduleData['receivables_aging'] ?? ['total_open' => 0, 'overdue_total' => 0])
+                @php($commandPayables = $moduleData['payables_summary'] ?? ['open_count' => 0, 'open_amount' => 0, 'due_soon_count' => 0])
+                @php($commandReconciliation = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'deposited_count' => 0, 'vendor_payment_count' => 0])
                 <div class="row">
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Posting Groups</div><h4 class="mb-1">{{ ($moduleData['posting_groups'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Account mapping rules available for journal posting.</p></div></div></div>
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Events To Review</div><h4 class="mb-1">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Accounting events not yet posted to journal.</p></div></div></div>
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Journal Entries</div><h4 class="mb-1">{{ ($moduleData['recent_journal_entries'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Posted accounting entries in this workspace.</p></div></div></div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-command-center">
+                    <div>
+                        <h5 class="mb-0">Finance Command Center</h5>
+                        <div class="text-muted small">Primary accounting work for this workspace.</div>
+                    </div>
+                    <span class="badge {{ ($setupSummary['complete'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($setupSummary['complete'] ?? false) ? 'Setup Ready' : 'Setup Needed' }}</span>
+                </div>
+                <div class="row">
+                    <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div><div class="text-muted small">Setup</div><h6 class="mb-0">{{ ($setupSummary['complete'] ?? false) ? 'Ready' : 'Open' }}</h6></div>
+                                    <i class="isax isax-setting-2 fs-4 text-primary"></i>
+                                </div>
+                                <a href="#accounting-first-time-setup" class="btn btn-sm btn-outline-primary mt-auto">Open Setup</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div><div class="text-muted small">Work Queue</div><h6 class="mb-0">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() + ($moduleData['reviewable_inventory_movements'] ?? collect())->count() + ($moduleData['pending_manual_journal_approvals'] ?? collect())->count() }}</h6></div>
+                                    <i class="isax isax-task-square fs-4 text-info"></i>
+                                </div>
+                                <a href="#accounting-posting-queue" class="btn btn-sm btn-outline-primary mt-auto">Review Queue</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div><div class="text-muted small">Money In</div><h6 class="mb-0">{{ number_format((float) ($commandReceivables['total_open'] ?? 0), 2) }}</h6></div>
+                                    <i class="isax isax-receipt-add fs-4 text-success"></i>
+                                </div>
+                                <a href="#accounting-receivables" class="btn btn-sm btn-outline-primary mt-auto">Open AR</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div><div class="text-muted small">Money Out</div><h6 class="mb-0">{{ number_format((float) ($commandPayables['open_amount'] ?? 0), 2) }}</h6></div>
+                                    <i class="isax isax-receipt-minus fs-4 text-warning"></i>
+                                </div>
+                                <a href="#accounting-payables" class="btn btn-sm btn-outline-primary mt-auto">Open AP</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div><div class="text-muted small">Bank Review</div><h6 class="mb-0">{{ (int) ($commandReconciliation['pending_count'] ?? 0) + (int) ($commandReconciliation['deposited_count'] ?? 0) + (int) ($commandReconciliation['vendor_payment_count'] ?? 0) }}</h6></div>
+                                    <i class="isax isax-bank fs-4 text-secondary"></i>
+                                </div>
+                                <a href="#accounting-cash" class="btn btn-sm btn-outline-primary mt-auto">Open Cash</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div><div class="text-muted small">Reports</div><h6 class="mb-0">Journal-led</h6></div>
+                                    <i class="isax isax-chart-2 fs-4 text-danger"></i>
+                                </div>
+                                <a href="#accounting-reports" class="btn btn-sm btn-outline-primary mt-auto">Run Reports</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="border rounded bg-white p-2 mb-3" id="accounting-workspace-navigation">
@@ -160,8 +241,6 @@
                     </ul>
                 </div>
 
-                @php($setupSummary = $moduleData['accounting_setup_summary'] ?? ['profile' => null, 'items' => [], 'complete' => false])
-                @php($setupProfile = $setupSummary['profile'] ?? null)
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-first-time-setup">
                     <div>
                         <h5 class="mb-0">First-Time Setup</h5>
