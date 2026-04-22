@@ -202,6 +202,8 @@ class BillingPageTest extends TestCase
             $canonicalResponse->assertOk();
             $legacyResponse->assertRedirect("http://{$domain}/workspace/admin/billing");
             $canonicalResponse->assertSee('Billing Moved To Customer Portal', false);
+            $canonicalResponse->assertSee('Customer Portal', false);
+            $canonicalResponse->assertSee('/workspace/portal', false);
         } finally {
             tenancy()->end();
             \Illuminate\Support\Facades\DB::purge('tenant');

@@ -16,34 +16,34 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <form method="POST" action="{{ route('automotive.logout') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-white">
-                                    Sign Out
-                                </button>
-                            </form>
-
-                            @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
-                                <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
-                                    Manage Workspace Billing
-                                </a>
-                            @else
-                                <a href="#products-catalog" class="btn btn-outline-white">
-                                    Choose Product
-                                </a>
-                            @endif
-
-                            <a href="#products-catalog" class="btn btn-outline-white">
-                                View Products
-                            </a>
-
-                            <a href="{{ route('automotive.portal.settings') }}" class="btn btn-outline-white">
-                                Account &amp; Settings
-                            </a>
-
                             @if($allowSystemAccess && !empty($systemUrl))
                                 <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
                                     Open My Workspace
+                                </a>
+                            @else
+                                <form method="POST" action="{{ route('automotive.logout') }}" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-outline-white">
+                                        Sign Out
+                                    </button>
+                                </form>
+
+                                @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
+                                    <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
+                                        Manage Workspace Billing
+                                    </a>
+                                @else
+                                    <a href="#products-catalog" class="btn btn-outline-white">
+                                        Choose Product
+                                    </a>
+                                @endif
+
+                                <a href="#products-catalog" class="btn btn-outline-white">
+                                    View Products
+                                </a>
+
+                                <a href="{{ route('automotive.portal.settings') }}" class="btn btn-outline-white">
+                                    Account &amp; Settings
                                 </a>
                             @endif
                         </div>
@@ -55,9 +55,9 @@
                             @if(session('checkout_completed'))
                                 <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
                                     @if($allowSystemAccess && !empty($systemUrl))
-                                        <a href="{{ $systemUrl }}" target="_blank" class="btn btn-sm btn-success">
-                                            Open My Workspace
-                                        </a>
+                                        <span class="small text-muted">
+                                            Use the Open My Workspace button at the top of this page.
+                                        </span>
                                     @else
                                         <a href="{{ route('automotive.portal', array_filter(['product' => session('checkout_completed_product')])) }}" class="btn btn-sm btn-outline-success">
                                             Refresh Portal Status
@@ -268,17 +268,17 @@
                                             <div class="col-lg-6">
                                                 <div class="border rounded p-3 mb-3">
                                                     <div class="fw-semibold mb-2">{{ $domain['domain'] }}</div>
-                                                    <div class="d-flex flex-wrap gap-2">
-                                                        <a href="{{ $domain['url'] }}" target="_blank" class="btn btn-sm btn-outline-white">
-                                                            Open Domain
-                                                        </a>
-
-                                                        @if($allowSystemAccess)
-                                                            <a href="{{ $domain['admin_login_url'] }}" target="_blank" class="btn btn-sm btn-primary">
-                                                            Open Workspace Login
+                                                    @if($allowSystemAccess && !empty($systemUrl))
+                                                        <p class="text-muted fs-13 mb-0">
+                                                            Use the Open My Workspace button at the top of this page.
+                                                        </p>
+                                                    @else
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <a href="{{ $domain['url'] }}" target="_blank" class="btn btn-sm btn-outline-white">
+                                                                Open Domain
                                                             </a>
-                                                        @endif
-                                                    </div>
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @endforeach
@@ -290,33 +290,25 @@
                                 @endif
                             </div>
 
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div class="d-flex flex-wrap gap-2">
-                                    <a href="{{ $hasExplicitProductSelection ? '#paid-plans' : '#products-catalog' }}" class="btn btn-outline-white">
-                                        {{ $hasExplicitProductSelection ? 'View Paid Plans' : 'Choose Product First' }}
-                                    </a>
-
-                                    @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
-                                        <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
-                                            Open Billing Control
-                                        </a>
-                                    @endif
-
-                                    @if($allowSystemAccess && !empty($systemUrl))
-                                        <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
-                                            Go to My Workspace
+                            @unless($allowSystemAccess && !empty($systemUrl))
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <a href="{{ $hasExplicitProductSelection ? '#paid-plans' : '#products-catalog' }}" class="btn btn-outline-white">
+                                            {{ $hasExplicitProductSelection ? 'View Paid Plans' : 'Choose Product First' }}
                                         </a>
 
-                                        <a href="#paid-plans" class="btn btn-outline-white">
-                                            Upgrade to Paid Plan
-                                        </a>
-                                    @endif
+                                        @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
+                                            <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
+                                                Open Billing Control
+                                            </a>
+                                        @endif
+                                    </div>
+
+                                    <button type="button" class="btn btn-outline-white" disabled>
+                                        Profile Overview Only
+                                    </button>
                                 </div>
-
-                                <button type="button" class="btn btn-outline-white" disabled>
-                                    Profile Overview Only
-                                </button>
-                            </div>
+                            @endunless
                         </div>
                     </div>
 
@@ -376,9 +368,15 @@
                                                 </div>
 
                                                 <div class="mt-auto d-flex flex-wrap gap-2">
-                                                    <a href="{{ $productRow['action_url'] }}" class="btn btn-outline-white" @if($productRow['is_subscribed'] && $allowSystemAccess) target="_blank" @endif>
-                                                        {{ $productRow['action_label'] }}
-                                                    </a>
+                                                    @if($productRow['is_subscribed'] && $allowSystemAccess && !empty($systemUrl))
+                                                        <span class="badge bg-soft-success text-success align-self-start">
+                                                            Workspace Ready
+                                                        </span>
+                                                    @else
+                                                        <a href="{{ $productRow['action_url'] }}" class="btn btn-outline-white">
+                                                            {{ $productRow['action_label'] }}
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>

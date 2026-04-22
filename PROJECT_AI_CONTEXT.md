@@ -2937,3 +2937,33 @@ Verification:
   - result: 4 passed, 10 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php tests/Feature/Tenancy/TenantIdentificationNoiseFilteringTest.php tests/Feature/Tenancy/WorkspaceHostResolverTest.php`
   - result: 8 passed, 26 assertions
+
+## 32) Customer Portal Post-Checkout Workspace CTA
+Status:
+- completed
+
+Current behavior:
+- checkout success now always returns the customer to the portal instead of redirecting directly to the tenant workspace
+- when workspace access is ready, the portal shows one clear primary `Open My Workspace` CTA at the top of the profile page
+- duplicate workspace-entry buttons were removed from:
+  - checkout success message
+  - profile action footer
+  - domain information cards
+  - subscribed product cards
+- subscribed product cards show `Workspace Ready` when the main workspace CTA is available
+- tenant admin header now includes a clear `Customer Portal` button/link so users can return from the workspace to the portal
+
+Important files changed:
+- `app/Http/Controllers/Automotive/Front/CustomerPortalController.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `resources/views/automotive/admin/layouts/adminLayout/partials/header.blade.php`
+- `tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+- `tests/Feature/Automotive/Admin/BillingPageTest.php`
+
+Verification:
+- default `php artisan test ...` was attempted but the local default database connection tried to reach unavailable MySQL database `automotive_local`
+- targeted tests passed with SQLite override:
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='checkout_success|workspace_login'`
+  - result: 3 passed, 25 assertions
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/BillingPageTest.php --filter='canonical'`
+  - result: 1 passed, 6 assertions

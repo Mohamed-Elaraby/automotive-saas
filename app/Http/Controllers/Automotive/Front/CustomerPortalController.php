@@ -330,15 +330,14 @@ class CustomerPortalController extends Controller
         $workspaceAccess = $this->workspaceAccessContextForUser($user, $profile);
         $productSlug = request()->query('product');
 
-        if ($workspaceAccess['allow_system_access'] && filled($workspaceAccess['system_url'])) {
-            return redirect()
-                ->away((string) $workspaceAccess['system_url'])
-                ->with('success', 'Your payment was completed and your workspace is ready.');
-        }
-
         return redirect()
             ->route('automotive.portal', array_filter(['product' => $productSlug]))
-            ->with('success', 'Your payment was completed. We are finalizing workspace access now.')
+            ->with(
+                'success',
+                ($workspaceAccess['allow_system_access'] && filled($workspaceAccess['system_url']))
+                    ? 'Your payment was completed and your workspace is ready.'
+                    : 'Your payment was completed. We are finalizing workspace access now.'
+            )
             ->with('checkout_completed', true)
             ->with('checkout_completed_product', $productSlug);
     }

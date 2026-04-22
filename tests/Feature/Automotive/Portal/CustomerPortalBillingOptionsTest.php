@@ -2325,7 +2325,7 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response->assertDontSee($tenantId . '.automotive.seven-scapital.com', false);
     }
 
-    public function test_checkout_success_redirects_directly_to_workspace_when_access_is_ready(): void
+    public function test_checkout_success_returns_to_portal_with_single_workspace_cta_when_access_is_ready(): void
     {
         $user = User::query()->create([
             'name' => 'Portal Checkout Redirect User',
@@ -2374,7 +2374,27 @@ class CustomerPortalBillingOptionsTest extends TestCase
         $response = $this->actingAs($user, 'web')
             ->get(route('automotive.portal.checkout.success', ['product' => 'automotive-service']));
 
-        $response->assertRedirect('https://demo-checkout-ready.seven-scapital.com/workspace');
+        $response->assertRedirect(route('automotive.portal', ['product' => 'automotive-service']));
+        $response->assertSessionHas('checkout_completed', true);
+        $response->assertSessionHas('checkout_completed_product', 'automotive-service');
+        $response->assertSessionHas('success', 'Your payment was completed and your workspace is ready.');
+
+        $portalResponse = $this->actingAs($user, 'web')
+            ->withSession([
+                'success' => 'Your payment was completed and your workspace is ready.',
+                'checkout_completed' => true,
+                'checkout_completed_product' => 'automotive-service',
+            ])
+            ->get(route('automotive.portal', ['product' => 'automotive-service']));
+
+        $portalResponse->assertOk();
+        $portalResponse->assertSee('Open My Workspace', false);
+        $portalResponse->assertSee('https://demo-checkout-ready.seven-scapital.com/workspace', false);
+        $portalResponse->assertSee('Use the Open My Workspace button at the top of this page.', false);
+        $portalResponse->assertDontSee('Manage Workspace Billing', false);
+        $portalResponse->assertDontSee('Go to My Workspace', false);
+        $portalResponse->assertDontSee('Open Product Workspace', false);
+        $portalResponse->assertDontSee('Open Workspace Login', false);
     }
 
     public function test_checkout_success_returns_to_portal_with_pending_handoff_message_when_workspace_access_is_not_ready_yet(): void

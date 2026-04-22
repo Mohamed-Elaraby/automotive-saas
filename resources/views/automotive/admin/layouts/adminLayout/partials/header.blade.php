@@ -5,6 +5,7 @@
     $focusedWorkspaceProductCode = (string) request()->attributes->get('workspace_product_code', request()->query('workspace_product', 'automotive_service'));
     $focusedWorkspaceProductFamily = $focusedWorkspaceProductFamily ?? 'automotive_service';
     $workspaceQuery = $focusedWorkspaceProductCode !== '' ? ['workspace_product' => $focusedWorkspaceProductCode] : [];
+    $customerPortalUrl = route('automotive.portal');
 
     $tenantAdminRouteLabels = [
         'automotive.admin.dashboard' => 'Dashboard',
@@ -105,6 +106,10 @@
                 @endif
 
                 <div class="d-flex align-items-center">
+                    <a href="{{ $customerPortalUrl }}" class="btn btn-primary me-2 d-none d-lg-inline-flex align-items-center">
+                        <i class="isax isax-profile-circle me-1"></i>Customer Portal
+                    </a>
+
                     <div class="me-2 theme-item">
                         <a href="javascript:void(0);" id="dark-mode-toggle" class="theme-toggle btn btn-menubar">
                             <i class="isax isax-moon"></i>
@@ -141,6 +146,9 @@
                             <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
                                 <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
                             </a>
+                            <a class="dropdown-item d-flex align-items-center" href="{{ $customerPortalUrl }}">
+                                <i class="isax isax-profile-circle me-2"></i>Customer Portal
+                            </a>
 
                             <hr class="dropdown-divider my-2">
 
@@ -171,6 +179,9 @@
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
                 <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
+            </a>
+            <a class="dropdown-item d-flex align-items-center" href="{{ $customerPortalUrl }}">
+                <i class="isax isax-profile-circle me-2"></i>Customer Portal
             </a>
             <form method="POST" action="{{ route('automotive.admin.logout') }}">
                 @csrf
