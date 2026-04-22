@@ -768,13 +768,15 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting AP Enhancements
+### Accounting Inventory Costing Controls
 Recommended scope:
-- add vendor/supplier selection integration when parts supplier catalog is active
-- support bill attachments metadata if existing file system patterns allow it
-- support bill due-date reminders or aging filters
-- support credit notes or vendor bill adjustments through explicit correction entries
-- block direct mutation of posted/paid bills except controlled correction flows
+- validate valuation source for stock movements
+- define supported costing method for now:
+  - current implementation uses available movement value based on stock item cost context
+  - do not imply FIFO/weighted average unless implemented
+- add clear policy UI labels for inventory asset, COGS, adjustment, and offset accounts
+- add tests for movement types that should and should not post
+- ensure parts inventory and accounting remain decoupled through integration handoffs
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -856,6 +858,11 @@ Current accounting foundations already completed:
 - AR invoice payments use the existing customer payment workflow against the invoice accounting event
 - customer statements and invoice print output use formal invoice numbers when available
 - work-order completion still creates accounting handoff events without requiring invoice creation
+- vendor bills can be tied to active supplier catalog records from General Ledger
+- vendor bill attachment metadata is stored without introducing file upload architecture
+- payables summary and filters expose due-soon/overdue state
+- vendor bill credit notes post explicit AP adjustment journals
+- payables aging and open payable amounts include posted credit note adjustments
 
 Important accounting runtime tables currently expected in tenant DB:
 - `accounting_posting_groups`
@@ -871,6 +878,7 @@ Important accounting runtime tables currently expected in tenant DB:
 - `accounting_payments`
 - `accounting_deposit_batches`
 - `accounting_vendor_bills`
+- `accounting_vendor_bill_adjustments`
 - `accounting_vendor_bill_payments`
 - `accounting_tax_rates`
 - plus cross-product handoff/runtime tables already used by the workspace integration layer
@@ -1339,22 +1347,53 @@ Verification:
 
 ### Package 7 - Accounting AP Enhancements
 Status:
-- pending
+- completed
 
 Goal:
 - make vendor bills/payables practical beyond the current minimal workflow
 
-Required scope:
-- add vendor/supplier selection integration when parts supplier catalog is active
-- support bill attachments metadata if existing file system patterns allow it
-- support bill due-date reminders or aging filters
-- support credit notes or vendor bill adjustments through explicit correction entries
-- block direct mutation of posted/paid bills except controlled correction flows
-
-Acceptance criteria:
+Completed behavior:
 - vendor bills can be tied to known suppliers
 - posted AP records cannot be silently rewritten
 - payables aging remains accurate
+- General Ledger vendor bill creation can select active supplier catalog records
+- vendor bills support attachment metadata:
+  - attachment name
+  - attachment reference
+  - attachment URL
+- General Ledger exposes payables due filters:
+  - overdue
+  - due soon
+- payables summary now includes due-soon count and amount
+- vendor bill credit notes are posted through explicit AP adjustment journals
+- credit notes debit Accounts Payable and credit expense/input tax accounts as applicable
+- vendor bill open amounts, payment validation, and payables aging account for posted credit notes
+- overpayment after a credit note is blocked by the adjusted open payable amount
+
+Important files added/changed:
+- `database/migrations/tenant/2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills.php`
+- `app/Models/AccountingVendorBill.php`
+- `app/Models/AccountingVendorBillAdjustment.php`
+- `app/Services/Automotive/AccountingPermissionService.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `routes/products/automotive/admin.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Models/AccountingVendorBillAdjustment.php`
+  - result: passed
+- `php -l database/migrations/tenant/2026_04_22_100000_add_ap_enhancements_to_accounting_vendor_bills.php`
+  - result: passed
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='ap_enhancements|vendor_bill_to_payables|reconciliation_workflow'`
+  - result: 3 passed, 167 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 30 passed, 772 assertions
 
 ### Package 8 - Accounting Inventory Costing Controls
 Status:

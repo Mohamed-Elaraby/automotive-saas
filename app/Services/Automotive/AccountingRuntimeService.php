@@ -14,6 +14,7 @@ use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
 use App\Models\AccountingTaxRate;
 use App\Models\AccountingVendorBill;
+use App\Models\AccountingVendorBillAdjustment;
 use App\Models\AccountingVendorBillPayment;
 use App\Models\JournalEntry;
 use App\Models\StockMovement;
@@ -308,8 +309,20 @@ class AccountingRuntimeService
     public function getVendorBills(array $filters = [], int $limit = 25): Collection
     {
         return AccountingVendorBill::query()
-            ->with(['supplier', 'journalEntry', 'payments', 'creator', 'poster'])
+            ->with(['supplier', 'journalEntry', 'payments', 'adjustments.journalEntry', 'creator', 'poster'])
             ->when(! empty($filters['vendor_bill_status']), fn ($query) => $query->where('status', $filters['vendor_bill_status']))
+            ->when(! empty($filters['supplier_id']), fn ($query) => $query->where('supplier_id', (int) $filters['supplier_id']))
+            ->when(! empty($filters['due_status']), function ($query) use ($filters) {
+                $today = now()->toDateString();
+
+                if ($filters['due_status'] === 'overdue') {
+                    $query->whereDate('due_date', '<', $today)->whereIn('status', ['posted', 'partial']);
+                } elseif ($filters['due_status'] === 'due_soon') {
+                    $query->whereDate('due_date', '>=', $today)
+                        ->whereDate('due_date', '<=', now()->addDays(7)->toDateString())
+                        ->whereIn('status', ['posted', 'partial']);
+                }
+            })
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('bill_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('bill_date', '<=', $filters['date_to']))
             ->when(! empty($filters['search']), function ($query) use ($filters) {
@@ -328,8 +341,12 @@ class AccountingRuntimeService
             ->get()
             ->map(function (AccountingVendorBill $bill): AccountingVendorBill {
                 $paidAmount = $this->paidAmountForVendorBill($bill->id);
+                $adjustedAmount = $this->adjustedAmountForVendorBill($bill->id);
+                $netAmount = max(0, round((float) $bill->amount - $adjustedAmount, 2));
                 $bill->setAttribute('paid_amount', $paidAmount);
-                $bill->setAttribute('open_amount', max(0, round((float) $bill->amount - $paidAmount, 2)));
+                $bill->setAttribute('adjusted_amount', $adjustedAmount);
+                $bill->setAttribute('net_amount', $netAmount);
+                $bill->setAttribute('open_amount', max(0, round($netAmount - $paidAmount, 2)));
 
                 return $bill;
             });
@@ -341,6 +358,8 @@ class AccountingRuntimeService
         $draft = $bills->where('status', 'draft');
         $open = $bills->whereIn('status', ['posted', 'partial']);
         $paid = $bills->where('status', 'paid');
+        $dueSoon = $bills->whereIn('status', ['posted', 'partial'])
+            ->filter(fn (AccountingVendorBill $bill): bool => $bill->due_date && $bill->due_date->isFuture() && $bill->due_date->lte(now()->addDays(7)));
 
         return [
             'draft_count' => $draft->count(),
@@ -349,6 +368,8 @@ class AccountingRuntimeService
             'open_amount' => round((float) $open->sum('open_amount'), 2),
             'paid_count' => $paid->count(),
             'paid_amount' => round((float) $paid->sum('amount'), 2),
+            'due_soon_count' => $dueSoon->count(),
+            'due_soon_amount' => round((float) $dueSoon->sum('open_amount'), 2),
         ];
     }
 
@@ -1741,6 +1762,9 @@ class AccountingRuntimeService
             'tax_account' => $taxAmount > 0 ? $taxAccount : null,
             'status' => 'draft',
             'notes' => $data['notes'] ?? null,
+            'attachment_name' => $data['attachment_name'] ?? null,
+            'attachment_reference' => $data['attachment_reference'] ?? null,
+            'attachment_url' => $data['attachment_url'] ?? null,
             'created_by' => $createdBy,
         ])->load(['supplier', 'creator']);
     }
@@ -1825,6 +1849,122 @@ class AccountingRuntimeService
             ], $createdBy);
 
             return $entry->load(['lines', 'creator']);
+        });
+    }
+
+    public function createVendorBillCreditNote(AccountingVendorBill $bill, array $data, ?int $createdBy = null): AccountingVendorBillAdjustment
+    {
+        $bill->loadMissing(['adjustments', 'payments']);
+
+        if (! in_array($bill->status, ['posted', 'partial', 'paid'], true)) {
+            throw ValidationException::withMessages([
+                'vendor_bill' => 'Only posted vendor bills can receive credit notes.',
+            ]);
+        }
+
+        $adjustmentDate = Carbon::parse($data['adjustment_date'] ?? now()->toDateString())->toDateString();
+        $this->assertPeriodOpen($adjustmentDate, 'posting vendor bill credit notes');
+        $amount = round((float) ($data['amount'] ?? 0), 2);
+        $taxAmount = round((float) ($data['tax_amount'] ?? 0), 2);
+        $remainingBeforeAdjustment = $this->remainingAmountForVendorBill($bill);
+
+        if ($amount <= 0 || $amount > $remainingBeforeAdjustment) {
+            throw ValidationException::withMessages([
+                'amount' => 'Credit note amount must be greater than zero and cannot exceed the open payable amount.',
+            ]);
+        }
+
+        if ($taxAmount < 0 || $taxAmount > $amount) {
+            throw ValidationException::withMessages([
+                'tax_amount' => 'Tax amount cannot be negative or greater than the credit note amount.',
+            ]);
+        }
+
+        $expenseAccount = $bill->expense_account ?: '5200 Operating Expense';
+        $payableAccount = $bill->payable_account ?: '2000 Accounts Payable';
+        $taxAccount = $taxAmount > 0 ? ($bill->tax_account ?: '1410 VAT Input Receivable') : null;
+        $expenseReduction = round($amount - $taxAmount, 2);
+        $this->ensureDefaultAccounts();
+        $this->assertActiveAccountCodes($taxAccount ? [$expenseAccount, $payableAccount, $taxAccount] : [$expenseAccount, $payableAccount], 'vendor_bill_adjustment_accounts');
+
+        return DB::transaction(function () use ($bill, $data, $adjustmentDate, $amount, $taxAmount, $expenseReduction, $expenseAccount, $payableAccount, $taxAccount, $createdBy): AccountingVendorBillAdjustment {
+            $entry = JournalEntry::query()->create([
+                'journal_number' => $this->nextJournalNumber('APCR'),
+                'source_type' => AccountingVendorBillAdjustment::class,
+                'source_id' => null,
+                'status' => 'posted',
+                'entry_date' => $adjustmentDate,
+                'currency' => $bill->currency ?: 'USD',
+                'debit_total' => $amount,
+                'credit_total' => $amount,
+                'memo' => 'Vendor bill credit note for ' . $bill->bill_number,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->lines()->create([
+                'account_code' => $payableAccount,
+                'account_name' => $this->resolveAccountName($payableAccount, 'Accounts Payable'),
+                'line_type' => 'debit',
+                'debit' => $amount,
+                'credit' => 0,
+                'memo' => 'Reduce payable from vendor credit note.',
+            ]);
+
+            if ($expenseReduction > 0) {
+                $entry->lines()->create([
+                    'account_code' => $expenseAccount,
+                    'account_name' => $this->resolveAccountName($expenseAccount, 'Operating Expense'),
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => $expenseReduction,
+                    'memo' => 'Reduce vendor bill expense.',
+                ]);
+            }
+
+            if ($taxAmount > 0) {
+                $entry->lines()->create([
+                    'account_code' => $taxAccount ?: '1410 VAT Input Receivable',
+                    'account_name' => $this->resolveAccountName($taxAccount ?: '1410 VAT Input Receivable', 'VAT Input Receivable'),
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => $taxAmount,
+                    'memo' => 'Reduce recoverable input tax from vendor credit note.',
+                ]);
+            }
+
+            $adjustment = AccountingVendorBillAdjustment::query()->create([
+                'accounting_vendor_bill_id' => $bill->id,
+                'journal_entry_id' => $entry->id,
+                'adjustment_number' => $this->nextJournalNumber('VCN'),
+                'type' => 'credit_note',
+                'adjustment_date' => $adjustmentDate,
+                'amount' => $amount,
+                'tax_amount' => $taxAmount,
+                'expense_account' => $expenseAccount,
+                'payable_account' => $payableAccount,
+                'tax_account' => $taxAccount,
+                'status' => 'posted',
+                'reference' => $data['reference'] ?? null,
+                'reason' => $data['reason'] ?? null,
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $entry->forceFill(['source_id' => $adjustment->id])->save();
+            $remainingAmount = $this->remainingAmountForVendorBill($bill->refresh());
+            $bill->forceFill([
+                'status' => $remainingAmount <= 0 ? 'paid' : ($this->paidAmountForVendorBill($bill->id) > 0 ? 'partial' : 'posted'),
+            ])->save();
+
+            $this->recordAudit('vendor_bill_credit_note_posted', $adjustment, "Credit note {$adjustment->adjustment_number} posted for {$bill->bill_number}.", [
+                'accounting_vendor_bill_id' => $bill->id,
+                'journal_entry_id' => $entry->id,
+                'amount' => $amount,
+                'tax_amount' => $taxAmount,
+            ], $createdBy);
+
+            return $adjustment->load(['vendorBill', 'journalEntry', 'creator']);
         });
     }
 
@@ -3095,9 +3235,17 @@ class AccountingRuntimeService
             ->sum('amount'), 2);
     }
 
+    protected function adjustedAmountForVendorBill(int $billId): float
+    {
+        return round((float) AccountingVendorBillAdjustment::query()
+            ->where('accounting_vendor_bill_id', $billId)
+            ->where('status', 'posted')
+            ->sum('amount'), 2);
+    }
+
     protected function remainingAmountForVendorBill(AccountingVendorBill $bill): float
     {
-        return max(0, round((float) $bill->amount - $this->paidAmountForVendorBill($bill->id), 2));
+        return max(0, round((float) $bill->amount - $this->adjustedAmountForVendorBill($bill->id) - $this->paidAmountForVendorBill($bill->id), 2));
     }
 
     protected function recordAudit(string $eventType, Model $auditable, string $description, array $payload = [], ?int $createdBy = null): void

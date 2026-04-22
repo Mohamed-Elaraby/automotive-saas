@@ -23,6 +23,9 @@ class AccountingVendorBill extends Model
         'tax_account',
         'status',
         'notes',
+        'attachment_name',
+        'attachment_reference',
+        'attachment_url',
         'created_by',
         'posted_by',
         'posted_at',
@@ -54,6 +57,11 @@ class AccountingVendorBill extends Model
     public function payments()
     {
         return $this->hasMany(AccountingVendorBillPayment::class);
+    }
+
+    public function adjustments()
+    {
+        return $this->hasMany(AccountingVendorBillAdjustment::class);
     }
 
     public function creator()

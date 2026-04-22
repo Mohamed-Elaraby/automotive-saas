@@ -15,6 +15,7 @@ class AccountingPermissionService
     public const AR_INVOICES_POST = 'accounting.ar_invoices.post';
     public const INVENTORY_MOVEMENTS_POST = 'accounting.inventory_movements.post';
     public const VENDOR_BILLS_POST = 'accounting.vendor_bills.post';
+    public const VENDOR_BILLS_ADJUST = 'accounting.vendor_bills.adjust';
     public const VENDOR_BILL_PAYMENTS_RECORD = 'accounting.vendor_bill_payments.record';
     public const CUSTOMER_PAYMENTS_RECORD = 'accounting.customer_payments.record';
     public const DEPOSIT_BATCHES_CREATE = 'accounting.deposit_batches.create';

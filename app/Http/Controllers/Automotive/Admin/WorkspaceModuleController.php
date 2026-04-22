@@ -330,6 +330,8 @@ class WorkspaceModuleController extends Controller
             'reconciliation_status' => ['nullable', 'in:pending,deposited,reconciled'],
             'invoice_status' => ['nullable', 'in:draft,posted,paid,void'],
             'vendor_bill_status' => ['nullable', 'in:draft,posted,partial,paid,void'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+            'due_status' => ['nullable', 'in:overdue,due_soon'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'search' => ['nullable', 'string', 'max:120'],
@@ -362,6 +364,7 @@ class WorkspaceModuleController extends Controller
                 'recent_deposit_batches' => $this->accountingRuntimeService->getDepositBatches(10),
                 'payment_reconciliation_summary' => $this->accountingRuntimeService->paymentReconciliationSummary(),
                 'vendor_bills' => $this->accountingRuntimeService->getVendorBills($filters, 15),
+                'accounting_suppliers' => $this->supplierCatalogService->getSuppliers(100),
                 'payables_summary' => $this->accountingRuntimeService->payablesSummary(),
                 'open_vendor_bills' => $this->accountingRuntimeService->getOpenVendorBills(25),
                 'recent_vendor_bill_payments' => $this->accountingRuntimeService->getVendorBillPayments($filters, 15),
@@ -1024,6 +1027,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeAccountingVendorBill(Request $request): RedirectResponse
     {
+        $this->authorizeAccounting(AccountingPermissionService::VENDOR_BILLS_POST);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
@@ -1038,6 +1043,9 @@ class WorkspaceModuleController extends Controller
             'expense_account' => ['nullable', 'string', 'max:120'],
             'payable_account' => ['nullable', 'string', 'max:120'],
             'tax_account' => ['nullable', 'string', 'max:120'],
+            'attachment_name' => ['nullable', 'string', 'max:255'],
+            'attachment_reference' => ['nullable', 'string', 'max:160'],
+            'attachment_url' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -1056,6 +1064,40 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', "Vendor bill {$bill->bill_number} created successfully.");
+    }
+
+    public function storeAccountingVendorBillCreditNote(Request $request, AccountingVendorBill $vendorBill): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::VENDOR_BILLS_ADJUST);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'adjustment_date' => ['required', 'date'],
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $adjustment = $this->accountingRuntimeService->createVendorBillCreditNote(
+                $vendorBill,
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $adjustment->journal_entry_id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Vendor credit note {$adjustment->adjustment_number} posted successfully.");
     }
 
     public function postAccountingVendorBill(Request $request, AccountingVendorBill $vendorBill): RedirectResponse
@@ -1556,6 +1598,7 @@ class WorkspaceModuleController extends Controller
             'ar_invoices_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::AR_INVOICES_POST),
             'inventory_movements_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::INVENTORY_MOVEMENTS_POST),
             'vendor_bills_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILLS_POST),
+            'vendor_bills_adjust' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILLS_ADJUST),
             'vendor_bill_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILL_PAYMENTS_RECORD),
             'customer_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD),
             'deposit_batches_create' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CREATE),

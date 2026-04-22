@@ -1208,6 +1208,142 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->assertStringContainsString('Net Tax Payable', $taxSummaryContent);
     }
 
+    public function test_accounting_ap_enhancements_link_suppliers_attachments_due_filters_and_credit_notes(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+        $dueDate = now()->addDays(3)->toDateString();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $supplierId = DB::connection('tenant')->table('suppliers')->insertGetId([
+                'name' => 'Linked Parts Supplier',
+                'contact_name' => 'Parts Contact',
+                'phone' => '555-0101',
+                'email' => 'parts@example.test',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $createResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'supplier_id' => $supplierId,
+            'bill_date' => now()->toDateString(),
+            'due_date' => $dueDate,
+            'amount' => 300,
+            'tax_amount' => 30,
+            'currency' => 'USD',
+            'expense_account' => '5200 Operating Expense',
+            'payable_account' => '2000 Accounts Payable',
+            'tax_account' => '1410 VAT Input Receivable',
+            'reference' => 'AP-ENH-001',
+            'attachment_name' => 'supplier-invoice.pdf',
+            'attachment_reference' => 'DOC-AP-001',
+            'attachment_url' => 'https://example.test/docs/supplier-invoice.pdf',
+        ]);
+        $createResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $bill = DB::connection('tenant')->table('accounting_vendor_bills')
+                ->where('reference', 'AP-ENH-001')
+                ->first();
+
+            $this->assertNotNull($bill);
+            $this->assertSame((int) $supplierId, (int) $bill->supplier_id);
+            $this->assertSame('supplier-invoice.pdf', $bill->attachment_name);
+            $this->assertSame('DOC-AP-001', $bill->attachment_reference);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $dueSoonResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&due_status=due_soon&supplier_id={$supplierId}");
+        $dueSoonResponse->assertOk();
+        $dueSoonResponse->assertSee('Linked Parts Supplier', false);
+        $dueSoonResponse->assertSee('Due Soon', false);
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills/{$bill->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect();
+
+        $postedDueSoonResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&due_status=due_soon&supplier_id={$supplierId}");
+        $postedDueSoonResponse->assertOk();
+        $postedDueSoonResponse->assertSee('Linked Parts Supplier', false);
+        $postedDueSoonResponse->assertSee('supplier-invoice.pdf', false);
+
+        $creditResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills/{$bill->id}/credit-notes?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'adjustment_date' => now()->toDateString(),
+            'amount' => 60,
+            'tax_amount' => 0,
+            'reference' => 'VCN-AP-001',
+            'reason' => 'Supplier credit note',
+        ]);
+        $creditResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $adjustment = DB::connection('tenant')->table('accounting_vendor_bill_adjustments')
+                ->where('reference', 'VCN-AP-001')
+                ->first();
+            $updatedBill = DB::connection('tenant')->table('accounting_vendor_bills')
+                ->where('id', $bill->id)
+                ->first();
+            $journalLines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $adjustment->journal_entry_id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertNotNull($adjustment);
+            $this->assertSame('credit_note', $adjustment->type);
+            $this->assertSame('posted', $adjustment->status);
+            $this->assertSame('posted', $updatedBill->status);
+            $this->assertSame('2000 Accounts Payable', $journalLines[0]->account_code);
+            $this->assertSame(60.0, (float) $journalLines[0]->debit);
+            $this->assertSame('5200 Operating Expense', $journalLines[1]->account_code);
+            $this->assertSame(60.0, (float) $journalLines[1]->credit);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'vendor_bill_credit_note_posted',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $overpayResponse = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/vendor-bill-payments?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'accounting_vendor_bill_id' => $bill->id,
+                'payment_date' => now()->toDateString(),
+                'amount' => 300,
+                'method' => 'bank_transfer',
+                'reference' => 'OVERPAY-AP-001',
+                'currency' => 'USD',
+            ]);
+        $overpayResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $overpayResponse->assertSessionHasErrors('amount');
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting&vendor_bill_status=posted");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Credit', false);
+        $ledgerResponse->assertSee('VCN-AP-001', false);
+        $ledgerResponse->assertSee('Open 240.00', false);
+    }
+
 
     public function test_accounting_runtime_can_filter_create_manual_journal_and_reverse_entries(): void
     {

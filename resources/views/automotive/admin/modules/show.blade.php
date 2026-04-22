@@ -150,6 +150,8 @@
                                 <div class="col-md-2 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Any</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>Posted</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>Reversed</option><option value="void" @selected(($journalFilters['status'] ?? '') === 'void')>Void</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Reconciliation</label><select name="reconciliation_status" class="form-select"><option value="">Any</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>Pending</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>Deposited</option><option value="reconciled" @selected(($journalFilters['reconciliation_status'] ?? '') === 'reconciled')>Reconciled</option></select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">Vendor Bills</label><select name="vendor_bill_status" class="form-select"><option value="">Any</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>Draft</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>Posted</option><option value="partial" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'partial')>Partial</option><option value="paid" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'paid')>Paid</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Due</label><select name="due_status" class="form-select"><option value="">Any</option><option value="overdue" @selected(($journalFilters['due_status'] ?? '') === 'overdue')>Overdue</option><option value="due_soon" @selected(($journalFilters['due_status'] ?? '') === 'due_soon')>Due Soon</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Supplier</label><select name="supplier_id" class="form-select"><option value="">Any</option>@foreach(($moduleData['accounting_suppliers'] ?? collect()) as $supplier)<option value="{{ $supplier->id }}" @selected((string) ($journalFilters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->name }}</option>@endforeach</select></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
                                 <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
                                 <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
@@ -306,15 +308,15 @@
                     </div>
                 </div>
 
-                @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'open_count' => 0, 'open_amount' => 0, 'paid_count' => 0, 'paid_amount' => 0])
+                @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'open_count' => 0, 'open_amount' => 0, 'paid_count' => 0, 'paid_amount' => 0, 'due_soon_count' => 0, 'due_soon_amount' => 0])
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Payables Summary</h5></div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-3 mb-3"><div class="text-muted small">Draft Bills</div><h5 class="mb-0">{{ $payablesSummary['draft_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['draft_amount'], 2) }}</div></div>
                             <div class="col-md-3 mb-3"><div class="text-muted small">Open Payables</div><h5 class="mb-0">{{ $payablesSummary['open_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['open_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">Due Soon</div><h5 class="mb-0">{{ $payablesSummary['due_soon_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['due_soon_amount'], 2) }}</div></div>
                             <div class="col-md-3 mb-3"><div class="text-muted small">Paid Bills</div><h5 class="mb-0">{{ $payablesSummary['paid_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['paid_amount'], 2) }}</div></div>
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Posting Rule</div><p class="mb-0">Bills credit Accounts Payable; payments debit Accounts Payable.</p></div>
                         </div>
                     </div>
                 </div>
@@ -806,10 +808,11 @@
                                     @csrf
                                     <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                     <div class="row">
-                                        <div class="col-md-6 mb-3"><label class="form-label">Supplier Name</label><input type="text" name="supplier_name" class="form-control" value="{{ old('supplier_name') }}" placeholder="Vendor or supplier"></div>
+                                        <div class="col-md-6 mb-3"><label class="form-label">Supplier</label><select name="supplier_id" class="form-select"><option value="">Manual supplier</option>@foreach(($moduleData['accounting_suppliers'] ?? collect())->where('is_active', true) as $supplier)<option value="{{ $supplier->id }}" @selected((string) old('supplier_id') === (string) $supplier->id)>{{ $supplier->name }}</option>@endforeach</select></div>
                                         <div class="col-md-3 mb-3"><label class="form-label">Bill Date</label><input type="date" name="bill_date" class="form-control" value="{{ old('bill_date', now()->toDateString()) }}"></div>
                                         <div class="col-md-3 mb-3"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control" value="{{ old('due_date') }}"></div>
                                     </div>
+                                    <div class="mb-3"><label class="form-label">Manual Supplier Name</label><input type="text" name="supplier_name" class="form-control" value="{{ old('supplier_name') }}" placeholder="Used when no supplier record is selected"></div>
                                     <div class="row">
                                         <div class="col-md-4 mb-3"><label class="form-label">Amount</label><input type="number" step="0.01" min="0.01" name="amount" class="form-control" value="{{ old('amount') }}"></div>
                                         <div class="col-md-4 mb-3"><label class="form-label">Tax Rate</label><select name="accounting_tax_rate_id" class="form-select"><option value="">No tax</option>@foreach(($moduleData['accounting_tax_rates'] ?? collect()) as $taxRate)<option value="{{ $taxRate->id }}">{{ $taxRate->name }}</option>@endforeach</select></div>
@@ -822,6 +825,11 @@
                                     </div>
                                     <input type="hidden" name="currency" value="USD">
                                     <div class="mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Attachment Name</label><input type="text" name="attachment_name" class="form-control" value="{{ old('attachment_name') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Attachment Ref</label><input type="text" name="attachment_reference" class="form-control" value="{{ old('attachment_reference') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Attachment URL</label><input type="text" name="attachment_url" class="form-control" value="{{ old('attachment_url') }}"></div>
+                                    </div>
                                     <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
                                     <button type="submit" class="btn btn-primary">Create Vendor Bill</button>
                                 </form>
@@ -840,13 +848,30 @@
                                                 <div class="text-muted small">{{ $bill->supplier_name ?: $bill->supplier?->name ?: 'Vendor bill' }} · {{ $bill->reference ?: 'No reference' }}</div>
                                                 <div class="text-muted small">{{ optional($bill->bill_date)->format('Y-m-d') }}{{ $bill->due_date ? ' · Due '.optional($bill->due_date)->format('Y-m-d') : '' }}</div>
                                                 <div class="text-muted small">{{ $bill->expense_account }} → {{ $bill->payable_account }}</div>
-                                                <div class="text-muted small">Paid {{ number_format((float) $bill->getAttribute('paid_amount'), 2) }} · Open {{ number_format((float) $bill->getAttribute('open_amount'), 2) }}</div>
+                                                <div class="text-muted small">Adjusted {{ number_format((float) $bill->getAttribute('adjusted_amount'), 2) }} · Paid {{ number_format((float) $bill->getAttribute('paid_amount'), 2) }} · Open {{ number_format((float) $bill->getAttribute('open_amount'), 2) }}</div>
+                                                @if($bill->attachment_name || $bill->attachment_reference || $bill->attachment_url)
+                                                    <div class="text-muted small">Attachment {{ $bill->attachment_name ?: 'Document' }}{{ $bill->attachment_reference ? ' · '.$bill->attachment_reference : '' }}{{ $bill->attachment_url ? ' · '.$bill->attachment_url : '' }}</div>
+                                                @endif
+                                                @foreach($bill->adjustments as $adjustment)
+                                                    <div class="text-muted small">Credit {{ $adjustment->adjustment_number }} · {{ number_format((float) $adjustment->amount, 2) }}{{ $adjustment->reference ? ' · '.$adjustment->reference : '' }}</div>
+                                                @endforeach
                                             </div>
                                             <div class="text-end">
                                                 <span class="badge {{ $bill->status === 'posted' ? 'bg-success' : 'bg-warning text-dark' }}">{{ strtoupper($bill->status) }}</span>
-                                                <div class="fw-semibold">{{ number_format((float) $bill->amount, 2) }} {{ $bill->currency }}</div>
+                                                <div class="fw-semibold">{{ number_format((float) $bill->getAttribute('net_amount'), 2) }} {{ $bill->currency }}</div>
                                                 @if($bill->journal_entry_id)
                                                     <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $bill->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                    @if(($accountingPermissions['vendor_bills_adjust'] ?? true) && in_array($bill->status, ['posted', 'partial'], true) && (float) $bill->getAttribute('open_amount') > 0)
+                                                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bills.credit-notes.store', ['vendorBill' => $bill->id] + $workspaceQuery) }}" class="mt-2 text-start">
+                                                            @csrf
+                                                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                            <input type="hidden" name="adjustment_date" value="{{ now()->toDateString() }}">
+                                                            <input type="hidden" name="tax_amount" value="0">
+                                                            <input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-sm mb-1" placeholder="Credit amount">
+                                                            <input type="text" name="reference" class="form-control form-control-sm mb-1" placeholder="Credit reference">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Post Credit Note</button>
+                                                        </form>
+                                                    @endif
                                                 @elseif($bill->status === 'draft')
                                                     @if($accountingPermissions['vendor_bills_post'] ?? true)
                                                     <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.vendor-bills.post', ['vendorBill' => $bill->id] + $workspaceQuery) }}" class="mt-2">

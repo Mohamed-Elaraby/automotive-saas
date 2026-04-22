@@ -200,6 +200,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.deposit-batches.reconcile');
                 Route::post('/general-ledger/vendor-bills', [WorkspaceModuleController::class, 'storeAccountingVendorBill'])
                     ->name('modules.general-ledger.vendor-bills.store');
+                Route::post('/general-ledger/vendor-bills/{vendorBill}/credit-notes', [WorkspaceModuleController::class, 'storeAccountingVendorBillCreditNote'])
+                    ->name('modules.general-ledger.vendor-bills.credit-notes.store');
                 Route::post('/general-ledger/vendor-bills/{vendorBill}/post', [WorkspaceModuleController::class, 'postAccountingVendorBill'])
                     ->name('modules.general-ledger.vendor-bills.post');
                 Route::post('/general-ledger/vendor-bill-payments', [WorkspaceModuleController::class, 'storeAccountingVendorBillPayment'])
