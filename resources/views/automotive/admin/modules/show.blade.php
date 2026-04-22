@@ -210,6 +210,78 @@
                     </div>
                 </div>
 
+                @php($accountingPermissions = $moduleData['accounting_permissions'] ?? [])
+                <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Create Customer Invoice</h5></div>
+                            <div class="card-body">
+                                @if($accountingPermissions['ar_invoices_manage'] ?? true)
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.invoices.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3"><label class="form-label">Customer</label><input type="text" name="customer_name" class="form-control" value="{{ old('customer_name') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Issue Date</label><input type="date" name="issue_date" class="form-control" value="{{ old('issue_date', now()->toDateString()) }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control" value="{{ old('due_date') }}"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-7 mb-3"><label class="form-label">Line Description</label><input type="text" name="lines[0][description]" class="form-control" value="{{ old('lines.0.description', 'Service invoice') }}"></div>
+                                            <div class="col-md-5 mb-3"><label class="form-label">Revenue Account</label><input type="text" name="lines[0][account_code]" list="account-catalog-options" class="form-control" value="{{ old('lines.0.account_code', '4100 Service Labor Revenue') }}"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3"><label class="form-label">Qty</label><input type="number" step="0.001" min="0.001" name="lines[0][quantity]" class="form-control" value="{{ old('lines.0.quantity', 1) }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Unit Price</label><input type="number" step="0.01" min="0" name="lines[0][unit_price]" class="form-control" value="{{ old('lines.0.unit_price') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Tax</label><input type="number" step="0.01" min="0" name="tax_amount" class="form-control" value="{{ old('tax_amount', 0) }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                        </div>
+                                        <input type="hidden" name="currency" value="USD">
+                                        <input type="hidden" name="receivable_account" value="1100 Accounts Receivable">
+                                        <input type="hidden" name="tax_account" value="2100 VAT Output Payable">
+                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">Create Invoice</button>
+                                    </form>
+                                @else
+                                    <p class="text-muted mb-0">You do not have permission to create invoices.</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Customer Invoices</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['accounting_invoices'] ?? collect()) as $invoice)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <h6 class="mb-1">{{ $invoice->invoice_number }}</h6>
+                                                <div class="text-muted small">{{ $invoice->customer_name }} · {{ optional($invoice->issue_date)->format('Y-m-d') }}{{ $invoice->due_date ? ' · Due '.optional($invoice->due_date)->format('Y-m-d') : '' }}</div>
+                                                <div class="text-muted small">{{ $invoice->reference ?: 'No reference' }} · Paid {{ number_format((float) $invoice->getAttribute('paid_amount'), 2) }} · Open {{ number_format((float) $invoice->getAttribute('open_amount'), 2) }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $invoice->status === 'draft' ? 'bg-warning text-dark' : ($invoice->status === 'paid' ? 'bg-primary' : 'bg-success') }}">{{ strtoupper($invoice->status) }}</span>
+                                                <div class="fw-semibold">{{ number_format((float) $invoice->total_amount, 2) }} {{ $invoice->currency }}</div>
+                                                @if($invoice->status === 'draft' && ($accountingPermissions['ar_invoices_post'] ?? true))
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.invoices.post', ['invoice' => $invoice->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Post Invoice</button>
+                                                    </form>
+                                                @elseif($invoice->accounting_event_id)
+                                                    <a class="btn btn-sm btn-outline-light mt-2" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.accounting-events.invoice', ['accountingEvent' => $invoice->accounting_event_id] + $workspaceQuery) }}">Print Invoice</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No customer invoices have been created yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 @php($reconciliationSummary = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'pending_amount' => 0, 'deposited_count' => 0, 'deposited_amount' => 0, 'vendor_payment_count' => 0, 'vendor_payment_amount' => 0, 'reconciled_period_amount' => 0])
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Payment Reconciliation</h5></div>

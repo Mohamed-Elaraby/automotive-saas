@@ -2103,6 +2103,150 @@ class TenantAdminAccessFlowTest extends TestCase
         $printResponse->assertSee('BANK-STMT-VPAY-1', false);
     }
 
+    public function test_accounting_ar_invoices_post_to_journals_and_accept_customer_payments(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $invoiceResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/invoices?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'customer_name' => 'Invoice Customer',
+            'issue_date' => '2026-10-01',
+            'due_date' => '2026-10-20',
+            'currency' => 'USD',
+            'tax_amount' => 10,
+            'receivable_account' => '1100 Accounts Receivable',
+            'tax_account' => '2100 VAT Output Payable',
+            'reference' => 'AR-INV-001',
+            'lines' => [
+                [
+                    'description' => 'Consulting service',
+                    'account_code' => '4100 Service Labor Revenue',
+                    'quantity' => 2,
+                    'unit_price' => 95,
+                ],
+            ],
+        ]);
+        $invoiceResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $invoice = DB::connection('tenant')->table('accounting_invoices')
+                ->where('reference', 'AR-INV-001')
+                ->first();
+
+            $this->assertNotNull($invoice);
+            $this->assertSame('draft', $invoice->status);
+            $this->assertSame(190.0, (float) $invoice->subtotal);
+            $this->assertSame(200.0, (float) $invoice->total_amount);
+            $this->assertDatabaseHas('accounting_invoice_lines', [
+                'accounting_invoice_id' => $invoice->id,
+                'description' => 'Consulting service',
+                'account_code' => '4100 Service Labor Revenue',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $postResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/invoices/{$invoice->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+        $postResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $postedInvoice = DB::connection('tenant')->table('accounting_invoices')
+                ->where('id', $invoice->id)
+                ->first();
+            $event = DB::connection('tenant')->table('accounting_events')
+                ->where('id', $postedInvoice->accounting_event_id)
+                ->first();
+            $journal = DB::connection('tenant')->table('journal_entries')
+                ->where('id', $postedInvoice->journal_entry_id)
+                ->first();
+            $journalLines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $postedInvoice->journal_entry_id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertSame('posted', $postedInvoice->status);
+            $this->assertNotNull($event);
+            $this->assertSame('customer_invoice.posted', $event->event_type);
+            $this->assertSame('journal_posted', $event->status);
+            $this->assertSame('posted', $journal->status);
+            $this->assertSame(200.0, (float) $journal->debit_total);
+            $this->assertSame(200.0, (float) $journal->credit_total);
+            $this->assertSame('1100 Accounts Receivable', $journalLines[0]->account_code);
+            $this->assertSame(200.0, (float) $journalLines[0]->debit);
+            $this->assertSame('4100 Service Labor Revenue', $journalLines[1]->account_code);
+            $this->assertSame(190.0, (float) $journalLines[1]->credit);
+            $this->assertSame('2100 VAT Output Payable', $journalLines[2]->account_code);
+            $this->assertSame(10.0, (float) $journalLines[2]->credit);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'customer_invoice_posted',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Customer Invoices', false);
+        $ledgerResponse->assertSee('Invoice Customer', false);
+        $ledgerResponse->assertSee('POSTED', false);
+
+        $paymentResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_event_id' => $postedInvoice->accounting_event_id,
+            'payment_date' => '2026-10-05',
+            'amount' => 200,
+            'method' => 'bank_transfer',
+            'payer_name' => 'Invoice Customer',
+            'reference' => 'AR-PAY-001',
+            'currency' => 'USD',
+        ]);
+        $paymentResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $paidInvoice = DB::connection('tenant')->table('accounting_invoices')
+                ->where('id', $invoice->id)
+                ->first();
+            $paidEvent = DB::connection('tenant')->table('accounting_events')
+                ->where('id', $paidInvoice->accounting_event_id)
+                ->first();
+
+            $this->assertSame('paid', $paidInvoice->status);
+            $this->assertSame('paid', $paidEvent->status);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $statementResponse = $this->get("http://{$domain}/automotive/admin/general-ledger/customer-statement?workspace_product=accounting&customer=Invoice%20Customer");
+        $statementResponse->assertOk();
+        $statementResponse->assertSee('Invoice Customer', false);
+        $statementResponse->assertSee($invoice->invoice_number, false);
+        $statementResponse->assertSee('AR-PAY-001', false);
+        $statementResponse->assertSee('0.00', false);
+
+        $invoicePrint = $this->get("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$postedInvoice->accounting_event_id}/invoice?workspace_product=accounting");
+        $invoicePrint->assertOk();
+        $invoicePrint->assertSee($invoice->invoice_number, false);
+        $invoicePrint->assertSee('Consulting service', false);
+        $invoicePrint->assertSee('Open Balance', false);
+    }
+
     public function test_accounting_runtime_enforces_account_catalog_period_locks_and_exports_reports(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

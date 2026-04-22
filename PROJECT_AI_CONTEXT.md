@@ -768,22 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting AR Invoicing Foundation
+### Accounting AP Enhancements
 Recommended scope:
-- separate formal customer invoicing from source accounting events where needed
-- decide whether work-order completion should directly produce accounting events only or also produce tenant invoices
-- if invoices are added:
-  - create invoice table
-  - invoice number
-  - customer
-  - issue date
-  - due date
-  - lines
-  - tax
-  - status
-  - journal posting relation
-- support customer statement output from invoices/payments/journal state
-- preserve existing work-order accounting handoff behavior
+- add vendor/supplier selection integration when parts supplier catalog is active
+- support bill attachments metadata if existing file system patterns allow it
+- support bill due-date reminders or aging filters
+- support credit notes or vendor bill adjustments through explicit correction entries
+- block direct mutation of posted/paid bills except controlled correction flows
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -860,6 +851,11 @@ Current accounting foundations already completed:
 - deposit batches and vendor payments can be marked reconciled from General Ledger
 - reconciled deposit batches cannot be directly corrected; reconciled customer payments cannot be directly voided
 - General Ledger exposes unreconciled receipts, unreconciled deposits, unreconciled vendor payments, and period reconciled total
+- formal AR invoices now exist separately from source accounting events
+- posting an AR invoice creates an accounting event and a balanced journal entry
+- AR invoice payments use the existing customer payment workflow against the invoice accounting event
+- customer statements and invoice print output use formal invoice numbers when available
+- work-order completion still creates accounting handoff events without requiring invoice creation
 
 Important accounting runtime tables currently expected in tenant DB:
 - `accounting_posting_groups`
@@ -870,6 +866,8 @@ Important accounting runtime tables currently expected in tenant DB:
 - `accounting_period_locks`
 - `accounting_policies`
 - `accounting_audit_entries`
+- `accounting_invoices`
+- `accounting_invoice_lines`
 - `accounting_payments`
 - `accounting_deposit_batches`
 - `accounting_vendor_bills`
@@ -1287,30 +1285,57 @@ Verification:
 
 ### Package 6 - Accounting AR Invoicing Foundation
 Status:
-- pending
+- completed
 
 Goal:
 - separate formal customer invoicing from source accounting events where needed
 
-Required scope:
-- decide whether work-order completion should directly produce accounting events only or also produce tenant invoices
-- if invoices are added:
-  - create invoice table
+Completed behavior:
+- customer-facing invoices can exist without breaking current work-order accounting events
+- invoice posting creates balanced journals
+- invoice payments continue settling receivables
+- General Ledger can create draft customer invoices with:
   - invoice number
   - customer
   - issue date
   - due date
-  - lines
-  - tax
+  - line description/account/quantity/unit price
+  - tax amount
   - status
-  - journal posting relation
-- support customer statement output from invoices/payments/journal state
-- preserve existing work-order accounting handoff behavior
+- posting an invoice creates a linked `accounting_events` record and posts it to journals
+- invoice line revenue and output tax are credited through journal lines
+- customer payments continue to use the existing receivable settlement flow against the invoice accounting event
+- paid invoice events update the formal invoice status to `paid`
+- invoice print output uses the formal invoice number and invoice lines when the event came from an AR invoice
+- customer statements show formal invoice numbers when available
+- work-order accounting handoff behavior remains unchanged; work orders can still post accounting events without creating formal invoices
 
-Acceptance criteria:
-- customer-facing invoices can exist without breaking current work-order accounting events
-- invoice posting creates balanced journals
-- invoice payments continue settling receivables
+Important files added/changed:
+- `database/migrations/tenant/2026_04_22_090000_create_accounting_invoices_table.php`
+- `app/Models/AccountingInvoice.php`
+- `app/Models/AccountingInvoiceLine.php`
+- `app/Services/Automotive/AccountingPermissionService.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `routes/products/automotive/admin.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Models/AccountingInvoice.php`
+  - result: passed
+- `php -l app/Models/AccountingInvoiceLine.php`
+  - result: passed
+- `php -l database/migrations/tenant/2026_04_22_090000_create_accounting_invoices_table.php`
+  - result: passed
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: passed
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: passed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='ar_invoices|record_customer_payment|create_posting_group|bank_accounts_control'`
+  - result: 4 passed, 139 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 29 passed, 739 assertions
 
 ### Package 7 - Accounting AP Enhancements
 Status:

@@ -11,6 +11,8 @@ class AccountingPermissionService
     public const MANUAL_JOURNALS_POST = 'accounting.manual_journals.post';
     public const MANUAL_JOURNALS_APPROVE = 'accounting.manual_journals.approve';
     public const SOURCE_EVENTS_POST = 'accounting.source_events.post';
+    public const AR_INVOICES_MANAGE = 'accounting.ar_invoices.manage';
+    public const AR_INVOICES_POST = 'accounting.ar_invoices.post';
     public const INVENTORY_MOVEMENTS_POST = 'accounting.inventory_movements.post';
     public const VENDOR_BILLS_POST = 'accounting.vendor_bills.post';
     public const VENDOR_BILL_PAYMENTS_RECORD = 'accounting.vendor_bill_payments.record';

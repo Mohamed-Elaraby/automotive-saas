@@ -7,6 +7,7 @@ use App\Models\AccountingAuditEntry;
 use App\Models\AccountingBankAccount;
 use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
+use App\Models\AccountingInvoice;
 use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
@@ -214,6 +215,37 @@ class AccountingRuntimeService
             })
             ->filter(fn (AccountingEvent $event): bool => (float) $event->getAttribute('open_amount') > 0)
             ->values();
+    }
+
+    public function getInvoices(array $filters = [], int $limit = 25): Collection
+    {
+        return AccountingInvoice::query()
+            ->with(['lines', 'accountingEvent', 'journalEntry', 'creator', 'poster'])
+            ->when(! empty($filters['invoice_status']), fn ($query) => $query->where('status', $filters['invoice_status']))
+            ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('issue_date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('issue_date', '<=', $filters['date_to']))
+            ->when(! empty($filters['search']), function ($query) use ($filters) {
+                $search = '%' . trim((string) $filters['search']) . '%';
+
+                $query->where(function ($query) use ($search) {
+                    $query->where('invoice_number', 'like', $search)
+                        ->orWhere('customer_name', 'like', $search)
+                        ->orWhere('reference', 'like', $search);
+                });
+            })
+            ->latest('issue_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->map(function (AccountingInvoice $invoice): AccountingInvoice {
+                $paidAmount = $invoice->accounting_event_id
+                    ? $this->paidAmountForEvent((int) $invoice->accounting_event_id)
+                    : 0.0;
+                $invoice->setAttribute('paid_amount', $paidAmount);
+                $invoice->setAttribute('open_amount', max(0, round((float) $invoice->total_amount - $paidAmount, 2)));
+
+                return $invoice;
+            });
     }
 
     public function getRecentPayments(int $limit = 15): Collection
@@ -558,6 +590,9 @@ class AccountingRuntimeService
 
     public function invoiceDocument(AccountingEvent $event): array
     {
+        $invoice = $event->reference_type === AccountingInvoice::class && $event->reference_id
+            ? AccountingInvoice::query()->with('lines')->find((int) $event->reference_id)
+            : null;
         $payments = AccountingPayment::query()
             ->with('journalEntry')
             ->where('accounting_event_id', $event->id)
@@ -567,14 +602,20 @@ class AccountingRuntimeService
         $paidAmount = $this->paidAmountForEvent($event->id);
 
         return [
-            'invoice_number' => 'INV-' . str_pad((string) $event->id, 6, '0', STR_PAD_LEFT),
+            'invoice_number' => $invoice?->invoice_number ?: 'INV-' . str_pad((string) $event->id, 6, '0', STR_PAD_LEFT),
+            'invoice' => $invoice,
             'event' => $event,
             'journal_entry' => JournalEntry::query()
                 ->where('accounting_event_id', $event->id)
                 ->where('source_type', $event->reference_type)
                 ->where('source_id', $event->reference_id)
                 ->first(),
-            'lines' => collect([
+            'lines' => $invoice
+                ? $invoice->lines->map(fn ($line): array => [
+                    'description' => $line->description,
+                    'amount' => round((float) $line->line_total, 2),
+                ])->values()
+                : collect([
                 [
                     'description' => 'Labor / service revenue',
                     'amount' => round((float) $event->labor_amount, 2),
@@ -613,7 +654,7 @@ class AccountingRuntimeService
             $rows->push([
                 'date' => optional($event->event_date)->toDateString() ?: now()->toDateString(),
                 'type' => 'Invoice',
-                'reference' => 'INV-' . str_pad((string) $event->id, 6, '0', STR_PAD_LEFT),
+                'reference' => data_get($event->payload, 'invoice_number') ?: 'INV-' . str_pad((string) $event->id, 6, '0', STR_PAD_LEFT),
                 'description' => trim((string) data_get($event->payload, 'work_order_number', '') . ' ' . (string) data_get($event->payload, 'title', $event->event_type)),
                 'debit' => round((float) $event->total_amount, 2),
                 'credit' => 0.0,
@@ -1216,6 +1257,8 @@ class AccountingRuntimeService
                 $event->forceFill(['status' => 'paid'])->save();
             }
 
+            $this->syncInvoiceStatusForEvent($event);
+
             $this->recordAudit('customer_payment_recorded', $payment, "Customer payment {$payment->payment_number} recorded.", [
                 'accounting_event_id' => $event->id,
                 'journal_entry_id' => $entry->id,
@@ -1223,6 +1266,148 @@ class AccountingRuntimeService
             ], $createdBy);
 
         return $payment->load(['accountingEvent', 'journalEntry', 'bankAccount', 'creator']);
+        });
+    }
+
+    public function createInvoice(array $data, ?int $createdBy = null): AccountingInvoice
+    {
+        $issueDate = Carbon::parse($data['issue_date'] ?? now()->toDateString())->toDateString();
+        $dueDate = ! empty($data['due_date']) ? Carbon::parse($data['due_date'])->toDateString() : null;
+        $lines = collect($data['lines'] ?? [])
+            ->map(function (array $line): array {
+                $quantity = round((float) ($line['quantity'] ?? 1), 3);
+                $unitPrice = round((float) ($line['unit_price'] ?? 0), 2);
+
+                return [
+                    'description' => trim((string) ($line['description'] ?? 'Invoice line')),
+                    'account_code' => $this->normalizeAccountCode((string) ($line['account_code'] ?? '4100 Service Labor Revenue')),
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'line_total' => round($quantity * $unitPrice, 2),
+                ];
+            })
+            ->filter(fn (array $line): bool => $line['description'] !== '' && $line['quantity'] > 0 && $line['unit_price'] >= 0 && $line['line_total'] > 0)
+            ->values();
+
+        if ($lines->isEmpty()) {
+            throw ValidationException::withMessages([
+                'lines' => 'Add at least one positive invoice line.',
+            ]);
+        }
+
+        $taxAmount = round((float) ($data['tax_amount'] ?? 0), 2);
+        $subtotal = round((float) $lines->sum('line_total'), 2);
+        $totalAmount = round($subtotal + $taxAmount, 2);
+        $receivableAccount = $this->normalizeAccountCode((string) ($data['receivable_account'] ?? '1100 Accounts Receivable'));
+        $revenueAccount = $lines->first()['account_code'];
+        $taxAccount = $taxAmount > 0
+            ? $this->normalizeAccountCode((string) ($data['tax_account'] ?? '2100 VAT Output Payable'))
+            : null;
+
+        if ($taxAmount < 0) {
+            throw ValidationException::withMessages([
+                'tax_amount' => 'Tax amount cannot be negative.',
+            ]);
+        }
+
+        $this->ensureDefaultAccounts();
+        $accountCodes = $lines->pluck('account_code')->push($receivableAccount);
+        if ($taxAccount) {
+            $accountCodes->push($taxAccount);
+        }
+        $this->assertActiveAccountCodes($accountCodes->all(), 'invoice_accounts');
+
+        return DB::transaction(function () use ($data, $lines, $issueDate, $dueDate, $subtotal, $taxAmount, $totalAmount, $receivableAccount, $revenueAccount, $taxAccount, $createdBy): AccountingInvoice {
+            $invoice = AccountingInvoice::query()->create([
+                'invoice_number' => $this->nextJournalNumber('INV'),
+                'customer_name' => $data['customer_name'],
+                'issue_date' => $issueDate,
+                'due_date' => $dueDate,
+                'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'receivable_account' => $receivableAccount,
+                'revenue_account' => $revenueAccount,
+                'tax_account' => $taxAccount,
+                'status' => 'draft',
+                'reference' => $data['reference'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $createdBy,
+            ]);
+
+            $lines->each(function (array $line, int $index) use ($invoice): void {
+                $invoice->lines()->create($line + ['sort_order' => $index + 1]);
+            });
+
+            $this->recordAudit('customer_invoice_created', $invoice, "Invoice {$invoice->invoice_number} created.", [
+                'customer_name' => $invoice->customer_name,
+                'total_amount' => (float) $invoice->total_amount,
+            ], $createdBy);
+
+            return $invoice->load(['lines', 'creator']);
+        });
+    }
+
+    public function postInvoice(AccountingInvoice $invoice, ?int $createdBy = null): JournalEntry
+    {
+        $invoice->loadMissing('lines');
+
+        if ($invoice->status !== 'draft') {
+            throw ValidationException::withMessages([
+                'invoice' => 'Only draft invoices can be posted.',
+            ]);
+        }
+
+        if ($invoice->accounting_event_id !== null || $invoice->journal_entry_id !== null) {
+            throw ValidationException::withMessages([
+                'invoice' => 'This invoice is already posted.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($invoice, $createdBy): JournalEntry {
+            $event = AccountingEvent::query()->create([
+                'event_type' => 'customer_invoice.posted',
+                'reference_type' => AccountingInvoice::class,
+                'reference_id' => $invoice->id,
+                'status' => 'posted',
+                'event_date' => $invoice->issue_date,
+                'currency' => $invoice->currency ?: 'USD',
+                'labor_amount' => $invoice->total_amount,
+                'parts_amount' => 0,
+                'total_amount' => $invoice->total_amount,
+                'payload' => [
+                    'invoice_number' => $invoice->invoice_number,
+                    'customer_name' => $invoice->customer_name,
+                    'title' => $invoice->reference ?: 'Customer invoice',
+                    'tax_amount' => (float) $invoice->tax_amount,
+                    'tax_account' => $invoice->tax_account,
+                    'invoice_lines' => $invoice->lines->map(fn ($line): array => [
+                        'description' => $line->description,
+                        'account_code' => $line->account_code,
+                        'amount' => (float) $line->line_total,
+                    ])->values()->all(),
+                ],
+                'created_by' => $createdBy,
+            ]);
+
+            $entry = $this->postAccountingEvent($event, null, $createdBy);
+
+            $invoice->forceFill([
+                'accounting_event_id' => $event->id,
+                'journal_entry_id' => $entry->id,
+                'status' => 'posted',
+                'posted_by' => $createdBy,
+                'posted_at' => now(),
+            ])->save();
+
+            $this->recordAudit('customer_invoice_posted', $invoice, "Invoice {$invoice->invoice_number} posted.", [
+                'accounting_event_id' => $event->id,
+                'journal_entry_id' => $entry->id,
+                'total_amount' => (float) $invoice->total_amount,
+            ], $createdBy);
+
+            return $entry->load(['lines', 'postingGroup', 'creator']);
         });
     }
 
@@ -1813,6 +1998,10 @@ class AccountingRuntimeService
                 $payment->accountingEvent->forceFill(['status' => 'journal_posted'])->save();
             }
 
+            if ($payment->accountingEvent) {
+                $this->syncInvoiceStatusForEvent($payment->accountingEvent);
+            }
+
             $this->recordAudit('customer_payment_voided', $payment, "Customer payment {$payment->payment_number} voided.", [
                 'void_journal_entry_id' => $entry->id,
                 'amount' => $amount,
@@ -1838,6 +2027,14 @@ class AccountingRuntimeService
         $totalAmount = round((float) $event->total_amount, 2);
         $taxAmount = round((float) data_get($event->payload, 'tax_amount', 0), 2);
         $outputTaxAccount = trim((string) data_get($event->payload, 'tax_account', '2100 VAT Output Payable')) ?: '2100 VAT Output Payable';
+        $invoiceLines = collect(data_get($event->payload, 'invoice_lines', []))
+            ->map(fn ($line): array => [
+                'description' => trim((string) data_get($line, 'description', 'Invoice revenue')),
+                'account_code' => $this->normalizeAccountCode((string) data_get($line, 'account_code', $postingGroup?->labor_revenue_account ?: '4100 Service Labor Revenue')),
+                'amount' => round((float) data_get($line, 'amount', 0), 2),
+            ])
+            ->filter(fn (array $line): bool => $line['amount'] > 0)
+            ->values();
 
         if ($totalAmount <= 0) {
             throw ValidationException::withMessages([
@@ -1852,14 +2049,15 @@ class AccountingRuntimeService
         }
 
         $this->ensureDefaultAccounts();
-        $this->assertActiveAccountCodes([
+        $postingAccounts = collect([
             $postingGroup?->receivable_account ?: '1100 Accounts Receivable',
             $postingGroup?->labor_revenue_account ?: '4100 Service Labor Revenue',
             $postingGroup?->parts_revenue_account ?: '4200 Parts Revenue',
             $outputTaxAccount,
-        ], 'posting_accounts');
+        ])->merge($invoiceLines->pluck('account_code'))->unique()->values()->all();
+        $this->assertActiveAccountCodes($postingAccounts, 'posting_accounts');
 
-        return DB::transaction(function () use ($event, $postingGroup, $entryDate, $laborAmount, $partsAmount, $totalAmount, $taxAmount, $outputTaxAccount, $createdBy): JournalEntry {
+        return DB::transaction(function () use ($event, $postingGroup, $entryDate, $laborAmount, $partsAmount, $totalAmount, $taxAmount, $outputTaxAccount, $invoiceLines, $createdBy): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'accounting_event_id' => $event->id,
                 'posting_group_id' => $postingGroup?->id,
@@ -1885,31 +2083,44 @@ class AccountingRuntimeService
                 'memo' => 'Customer receivable from posted accounting event.',
             ]);
 
-            $taxReduction = $taxAmount;
-            $netLaborAmount = max(0, round($laborAmount - min($laborAmount, $taxReduction), 2));
-            $taxReduction = max(0, round($taxReduction - ($laborAmount - $netLaborAmount), 2));
-            $netPartsAmount = max(0, round($partsAmount - min($partsAmount, $taxReduction), 2));
+            if ($invoiceLines->isNotEmpty()) {
+                foreach ($invoiceLines as $line) {
+                    $entry->lines()->create([
+                        'account_code' => $line['account_code'],
+                        'account_name' => $this->resolveAccountName($line['account_code'], 'Invoice Revenue'),
+                        'line_type' => 'credit',
+                        'debit' => 0,
+                        'credit' => $line['amount'],
+                        'memo' => $line['description'],
+                    ]);
+                }
+            } else {
+                $taxReduction = $taxAmount;
+                $netLaborAmount = max(0, round($laborAmount - min($laborAmount, $taxReduction), 2));
+                $taxReduction = max(0, round($taxReduction - ($laborAmount - $netLaborAmount), 2));
+                $netPartsAmount = max(0, round($partsAmount - min($partsAmount, $taxReduction), 2));
 
-            if ($netLaborAmount > 0) {
-                $entry->lines()->create([
-                    'account_code' => $postingGroup?->labor_revenue_account ?: '4100 Service Labor Revenue',
-                    'account_name' => 'Service Labor Revenue',
-                    'line_type' => 'credit',
-                    'debit' => 0,
-                    'credit' => $netLaborAmount,
-                    'memo' => 'Labor revenue from workshop work order.',
-                ]);
-            }
+                if ($netLaborAmount > 0) {
+                    $entry->lines()->create([
+                        'account_code' => $postingGroup?->labor_revenue_account ?: '4100 Service Labor Revenue',
+                        'account_name' => 'Service Labor Revenue',
+                        'line_type' => 'credit',
+                        'debit' => 0,
+                        'credit' => $netLaborAmount,
+                        'memo' => 'Labor revenue from workshop work order.',
+                    ]);
+                }
 
-            if ($netPartsAmount > 0) {
-                $entry->lines()->create([
-                    'account_code' => $postingGroup?->parts_revenue_account ?: '4200 Parts Revenue',
-                    'account_name' => 'Parts Revenue',
-                    'line_type' => 'credit',
-                    'debit' => 0,
-                    'credit' => $netPartsAmount,
-                    'memo' => 'Parts revenue from workshop work order.',
-                ]);
+                if ($netPartsAmount > 0) {
+                    $entry->lines()->create([
+                        'account_code' => $postingGroup?->parts_revenue_account ?: '4200 Parts Revenue',
+                        'account_name' => 'Parts Revenue',
+                        'line_type' => 'credit',
+                        'debit' => 0,
+                        'credit' => $netPartsAmount,
+                        'memo' => 'Parts revenue from workshop work order.',
+                    ]);
+                }
             }
 
             if ($taxAmount > 0) {
@@ -2855,6 +3066,25 @@ class AccountingRuntimeService
     protected function remainingAmountForEvent(AccountingEvent $event): float
     {
         return max(0, round((float) $event->total_amount - $this->paidAmountForEvent($event->id), 2));
+    }
+
+    protected function syncInvoiceStatusForEvent(AccountingEvent $event): void
+    {
+        if ($event->reference_type !== AccountingInvoice::class || ! $event->reference_id) {
+            return;
+        }
+
+        $invoice = AccountingInvoice::query()->find((int) $event->reference_id);
+
+        if (! $invoice || ! in_array($invoice->status, ['posted', 'paid'], true)) {
+            return;
+        }
+
+        $remainingAmount = $this->remainingAmountForEvent($event);
+
+        $invoice->forceFill([
+            'status' => $remainingAmount <= 0 ? 'paid' : 'posted',
+        ])->save();
     }
 
     protected function paidAmountForVendorBill(int $billId): float

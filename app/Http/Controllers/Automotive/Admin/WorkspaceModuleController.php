@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountingDepositBatch;
 use App\Models\AccountingAccount;
 use App\Models\AccountingEvent;
+use App\Models\AccountingInvoice;
 use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingVendorBill;
@@ -327,6 +328,7 @@ class WorkspaceModuleController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', 'in:pending_approval,approved,posted,reversed,rejected,void'],
             'reconciliation_status' => ['nullable', 'in:pending,deposited,reconciled'],
+            'invoice_status' => ['nullable', 'in:draft,posted,paid,void'],
             'vendor_bill_status' => ['nullable', 'in:draft,posted,partial,paid,void'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
@@ -354,6 +356,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'accounting_bank_accounts' => $this->accountingRuntimeService->getBankAccounts(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
+                'accounting_invoices' => $this->accountingRuntimeService->getInvoices($filters, 15),
                 'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
                 'reconcilable_payments' => $this->accountingRuntimeService->getReconcilablePayments(25),
                 'recent_deposit_batches' => $this->accountingRuntimeService->getDepositBatches(10),
@@ -853,6 +856,73 @@ class WorkspaceModuleController extends Controller
         $statement = $this->accountingRuntimeService->customerStatement($validated['customer']);
 
         return view('automotive.admin.modules.accounting-statement-print', compact('statement'));
+    }
+
+    public function storeAccountingInvoice(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::AR_INVOICES_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'issue_date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'receivable_account' => ['nullable', 'string', 'max:120'],
+            'tax_account' => ['nullable', 'string', 'max:120'],
+            'reference' => ['nullable', 'string', 'max:120'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.description' => ['nullable', 'string', 'max:255'],
+            'lines.*.account_code' => ['nullable', 'string', 'max:120'],
+            'lines.*.quantity' => ['nullable', 'numeric', 'gt:0'],
+            'lines.*.unit_price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        try {
+            $invoice = $this->accountingRuntimeService->createInvoice(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', "Invoice {$invoice->invoice_number} created successfully.");
+    }
+
+    public function postAccountingInvoice(Request $request, AccountingInvoice $invoice): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::AR_INVOICES_POST);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $entry = $this->accountingRuntimeService->postInvoice(
+                $invoice,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $entry->id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', "Invoice journal {$entry->journal_number} posted successfully.");
     }
 
     public function postInventoryMovement(Request $request, StockMovement $stockMovement): RedirectResponse
@@ -1482,6 +1552,8 @@ class WorkspaceModuleController extends Controller
             'manual_journals_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_POST),
             'manual_journals_approve' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_APPROVE),
             'source_events_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::SOURCE_EVENTS_POST),
+            'ar_invoices_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::AR_INVOICES_MANAGE),
+            'ar_invoices_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::AR_INVOICES_POST),
             'inventory_movements_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::INVENTORY_MOVEMENTS_POST),
             'vendor_bills_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILLS_POST),
             'vendor_bill_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILL_PAYMENTS_RECORD),

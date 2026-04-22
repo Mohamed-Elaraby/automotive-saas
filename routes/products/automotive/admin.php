@@ -182,6 +182,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.accounting-events.invoice');
                 Route::get('/general-ledger/customer-statement', [WorkspaceModuleController::class, 'showCustomerStatement'])
                     ->name('modules.general-ledger.customer-statement');
+                Route::post('/general-ledger/invoices', [WorkspaceModuleController::class, 'storeAccountingInvoice'])
+                    ->name('modules.general-ledger.invoices.store');
+                Route::post('/general-ledger/invoices/{invoice}/post', [WorkspaceModuleController::class, 'postAccountingInvoice'])
+                    ->name('modules.general-ledger.invoices.post');
                 Route::post('/general-ledger/inventory-movements/{stockMovement}/post', [WorkspaceModuleController::class, 'postInventoryMovement'])
                     ->name('modules.general-ledger.inventory-movements.post');
                 Route::post('/general-ledger/payments', [WorkspaceModuleController::class, 'storeAccountingPayment'])
