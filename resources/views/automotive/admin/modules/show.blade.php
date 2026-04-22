@@ -1271,12 +1271,51 @@
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Accounting Audit Timeline</h5></div>
                     <div class="card-body">
+                        <form method="GET" action="{{ route('automotive.admin.modules.general-ledger') }}" class="mb-3">
+                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                            <div class="row align-items-end">
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Event Type</label>
+                                    <select name="audit_event_type" class="form-select">
+                                        <option value="">Any</option>
+                                        @foreach(($moduleData['accounting_audit_event_types'] ?? collect()) as $eventType)
+                                            <option value="{{ $eventType }}" @selected(($journalFilters['audit_event_type'] ?? '') === $eventType)>{{ str_replace('_', ' ', strtoupper($eventType)) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Actor</label>
+                                    <select name="audit_actor_id" class="form-select">
+                                        <option value="">Any</option>
+                                        @foreach(($moduleData['accounting_audit_actors'] ?? collect()) as $actor)
+                                            <option value="{{ $actor->id }}" @selected((string) ($journalFilters['audit_actor_id'] ?? '') === (string) $actor->id)>{{ $actor->name ?: $actor->email }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Source Model</label>
+                                    <select name="audit_source_type" class="form-select">
+                                        <option value="">Any</option>
+                                        @foreach(($moduleData['accounting_audit_source_types'] ?? collect()) as $sourceType)
+                                            <option value="{{ $sourceType['value'] }}" @selected(($journalFilters['audit_source_type'] ?? '') === $sourceType['value'])>{{ $sourceType['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="audit_date_from" class="form-control" value="{{ $journalFilters['audit_date_from'] ?? '' }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="audit_date_to" class="form-control" value="{{ $journalFilters['audit_date_to'] ?? '' }}"></div>
+                                <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Filter Audit</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
+                            </div>
+                        </form>
                         @forelse(($moduleData['accounting_audit_entries'] ?? collect()) as $audit)
                             <div class="border-bottom pb-2 mb-2">
                                 <div class="d-flex justify-content-between gap-3">
                                     <div>
                                         <h6 class="mb-1">{{ str_replace('_', ' ', strtoupper($audit->event_type)) }}</h6>
                                         <div class="text-muted small">{{ $audit->description }}</div>
+                                        <div class="text-muted small">
+                                            Actor {{ $audit->actor?->name ?: 'System user' }}
+                                            · Source {{ class_basename($audit->auditable_type ?: 'Unknown') }} #{{ $audit->auditable_id ?: '-' }}
+                                        </div>
                                     </div>
                                     <div class="text-muted small text-end">{{ optional($audit->created_at)->format('Y-m-d H:i') }}</div>
                                 </div>

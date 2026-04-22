@@ -987,6 +987,11 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertNotNull($taxRate);
             $this->assertSame('1410 VAT Input Receivable', $taxRate->input_tax_account);
             $this->assertSame('2100 VAT Output Payable', $taxRate->output_tax_account);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'tax_rate_changed',
+                'auditable_type' => \App\Models\AccountingTaxRate::class,
+                'auditable_id' => $taxRate->id,
+            ], 'tenant');
         } finally {
             tenancy()->end();
             DB::purge('tenant');
@@ -1627,6 +1632,25 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertSame('posted', $postedJournal->approval_status);
             $this->assertNotNull($postedJournal->approved_at);
             $this->assertNotNull($postedJournal->posted_at);
+            $approvalAudit = DB::connection('tenant')->table('accounting_audit_entries')
+                ->where('event_type', 'manual_journal_approved')
+                ->first();
+            $postingAudit = DB::connection('tenant')->table('accounting_audit_entries')
+                ->where('event_type', 'manual_journal_posted_after_approval')
+                ->first();
+            $approver = DB::connection('tenant')->table('users')
+                ->where('email', $approverEmail)
+                ->first();
+
+            $this->assertNotNull($approvalAudit);
+            $this->assertNotNull($postingAudit);
+            $this->assertNotNull($approver);
+            $payload = json_decode($postingAudit->payload, true);
+            $this->assertSame('manual_journal_posted_after_approval', $payload['event_type']);
+            $this->assertSame(\App\Models\JournalEntry::class, $payload['source_type']);
+            $this->assertSame($postedJournal->id, $payload['source_id']);
+            $this->assertSame($approver->id, $payload['actor_id']);
+            $this->assertSame('journal_entries_and_journal_entry_lines', $payload['source_of_truth']);
             $this->assertDatabaseHas('accounting_audit_entries', [
                 'event_type' => 'manual_journal_approved',
             ], 'tenant');
@@ -1637,6 +1661,21 @@ class TenantAdminAccessFlowTest extends TestCase
             tenancy()->end();
             DB::purge('tenant');
         }
+
+        $auditQuery = http_build_query([
+            'workspace_product' => 'accounting',
+            'audit_event_type' => 'manual_journal_approved',
+            'audit_actor_id' => $approver->id,
+            'audit_source_type' => \App\Models\JournalEntry::class,
+            'audit_date_from' => now()->subDay()->toDateString(),
+            'audit_date_to' => now()->addDay()->toDateString(),
+        ]);
+        $auditResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?{$auditQuery}");
+        $auditResponse->assertOk();
+        $auditResponse->assertSee('Accounting Audit Timeline', false);
+        $auditResponse->assertSee('MANUAL JOURNAL APPROVED', false);
+        $auditResponse->assertSee('Actor Accounting Approver', false);
+        $auditResponse->assertSee('Source JournalEntry #' . $journal->id, false);
     }
 
     public function test_accounting_chart_of_accounts_hardening_blocks_unsafe_mutation_and_inactive_posting(): void
@@ -2876,6 +2915,9 @@ class TenantAdminAccessFlowTest extends TestCase
 
             $this->assertSame('5110 Inventory Shrinkage', $lines[0]->account_code);
             $this->assertSame('1310 Workshop Inventory', $lines[1]->account_code);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'accounting_policy_changed',
+            ], 'tenant');
             $this->assertDatabaseHas('accounting_audit_entries', [
                 'event_type' => 'inventory_valuation_posted',
             ], 'tenant');

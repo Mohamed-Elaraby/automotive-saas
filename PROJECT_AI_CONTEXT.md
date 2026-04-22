@@ -768,24 +768,18 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Audit Trail And Compliance Review
+### Accounting Data Quality And Readiness Command Expansion
 Recommended scope:
-- standardize audit event names and payloads
-- expose audit filters:
-  - event type
-  - actor
-  - date range
-  - source model
-- audit high-risk events:
-  - posting
-  - reversal
-  - approval
-  - rejection
-  - period lock
-  - payment void
-  - deposit correction
-  - tax/account policy changes
-- ensure audit entries do not become the accounting source of truth; they are evidence/logging only
+- expand `tenancy:verify-integration-readiness` accounting checks:
+  - required tables
+  - default accounts
+  - default posting group
+  - default accounting policy
+  - default tax rate
+  - integration handoff tables
+  - active accounting workspace product
+- add actionable warnings for missing or inactive accounting setup
+- keep the command safe to run in production
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -824,6 +818,8 @@ Current accounting foundations already completed:
 - accounting policies exist for inventory accounting
 - inventory movements from parts inventory can be posted into accounting
 - period locks exist
+- General Ledger includes an accounting audit timeline with filters by event type, actor, source model, and date range
+- audit entries are compliance evidence only; journal entries and journal lines remain the accounting source of truth
 - fiscal close posting controls now block posting inside locked periods
 - overlapping period locks are rejected
 - accounting permission gates now protect sensitive actions:
@@ -1533,7 +1529,7 @@ Verification:
 
 ### Package 10 - Accounting Audit Trail And Compliance Review
 Status:
-- pending
+- completed
 
 Goal:
 - make accounting activity traceable and reviewable
@@ -1559,6 +1555,39 @@ Required scope:
 Acceptance criteria:
 - finance/admin users can review who did what and when
 - tests cover important audit event creation
+
+Completed implementation:
+- standardized accounting audit payloads with `event_type`, source model/id, actor id, recorded timestamp, and explicit journal-source-of-truth marker
+- added filtered audit review inside General Ledger by event type, actor, source model, and audit date range
+- loaded audit actors and source model options for finance/admin review
+- added audit entries for chart of account saves, accounting policy changes, and tax rate changes
+- kept audit entries as compliance evidence only; journal entries and journal lines remain the accounting source of truth
+
+Files changed:
+- `app/Models/AccountingAuditEntry.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingAuditEntry.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='high_risk_manual_journals|vendor_bill_to_payables|configured_inventory_policy_accounts'`
+  - result: 3 passed, 154 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|high_risk_manual_journals|permissions|vendor_bill_to_payables|configured_inventory_policy_accounts|reconciliation_workflow'`
+  - result: 11 passed, 439 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 33 passed, 839 assertions
 
 ### Package 11 - Accounting Data Quality And Readiness Command Expansion
 Status:

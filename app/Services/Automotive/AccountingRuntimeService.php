@@ -18,6 +18,7 @@ use App\Models\AccountingVendorBillAdjustment;
 use App\Models\AccountingVendorBillPayment;
 use App\Models\JournalEntry;
 use App\Models\StockMovement;
+use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\Tenancy\WorkspaceIntegrationHandoffService;
 use Illuminate\Database\Eloquent\Model;
@@ -189,13 +190,65 @@ class AccountingRuntimeService
         });
     }
 
-    public function getAuditEntries(int $limit = 30): Collection
+    public function getAuditEntries(array|int $filters = [], int $limit = 30): Collection
     {
+        if (is_int($filters)) {
+            $limit = $filters;
+            $filters = [];
+        }
+
         return AccountingAuditEntry::query()
+            ->with('actor:id,name,email')
+            ->when(! empty($filters['audit_event_type']), fn ($query) => $query->where('event_type', $filters['audit_event_type']))
+            ->when(! empty($filters['audit_actor_id']), fn ($query) => $query->where('created_by', (int) $filters['audit_actor_id']))
+            ->when(! empty($filters['audit_source_type']), fn ($query) => $query->where('auditable_type', $filters['audit_source_type']))
+            ->when(! empty($filters['audit_date_from']), fn ($query) => $query->whereDate('created_at', '>=', $filters['audit_date_from']))
+            ->when(! empty($filters['audit_date_to']), fn ($query) => $query->whereDate('created_at', '<=', $filters['audit_date_to']))
             ->latest('created_at')
             ->latest('id')
             ->limit($limit)
             ->get();
+    }
+
+    public function getAuditEventTypes(): Collection
+    {
+        return AccountingAuditEntry::query()
+            ->select('event_type')
+            ->distinct()
+            ->orderBy('event_type')
+            ->pluck('event_type');
+    }
+
+    public function getAuditSourceTypes(): Collection
+    {
+        return AccountingAuditEntry::query()
+            ->whereNotNull('auditable_type')
+            ->select('auditable_type')
+            ->distinct()
+            ->orderBy('auditable_type')
+            ->pluck('auditable_type')
+            ->map(fn (string $type): array => [
+                'value' => $type,
+                'label' => class_basename($type),
+            ]);
+    }
+
+    public function getAuditActors(): Collection
+    {
+        $actorIds = AccountingAuditEntry::query()
+            ->whereNotNull('created_by')
+            ->select('created_by')
+            ->distinct()
+            ->pluck('created_by');
+
+        if ($actorIds->isEmpty()) {
+            return collect();
+        }
+
+        return User::query()
+            ->whereIn('id', $actorIds)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
     }
 
     public function getReceivableEvents(int $limit = 25): Collection
@@ -837,7 +890,7 @@ class AccountingRuntimeService
         });
     }
 
-    public function createAccount(array $data): AccountingAccount
+    public function createAccount(array $data, ?int $createdBy = null): AccountingAccount
     {
         $code = $this->normalizeAccountCode((string) $data['code']);
         $type = (string) $data['type'];
@@ -845,8 +898,9 @@ class AccountingRuntimeService
 
         $this->assertValidNormalBalance($type, $normalBalance);
 
-        return DB::transaction(function () use ($data, $code, $type, $normalBalance): AccountingAccount {
+        return DB::transaction(function () use ($data, $code, $type, $normalBalance, $createdBy): AccountingAccount {
             $account = AccountingAccount::query()->where('code', $code)->first();
+            $alreadyExists = (bool) $account;
             $payload = [
                 'name' => $data['name'],
                 'type' => $type,
@@ -869,13 +923,29 @@ class AccountingRuntimeService
                     'notes' => $payload['notes'],
                 ])->save();
 
-                return $account->refresh();
+                $account = $account->refresh();
+                $this->recordAudit('account_saved', $account, "Accounting account {$account->code} updated.", [
+                    'code' => $account->code,
+                    'action' => 'updated',
+                    'changed_fields' => ['is_active', 'notes'],
+                ], $createdBy);
+
+                return $account;
             }
 
-            return AccountingAccount::query()->updateOrCreate(
+            $account = AccountingAccount::query()->updateOrCreate(
                 ['code' => $code],
                 $payload
             );
+
+            $this->recordAudit('account_saved', $account, "Accounting account {$account->code} " . ($alreadyExists ? 'updated' : 'created') . '.', [
+                'code' => $account->code,
+                'action' => $alreadyExists ? 'updated' : 'created',
+                'type' => $account->type,
+                'normal_balance' => $account->normal_balance,
+            ], $createdBy);
+
+            return $account;
         });
     }
 
@@ -1140,10 +1210,12 @@ class AccountingRuntimeService
         ];
     }
 
-    public function createPolicy(array $data): AccountingPolicy
+    public function createPolicy(array $data, ?int $createdBy = null): AccountingPolicy
     {
-        return DB::transaction(function () use ($data): AccountingPolicy {
+        return DB::transaction(function () use ($data, $createdBy): AccountingPolicy {
             $isDefault = ! empty($data['is_default']);
+            $code = Str::slug((string) $data['code'], '_');
+            $alreadyExists = AccountingPolicy::query()->where('code', $code)->exists();
             $this->assertActiveAccountCodes([
                 $data['inventory_asset_account'],
                 $data['inventory_adjustment_offset_account'],
@@ -1156,7 +1228,7 @@ class AccountingRuntimeService
             }
 
             $policy = AccountingPolicy::query()->updateOrCreate(
-                ['code' => Str::slug((string) $data['code'], '_')],
+                ['code' => $code],
                 [
                     'name' => $data['name'],
                     'currency' => strtoupper((string) ($data['currency'] ?? 'USD')),
@@ -1170,14 +1242,26 @@ class AccountingRuntimeService
                 ]
             );
 
+            $this->recordAudit('accounting_policy_changed', $policy, "Accounting policy {$policy->code} " . ($alreadyExists ? 'updated' : 'created') . '.', [
+                'code' => $policy->code,
+                'action' => $alreadyExists ? 'updated' : 'created',
+                'inventory_asset_account' => $policy->inventory_asset_account,
+                'inventory_adjustment_offset_account' => $policy->inventory_adjustment_offset_account,
+                'inventory_adjustment_expense_account' => $policy->inventory_adjustment_expense_account,
+                'cogs_account' => $policy->cogs_account,
+                'is_default' => (bool) $policy->is_default,
+            ], $createdBy);
+
             return $policy;
         });
     }
 
-    public function createTaxRate(array $data): AccountingTaxRate
+    public function createTaxRate(array $data, ?int $createdBy = null): AccountingTaxRate
     {
-        return DB::transaction(function () use ($data): AccountingTaxRate {
+        return DB::transaction(function () use ($data, $createdBy): AccountingTaxRate {
             $isDefault = ! empty($data['is_default']);
+            $code = Str::slug((string) $data['code'], '_');
+            $alreadyExists = AccountingTaxRate::query()->where('code', $code)->exists();
             $this->assertActiveAccountCodes([
                 $data['input_tax_account'] ?? '1410 VAT Input Receivable',
                 $data['output_tax_account'] ?? '2100 VAT Output Payable',
@@ -1188,7 +1272,7 @@ class AccountingRuntimeService
             }
 
             $rate = AccountingTaxRate::query()->updateOrCreate(
-                ['code' => Str::slug((string) $data['code'], '_')],
+                ['code' => $code],
                 [
                     'name' => $data['name'],
                     'rate' => round((float) ($data['rate'] ?? 0), 4),
@@ -1199,6 +1283,15 @@ class AccountingRuntimeService
                     'notes' => $data['notes'] ?? null,
                 ]
             );
+
+            $this->recordAudit('tax_rate_changed', $rate, "Tax rate {$rate->code} " . ($alreadyExists ? 'updated' : 'created') . '.', [
+                'code' => $rate->code,
+                'action' => $alreadyExists ? 'updated' : 'created',
+                'rate' => (float) $rate->rate,
+                'input_tax_account' => $rate->input_tax_account,
+                'output_tax_account' => $rate->output_tax_account,
+                'is_default' => (bool) $rate->is_default,
+            ], $createdBy);
 
             return $rate;
         });
@@ -3271,14 +3364,25 @@ class AccountingRuntimeService
 
     protected function recordAudit(string $eventType, Model $auditable, string $description, array $payload = [], ?int $createdBy = null): void
     {
+        $recordedAt = now();
+        $sourceType = $auditable::class;
+        $sourceId = $auditable->getKey();
+
         AccountingAuditEntry::query()->create([
             'event_type' => $eventType,
-            'auditable_type' => $auditable::class,
-            'auditable_id' => $auditable->id,
+            'auditable_type' => $sourceType,
+            'auditable_id' => $sourceId,
             'description' => $description,
-            'payload' => $payload,
+            'payload' => array_merge($payload, [
+                'event_type' => $eventType,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'actor_id' => $createdBy,
+                'recorded_at' => $recordedAt->toIso8601String(),
+                'source_of_truth' => 'journal_entries_and_journal_entry_lines',
+            ]),
             'created_by' => $createdBy,
-            'created_at' => now(),
+            'created_at' => $recordedAt,
         ]);
     }
 

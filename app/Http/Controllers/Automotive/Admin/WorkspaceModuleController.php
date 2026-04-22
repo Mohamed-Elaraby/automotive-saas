@@ -338,6 +338,11 @@ class WorkspaceModuleController extends Controller
             'account_search' => ['nullable', 'string', 'max:120'],
             'account_type' => ['nullable', 'in:asset,liability,equity,revenue,expense'],
             'account_status' => ['nullable', 'in:active,inactive'],
+            'audit_event_type' => ['nullable', 'string', 'max:80'],
+            'audit_actor_id' => ['nullable', 'integer', 'exists:users,id'],
+            'audit_source_type' => ['nullable', 'string', 'max:160'],
+            'audit_date_from' => ['nullable', 'date'],
+            'audit_date_to' => ['nullable', 'date'],
             'workspace_product' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -375,7 +380,10 @@ class WorkspaceModuleController extends Controller
                 'recent_journal_entries' => $this->accountingRuntimeService->getJournalEntries($filters, 25),
                 'trial_balance' => $this->accountingRuntimeService->trialBalance($filters),
                 'revenue_summary' => $this->accountingRuntimeService->revenueSummary($filters),
-                'accounting_audit_entries' => $this->accountingRuntimeService->getAuditEntries(30),
+                'accounting_audit_entries' => $this->accountingRuntimeService->getAuditEntries($filters, 50),
+                'accounting_audit_event_types' => $this->accountingRuntimeService->getAuditEventTypes(),
+                'accounting_audit_source_types' => $this->accountingRuntimeService->getAuditSourceTypes(),
+                'accounting_audit_actors' => $this->accountingRuntimeService->getAuditActors(),
                 'pending_manual_journal_approvals' => $this->accountingRuntimeService->getPendingManualJournalApprovals(25),
                 'accounting_permissions' => $this->accountingPermissionMatrix(),
                 'integration_contracts' => $this->workspaceIntegrationContractService->contracts(),
@@ -456,7 +464,7 @@ class WorkspaceModuleController extends Controller
         ]);
 
         try {
-            $this->accountingRuntimeService->createAccount($validated);
+            $this->accountingRuntimeService->createAccount($validated, auth('automotive_admin')->id());
         } catch (ValidationException $exception) {
             return redirect()
                 ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
@@ -596,7 +604,7 @@ class WorkspaceModuleController extends Controller
         ]);
 
         try {
-            $this->accountingRuntimeService->createPolicy($validated);
+            $this->accountingRuntimeService->createPolicy($validated, auth('automotive_admin')->id());
         } catch (ValidationException $exception) {
             return redirect()
                 ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
@@ -626,7 +634,7 @@ class WorkspaceModuleController extends Controller
         ]);
 
         try {
-            $this->accountingRuntimeService->createTaxRate($validated);
+            $this->accountingRuntimeService->createTaxRate($validated, auth('automotive_admin')->id());
         } catch (ValidationException $exception) {
             return redirect()
                 ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
