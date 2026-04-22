@@ -65,7 +65,20 @@ class VerifyIntegrationReadinessCommandTest extends TestCase
             ->expectsOutputToContain('automotive-accounting')
             ->expectsOutputToContain('parts-accounting')
             ->expectsOutputToContain('Runtime tables')
-            ->expectsOutputToContain('Workspace products')
+            ->expectsOutputToContain('Accounting workspace product')
+            ->expectsOutputToContain('Optional integration products')
+            ->expectsOutput('Workspace integration readiness verification passed.')
+            ->assertExitCode(0);
+    }
+
+    public function test_it_verifies_accounting_only_tenant_runtime_readiness(): void
+    {
+        $tenant = $this->prepareTenantWithIntegrationProducts(includeAutomotive: false, includeParts: false);
+
+        $this->artisan("tenancy:verify-integration-readiness --tenant={$tenant->id}")
+            ->expectsOutputToContain('Accounting workspace product')
+            ->expectsOutputToContain('Optional integration products')
+            ->expectsOutputToContain('Cross-product integration checks skipped for inactive workspace products: automotive_service, parts_inventory.')
             ->expectsOutput('Workspace integration readiness verification passed.')
             ->assertExitCode(0);
     }
@@ -75,7 +88,7 @@ class VerifyIntegrationReadinessCommandTest extends TestCase
         $tenant = $this->prepareTenantWithIntegrationProducts(includeParts: false, includeAccounting: false);
 
         $this->artisan("tenancy:verify-integration-readiness --tenant={$tenant->id}")
-            ->expectsOutputToContain('Tenant is missing active workspace products for integration verification')
+            ->expectsOutputToContain('Tenant is missing an active accounting workspace product.')
             ->assertExitCode(1);
     }
 
@@ -161,6 +174,7 @@ class VerifyIntegrationReadinessCommandTest extends TestCase
     }
 
     protected function prepareTenantWithIntegrationProducts(
+        bool $includeAutomotive = true,
         bool $includeParts = true,
         bool $includeAccounting = true,
         bool $seedAccountingDefaults = true
@@ -183,14 +197,18 @@ class VerifyIntegrationReadinessCommandTest extends TestCase
             'tenant_id' => $tenant->id,
         ]);
 
+        $primaryPlan = $includeAccounting ? $accountingProduct['plan'] : $automotiveProduct['plan'];
+
         Subscription::query()->create([
             'tenant_id' => $tenant->id,
-            'plan_id' => $automotiveProduct['plan']->id,
+            'plan_id' => $primaryPlan->id,
             'status' => 'active',
             'gateway' => null,
         ]);
 
-        $this->attachTenantProduct($tenant, $automotiveProduct['product'], $automotiveProduct['plan']);
+        if ($includeAutomotive) {
+            $this->attachTenantProduct($tenant, $automotiveProduct['product'], $automotiveProduct['plan']);
+        }
 
         if ($includeParts) {
             $this->attachTenantProduct($tenant, $partsProduct['product'], $partsProduct['plan']);

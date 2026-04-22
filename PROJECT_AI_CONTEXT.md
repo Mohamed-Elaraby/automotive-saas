@@ -768,11 +768,29 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### No Remaining Accounting Completion Package
+### Professional Accounting Roadmap - Package 2 of 10: First-Time Setup Wizard
 Recommended scope:
-- Accounting Completion Roadmap packages 1 through 13 are complete.
-- Accounting runtime is ready for production smoke testing and deployment review.
-- Do not start a new accounting package unless a bug, production finding, or new product requirement is explicitly reported.
+- build a guided first-run setup inside General Ledger for non-accountant users
+- collect company fiscal year, base currency, tax/VAT mode, chart template, default bank/cash account, AR/AP defaults, and posting group defaults
+- make setup idempotent and tenant-safe
+- do not bypass journals as the accounting source of truth
+- continue to support accounting-only tenants without requiring Automotive or Parts Inventory
+- keep integration architecture closed unless a real blocker appears
+- continue to avoid `php artisan route:cache`
+
+Professional Accounting Roadmap progress:
+1. Standalone Accounting Product Readiness - completed
+2. First-Time Setup Wizard - next
+3. General Ledger UX Simplification - pending
+4. IFRS-Ready Chart Of Accounts And Mapping Layer - pending
+5. Financial Statement Builder And Notes Foundation - pending
+6. Advanced Period Close And Adjustments - pending
+7. Tax/VAT Compliance Expansion - pending
+8. Multi-Currency And Exchange Revaluation - pending
+9. Import/Export, Audit Evidence, And Accountant Review Pack - pending
+10. Production Hardening, Permissions Matrix, And Market Acceptance - pending
+
+Persistent accounting rules:
 - For future accounting changes, keep journals as the accounting source of truth.
 - Continue to avoid `php artisan route:cache`.
 - do not reopen integration architecture unless a real blocker appears
@@ -3227,3 +3245,47 @@ Additional verification:
   - result: no syntax errors
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='ap_enhancement_migration_can_resume|bank_account_migration_can_resume|ap_enhancements'`
   - result: 3 passed, 46 assertions
+
+## 33) Professional Accounting Roadmap Package 1 - Standalone Accounting Product Readiness
+Status:
+- completed
+- this is package 1 of 10 in the new Professional Accounting Roadmap
+
+Problem fixed:
+- the readiness command still treated Automotive Service and Parts Inventory as required for accounting integration verification
+- this blocked the intended product model where a customer can subscribe only to Accounting and still use the shared workspace
+
+Current behavior:
+- Accounting is now the only required workspace product for `tenancy:verify-integration-readiness --tenant=...`
+- Automotive Service and Parts Inventory are optional integration sources
+- if Automotive or Parts are inactive, readiness verification emits a warning that cross-product checks were skipped, but it still passes when accounting runtime defaults are ready
+- accounting-only tenants can:
+  - log into the tenant workspace
+  - see Accounting as the active product
+  - open General Ledger
+  - create the default posting group
+  - be verified by the readiness command
+- accounting-only tenants do not see Automotive or Parts product actions, and workshop runtime routes remain blocked without the Automotive subscription
+
+Important files changed:
+- `app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+- `tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Console/Commands/Tenancy/VerifyIntegrationReadinessCommand.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 6 passed, 30 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_only_tenant_can_use_workspace_without_other_products`
+  - result: 1 passed, 24 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_only_tenant_can_use_workspace_without_other_products|verifies_accounting_only_tenant_runtime_readiness|verifies_tenant_runtime_tables_and_workspace_products|fails_when_tenant_is_missing_required_workspace_products'`
+  - result: 4 passed, 39 assertions
+
+Next package:
+- Package 2 of 10: First-Time Setup Wizard

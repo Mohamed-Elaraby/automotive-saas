@@ -66,6 +66,11 @@ class VerifyIntegrationReadinessCommand extends Command
         '5200 Operating Expense',
     ];
 
+    protected array $optionalIntegrationFamilies = [
+        'automotive_service',
+        'parts_inventory',
+    ];
+
     public function __construct(
         protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceIntegrationContractService $workspaceIntegrationContractService,
@@ -151,13 +156,13 @@ class VerifyIntegrationReadinessCommand extends Command
             }
 
             $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts($tenantId);
-            $missingFamilies = collect(['automotive_service', 'parts_inventory', 'accounting'])
+            $missingIntegrationFamilies = collect($this->optionalIntegrationFamilies)
                 ->reject(fn (string $family): bool => $this->workspaceManifestService->hasAccessibleFamily($workspaceProducts, $family))
                 ->values()
                 ->all();
 
-            if ($missingFamilies !== []) {
-                $failures[] = 'Tenant is missing active workspace products for integration verification: ' . implode(', ', $missingFamilies) . '.';
+            if ($missingIntegrationFamilies !== []) {
+                $warnings[] = 'Cross-product integration checks skipped for inactive workspace products: ' . implode(', ', $missingIntegrationFamilies) . '.';
             }
 
             if (! $this->workspaceManifestService->hasAccessibleFamily($workspaceProducts, 'accounting')) {
@@ -174,7 +179,8 @@ class VerifyIntegrationReadinessCommand extends Command
             $this->table(['Tenant Check', 'Value'], [
                 ['Tenant', $tenantId],
                 ['Runtime tables', $missingTables === [] ? 'OK' : 'Missing: ' . implode(', ', $missingTables)],
-                ['Workspace products', $missingFamilies === [] ? 'OK' : 'Missing: ' . implode(', ', $missingFamilies)],
+                ['Accounting workspace product', $this->workspaceManifestService->hasAccessibleFamily($workspaceProducts, 'accounting') ? 'OK' : 'Missing'],
+                ['Optional integration products', $missingIntegrationFamilies === [] ? 'OK' : 'Inactive: ' . implode(', ', $missingIntegrationFamilies)],
                 ['Default accounts', $accountingChecks['accounts']],
                 ['Default posting group', $accountingChecks['posting_group']],
                 ['Default accounting policy', $accountingChecks['policy']],

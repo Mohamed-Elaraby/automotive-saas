@@ -226,6 +226,58 @@ class TenantAdminAccessFlowTest extends TestCase
         $generalLedgerResponse->assertSee('Open Workshop', false);
     }
 
+    public function test_accounting_only_tenant_can_use_workspace_without_other_products(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $dashboardResponse = $this->get("http://{$domain}/automotive/admin/dashboard");
+
+        $dashboardResponse->assertOk();
+        $dashboardResponse->assertSee('Accounting System', false);
+        $dashboardResponse->assertSee('Open General Ledger', false);
+        $dashboardResponse->assertSee('General Ledger', false);
+        $dashboardResponse->assertDontSee('Automotive Service Management', false);
+        $dashboardResponse->assertDontSee('Parts Inventory Management', false);
+        $dashboardResponse->assertDontSee('Open Workshop', false);
+        $dashboardResponse->assertDontSee('Open Supplier Catalog', false);
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('General Ledger', false);
+        $ledgerResponse->assertSee('Accounting Workspace Navigation', false);
+        $ledgerResponse->assertSee('Create Manual Journal Entry', false);
+        $ledgerResponse->assertDontSee('Recent Workshop Consumptions', false);
+
+        $groupResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/posting-groups?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => 'standalone_revenue',
+            'name' => 'Standalone Revenue',
+            'receivable_account' => '1100 Accounts Receivable',
+            'labor_revenue_account' => '4100 Service Labor Revenue',
+            'parts_revenue_account' => '4200 Parts Revenue',
+            'currency' => 'USD',
+            'is_default' => '1',
+        ]);
+
+        $groupResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $workshopResponse = $this->get("http://{$domain}/automotive/admin/workshop-operations?workspace_product=automotive_service");
+        $workshopResponse->assertRedirect("http://{$domain}/workspace/admin/dashboard?workspace_product=automotive_service");
+
+        $this->artisan("tenancy:verify-integration-readiness --tenant={$tenant->id}")
+            ->expectsOutputToContain('Accounting workspace product')
+            ->expectsOutputToContain('Optional integration products')
+            ->expectsOutputToContain('Cross-product integration checks skipped for inactive workspace products: automotive_service, parts_inventory.')
+            ->expectsOutput('Workspace integration readiness verification passed.')
+            ->assertExitCode(0);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
@@ -3893,6 +3945,95 @@ class TenantAdminAccessFlowTest extends TestCase
         try {
             User::query()->create([
                 'name' => 'Tenant Owner',
+                'email' => $email,
+                'password' => bcrypt($password),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        return [$tenant, $domain, $email, $password];
+    }
+
+    /**
+     * @return array{0: Tenant, 1: string, 2: string, 3: string}
+     */
+    protected function prepareAccountingOnlyTenantWorkspace(): array
+    {
+        $tenantId = 'accounting-only-' . uniqid();
+        $domain = $tenantId . '.example.test';
+        $password = 'secret-pass';
+        $email = $tenantId . '@example.test';
+
+        $accountingProduct = Product::query()->firstOrCreate(
+            ['code' => 'accounting'],
+            [
+                'name' => 'Accounting System',
+                'slug' => 'accounting-system',
+                'is_active' => true,
+                'sort_order' => 1,
+            ]
+        );
+
+        $plan = Plan::query()->create([
+            'product_id' => $accountingProduct->id,
+            'name' => 'Accounting Only Plan',
+            'slug' => 'accounting-only-plan-' . uniqid(),
+            'description' => 'Accounting only tenant flow plan',
+            'price' => 199,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'stripe_product_id' => 'prod_' . uniqid(),
+            'stripe_price_id' => 'price_' . uniqid(),
+        ]);
+
+        $tenant = Tenant::query()->create([
+            'id' => $tenantId,
+            'data' => [
+                'company_name' => 'Accounting Only Co',
+            ],
+        ]);
+
+        $this->tenantDatabaseFiles[] = database_path($tenant->database()->getName());
+
+        Domain::query()->create([
+            'domain' => $domain,
+            'tenant_id' => $tenant->id,
+        ]);
+
+        Subscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'gateway' => null,
+            'gateway_customer_id' => null,
+            'gateway_subscription_id' => null,
+            'gateway_checkout_session_id' => null,
+            'gateway_price_id' => null,
+        ]);
+
+        TenantProductSubscription::query()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $accountingProduct->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'activation_status' => 'active',
+            'provisioning_status' => 'active',
+            'gateway' => null,
+        ]);
+
+        Artisan::call('tenants:migrate', [
+            '--tenants' => [$tenant->id],
+            '--force' => true,
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            User::query()->create([
+                'name' => 'Accounting Owner',
                 'email' => $email,
                 'password' => bcrypt($password),
             ]);
