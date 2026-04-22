@@ -146,6 +146,7 @@
                         <span class="text-muted small">Jump to a finance workflow</span>
                     </div>
                     <ul class="nav nav-pills gap-2 flex-nowrap overflow-auto pb-1">
+                        <li class="nav-item"><a class="nav-link" href="#accounting-first-time-setup">Setup</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-posting-queue">Posting Queue</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-approvals">Approvals</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-period-close">Period Close</a></li>
@@ -157,6 +158,92 @@
                         <li class="nav-item"><a class="nav-link" href="#accounting-settings">Settings</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-audit">Audit</a></li>
                     </ul>
+                </div>
+
+                @php($setupSummary = $moduleData['accounting_setup_summary'] ?? ['profile' => null, 'items' => [], 'complete' => false])
+                @php($setupProfile = $setupSummary['profile'] ?? null)
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-first-time-setup">
+                    <div>
+                        <h5 class="mb-0">First-Time Setup</h5>
+                        <div class="text-muted small">Company defaults for currency, fiscal year, tax, accounts, cash, and posting rules.</div>
+                    </div>
+                    <span class="badge {{ ($setupSummary['complete'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($setupSummary['complete'] ?? false) ? 'READY' : 'NEEDS SETUP' }}</span>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xl-8">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.first-time-setup.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Base Currency</label>
+                                            <input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Fiscal Start Month</label>
+                                            <select name="fiscal_year_start_month" class="form-select">
+                                                @for($month = 1; $month <= 12; $month++)
+                                                    <option value="{{ $month }}" @selected((int) old('fiscal_year_start_month', $setupProfile->fiscal_year_start_month ?? 1) === $month)>{{ $month }}</option>
+                                                @endfor
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Fiscal Start Day</label>
+                                            <input type="number" min="1" max="31" name="fiscal_year_start_day" class="form-control" value="{{ old('fiscal_year_start_day', $setupProfile->fiscal_year_start_day ?? 1) }}">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label class="form-label">Chart Template</label>
+                                            <select name="chart_template" class="form-select">
+                                                <option value="service_business" @selected(old('chart_template', $setupProfile->chart_template ?? 'service_business') === 'service_business')>Service Business</option>
+                                                <option value="trading_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'trading_business')>Trading Business</option>
+                                                <option value="general_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'general_business')>General Business</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Tax Mode</label>
+                                            <select name="tax_mode" class="form-select">
+                                                <option value="vat_standard" @selected(old('tax_mode', $setupProfile->tax_mode ?? 'vat_standard') === 'vat_standard')>VAT Standard</option>
+                                                <option value="no_tax" @selected(old('tax_mode', $setupProfile->tax_mode ?? '') === 'no_tax')>No Tax</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Default Tax Rate %</label><input type="number" step="0.0001" min="0" max="100" name="default_tax_rate" class="form-control" value="{{ old('default_tax_rate', data_get($setupProfile?->payload, 'tax_rate', 5)) }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Revenue Account</label><input type="text" name="default_revenue_account" list="account-catalog-options" class="form-control" value="{{ old('default_revenue_account', $setupProfile->default_revenue_account ?? '4100 Service Revenue') }}"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Receivable Account</label><input type="text" name="default_receivable_account" list="account-catalog-options" class="form-control" value="{{ old('default_receivable_account', $setupProfile->default_receivable_account ?? '1100 Accounts Receivable') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Payable Account</label><input type="text" name="default_payable_account" list="account-catalog-options" class="form-control" value="{{ old('default_payable_account', $setupProfile->default_payable_account ?? '2000 Accounts Payable') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Expense Account</label><input type="text" name="default_expense_account" list="account-catalog-options" class="form-control" value="{{ old('default_expense_account', $setupProfile->default_expense_account ?? '5200 Operating Expense') }}"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3"><label class="form-label">Cash Account</label><input type="text" name="default_cash_account" list="account-catalog-options" class="form-control" value="{{ old('default_cash_account', $setupProfile->default_cash_account ?? '1000 Cash On Hand') }}"></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Bank Account</label><input type="text" name="default_bank_account" list="account-catalog-options" class="form-control" value="{{ old('default_bank_account', $setupProfile->default_bank_account ?? '1010 Bank Account') }}"></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Input Tax Account</label><input type="text" name="default_input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_input_tax_account', $setupProfile->default_input_tax_account ?? '1410 VAT Input Receivable') }}"></div>
+                                        <div class="col-md-3 mb-3"><label class="form-label">Output Tax Account</label><input type="text" name="default_output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_output_tax_account', $setupProfile->default_output_tax_account ?? '2100 VAT Output Payable') }}"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Complete Accounting Setup</button>
+                                </form>
+                            </div>
+                            <div class="col-xl-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="fw-semibold mb-2">Setup Readiness</div>
+                                    @foreach(($setupSummary['items'] ?? []) as $item)
+                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                            <span>{{ $item['label'] }}</span>
+                                            <span class="badge {{ !empty($item['ready']) ? 'bg-success' : 'bg-warning text-dark' }}">{{ !empty($item['ready']) ? 'READY' : 'OPEN' }}</span>
+                                        </div>
+                                    @endforeach
+                                    @if($setupProfile?->setup_completed_at)
+                                        <div class="text-muted small">Completed {{ optional($setupProfile->setup_completed_at)->format('Y-m-d H:i') }}</div>
+                                    @endif
+                                    <div class="text-muted small mt-2">Journals and journal lines remain the accounting source of truth.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-reports">

@@ -12,6 +12,7 @@ use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
+use App\Models\AccountingSetupProfile;
 use App\Models\AccountingTaxRate;
 use App\Models\AccountingVendorBill;
 use App\Models\AccountingVendorBillAdjustment;
@@ -154,6 +155,191 @@ class AccountingRuntimeService
 
                 return $account;
             });
+    }
+
+    public function getSetupProfile(): ?AccountingSetupProfile
+    {
+        return AccountingSetupProfile::query()->latest('id')->first();
+    }
+
+    public function setupSummary(): array
+    {
+        $profile = $this->getSetupProfile();
+        $hasDefaultPostingGroup = AccountingPostingGroup::query()
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->exists();
+        $hasDefaultPolicy = AccountingPolicy::query()
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->exists();
+        $hasDefaultTaxRate = AccountingTaxRate::query()
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->exists();
+        $hasReceiptAccount = AccountingBankAccount::query()
+            ->where('is_active', true)
+            ->where('is_default_receipt', true)
+            ->exists();
+        $hasPaymentAccount = AccountingBankAccount::query()
+            ->where('is_active', true)
+            ->where('is_default_payment', true)
+            ->exists();
+
+        $items = [
+            ['label' => 'Setup profile', 'ready' => (bool) $profile?->setup_completed_at],
+            ['label' => 'Default posting group', 'ready' => $hasDefaultPostingGroup],
+            ['label' => 'Default inventory policy', 'ready' => $hasDefaultPolicy],
+            ['label' => 'Default tax rate', 'ready' => $hasDefaultTaxRate],
+            ['label' => 'Receipt account', 'ready' => $hasReceiptAccount],
+            ['label' => 'Payment account', 'ready' => $hasPaymentAccount],
+        ];
+
+        return [
+            'profile' => $profile,
+            'items' => $items,
+            'complete' => collect($items)->every(fn (array $item): bool => (bool) $item['ready']),
+        ];
+    }
+
+    public function applyFirstTimeSetup(array $data, ?int $createdBy = null): AccountingSetupProfile
+    {
+        $currency = strtoupper((string) ($data['base_currency'] ?? 'USD'));
+        $taxMode = (string) ($data['tax_mode'] ?? 'vat_standard');
+        $chartTemplate = (string) ($data['chart_template'] ?? 'service_business');
+
+        return DB::transaction(function () use ($data, $createdBy, $currency, $taxMode, $chartTemplate): AccountingSetupProfile {
+            $this->ensureDefaultAccounts();
+
+            $receivableAccount = $this->normalizeAccountCode((string) $data['default_receivable_account']);
+            $payableAccount = $this->normalizeAccountCode((string) $data['default_payable_account']);
+            $cashAccount = $this->normalizeAccountCode((string) $data['default_cash_account']);
+            $bankAccount = $this->normalizeAccountCode((string) $data['default_bank_account']);
+            $revenueAccount = $this->normalizeAccountCode((string) $data['default_revenue_account']);
+            $expenseAccount = $this->normalizeAccountCode((string) $data['default_expense_account']);
+            $inputTaxAccount = $this->normalizeAccountCode((string) $data['default_input_tax_account']);
+            $outputTaxAccount = $this->normalizeAccountCode((string) $data['default_output_tax_account']);
+
+            $this->ensureAccountsFromCodes([
+                $receivableAccount,
+                $payableAccount,
+                $cashAccount,
+                $bankAccount,
+                $revenueAccount,
+                $expenseAccount,
+                $inputTaxAccount,
+                $outputTaxAccount,
+                '1300 Inventory Asset',
+                '3900 Inventory Adjustment Offset',
+                '5000 Cost Of Goods Sold',
+                '5100 Inventory Adjustment Expense',
+            ]);
+
+            $this->createBankAccount([
+                'name' => 'Default Cash Account',
+                'type' => 'cash',
+                'account_code' => $cashAccount,
+                'currency' => $currency,
+                'reference' => 'first-time-setup',
+                'is_default_receipt' => true,
+                'is_default_payment' => $cashAccount === $bankAccount,
+                'is_active' => true,
+                'notes' => 'Configured by the accounting first-time setup wizard.',
+            ]);
+
+            if ($bankAccount !== $cashAccount) {
+                $this->createBankAccount([
+                    'name' => 'Default Bank Account',
+                    'type' => 'bank',
+                    'account_code' => $bankAccount,
+                    'currency' => $currency,
+                    'reference' => 'first-time-setup',
+                    'is_default_receipt' => false,
+                    'is_default_payment' => true,
+                    'is_active' => true,
+                    'notes' => 'Configured by the accounting first-time setup wizard.',
+                ]);
+            }
+
+            AccountingPostingGroup::query()->where('is_default', true)->update(['is_default' => false]);
+            $postingGroup = AccountingPostingGroup::query()->updateOrCreate(
+                ['code' => 'default_revenue'],
+                [
+                    'name' => 'Default Revenue',
+                    'receivable_account' => $receivableAccount,
+                    'labor_revenue_account' => $revenueAccount,
+                    'parts_revenue_account' => $revenueAccount,
+                    'currency' => $currency,
+                    'is_default' => true,
+                    'is_active' => true,
+                    'notes' => 'Configured by the accounting first-time setup wizard.',
+                ]
+            );
+
+            $this->createPolicy([
+                'code' => 'default_inventory_policy',
+                'name' => 'Default Inventory Policy',
+                'currency' => $currency,
+                'inventory_asset_account' => '1300 Inventory Asset',
+                'inventory_adjustment_offset_account' => '3900 Inventory Adjustment Offset',
+                'inventory_adjustment_expense_account' => '5100 Inventory Adjustment Expense',
+                'cogs_account' => '5000 Cost Of Goods Sold',
+                'is_default' => true,
+                'notes' => 'Configured by the accounting first-time setup wizard.',
+            ], $createdBy);
+
+            $this->createTaxRate([
+                'code' => $taxMode === 'no_tax' ? 'no_tax' : 'vat_default',
+                'name' => $taxMode === 'no_tax' ? 'No Tax' : 'Default VAT',
+                'rate' => $taxMode === 'no_tax' ? 0 : (float) ($data['default_tax_rate'] ?? 5),
+                'input_tax_account' => $inputTaxAccount,
+                'output_tax_account' => $outputTaxAccount,
+                'is_default' => true,
+                'is_active' => true,
+                'notes' => 'Configured by the accounting first-time setup wizard.',
+            ], $createdBy);
+
+            $profile = AccountingSetupProfile::query()->updateOrCreate(
+                ['id' => 1],
+                [
+                    'base_currency' => $currency,
+                    'fiscal_year_start_month' => (int) $data['fiscal_year_start_month'],
+                    'fiscal_year_start_day' => (int) $data['fiscal_year_start_day'],
+                    'tax_mode' => $taxMode,
+                    'chart_template' => $chartTemplate,
+                    'default_receivable_account' => $receivableAccount,
+                    'default_payable_account' => $payableAccount,
+                    'default_cash_account' => $cashAccount,
+                    'default_bank_account' => $bankAccount,
+                    'default_revenue_account' => $revenueAccount,
+                    'default_expense_account' => $expenseAccount,
+                    'default_input_tax_account' => $inputTaxAccount,
+                    'default_output_tax_account' => $outputTaxAccount,
+                    'payload' => [
+                        'tax_rate' => $taxMode === 'no_tax' ? 0 : (float) ($data['default_tax_rate'] ?? 5),
+                        'posting_group_id' => $postingGroup->id,
+                        'journal_policy' => 'Setup configures defaults only; journals remain the accounting source of truth.',
+                    ],
+                    'created_by' => AccountingSetupProfile::query()->whereKey(1)->exists() ? AccountingSetupProfile::query()->whereKey(1)->value('created_by') : $createdBy,
+                    'updated_by' => $createdBy,
+                    'setup_completed_at' => now(),
+                ]
+            );
+
+            $this->recordAudit('accounting_first_time_setup_completed', $profile, 'Accounting first-time setup completed.', [
+                'base_currency' => $profile->base_currency,
+                'tax_mode' => $profile->tax_mode,
+                'chart_template' => $profile->chart_template,
+                'default_receivable_account' => $profile->default_receivable_account,
+                'default_payable_account' => $profile->default_payable_account,
+                'default_cash_account' => $profile->default_cash_account,
+                'default_bank_account' => $profile->default_bank_account,
+                'default_revenue_account' => $profile->default_revenue_account,
+                'default_expense_account' => $profile->default_expense_account,
+            ], $createdBy);
+
+            return $profile;
+        });
     }
 
     public function createBankAccount(array $data): AccountingBankAccount

@@ -362,6 +362,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'accounting_bank_accounts' => $this->accountingRuntimeService->getBankAccounts(),
+                'accounting_setup_summary' => $this->accountingRuntimeService->setupSummary(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
                 'accounting_invoices' => $this->accountingRuntimeService->getInvoices($filters, 15),
                 'recent_accounting_payments' => $this->accountingRuntimeService->getPayments($filters, 15),
@@ -447,6 +448,42 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Posting group created successfully.');
+    }
+
+    public function storeAccountingFirstTimeSetup(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'base_currency' => ['required', 'string', 'size:3'],
+            'fiscal_year_start_month' => ['required', 'integer', 'min:1', 'max:12'],
+            'fiscal_year_start_day' => ['required', 'integer', 'min:1', 'max:31'],
+            'tax_mode' => ['required', 'in:vat_standard,no_tax'],
+            'default_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'chart_template' => ['required', 'in:service_business,trading_business,general_business'],
+            'default_receivable_account' => ['required', 'string', 'max:120'],
+            'default_payable_account' => ['required', 'string', 'max:120'],
+            'default_cash_account' => ['required', 'string', 'max:120'],
+            'default_bank_account' => ['required', 'string', 'max:120'],
+            'default_revenue_account' => ['required', 'string', 'max:120'],
+            'default_expense_account' => ['required', 'string', 'max:120'],
+            'default_input_tax_account' => ['required', 'string', 'max:120'],
+            'default_output_tax_account' => ['required', 'string', 'max:120'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->applyFirstTimeSetup($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Accounting setup completed successfully.');
     }
 
     public function storeAccountingAccount(Request $request): RedirectResponse

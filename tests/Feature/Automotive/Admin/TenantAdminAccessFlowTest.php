@@ -278,6 +278,97 @@ class TenantAdminAccessFlowTest extends TestCase
             ->assertExitCode(0);
     }
 
+    public function test_accounting_first_time_setup_wizard_configures_defaults_idempotently(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('First-Time Setup', false);
+        $ledgerResponse->assertSee('Complete Accounting Setup', false);
+        $ledgerResponse->assertSee('NEEDS SETUP', false);
+
+        $payload = [
+            'workspace_product' => 'accounting',
+            'base_currency' => 'USD',
+            'fiscal_year_start_month' => 1,
+            'fiscal_year_start_day' => 1,
+            'tax_mode' => 'vat_standard',
+            'default_tax_rate' => 5,
+            'chart_template' => 'service_business',
+            'default_receivable_account' => '1100 Accounts Receivable',
+            'default_payable_account' => '2000 Accounts Payable',
+            'default_cash_account' => '1000 Cash On Hand',
+            'default_bank_account' => '1010 Bank Account',
+            'default_revenue_account' => '4100 Service Revenue',
+            'default_expense_account' => '5200 Operating Expense',
+            'default_input_tax_account' => '1410 VAT Input Receivable',
+            'default_output_tax_account' => '2100 VAT Output Payable',
+        ];
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/first-time-setup?workspace_product=accounting", $payload)
+            ->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/first-time-setup?workspace_product=accounting", $payload)
+            ->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertSame(1, DB::connection('tenant')->table('accounting_setup_profiles')->count());
+            $this->assertDatabaseHas('accounting_setup_profiles', [
+                'base_currency' => 'USD',
+                'tax_mode' => 'vat_standard',
+                'chart_template' => 'service_business',
+                'default_receivable_account' => '1100 Accounts Receivable',
+                'default_payable_account' => '2000 Accounts Payable',
+            ], 'tenant');
+            $this->assertSame(1, DB::connection('tenant')->table('accounting_posting_groups')->where('code', 'default_revenue')->count());
+            $this->assertDatabaseHas('accounting_posting_groups', [
+                'code' => 'default_revenue',
+                'receivable_account' => '1100 Accounts Receivable',
+                'labor_revenue_account' => '4100 Service Revenue',
+                'parts_revenue_account' => '4100 Service Revenue',
+                'is_default' => true,
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_bank_accounts', [
+                'account_code' => '1000 Cash On Hand',
+                'is_default_receipt' => true,
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_bank_accounts', [
+                'account_code' => '1010 Bank Account',
+                'is_default_payment' => true,
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_tax_rates', [
+                'code' => 'vat_default',
+                'rate' => 5,
+                'is_default' => true,
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_policies', [
+                'code' => 'default_inventory_policy',
+                'is_default' => true,
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'accounting_first_time_setup_completed',
+            ], 'tenant');
+            $this->assertSame(0, DB::connection('tenant')->table('journal_entries')->count());
+            $this->assertSame(0, DB::connection('tenant')->table('journal_entry_lines')->count());
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $readyLedgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $readyLedgerResponse->assertOk();
+        $readyLedgerResponse->assertSee('READY', false);
+        $readyLedgerResponse->assertSee('Completed', false);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

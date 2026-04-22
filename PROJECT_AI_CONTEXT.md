@@ -768,11 +768,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 2 of 10: First-Time Setup Wizard
+### Professional Accounting Roadmap - Package 3 of 10: General Ledger UX Simplification
 Recommended scope:
-- build a guided first-run setup inside General Ledger for non-accountant users
-- collect company fiscal year, base currency, tax/VAT mode, chart template, default bank/cash account, AR/AP defaults, and posting group defaults
-- make setup idempotent and tenant-safe
+- improve the General Ledger screen for ordinary users by reducing visual overload
+- organize the current long General Ledger page into clearer task areas and primary actions
+- keep advanced accounting controls discoverable without making the first screen feel like a dense admin panel
+- preserve all existing accounting workflows and tests
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -780,8 +781,8 @@ Recommended scope:
 
 Professional Accounting Roadmap progress:
 1. Standalone Accounting Product Readiness - completed
-2. First-Time Setup Wizard - next
-3. General Ledger UX Simplification - pending
+2. First-Time Setup Wizard - completed
+3. General Ledger UX Simplification - next
 4. IFRS-Ready Chart Of Accounts And Mapping Layer - pending
 5. Financial Statement Builder And Notes Foundation - pending
 6. Advanced Period Close And Adjustments - pending
@@ -3289,3 +3290,67 @@ Verification:
 
 Next package:
 - Package 2 of 10: First-Time Setup Wizard
+
+## 34) Professional Accounting Roadmap Package 2 - First-Time Setup Wizard
+Status:
+- completed
+- this is package 2 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- General Ledger now includes a first-time setup workflow for normal users
+- the setup collects:
+  - base currency
+  - fiscal year start month and day
+  - tax mode and default tax rate
+  - chart template
+  - AR/AP accounts
+  - default cash and bank accounts
+  - default revenue and expense accounts
+  - input/output tax accounts
+- the setup writes tenant-safe defaults to:
+  - `accounting_setup_profiles`
+  - `accounting_posting_groups`
+  - `accounting_bank_accounts`
+  - `accounting_tax_rates`
+  - `accounting_policies`
+  - `accounting_accounts`
+- the setup is idempotent:
+  - re-running it updates the tenant setup profile and default mappings
+  - it does not duplicate the `default_revenue` posting group
+  - it does not create duplicate setup profiles
+- setup records an `accounting_first_time_setup_completed` audit entry
+- setup does not create journal entries or journal lines; journals remain the accounting source of truth
+- accounting-only tenants can complete setup without Automotive Service or Parts Inventory
+
+Important files changed:
+- `database/migrations/tenant/2026_04_23_090000_create_accounting_setup_profiles_table.php`
+- `app/Models/AccountingSetupProfile.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingSetupProfile.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_23_090000_create_accounting_setup_profiles_table.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_first_time_setup_wizard_configures_defaults_idempotently`
+  - result: 1 passed, 24 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_only_tenant_can_use_workspace_without_other_products`
+  - result: 1 passed, 24 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='accounting_first_time_setup_wizard_configures_defaults_idempotently|accounting_only_tenant_can_use_workspace_without_other_products|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 3 passed, 53 assertions
+
+Next package:
+- Package 3 of 10: General Ledger UX Simplification
