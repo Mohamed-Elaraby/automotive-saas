@@ -140,6 +140,32 @@
                     <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Journal Entries</div><h4 class="mb-1">{{ ($moduleData['recent_journal_entries'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Posted accounting entries in this workspace.</p></div></div></div>
                 </div>
 
+                <div class="border rounded bg-white p-2 mb-3" id="accounting-workspace-navigation">
+                    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
+                        <h5 class="mb-0">Accounting Workspace Navigation</h5>
+                        <span class="text-muted small">Jump to a finance workflow</span>
+                    </div>
+                    <ul class="nav nav-pills gap-2 flex-nowrap overflow-auto pb-1">
+                        <li class="nav-item"><a class="nav-link" href="#accounting-posting-queue">Posting Queue</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-approvals">Approvals</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-period-close">Period Close</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-reports">Reports</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-receivables">Receivables</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-payables">Payables</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-cash">Cash</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-tax">Tax</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-settings">Settings</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-audit">Audit</a></li>
+                    </ul>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-reports">
+                    <div>
+                        <h5 class="mb-0">Financial Reports</h5>
+                        <div class="text-muted small">Journal-driven report filters, exports, and print views.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Journal Filters</h5></div>
                     <div class="card-body">
@@ -185,6 +211,13 @@
                 </div>
 
                 @php($aging = $moduleData['receivables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-receivables">
+                    <div>
+                        <h5 class="mb-0">Receivables</h5>
+                        <div class="text-muted small">Invoices, statements, aging, and customer collections.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Receivables Aging</h5></div>
                     <div class="card-body">
@@ -294,6 +327,13 @@
                 </div>
 
                 @php($reconciliationSummary = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'pending_amount' => 0, 'deposited_count' => 0, 'deposited_amount' => 0, 'vendor_payment_count' => 0, 'vendor_payment_amount' => 0, 'reconciled_period_amount' => 0])
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-cash">
+                    <div>
+                        <h5 class="mb-0">Cash And Reconciliation</h5>
+                        <div class="text-muted small">Bank accounts, receipts, deposit batches, and reconciliation state.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Payment Reconciliation</h5></div>
                     <div class="card-body">
@@ -318,6 +358,13 @@
                 </div>
 
                 @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'open_count' => 0, 'open_amount' => 0, 'paid_count' => 0, 'paid_amount' => 0, 'due_soon_count' => 0, 'due_soon_amount' => 0])
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-payables">
+                    <div>
+                        <h5 class="mb-0">Payables</h5>
+                        <div class="text-muted small">Vendor bills, credit notes, payments, and payables aging.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Payables Summary</h5></div>
                     <div class="card-body">
@@ -348,6 +395,13 @@
                     </div>
                 </div>
 
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-tax">
+                    <div>
+                        <h5 class="mb-0">Tax</h5>
+                        <div class="text-muted small">VAT rates and tax ledger mapping.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Tax And VAT Settings</h5></div>
                     <div class="card-body">
@@ -388,6 +442,13 @@
                 @php($activeClosePeriod = $periodLockSummary['active_close'] ?? null)
                 @php($latestPeriodLock = $periodLockSummary['latest_lock'] ?? null)
                 @php($closeChecklist = $moduleData['accounting_close_checklist'] ?? [])
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-period-close">
+                    <div>
+                        <h5 class="mb-0">Period Close</h5>
+                        <div class="text-muted small">Posting controls, close readiness, and locked-period lifecycle.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Posting Controls</h5></div>
                     <div class="card-body">
@@ -444,6 +505,13 @@
                     </div>
                 </div>
 
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-settings">
+                    <div>
+                        <h5 class="mb-0">Accounting Settings</h5>
+                        <div class="text-muted small">Chart of accounts, inventory policy, posting groups, and integration diagnostics.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="row">
                     <div class="col-xl-5 d-flex">
                         <div class="card flex-fill">
@@ -746,6 +814,13 @@
 
                 @php($accountingPermissions = $moduleData['accounting_permissions'] ?? [])
 
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-posting-queue">
+                    <div>
+                        <h5 class="mb-0">Posting Queue</h5>
+                        <div class="text-muted small">Operational events and inventory valuations awaiting journal posting.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Accounting Event Review</h5></div>
                     <div class="card-body">
@@ -1104,6 +1179,13 @@
                     </div>
                 </div>
 
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-approvals">
+                    <div>
+                        <h5 class="mb-0">Approvals And Manual Journals</h5>
+                        <div class="text-muted small">High-risk journal approvals and controlled manual adjustments.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Manual Journal Approvals</h5></div>
                     <div class="card-body">
@@ -1268,6 +1350,13 @@
                     </div>
                 </div>
 
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-audit">
+                    <div>
+                        <h5 class="mb-0">Audit And Source Activity</h5>
+                        <div class="text-muted small">Compliance timeline and source accounting events; journals remain the source of truth.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Accounting Audit Timeline</h5></div>
                     <div class="card-body">

@@ -534,6 +534,15 @@ class TenantAdminAccessFlowTest extends TestCase
 
         $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
         $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Accounting Workspace Navigation', false);
+        $ledgerResponse->assertSee('href="#accounting-posting-queue"', false);
+        $ledgerResponse->assertSee('href="#accounting-approvals"', false);
+        $ledgerResponse->assertSee('href="#accounting-period-close"', false);
+        $ledgerResponse->assertSee('href="#accounting-reports"', false);
+        $ledgerResponse->assertSee('href="#accounting-receivables"', false);
+        $ledgerResponse->assertSee('href="#accounting-payables"', false);
+        $ledgerResponse->assertSee('href="#accounting-tax"', false);
+        $ledgerResponse->assertSee('href="#accounting-audit"', false);
         $ledgerResponse->assertSee('Create Posting Group', false);
         $ledgerResponse->assertSee('Accounting Event Review', false);
         $ledgerResponse->assertSee('WO-ACCOUNTING-1', false);

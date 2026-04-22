@@ -768,21 +768,19 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting UX Consolidation And Navigation
+### Accounting End-To-End Production Acceptance
 Recommended scope:
-- split General Ledger UI into clearer sections or tabs if local layout patterns support it
-- keep critical dashboards visible:
-  - posting queue
-  - approvals
-  - period close
-  - financial reports
-  - receivables
-  - payables
-  - tax
-  - audit
-- avoid creating marketing/landing pages
-- do not introduce unrelated theme rewrites
-- ensure mobile and desktop layout remains usable
+- prove the whole accounting workflow works as one system before calling accounting complete
+- cover end-to-end scenarios:
+  - automotive work order completed -> accounting event -> journal posted -> receivable created -> customer payment recorded -> deposit batch created -> reconciliation state visible
+  - parts stock movement valued -> accounting handoff -> inventory journal posted -> report totals updated
+  - vendor bill created -> bill posted -> AP created -> vendor payment recorded -> payables aging updated
+  - tax configured -> taxable vendor bill or revenue event posted -> tax summary updated
+  - manual journal submitted -> approved -> posted -> financial statements updated
+  - posted journal reversed in open period -> financial statements updated
+  - closed period blocks posting and requires correction/reversal in an open period
+- run full accounting runtime tests and readiness verification
+- document production UI smoke steps
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -822,6 +820,7 @@ Current accounting foundations already completed:
 - inventory movements from parts inventory can be posted into accounting
 - period locks exist
 - General Ledger includes an accounting audit timeline with filters by event type, actor, source model, and date range
+- General Ledger now has a workspace navigation band with clear jumps to posting queue, approvals, period close, reports, receivables, payables, cash, tax, settings, and audit
 - audit entries are compliance evidence only; journal entries and journal lines remain the accounting source of truth
 - `tenancy:verify-integration-readiness` now checks accounting runtime tables, active workspace products, default accounts, default posting group, default accounting policy, default tax rate, period lock overlaps, and stale integration handoffs
 - fiscal close posting controls now block posting inside locked periods
@@ -1644,7 +1643,7 @@ Verification:
 
 ### Package 12 - Accounting UX Consolidation And Navigation
 Status:
-- pending
+- completed
 
 Goal:
 - make the General Ledger screen manageable after many accounting features have been added
@@ -1668,6 +1667,40 @@ Acceptance criteria:
 - accounting UI remains usable as features grow
 - no cards inside cards
 - no unrelated frontend redesign
+
+Completed implementation:
+- added an internal General Ledger workspace navigation band using existing Bootstrap nav styles
+- grouped the long General Ledger screen with clear section headers and back-to-top links:
+  - posting queue
+  - approvals and manual journals
+  - period close
+  - financial reports
+  - receivables
+  - payables
+  - cash and reconciliation
+  - tax
+  - accounting settings
+  - audit and source activity
+- kept all existing cards/forms on the page to avoid breaking accounting workflows or changing posting behavior
+- avoided card nesting, landing pages, integration architecture changes, and unrelated theme rewrites
+- kept journals as the accounting source of truth
+
+Files changed:
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime_can_create_posting_group_and_post_event_to_journal'`
+  - result: 1 passed, 35 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|high_risk_manual_journals|permissions|vendor_bill_to_payables|configured_inventory_policy_accounts|reconciliation_workflow|invoice'`
+  - result: 12 passed, 488 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 33 passed, 848 assertions
 
 ### Package 13 - Accounting End-To-End Production Acceptance
 Status:
