@@ -768,20 +768,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting End-To-End Production Acceptance
+### No Remaining Accounting Completion Package
 Recommended scope:
-- prove the whole accounting workflow works as one system before calling accounting complete
-- cover end-to-end scenarios:
-  - automotive work order completed -> accounting event -> journal posted -> receivable created -> customer payment recorded -> deposit batch created -> reconciliation state visible
-  - parts stock movement valued -> accounting handoff -> inventory journal posted -> report totals updated
-  - vendor bill created -> bill posted -> AP created -> vendor payment recorded -> payables aging updated
-  - tax configured -> taxable vendor bill or revenue event posted -> tax summary updated
-  - manual journal submitted -> approved -> posted -> financial statements updated
-  - posted journal reversed in open period -> financial statements updated
-  - closed period blocks posting and requires correction/reversal in an open period
-- run full accounting runtime tests and readiness verification
-- document production UI smoke steps
-- keep journals as the accounting source of truth
+- Accounting Completion Roadmap packages 1 through 13 are complete.
+- Accounting runtime is ready for production smoke testing and deployment review.
+- Do not start a new accounting package unless a bug, production finding, or new product requirement is explicitly reported.
+- For future accounting changes, keep journals as the accounting source of truth.
+- Continue to avoid `php artisan route:cache`.
 - do not reopen integration architecture unless a real blocker appears
 
 ## 15.2.1) Accounting System Current State Before Next Chat
@@ -823,6 +816,8 @@ Current accounting foundations already completed:
 - General Ledger now has a workspace navigation band with clear jumps to posting queue, approvals, period close, reports, receivables, payables, cash, tax, settings, and audit
 - audit entries are compliance evidence only; journal entries and journal lines remain the accounting source of truth
 - `tenancy:verify-integration-readiness` now checks accounting runtime tables, active workspace products, default accounts, default posting group, default accounting policy, default tax rate, period lock overlaps, and stale integration handoffs
+- end-to-end production acceptance now covers automotive, parts inventory, receivables, payables, tax, manual journals, reversals, period locks, and readiness verification in one tenant workflow
+- accounting completion roadmap packages 1 through 13 are complete
 - fiscal close posting controls now block posting inside locked periods
 - overlapping period locks are rejected
 - accounting permission gates now protect sensitive actions:
@@ -1704,7 +1699,7 @@ Verification:
 
 ### Package 13 - Accounting End-To-End Production Acceptance
 Status:
-- final accounting hardening package
+- completed
 
 Goal:
 - prove the whole accounting workflow works as one system before calling accounting complete
@@ -1723,6 +1718,40 @@ Acceptance criteria:
 - integration readiness command passes with a real tenant
 - UI steps are documented for production smoke testing
 - `PROJECT_AI_CONTEXT.md` is updated one final time with accounting completion status
+
+Completed implementation:
+- added a production acceptance feature test that proves the accounting runtime works end-to-end in one tenant:
+  - automotive work order completion creates an accounting event and posted handoff
+  - accounting event posts to journal and receivable
+  - customer payment records cash and settles receivable
+  - deposit batch groups the receipt and exposes reconciliation state
+  - parts stock movement posts an inventory valuation journal
+  - taxable vendor bill posts AP, tax input, and expense journals
+  - vendor payment settles payables
+  - high-risk manual journal requires approval, posts after approval, and reverses in an open period
+  - closed period blocks posting into the locked range
+  - trial balance, tax summary, payables aging, audit, and readiness verification remain available
+- ran readiness verification against the acceptance tenant through `tenancy:verify-integration-readiness --tenant=...`
+- confirmed the full tenant admin flow test suite passes after the final accounting acceptance test
+- marked the Accounting Completion Roadmap as complete with zero remaining packages
+
+Files changed:
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_end_to_end_production_acceptance_workflows'`
+  - result: 1 passed, 85 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_runtime|accounting_end_to_end|high_risk_manual_journals|permissions|vendor_bill_to_payables|configured_inventory_policy_accounts|reconciliation_workflow|invoice'`
+  - result: 13 passed, 573 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php`
+  - result: 5 passed, 24 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 34 passed, 933 assertions
 
 ## 15.3) Spare Parts Stock Item Model Correction
 Status:

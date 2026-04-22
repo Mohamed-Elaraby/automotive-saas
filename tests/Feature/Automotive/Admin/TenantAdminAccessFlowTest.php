@@ -2936,6 +2936,421 @@ class TenantAdminAccessFlowTest extends TestCase
         }
     }
 
+    public function test_accounting_end_to_end_production_acceptance_workflows(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachPartsWorkspaceToTenant($tenant);
+        $this->attachAccountingWorkspaceToTenant($tenant);
+
+        [$branchId, $productId] = $this->seedTenantStock($tenant, [
+            [
+                'branch' => ['name' => 'Main Branch', 'code' => 'MAIN'],
+                'product' => ['name' => 'Acceptance Brake Pad', 'sku' => 'ACC-BP-1'],
+                'quantity' => 10,
+            ],
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $approverEmail = 'acceptance-approver-' . uniqid() . '@example.test';
+            $approverPassword = 'secret-pass';
+
+            User::query()->create([
+                'name' => 'Acceptance Controller',
+                'email' => $approverEmail,
+                'password' => bcrypt($approverPassword),
+                'accounting_role' => 'controller',
+                'accounting_permissions' => [
+                    'accounting.manual_journals.approve',
+                    'accounting.manual_journals.create',
+                    'accounting.manual_journals.post',
+                    'accounting.journals.reverse',
+                    'accounting.periods.lock',
+                    'accounting.reports.export',
+                ],
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->assertOk()
+            ->assertSee('Accounting Workspace Navigation', false);
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/customers?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'name' => 'Acceptance Customer',
+            'phone' => '0501002000',
+            'email' => 'acceptance-customer@example.test',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $customer = DB::connection('tenant')->table('customers')->where('name', 'Acceptance Customer')->first();
+            $this->assertNotNull($customer);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/vehicles?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'customer_id' => $customer->id,
+            'make' => 'Toyota',
+            'model' => 'Camry',
+            'year' => 2024,
+            'plate_number' => 'ACC-100',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $vehicle = DB::connection('tenant')->table('vehicles')->where('plate_number', 'ACC-100')->first();
+            $this->assertNotNull($vehicle);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'branch_id' => $branchId,
+            'customer_id' => $customer->id,
+            'vehicle_id' => $vehicle->id,
+            'title' => 'Acceptance service order',
+            'notes' => 'Production acceptance workflow',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $workOrder = DB::connection('tenant')->table('work_orders')->where('title', 'Acceptance service order')->first();
+            $this->assertNotNull($workOrder);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/consume-part?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'work_order_id' => $workOrder->id,
+            'branch_id' => $branchId,
+            'product_id' => $productId,
+            'quantity' => 2,
+            'notes' => 'Acceptance stock consumption',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations?workspace_product=automotive_service");
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/labor-lines?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'description' => 'Acceptance labor',
+            'quantity' => 1,
+            'unit_price' => 150,
+            'notes' => 'Acceptance labor line',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+
+        $this->post("http://{$domain}/automotive/admin/workshop-operations/work-orders/{$workOrder->id}/status?workspace_product=automotive_service", [
+            'workspace_product' => 'automotive_service',
+            'status' => 'completed',
+        ])->assertRedirect("http://{$domain}/workspace/admin/workshop-operations/work-orders/{$workOrder->id}?workspace_product=automotive_service");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $accountingEvent = DB::connection('tenant')->table('accounting_events')
+                ->where('reference_type', \App\Models\WorkOrder::class)
+                ->where('reference_id', $workOrder->id)
+                ->first();
+            $this->assertNotNull($accountingEvent);
+            $this->assertSame('posted', $accountingEvent->status);
+            $this->assertSame(190.0, (float) $accountingEvent->total_amount);
+
+            $stockMovement = DB::connection('tenant')->table('stock_movements')
+                ->where('reference_type', \App\Models\WorkOrder::class)
+                ->where('reference_id', $workOrder->id)
+                ->first();
+            $this->assertNotNull($stockMovement);
+
+            $handoff = DB::connection('tenant')->table('workspace_integration_handoffs')
+                ->where('integration_key', 'automotive-accounting')
+                ->where('source_id', $workOrder->id)
+                ->first();
+            $this->assertNotNull($handoff);
+            $this->assertSame('posted', $handoff->status);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/accounting-events/{$accountingEvent->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/inventory-movements/{$stockMovement->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect();
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_event_id' => $accountingEvent->id,
+            'payment_date' => '2026-09-02',
+            'amount' => 190,
+            'method' => 'cash',
+            'payer_name' => 'Acceptance Customer',
+            'reference' => 'ACC-RCPT-1',
+            'currency' => 'USD',
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $payment = DB::connection('tenant')->table('accounting_payments')
+                ->where('reference', 'ACC-RCPT-1')
+                ->first();
+            $this->assertNotNull($payment);
+            $this->assertSame('posted', $payment->status);
+
+            $workOrderJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('accounting_event_id', $accountingEvent->id)
+                ->first();
+            $this->assertNotNull($workOrderJournal);
+
+            $inventoryJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', \App\Models\StockMovement::class)
+                ->where('source_id', $stockMovement->id)
+                ->first();
+            $this->assertNotNull($inventoryJournal);
+            $this->assertSame(20.0, (float) $inventoryJournal->debit_total);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/deposit-batches?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'payment_ids' => [$payment->id],
+            'deposit_date' => '2026-09-03',
+            'currency' => 'USD',
+            'reference' => 'ACC-DEP-1',
+            'notes' => 'Acceptance deposit',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $taxRateResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/tax-rates?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => 'acceptance_vat_5',
+            'name' => 'Acceptance VAT 5',
+            'rate' => 5,
+            'input_tax_account' => '1410 VAT Input Receivable',
+            'output_tax_account' => '2100 VAT Output Payable',
+            'is_default' => '1',
+            'is_active' => '1',
+        ]);
+        $taxRateResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $taxRate = DB::connection('tenant')->table('accounting_tax_rates')
+                ->where('code', 'acceptance_vat_5')
+                ->first();
+            $this->assertNotNull($taxRate);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'bill_date' => '2026-09-04',
+            'due_date' => '2026-09-14',
+            'supplier_name' => 'Acceptance Vendor',
+            'reference' => 'ACC-BILL-1',
+            'currency' => 'USD',
+            'amount' => 105,
+            'accounting_tax_rate_id' => $taxRate->id,
+            'tax_amount' => 5,
+            'expense_account' => '5200 Operating Expense',
+            'payable_account' => '2000 Accounts Payable',
+            'tax_account' => '1410 VAT Input Receivable',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $bill = DB::connection('tenant')->table('accounting_vendor_bills')
+                ->where('reference', 'ACC-BILL-1')
+                ->first();
+            $this->assertNotNull($bill);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bills/{$bill->id}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect();
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/vendor-bill-payments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_vendor_bill_id' => $bill->id,
+            'payment_date' => '2026-09-05',
+            'amount' => 105,
+            'method' => 'bank_transfer',
+            'reference' => 'ACC-VPAY-1',
+            'currency' => 'USD',
+        ])->assertRedirect();
+
+        $manualResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-09-06',
+            'currency' => 'USD',
+            'memo' => 'Acceptance high-risk journal',
+            'lines' => [
+                ['account_code' => '1100 Accounts Receivable', 'account_name' => 'Accounts Receivable', 'debit' => 6000, 'credit' => 0],
+                ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 6000],
+            ],
+        ]);
+        $manualResponse->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $manualJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('memo', 'Acceptance high-risk journal')
+                ->first();
+            $this->assertNotNull($manualJournal);
+            $this->assertSame('pending_approval', $manualJournal->status);
+
+            $vendorPayment = DB::connection('tenant')->table('accounting_vendor_bill_payments')
+                ->where('reference', 'ACC-VPAY-1')
+                ->first();
+            $this->assertNotNull($vendorPayment);
+
+            $postedBill = DB::connection('tenant')->table('accounting_vendor_bills')
+                ->where('id', $bill->id)
+                ->first();
+            $this->assertSame('paid', $postedBill->status);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        Auth::guard('automotive_admin')->logout();
+        $this->flushSession();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $approverEmail,
+            'password' => $approverPassword,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$manualJournal->id}/approve?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'approval_notes' => 'Production acceptance approved',
+        ])->assertRedirect();
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$manualJournal->id}/post-approved?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect();
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/journal-entries/{$manualJournal->id}/reverse?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ])->assertRedirect();
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => '2026-10-01',
+            'period_end' => '2026-10-31',
+            'notes' => 'Acceptance closed period',
+        ])->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $blockedPosting = $this->from("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+                'workspace_product' => 'accounting',
+                'entry_date' => '2026-10-15',
+                'currency' => 'USD',
+                'memo' => 'Blocked closed period posting',
+                'lines' => [
+                    ['account_code' => '1100 Accounts Receivable', 'account_name' => 'Accounts Receivable', 'debit' => 50, 'credit' => 0],
+                    ['account_code' => '4100 Service Revenue', 'account_name' => 'Service Revenue', 'debit' => 0, 'credit' => 50],
+                ],
+            ]);
+        $blockedPosting->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+        $blockedPosting->assertSessionHasErrors('entry_date');
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $depositBatch = DB::connection('tenant')->table('accounting_deposit_batches')
+                ->where('reference', 'ACC-DEP-1')
+                ->first();
+            $this->assertNotNull($depositBatch);
+            $this->assertSame('posted', $depositBatch->status);
+
+            $depositedPayment = DB::connection('tenant')->table('accounting_payments')
+                ->where('id', $payment->id)
+                ->first();
+            $this->assertSame('deposited', $depositedPayment->reconciliation_status);
+
+            $postedManualJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('id', $manualJournal->id)
+                ->first();
+            $this->assertSame('reversed', $postedManualJournal->status);
+
+            $reversalJournal = DB::connection('tenant')->table('journal_entries')
+                ->where('source_type', 'journal_reversal')
+                ->where('source_id', $manualJournal->id)
+                ->first();
+            $this->assertNotNull($reversalJournal);
+
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'journal_reversed',
+            ], 'tenant');
+            $this->assertDatabaseMissing('journal_entries', [
+                'memo' => 'Blocked closed period posting',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Payment Reconciliation', false);
+        $ledgerResponse->assertSee('ACC-DEP-1', false);
+        $ledgerResponse->assertSee('Payables Aging', false);
+        $ledgerResponse->assertSee('Tax And VAT Settings', false);
+        $ledgerResponse->assertSee('Accounting Audit Timeline', false);
+        $ledgerResponse->assertSee('Posting Controls', false);
+
+        $trialBalance = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/trial-balance?workspace_product=accounting&format=csv");
+        $trialBalance->assertOk();
+        $trialBalanceContent = $trialBalance->streamedContent();
+        $this->assertStringContainsString('1100 Accounts Receivable', $trialBalanceContent);
+        $this->assertStringContainsString('2000 Accounts Payable', $trialBalanceContent);
+
+        $taxSummary = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/tax-summary?workspace_product=accounting&format=csv");
+        $taxSummary->assertOk();
+        $taxSummaryContent = $taxSummary->streamedContent();
+        $this->assertStringContainsString('Input Tax Total', $taxSummaryContent);
+        $this->assertStringContainsString('Input,"1410 VAT Input Receivable"', $taxSummaryContent);
+        $this->assertStringContainsString('Net Tax Payable', $taxSummaryContent);
+
+        $payablesAging = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/payables-aging?workspace_product=accounting&format=csv");
+        $payablesAging->assertOk();
+        $this->assertStringContainsString('Total Open', $payablesAging->streamedContent());
+
+        $this->artisan("tenancy:verify-integration-readiness --tenant={$tenant->id}")
+            ->expectsOutput('Workspace integration readiness verification passed.')
+            ->assertExitCode(0);
+    }
+
     public function test_workshop_operations_can_create_work_order_and_consume_spare_parts_stock(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
