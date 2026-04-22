@@ -768,15 +768,22 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Accounting Inventory Costing Controls
+### Accounting Report Export Polish
 Recommended scope:
-- validate valuation source for stock movements
-- define supported costing method for now:
-  - current implementation uses available movement value based on stock item cost context
-  - do not imply FIFO/weighted average unless implemented
-- add clear policy UI labels for inventory asset, COGS, adjustment, and offset accounts
-- add tests for movement types that should and should not post
-- ensure parts inventory and accounting remain decoupled through integration handoffs
+- unify CSV export headers and date filters
+- add printable views where missing
+- verify:
+  - journal entries
+  - trial balance
+  - revenue summary
+  - tax summary
+  - profit and loss
+  - balance sheet
+  - receivables aging
+  - payables aging
+  - reconciliation summary
+- add date range indicators to print views
+- keep exports read-only
 - keep journals as the accounting source of truth
 - do not reopen integration architecture unless a real blocker appears
 
@@ -1397,7 +1404,7 @@ Verification:
 
 ### Package 8 - Accounting Inventory Costing Controls
 Status:
-- pending
+- completed
 
 Goal:
 - strengthen inventory accounting from parts movements
@@ -1415,6 +1422,44 @@ Acceptance criteria:
 - inventory journals are predictable
 - unsupported valuation cases are skipped or blocked with clear reason
 - readiness command still proves parts-accounting integration requirements
+
+Completed behavior:
+- stock movement valuation is now explicit and centralized through accounting runtime valuation details
+- supported costing method is documented as current product cost at posting time:
+  - method key: `current_product_cost`
+  - valuation source: `products.cost_price`
+  - FIFO and weighted average are not implied or exposed as implemented
+- General Ledger policy UI labels now clearly identify:
+  - Inventory Asset Account
+  - Inventory Adjustment Offset Account
+  - Inventory Adjustment Expense Account
+  - COGS Account
+- Inventory Valuation Review shows method/source labels and uses the centralized valuation details instead of duplicating arithmetic in Blade
+- posting validates:
+  - movement type must be `opening`, `adjustment_in`, or `adjustment_out`
+  - quantity must be positive
+  - current product cost must be positive
+  - resulting valuation amount must be positive
+- transfer movements are blocked from accounting posting and recorded as skipped integration handoffs when attempted directly
+- posted inventory valuation handoff payloads now record valuation method and valuation source
+- journals remain the accounting source of truth; parts inventory stays decoupled through `workspace_integration_handoffs`
+
+Important files changed:
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='inventory_valuation'`
+  - result: 2 passed, 38 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='inventory'`
+  - result: 6 passed, 79 assertions
 
 ### Package 9 - Accounting Report Export Polish
 Status:

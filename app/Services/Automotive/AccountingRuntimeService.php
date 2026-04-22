@@ -29,6 +29,11 @@ use Illuminate\Validation\ValidationException;
 
 class AccountingRuntimeService
 {
+    protected const INVENTORY_VALUATION_METHOD = 'current_product_cost';
+    protected const INVENTORY_VALUATION_METHOD_LABEL = 'Current product cost at posting time';
+    protected const INVENTORY_VALUATION_SOURCE = 'products.cost_price';
+    protected const INVENTORY_POSTABLE_MOVEMENT_TYPES = ['opening', 'adjustment_in', 'adjustment_out'];
+
     public function __construct(
         protected WorkspaceIntegrationHandoffService $workspaceIntegrationHandoffService
     ) {
@@ -789,8 +794,18 @@ class AccountingRuntimeService
             ->latest('stock_movements.id')
             ->limit($limit)
             ->get()
-            ->filter(fn (StockMovement $movement): bool => $this->inventoryMovementValue($movement) > 0)
+            ->map(function (StockMovement $movement): StockMovement {
+                $movement->setAttribute('valuation_details', $this->inventoryMovementValuation($movement));
+
+                return $movement;
+            })
+            ->filter(fn (StockMovement $movement): bool => (bool) data_get($movement->valuation_details, 'can_post'))
             ->values();
+    }
+
+    public function inventoryMovementValuationDetails(StockMovement $movement): array
+    {
+        return $this->inventoryMovementValuation($movement);
     }
 
     public function createPostingGroup(array $data): AccountingPostingGroup
@@ -1044,7 +1059,7 @@ class AccountingRuntimeService
             ->whereDate('stock_movements.movement_date', '<=', $end)
             ->select('stock_movements.*')
             ->get()
-            ->filter(fn (StockMovement $movement): bool => $this->inventoryMovementValue($movement) > 0)
+            ->filter(fn (StockMovement $movement): bool => (bool) $this->inventoryMovementValuation($movement)['can_post'])
             ->count();
 
         $draftVendorBills = AccountingVendorBill::query()
@@ -2528,7 +2543,7 @@ class AccountingRuntimeService
         }
 
         $movement->loadMissing(['product', 'branch']);
-        $amount = $this->inventoryMovementValue($movement);
+        $valuation = $this->inventoryMovementValuation($movement);
         $entryDate = optional($movement->movement_date)->toDateString() ?: now()->toDateString();
         $this->assertPeriodOpen($entryDate, 'posting inventory valuation movements');
         $policy = $this->ensureDefaultPolicy();
@@ -2549,24 +2564,28 @@ class AccountingRuntimeService
                 'stock_movement_id' => $movement->id,
                 'movement_type' => $movement->type,
                 'quantity' => $movement->quantity,
-                'unit_cost' => $movement->product?->cost_price,
-                'valuation_amount' => $amount,
+                'unit_cost' => $valuation['unit_cost'],
+                'valuation_amount' => $valuation['amount'],
+                'valuation_method' => $valuation['method'],
+                'valuation_source' => $valuation['source'],
             ],
         ], $createdBy);
 
-        if ($amount <= 0) {
+        if (! $valuation['can_post']) {
             $this->workspaceIntegrationHandoffService->markSkipped(
                 $handoff,
-                'Inventory movement valuation is zero.'
+                $valuation['reason']
             );
 
             throw ValidationException::withMessages([
-                'stock_movement' => 'Only inventory movements with positive valuation can be posted.',
+                'stock_movement' => $valuation['reason'],
             ]);
         }
 
         try {
-            return DB::transaction(function () use ($movement, $amount, $entryDate, $policy, $createdBy, $handoff): JournalEntry {
+            $amount = (float) $valuation['amount'];
+
+            return DB::transaction(function () use ($movement, $amount, $entryDate, $policy, $createdBy, $handoff, $valuation): JournalEntry {
             $entry = JournalEntry::query()->create([
                 'journal_number' => $this->nextJournalNumber('INV'),
                 'source_type' => StockMovement::class,
@@ -2630,6 +2649,8 @@ class AccountingRuntimeService
                     'stock_movement_id' => $movement->id,
                     'policy_id' => $policy->id,
                     'valuation_amount' => $amount,
+                    'valuation_method' => $valuation['method'],
+                    'valuation_source' => $valuation['source'],
                 ], $createdBy);
 
                 return $entry->load(['lines', 'creator']);
@@ -3283,9 +3304,40 @@ class AccountingRuntimeService
 
     protected function inventoryMovementValue(StockMovement $movement): float
     {
+        return (float) $this->inventoryMovementValuation($movement)['amount'];
+    }
+
+    protected function inventoryMovementValuation(StockMovement $movement): array
+    {
         $movement->loadMissing('product');
 
-        return round((float) $movement->quantity * (float) ($movement->product?->cost_price ?? 0), 2);
+        $quantity = (float) $movement->quantity;
+        $unitCost = (float) ($movement->product?->cost_price ?? 0);
+        $amount = round(abs($quantity) * $unitCost, 2);
+        $movementType = (string) $movement->type;
+        $reason = null;
+
+        if (! in_array($movementType, self::INVENTORY_POSTABLE_MOVEMENT_TYPES, true)) {
+            $reason = 'Only opening, adjustment in, and adjustment out stock movements can be posted to accounting. Transfer movements are operational stock logistics only.';
+        } elseif ($quantity <= 0) {
+            $reason = 'Only stock movements with a positive quantity can be posted to accounting.';
+        } elseif ($unitCost <= 0) {
+            $reason = 'Only stock movements with a positive current product cost can be posted to accounting.';
+        } elseif ($amount <= 0) {
+            $reason = 'Only inventory movements with positive valuation can be posted.';
+        }
+
+        return [
+            'method' => self::INVENTORY_VALUATION_METHOD,
+            'method_label' => self::INVENTORY_VALUATION_METHOD_LABEL,
+            'source' => self::INVENTORY_VALUATION_SOURCE,
+            'source_label' => 'Current stock item cost price',
+            'quantity' => $quantity,
+            'unit_cost' => $unitCost,
+            'amount' => $amount,
+            'can_post' => $reason === null,
+            'reason' => $reason,
+        ];
     }
 
     protected function inventoryMovementMemo(StockMovement $movement): string

@@ -597,10 +597,13 @@
                                         <div class="col-5 mb-2"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', 'default_inventory_policy') }}"></div>
                                         <div class="col-7 mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'Default Inventory Policy') }}"></div>
                                     </div>
-                                    <div class="mb-2"><label class="form-label">Inventory Asset</label><input type="text" name="inventory_asset_account" class="form-control" value="{{ old('inventory_asset_account', '1300 Inventory Asset') }}"></div>
-                                    <div class="mb-2"><label class="form-label">Adjustment Offset</label><input type="text" name="inventory_adjustment_offset_account" class="form-control" value="{{ old('inventory_adjustment_offset_account', '3900 Inventory Adjustment Offset') }}"></div>
-                                    <div class="mb-2"><label class="form-label">Adjustment Expense</label><input type="text" name="inventory_adjustment_expense_account" class="form-control" value="{{ old('inventory_adjustment_expense_account', '5100 Inventory Adjustment Expense') }}"></div>
-                                    <div class="mb-2"><label class="form-label">COGS</label><input type="text" name="cogs_account" class="form-control" value="{{ old('cogs_account', '5000 Cost Of Goods Sold') }}"></div>
+                                    <div class="alert alert-light border small mb-3">
+                                        Costing method: Current product cost at posting time. FIFO and weighted average costing are not enabled.
+                                    </div>
+                                    <div class="mb-2"><label class="form-label">Inventory Asset Account</label><input type="text" name="inventory_asset_account" class="form-control" value="{{ old('inventory_asset_account', '1300 Inventory Asset') }}"><div class="form-text">Debited for opening and adjustment-in movements; credited for valued stock reductions.</div></div>
+                                    <div class="mb-2"><label class="form-label">Inventory Adjustment Offset Account</label><input type="text" name="inventory_adjustment_offset_account" class="form-control" value="{{ old('inventory_adjustment_offset_account', '3900 Inventory Adjustment Offset') }}"><div class="form-text">Credited against opening and adjustment-in valuation increases.</div></div>
+                                    <div class="mb-2"><label class="form-label">Inventory Adjustment Expense Account</label><input type="text" name="inventory_adjustment_expense_account" class="form-control" value="{{ old('inventory_adjustment_expense_account', '5100 Inventory Adjustment Expense') }}"><div class="form-text">Debited for non-work-order adjustment-out valuation decreases.</div></div>
+                                    <div class="mb-2"><label class="form-label">COGS Account</label><input type="text" name="cogs_account" class="form-control" value="{{ old('cogs_account', '5000 Cost Of Goods Sold') }}"><div class="form-text">Debited for work-order stock consumption movements.</div></div>
                                     <input type="hidden" name="currency" value="USD">
                                     <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="policy_default" name="is_default" value="1" checked><label class="form-check-label" for="policy_default">Default policy</label></div>
                                     <button type="submit" class="btn btn-primary">Save Policy</button>
@@ -609,7 +612,10 @@
                                 @forelse(($moduleData['accounting_policies'] ?? collect()) as $policy)
                                     <div class="border-bottom pb-2 mb-2">
                                         <div class="fw-semibold">{{ $policy->name }}</div>
-                                        <div class="text-muted small">{{ $policy->inventory_asset_account }} / {{ $policy->cogs_account }}</div>
+                                        <div class="text-muted small">Inventory Asset: {{ $policy->inventory_asset_account }}</div>
+                                        <div class="text-muted small">Adjustment Offset: {{ $policy->inventory_adjustment_offset_account }}</div>
+                                        <div class="text-muted small">Adjustment Expense: {{ $policy->inventory_adjustment_expense_account }}</div>
+                                        <div class="text-muted small">COGS: {{ $policy->cogs_account }}</div>
                                     </div>
                                 @empty
                                     <p class="text-muted mb-0">No accounting policies are configured yet.</p>
@@ -772,17 +778,18 @@
                     <div class="card-header"><h5 class="card-title mb-0">Inventory Valuation Review</h5></div>
                     <div class="card-body">
                         @forelse(($moduleData['reviewable_inventory_movements'] ?? collect()) as $movement)
-                            @php($movementValue = round((float) $movement->quantity * (float) ($movement->product?->cost_price ?? 0), 2))
+                            @php($valuation = $movement->valuation_details ?? app(\App\Services\Automotive\AccountingRuntimeService::class)->inventoryMovementValuationDetails($movement))
                             <div class="border-bottom pb-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                     <div>
                                         <h6 class="mb-1">{{ $movement->product?->name ?: 'Stock Item' }}</h6>
                                         <div class="text-muted small">{{ strtoupper($movement->type) }} · {{ $movement->branch?->name ?: 'Branch' }}</div>
-                                        <div class="text-muted small">Qty {{ rtrim(rtrim((string) $movement->quantity, '0'), '.') }} × Cost {{ number_format((float) ($movement->product?->cost_price ?? 0), 2) }}</div>
+                                        <div class="text-muted small">Qty {{ rtrim(rtrim((string) $movement->quantity, '0'), '.') }} × Current Product Cost {{ number_format((float) ($valuation['unit_cost'] ?? 0), 2) }}</div>
+                                        <div class="text-muted small">Valuation Method: {{ $valuation['method_label'] ?? 'Current product cost at posting time' }} · Source: {{ $valuation['source_label'] ?? 'Current stock item cost price' }}</div>
                                         <div class="text-muted small">{{ $movement->notes ?: 'Inventory movement' }}</div>
                                     </div>
                                     <div class="text-end">
-                                        <div class="fw-semibold mb-2">{{ number_format($movementValue, 2) }} USD</div>
+                                        <div class="fw-semibold mb-2">{{ number_format((float) ($valuation['amount'] ?? 0), 2) }} USD</div>
                                         @if($accountingPermissions['inventory_movements_post'] ?? true)
                                             <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.inventory-movements.post', ['stockMovement' => $movement->id] + $workspaceQuery) }}">
                                                 @csrf

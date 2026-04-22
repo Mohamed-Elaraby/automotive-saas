@@ -2617,6 +2617,11 @@ class TenantAdminAccessFlowTest extends TestCase
         $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
         $ledgerResponse->assertOk();
         $ledgerResponse->assertSee('Inventory Valuation Review', false);
+        $ledgerResponse->assertSee('Costing method: Current product cost at posting time. FIFO and weighted average costing are not enabled.', false);
+        $ledgerResponse->assertSee('Inventory Asset Account', false);
+        $ledgerResponse->assertSee('COGS Account', false);
+        $ledgerResponse->assertSee('Valuation Method: Current product cost at posting time', false);
+        $ledgerResponse->assertSee('Source: Current stock item cost price', false);
         $ledgerResponse->assertSee('Oil Filter', false);
         $ledgerResponse->assertSee('Post Inventory Valuation', false);
 
@@ -2661,6 +2666,83 @@ class TenantAdminAccessFlowTest extends TestCase
             $this->assertSame('posted', $handoff->status);
             $this->assertSame(\App\Models\JournalEntry::class, $handoff->target_type);
             $this->assertSame((int) $journal->id, (int) $handoff->target_id);
+
+            $payload = json_decode((string) $handoff->payload, true);
+            $this->assertSame('current_product_cost', $payload['valuation_method'] ?? null);
+            $this->assertSame('products.cost_price', $payload['valuation_source'] ?? null);
+            $this->assertSame(10.0, (float) ($payload['unit_cost'] ?? 0));
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
+    public function test_accounting_inventory_valuation_rejects_transfer_movements(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+        $this->attachAccountingWorkspaceToTenant($tenant);
+        $this->attachPartsWorkspaceToTenant($tenant);
+
+        [$branchId, $productId] = $this->seedTenantStock($tenant, [
+            [
+                'branch' => ['name' => 'Transfer Branch', 'code' => 'TRF'],
+                'product' => ['name' => 'Transfer Filter', 'sku' => 'TF-BLOCK'],
+                'quantity' => 5,
+            ],
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $movementId = DB::connection('tenant')->table('stock_movements')->insertGetId([
+                'branch_id' => $branchId,
+                'product_id' => $productId,
+                'type' => 'transfer_out',
+                'quantity' => 2,
+                'reference_type' => null,
+                'reference_id' => null,
+                'notes' => 'Operational transfer only',
+                'created_by' => null,
+                'movement_date' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertDontSee('Transfer Filter', false);
+
+        $postResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/inventory-movements/{$movementId}/post?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $postResponse->assertSessionHasErrors('stock_movement');
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseMissing('journal_entries', [
+                'source_type' => \App\Models\StockMovement::class,
+                'source_id' => $movementId,
+            ], 'tenant');
+
+            $handoff = DB::connection('tenant')->table('workspace_integration_handoffs')
+                ->where('source_type', \App\Models\StockMovement::class)
+                ->where('source_id', $movementId)
+                ->first();
+
+            $this->assertNotNull($handoff);
+            $this->assertSame('skipped', $handoff->status);
+            $this->assertStringContainsString('Transfer movements are operational stock logistics only', (string) $handoff->error_message);
         } finally {
             tenancy()->end();
             DB::purge('tenant');
