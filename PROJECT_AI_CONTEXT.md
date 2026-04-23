@@ -769,12 +769,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 6 of 10: Advanced Period Close And Adjustments
+### Professional Accounting Roadmap - Package 7 of 10: Tax/VAT Compliance Expansion
 Recommended scope:
-- strengthen close-period workflows for adjustments, review checkpoints, and statement readiness
-- add clearer support for end-of-period correction and closing entries
-- keep locked periods journal-safe and avoid silent backdating
-- preserve journal entries and journal lines as the accounting source of truth
+- expand tax/VAT workflows beyond the current basic rate setup and tax summary
+- improve operational tax controls, reporting visibility, and compliance exports
+- keep tax amounts journal-driven wherever posted transactions exist
+- preserve notes, settings, and tax configuration as metadata only
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -786,8 +786,8 @@ Professional Accounting Roadmap progress:
 3. General Ledger UX Simplification - completed
 4. IFRS-Ready Chart Of Accounts And Mapping Layer - completed
 5. Financial Statement Builder And Notes Foundation - completed
-6. Advanced Period Close And Adjustments - next
-7. Tax/VAT Compliance Expansion - pending
+6. Advanced Period Close And Adjustments - completed
+7. Tax/VAT Compliance Expansion - next
 8. Multi-Currency And Exchange Revaluation - pending
 9. Import/Export, Audit Evidence, And Accountant Review Pack - pending
 10. Production Hardening, Permissions Matrix, And Market Acceptance - pending
@@ -3511,3 +3511,61 @@ Verification:
 
 Next package:
 - Package 6 of 10: Advanced Period Close And Adjustments
+
+## 38) Professional Accounting Roadmap Package 6 - Advanced Period Close And Adjustments
+Status:
+- completed
+- this is package 6 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- General Ledger period close now includes `Period Close Adjustments`
+- close adjustments create real manual journal entries and then attach close-review metadata to them
+- close adjustments support:
+  - closing entry
+  - accrual
+  - reclass
+  - correction
+- each close adjustment is linked to:
+  - the target accounting close period
+  - the journal entry that carries the accounting effect
+  - a rationale
+  - a review status and review notes
+- period close adjustments can be marked reviewed after the journal reaches a reviewable state
+- the period close checklist now blocks final readiness when close adjustments are still pending review
+- journals and journal lines remain the accounting source of truth; the new adjustment table is review/control metadata only
+
+Database note:
+- this package added a new tenant migration:
+  - `database/migrations/tenant/2026_04_23_120000_create_accounting_period_close_adjustments_table.php`
+- after deploying this package, run tenant migrations
+
+Important files changed:
+- `app/Models/AccountingPeriodCloseAdjustment.php`
+- `database/migrations/tenant/2026_04_23_120000_create_accounting_period_close_adjustments_table.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingPeriodCloseAdjustment.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_23_120000_create_accounting_period_close_adjustments_table.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=period_close_adjustments_are_journal_backed_and_reviewed_before_final_close`
+  - result: 1 passed, 22 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='period_close_adjustments_are_journal_backed_and_reviewed_before_final_close|financial_statement_builder_and_notes_remain_journal_driven|accounting_accounts_support_ifrs_statement_mapping_without_changing_journal_source_of_truth|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 54 assertions
+
+Next package:
+- Package 7 of 10: Tax/VAT Compliance Expansion

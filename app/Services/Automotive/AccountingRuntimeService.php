@@ -9,6 +9,7 @@ use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
 use App\Models\AccountingInvoice;
 use App\Models\AccountingPayment;
+use App\Models\AccountingPeriodCloseAdjustment;
 use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
@@ -206,6 +207,96 @@ class AccountingRuntimeService
 
             return $note;
         });
+    }
+
+    public function getPeriodCloseAdjustments(?int $periodLockId = null, int $limit = 25): Collection
+    {
+        if (! Schema::hasTable('accounting_period_close_adjustments')) {
+            return collect();
+        }
+
+        return AccountingPeriodCloseAdjustment::query()
+            ->with(['journalEntry.lines', 'periodLock', 'reviewer'])
+            ->when($periodLockId, fn ($query) => $query->where('accounting_period_lock_id', $periodLockId))
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function createPeriodCloseAdjustment(array $data, ?int $createdBy = null): AccountingPeriodCloseAdjustment
+    {
+        if (! Schema::hasTable('accounting_period_close_adjustments')) {
+            throw ValidationException::withMessages([
+                'period_close_adjustment' => 'Run tenant migrations before using period close adjustments.',
+            ]);
+        }
+
+        $period = AccountingPeriodLock::query()->findOrFail((int) $data['accounting_period_lock_id']);
+
+        if (! in_array($period->status, ['closing', 'locked'], true)) {
+            throw ValidationException::withMessages([
+                'accounting_period_lock_id' => 'Choose a period that is currently in closing review or already locked.',
+            ]);
+        }
+
+        $entry = $this->createManualJournalEntry([
+            'entry_date' => $data['entry_date'],
+            'currency' => $data['currency'] ?? 'USD',
+            'memo' => trim('Period close adjustment: ' . ($data['memo'] ?? $data['adjustment_type'])),
+            'requires_approval' => ! empty($data['requires_approval']),
+            'lines' => $data['lines'] ?? [],
+        ], $createdBy);
+
+        $adjustment = AccountingPeriodCloseAdjustment::query()->create([
+            'accounting_period_lock_id' => $period->id,
+            'journal_entry_id' => $entry->id,
+            'adjustment_type' => $data['adjustment_type'],
+            'target_period_start' => $period->period_start,
+            'target_period_end' => $period->period_end,
+            'rationale' => $data['rationale'],
+            'review_status' => 'pending',
+            'created_by' => $createdBy,
+        ]);
+
+        $this->recordAudit('period_close_adjustment_created', $adjustment, "Period close adjustment {$entry->journal_number} created for {$period->period_start->toDateString()} to {$period->period_end->toDateString()}.", [
+            'journal_entry_id' => $entry->id,
+            'adjustment_type' => $adjustment->adjustment_type,
+            'target_period_start' => $adjustment->target_period_start?->toDateString(),
+            'target_period_end' => $adjustment->target_period_end?->toDateString(),
+        ], $createdBy);
+
+        return $adjustment->load(['journalEntry.lines', 'periodLock']);
+    }
+
+    public function reviewPeriodCloseAdjustment(AccountingPeriodCloseAdjustment $adjustment, ?string $notes = null, ?int $reviewedBy = null): AccountingPeriodCloseAdjustment
+    {
+        if (! Schema::hasTable('accounting_period_close_adjustments')) {
+            throw ValidationException::withMessages([
+                'period_close_adjustment' => 'Run tenant migrations before using period close adjustments.',
+            ]);
+        }
+
+        $adjustment->loadMissing('journalEntry');
+
+        if (! in_array($adjustment->journalEntry?->status, ['posted', 'approved'], true)) {
+            throw ValidationException::withMessages([
+                'period_close_adjustment' => 'Only posted or approved adjustment journals can be reviewed.',
+            ]);
+        }
+
+        $adjustment->forceFill([
+            'review_status' => 'reviewed',
+            'review_notes' => $notes,
+            'reviewed_by' => $reviewedBy,
+            'reviewed_at' => now(),
+        ])->save();
+
+        $this->recordAudit('period_close_adjustment_reviewed', $adjustment, "Period close adjustment {$adjustment->journalEntry?->journal_number} reviewed.", [
+            'journal_entry_id' => $adjustment->journal_entry_id,
+            'review_status' => 'reviewed',
+        ], $reviewedBy);
+
+        return $adjustment->refresh()->load(['journalEntry.lines', 'periodLock', 'reviewer']);
     }
 
     public function getSetupProfile(): ?AccountingSetupProfile
@@ -1416,6 +1507,20 @@ class AccountingRuntimeService
             ->whereDate('entry_date', '<=', $end)
             ->count();
 
+        $closeAdjustmentsPendingReview = 0;
+
+        if (Schema::hasTable('accounting_period_close_adjustments')) {
+            $closeAdjustmentsPendingReview = AccountingPeriodCloseAdjustment::query()
+                ->leftJoin('journal_entries', 'journal_entries.id', '=', 'accounting_period_close_adjustments.journal_entry_id')
+                ->whereDate('accounting_period_close_adjustments.target_period_start', '>=', $start)
+                ->whereDate('accounting_period_close_adjustments.target_period_end', '<=', $end)
+                ->where(function ($query) {
+                    $query->where('accounting_period_close_adjustments.review_status', '!=', 'reviewed')
+                        ->orWhereIn('journal_entries.status', ['pending_approval', 'approved']);
+                })
+                ->count();
+        }
+
         $items = [
             'unposted_accounting_events' => [
                 'label' => 'Unposted accounting events',
@@ -1447,6 +1552,11 @@ class AccountingRuntimeService
                 'label' => 'Unapproved manual journals',
                 'count' => $unapprovedManualJournals,
                 'blocking' => $unapprovedManualJournals > 0,
+            ],
+            'period_close_adjustments_pending_review' => [
+                'label' => 'Period close adjustments pending review',
+                'count' => $closeAdjustmentsPendingReview,
+                'blocking' => $closeAdjustmentsPendingReview > 0,
             ],
         ];
 

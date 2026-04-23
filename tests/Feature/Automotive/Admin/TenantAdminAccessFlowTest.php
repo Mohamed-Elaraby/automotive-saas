@@ -628,6 +628,115 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertSee('JE-STMT-002', false);
     }
 
+    public function test_period_close_adjustments_are_journal_backed_and_reviewed_before_final_close(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $startCloseResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-locks/closing?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => now()->startOfMonth()->toDateString(),
+            'period_end' => now()->endOfMonth()->toDateString(),
+            'notes' => 'Month-end close',
+        ]);
+
+        $startCloseResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $period = DB::connection('tenant')->table('accounting_period_locks')->where('status', 'closing')->latest('id')->first();
+            $this->assertNotNull($period);
+            $periodId = $period->id;
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $createAdjustmentResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-close-adjustments?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'accounting_period_lock_id' => $periodId,
+            'adjustment_type' => 'accrual',
+            'entry_date' => now()->toDateString(),
+            'currency' => 'USD',
+            'memo' => 'Accrual for close',
+            'rationale' => 'Record outstanding month-end accrual before lock.',
+            'lines' => [
+                [
+                    'account_code' => '5200 Operating Expense',
+                    'account_name' => 'Operating Expense',
+                    'debit' => 125,
+                    'credit' => 0,
+                    'memo' => 'Accrual debit',
+                ],
+                [
+                    'account_code' => '2000 Accounts Payable',
+                    'account_name' => 'Accounts Payable',
+                    'debit' => 0,
+                    'credit' => 125,
+                    'memo' => 'Accrual credit',
+                ],
+            ],
+        ]);
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $adjustment = DB::connection('tenant')->table('accounting_period_close_adjustments')->latest('id')->first();
+            $this->assertNotNull($adjustment);
+            $journal = DB::connection('tenant')->table('journal_entries')->where('id', $adjustment->journal_entry_id)->first();
+            $this->assertNotNull($journal);
+            $this->assertSame('posted', $journal->status);
+            $this->assertSame('pending', $adjustment->review_status);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'period_close_adjustment_created',
+            ], 'tenant');
+            $adjustmentId = $adjustment->id;
+            $journalId = $journal->id;
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $createAdjustmentResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger/journal-entries/{$journalId}?workspace_product=accounting");
+
+        $beforeReview = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $beforeReview->assertOk();
+        $beforeReview->assertSee('Close Adjustments Review', false);
+        $beforeReview->assertSee('ACCRUAL', false);
+        $beforeReview->assertSee('Period close adjustments pending review', false);
+
+        $reviewResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/period-close-adjustments/{$adjustmentId}/review?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'review_notes' => 'Close adjustment reviewed and accepted.',
+        ]);
+
+        $reviewResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_period_close_adjustments', [
+                'id' => $adjustmentId,
+                'review_status' => 'reviewed',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'period_close_adjustment_reviewed',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $afterReview = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $afterReview->assertOk();
+        $afterReview->assertSee('REVIEWED', false);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

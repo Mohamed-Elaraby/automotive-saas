@@ -770,6 +770,93 @@
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Period Close Adjustment</h5></div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-close-adjustments.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Close Period</label>
+                                            <select name="accounting_period_lock_id" class="form-select">
+                                                @foreach(($moduleData['accounting_period_locks'] ?? collect())->whereIn('status', ['closing', 'locked']) as $lock)
+                                                    <option value="{{ $lock->id }}">{{ optional($lock->period_start)->format('Y-m-d') }} to {{ optional($lock->period_end)->format('Y-m-d') }} · {{ strtoupper($lock->status) }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Adjustment Type</label>
+                                            <select name="adjustment_type" class="form-select">
+                                                <option value="closing_entry">Closing Entry</option>
+                                                <option value="accrual">Accrual</option>
+                                                <option value="reclass">Reclass</option>
+                                                <option value="correction">Correction</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Currency</label><input type="text" maxlength="3" name="currency" class="form-control" value="{{ old('currency', 'USD') }}"></div>
+                                        <div class="col-md-4 mb-3 d-flex align-items-end"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="close_adjustment_approval" name="requires_approval" value="1" {{ old('requires_approval') ? 'checked' : '' }}><label class="form-check-label" for="close_adjustment_approval">Requires approval</label></div></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo', 'Period close adjustment') }}"></div>
+                                    <div class="mb-3"><label class="form-label">Rationale</label><textarea name="rationale" class="form-control" rows="2">{{ old('rationale') }}</textarea></div>
+                                    @for($lineIndex = 0; $lineIndex < 2; $lineIndex++)
+                                        <div class="border rounded p-2 mb-2">
+                                            <div class="fw-semibold small mb-2">Line {{ $lineIndex + 1 }}</div>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-2"><label class="form-label">Account</label><input type="text" name="lines[{{ $lineIndex }}][account_code]" list="account-catalog-options" class="form-control" value="{{ old("lines.{$lineIndex}.account_code", $lineIndex === 0 ? '5200 Operating Expense' : '3900 Inventory Adjustment Offset') }}"></div>
+                                                <div class="col-md-6 mb-2"><label class="form-label">Name</label><input type="text" name="lines[{{ $lineIndex }}][account_name]" class="form-control" value="{{ old("lines.{$lineIndex}.account_name", $lineIndex === 0 ? 'Operating Expense' : 'Inventory Adjustment Offset') }}"></div>
+                                                <div class="col-md-4 mb-2"><label class="form-label">Debit</label><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][debit]" class="form-control" value="{{ old("lines.{$lineIndex}.debit", $lineIndex === 0 ? '0.00' : '0.00') }}"></div>
+                                                <div class="col-md-4 mb-2"><label class="form-label">Credit</label><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][credit]" class="form-control" value="{{ old("lines.{$lineIndex}.credit", $lineIndex === 0 ? '0.00' : '0.00') }}"></div>
+                                                <div class="col-md-4 mb-2"><label class="form-label">Line Memo</label><input type="text" name="lines[{{ $lineIndex }}][memo]" class="form-control" value="{{ old("lines.{$lineIndex}.memo") }}"></div>
+                                            </div>
+                                        </div>
+                                    @endfor
+                                    <button type="submit" class="btn btn-primary">Create Close Adjustment</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Close Adjustments Review</h5></div>
+                            <div class="card-body">
+                                @forelse(($moduleData['period_close_adjustments'] ?? collect()) as $adjustment)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <div class="fw-semibold">{{ $adjustment->journalEntry?->journal_number ?: 'Adjustment' }}</div>
+                                                <div class="text-muted small">{{ strtoupper(str_replace('_', ' ', $adjustment->adjustment_type)) }} · {{ optional($adjustment->target_period_start)->format('Y-m-d') }} to {{ optional($adjustment->target_period_end)->format('Y-m-d') }}</div>
+                                                <div class="text-muted small">{{ $adjustment->rationale }}</div>
+                                                <div class="text-muted small">Journal status: {{ strtoupper($adjustment->journalEntry?->status ?: 'unknown') }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $adjustment->review_status === 'reviewed' ? 'bg-success' : 'bg-warning text-dark' }}">{{ strtoupper($adjustment->review_status) }}</span>
+                                                <div class="mt-2">
+                                                    <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $adjustment->journal_entry_id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light">Open Journal</a>
+                                                </div>
+                                                @if($adjustment->review_status !== 'reviewed')
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-close-adjustments.review', ['adjustment' => $adjustment->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <input type="text" name="review_notes" class="form-control form-control-sm mb-2" placeholder="Review notes">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Mark Reviewed</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No period close adjustments have been recorded yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-settings">
                     <div>

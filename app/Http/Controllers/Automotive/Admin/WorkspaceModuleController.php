@@ -359,6 +359,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_period_locks' => $this->accountingRuntimeService->getPeriodLocks(),
                 'accounting_period_lock_summary' => $this->accountingRuntimeService->periodLockSummary(),
                 'accounting_close_checklist' => $this->accountingRuntimeService->periodCloseChecklist(),
+                'period_close_adjustments' => $this->accountingRuntimeService->getPeriodCloseAdjustments(null, 25),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'accounting_bank_accounts' => $this->accountingRuntimeService->getBankAccounts(),
@@ -660,6 +661,73 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Accounting period archived successfully.');
+    }
+
+    public function storePeriodCloseAdjustment(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_CREATE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'accounting_period_lock_id' => ['required', 'integer', 'exists:accounting_period_locks,id'],
+            'adjustment_type' => ['required', 'in:closing_entry,accrual,reclass,correction'],
+            'entry_date' => ['required', 'date'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'memo' => ['nullable', 'string', 'max:2000'],
+            'rationale' => ['required', 'string', 'max:2000'],
+            'requires_approval' => ['nullable', 'boolean'],
+            'lines' => ['required', 'array', 'min:2'],
+            'lines.*.account_code' => ['nullable', 'string', 'max:120'],
+            'lines.*.account_name' => ['nullable', 'string', 'max:255'],
+            'lines.*.debit' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.credit' => ['nullable', 'numeric', 'min:0'],
+            'lines.*.memo' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $adjustment = $this->accountingRuntimeService->createPeriodCloseAdjustment(
+                $validated,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $adjustment->journal_entry_id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', 'Period close adjustment journal created successfully.');
+    }
+
+    public function reviewPeriodCloseAdjustment(Request $request, \App\Models\AccountingPeriodCloseAdjustment $adjustment): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::PERIODS_LOCK);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'review_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->reviewPeriodCloseAdjustment(
+                $adjustment,
+                $validated['review_notes'] ?? null,
+                auth('automotive_admin')->id()
+            );
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Period close adjustment reviewed successfully.');
     }
 
     public function storeAccountingPolicy(Request $request): RedirectResponse

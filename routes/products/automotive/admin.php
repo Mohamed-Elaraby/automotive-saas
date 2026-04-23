@@ -160,6 +160,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.period-locks.closing');
                 Route::post('/general-ledger/period-locks/{period}/archive', [WorkspaceModuleController::class, 'archiveAccountingPeriod'])
                     ->name('modules.general-ledger.period-locks.archive');
+                Route::post('/general-ledger/period-close-adjustments', [WorkspaceModuleController::class, 'storePeriodCloseAdjustment'])
+                    ->name('modules.general-ledger.period-close-adjustments.store');
+                Route::post('/general-ledger/period-close-adjustments/{adjustment}/review', [WorkspaceModuleController::class, 'reviewPeriodCloseAdjustment'])
+                    ->name('modules.general-ledger.period-close-adjustments.review');
                 Route::post('/general-ledger/policies', [WorkspaceModuleController::class, 'storeAccountingPolicy'])
                     ->name('modules.general-ledger.policies.store');
                 Route::post('/general-ledger/tax-rates', [WorkspaceModuleController::class, 'storeAccountingTaxRate'])
