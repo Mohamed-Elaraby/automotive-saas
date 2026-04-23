@@ -396,6 +396,106 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertSee('href="#accounting-reports"', false);
     }
 
+    public function test_accounting_accounts_support_ifrs_statement_mapping_without_changing_journal_source_of_truth(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting")
+            ->assertOk()
+            ->assertSee('IFRS Category', false)
+            ->assertSee('IFRS Section', false);
+
+        $accountResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/accounts?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'code' => '5300 Marketing Expense',
+            'name' => 'Marketing Expense',
+            'type' => 'expense',
+            'normal_balance' => 'debit',
+            'ifrs_category' => 'operating_expenses',
+            'statement_report' => 'profit_and_loss',
+            'statement_section' => 'Expenses',
+            'statement_subsection' => 'Selling and marketing',
+            'statement_order' => 530,
+            'cash_flow_category' => 'operating',
+            'is_active' => '1',
+        ]);
+
+        $accountResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_accounts', [
+                'code' => '1000 Cash On Hand',
+                'statement_report' => 'balance_sheet',
+                'statement_section' => 'Assets',
+                'statement_subsection' => 'Cash and cash equivalents',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_accounts', [
+                'code' => '5300 Marketing Expense',
+                'ifrs_category' => 'operating_expenses',
+                'statement_report' => 'profit_and_loss',
+                'statement_section' => 'Expenses',
+                'statement_subsection' => 'Selling and marketing',
+                'statement_order' => 530,
+                'cash_flow_category' => 'operating',
+            ], 'tenant');
+
+            $journalId = DB::connection('tenant')->table('journal_entries')->insertGetId([
+                'journal_number' => 'JE-IFRS-001',
+                'status' => 'posted',
+                'entry_date' => '2026-04-23',
+                'currency' => 'USD',
+                'debit_total' => 75,
+                'credit_total' => 75,
+                'memo' => 'IFRS mapped expense proof',
+                'posted_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::connection('tenant')->table('journal_entry_lines')->insert([
+                [
+                    'journal_entry_id' => $journalId,
+                    'account_code' => '5300 Marketing Expense',
+                    'account_name' => 'Marketing Expense',
+                    'line_type' => 'debit',
+                    'debit' => 75,
+                    'credit' => 0,
+                    'memo' => 'Mapped expense',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => $journalId,
+                    'account_code' => '1000 Cash On Hand',
+                    'account_name' => 'Cash On Hand',
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => 75,
+                    'memo' => 'Cash payment',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Selling and marketing', false);
+        $ledgerResponse->assertSee('Cash and cash equivalents', false);
+        $ledgerResponse->assertSee('JE-IFRS-001', false);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

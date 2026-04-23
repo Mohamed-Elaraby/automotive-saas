@@ -754,6 +754,18 @@
                                         <div class="col-6 mb-2"><label class="form-label">Type</label><select name="type" class="form-select"><option value="asset" @selected(old('type') === 'asset')>Asset</option><option value="liability" @selected(old('type') === 'liability')>Liability</option><option value="equity" @selected(old('type') === 'equity')>Equity</option><option value="revenue" @selected(old('type') === 'revenue')>Revenue</option><option value="expense" @selected(old('type') === 'expense')>Expense</option></select></div>
                                         <div class="col-6 mb-2"><label class="form-label">Normal</label><select name="normal_balance" class="form-select"><option value="debit" @selected(old('normal_balance') === 'debit')>Debit</option><option value="credit" @selected(old('normal_balance') === 'credit')>Credit</option></select></div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-2"><label class="form-label">IFRS Category</label><input type="text" name="ifrs_category" class="form-control" value="{{ old('ifrs_category') }}" placeholder="current_assets"></div>
+                                        <div class="col-6 mb-2"><label class="form-label">Statement</label><select name="statement_report" class="form-select"><option value="">Auto</option><option value="balance_sheet" @selected(old('statement_report') === 'balance_sheet')>Balance Sheet</option><option value="profit_and_loss" @selected(old('statement_report') === 'profit_and_loss')>Profit &amp; Loss</option></select></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-2"><label class="form-label">Section</label><input type="text" name="statement_section" class="form-control" value="{{ old('statement_section') }}" placeholder="Assets"></div>
+                                        <div class="col-6 mb-2"><label class="form-label">Subsection</label><input type="text" name="statement_subsection" class="form-control" value="{{ old('statement_subsection') }}" placeholder="Current assets"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-5 mb-2"><label class="form-label">Order</label><input type="number" min="1" max="999" name="statement_order" class="form-control" value="{{ old('statement_order') }}" placeholder="100"></div>
+                                        <div class="col-7 mb-2"><label class="form-label">Cash Flow</label><select name="cash_flow_category" class="form-select"><option value="">Auto</option><option value="operating" @selected(old('cash_flow_category') === 'operating')>Operating</option><option value="investing" @selected(old('cash_flow_category') === 'investing')>Investing</option><option value="financing" @selected(old('cash_flow_category') === 'financing')>Financing</option><option value="not_applicable" @selected(old('cash_flow_category') === 'not_applicable')>N/A</option></select></div>
+                                    </div>
                                     <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="account_is_active" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}><label class="form-check-label" for="account_is_active">Active</label></div>
                                     <button type="submit" class="btn btn-primary">Save Account</button>
                                 </form>
@@ -761,9 +773,10 @@
                                 @forelse(($moduleData['accounting_accounts'] ?? collect())->take(12) as $account)
                                     <div class="border-bottom pb-2 mb-2">
                                         <div class="d-flex justify-content-between gap-2">
-                                            <div><div class="fw-semibold">{{ $account->code }}</div><div class="text-muted small">{{ $account->name }}</div><div class="text-muted small">{{ ucfirst($account->normal_balance) }} normal balance</div></div>
+                                            <div><div class="fw-semibold">{{ $account->code }}</div><div class="text-muted small">{{ $account->name }}</div><div class="text-muted small">{{ ucfirst($account->normal_balance) }} normal balance</div><div class="text-muted small">{{ $account->statement_section ?: ucfirst($account->type) }}{{ $account->statement_subsection ? ' · '.$account->statement_subsection : '' }}{{ $account->statement_order ? ' · Order '.$account->statement_order : '' }}</div></div>
                                             <div class="text-end">
                                                 <span class="badge bg-light text-dark">{{ strtoupper($account->type) }}</span>
+                                                @if($account->ifrs_category)<span class="badge bg-info">{{ strtoupper(str_replace('_', ' ', $account->ifrs_category)) }}</span>@endif
                                                 <span class="badge {{ $account->is_active ? 'bg-success' : 'bg-secondary' }}">{{ $account->is_active ? 'ACTIVE' : 'INACTIVE' }}</span>
                                             </div>
                                         </div>
@@ -1439,18 +1452,19 @@
                             <div class="card-body">
                                 <div class="table-responsive">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th>Account</th><th>Name</th><th class="text-end">Debit</th><th class="text-end">Credit</th><th class="text-end">Balance</th></tr></thead>
+                                        <thead><tr><th>Account</th><th>Name</th><th>IFRS Section</th><th class="text-end">Debit</th><th class="text-end">Credit</th><th class="text-end">Balance</th></tr></thead>
                                         <tbody>
                                         @forelse(($moduleData['trial_balance'] ?? collect()) as $row)
                                             <tr>
                                                 <td>{{ $row->account_code }}</td>
                                                 <td>{{ $row->account_name ?: '-' }}</td>
+                                                <td><span class="text-muted small">{{ $row->statement_section ?? '-' }}{{ !empty($row->statement_subsection) ? ' · '.$row->statement_subsection : '' }}</span></td>
                                                 <td class="text-end">{{ number_format((float) $row->debit_total, 2) }}</td>
                                                 <td class="text-end">{{ number_format((float) $row->credit_total, 2) }}</td>
                                                 <td class="text-end">{{ number_format((float) $row->balance, 2) }}</td>
                                             </tr>
                                         @empty
-                                            <tr><td colspan="5" class="text-muted">No posted journal lines are available yet.</td></tr>
+                                            <tr><td colspan="6" class="text-muted">No posted journal lines are available yet.</td></tr>
                                         @endforelse
                                         </tbody>
                                     </table>

@@ -769,12 +769,13 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 4 of 10: IFRS-Ready Chart Of Accounts And Mapping Layer
+### Professional Accounting Roadmap - Package 5 of 10: Financial Statement Builder And Notes Foundation
 Recommended scope:
-- add a stronger IFRS-ready account classification layer over the chart of accounts
-- map accounts to financial statement sections and report ordering
-- keep trial balance, P&L, and balance sheet journal-driven
-- avoid forcing one chart template on every tenant; preserve tenant customization
+- add a clearer financial statement builder surface for P&L and balance sheet outputs
+- prepare statement notes/disclosures foundation without turning notes into the accounting source of truth
+- use IFRS account mappings for sections and ordering
+- keep all statement amounts journal-driven
+- preserve tenant customization of account mappings and templates
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -784,8 +785,8 @@ Professional Accounting Roadmap progress:
 1. Standalone Accounting Product Readiness - completed
 2. First-Time Setup Wizard - completed
 3. General Ledger UX Simplification - completed
-4. IFRS-Ready Chart Of Accounts And Mapping Layer - next
-5. Financial Statement Builder And Notes Foundation - pending
+4. IFRS-Ready Chart Of Accounts And Mapping Layer - completed
+5. Financial Statement Builder And Notes Foundation - next
 6. Advanced Period Close And Adjustments - pending
 7. Tax/VAT Compliance Expansion - pending
 8. Multi-Currency And Exchange Revaluation - pending
@@ -3396,3 +3397,59 @@ Verification:
 
 Next package:
 - Package 4 of 10: IFRS-Ready Chart Of Accounts And Mapping Layer
+
+## 36) Professional Accounting Roadmap Package 4 - IFRS-Ready Chart Of Accounts And Mapping Layer
+Status:
+- completed
+- this is package 4 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- `accounting_accounts` now supports IFRS-ready mapping fields for each tenant account:
+  - `ifrs_category`
+  - `statement_report`
+  - `statement_section`
+  - `statement_subsection`
+  - `statement_order`
+  - `cash_flow_category`
+- default accounting accounts now receive mapping defaults for:
+  - balance sheet sections such as cash, receivables, inventory, payables, equity, and tax
+  - profit and loss sections such as revenue, cost of sales, and operating expenses
+- creating or updating an account from General Ledger now accepts explicit IFRS/report mapping
+- if an account is already used by posted journal lines, the account still cannot be renamed or reclassified structurally, but mapping/status/notes updates remain controlled
+- trial balance remains journal-driven and now displays IFRS section/subsection information from the account mapping layer
+- journal entries and journal lines remain the accounting source of truth; mapping only controls classification and presentation
+
+Database note:
+- this package added a new tenant migration:
+  - `database/migrations/tenant/2026_04_23_100000_add_ifrs_mapping_to_accounting_accounts_table.php`
+- after deploying this package, run tenant migrations
+
+Important files changed:
+- `database/migrations/tenant/2026_04_23_100000_add_ifrs_mapping_to_accounting_accounts_table.php`
+- `app/Models/AccountingAccount.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingAccount.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_23_100000_add_ifrs_mapping_to_accounting_accounts_table.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_accounts_support_ifrs_statement_mapping_without_changing_journal_source_of_truth`
+  - result: 1 passed, 13 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='accounting_accounts_support_ifrs_statement_mapping_without_changing_journal_source_of_truth|general_ledger_shows_simplified_command_center_for_accounting_users|accounting_first_time_setup_wizard_configures_defaults_idempotently|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 58 assertions
+
+Next package:
+- Package 5 of 10: Financial Statement Builder And Notes Foundation

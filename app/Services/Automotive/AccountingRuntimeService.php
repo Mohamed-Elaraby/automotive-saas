@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -1095,6 +1096,10 @@ class AccountingRuntimeService
                 'notes' => $data['notes'] ?? null,
             ];
 
+            if ($this->accountMappingColumnsAvailable()) {
+                $payload = array_merge($payload, $this->accountMappingPayload($data, $code, $type));
+            }
+
             if ($account && $this->accountCodeIsUsed($account->code)) {
                 foreach (['name', 'type', 'normal_balance'] as $field) {
                     if ((string) $account->{$field} !== (string) $payload[$field]) {
@@ -1107,13 +1112,20 @@ class AccountingRuntimeService
                 $account->forceFill([
                     'is_active' => $payload['is_active'],
                     'notes' => $payload['notes'],
-                ])->save();
+                ] + ($this->accountMappingColumnsAvailable() ? [
+                    'ifrs_category' => $payload['ifrs_category'],
+                    'statement_report' => $payload['statement_report'],
+                    'statement_section' => $payload['statement_section'],
+                    'statement_subsection' => $payload['statement_subsection'],
+                    'statement_order' => $payload['statement_order'],
+                    'cash_flow_category' => $payload['cash_flow_category'],
+                ] : []))->save();
 
                 $account = $account->refresh();
                 $this->recordAudit('account_saved', $account, "Accounting account {$account->code} updated.", [
                     'code' => $account->code,
                     'action' => 'updated',
-                    'changed_fields' => ['is_active', 'notes'],
+                    'changed_fields' => ['is_active', 'notes', 'ifrs_mapping'],
                 ], $createdBy);
 
                 return $account;
@@ -1129,6 +1141,9 @@ class AccountingRuntimeService
                 'action' => $alreadyExists ? 'updated' : 'created',
                 'type' => $account->type,
                 'normal_balance' => $account->normal_balance,
+                'ifrs_category' => $account->ifrs_category ?? null,
+                'statement_report' => $account->statement_report ?? null,
+                'statement_section' => $account->statement_section ?? null,
             ], $createdBy);
 
             return $account;
@@ -2943,20 +2958,46 @@ class AccountingRuntimeService
 
     public function trialBalance(array $filters = []): Collection
     {
-        return DB::table('journal_entry_lines')
+        $mappingAvailable = $this->accountMappingColumnsAvailable();
+        $query = DB::table('journal_entry_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->leftJoin('accounting_accounts', 'accounting_accounts.code', '=', 'journal_entry_lines.account_code')
             ->whereIn('journal_entries.status', ['posted', 'reversed'])
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('journal_entries.entry_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('journal_entries.entry_date', '<=', $filters['date_to']))
-            ->groupBy('journal_entry_lines.account_code', 'journal_entry_lines.account_name')
-            ->orderBy('journal_entry_lines.account_code')
-            ->select([
+            ->groupBy('journal_entry_lines.account_code', 'journal_entry_lines.account_name');
+
+        $select = [
                 'journal_entry_lines.account_code',
                 'journal_entry_lines.account_name',
                 DB::raw('SUM(journal_entry_lines.debit) as debit_total'),
                 DB::raw('SUM(journal_entry_lines.credit) as credit_total'),
                 DB::raw('SUM(journal_entry_lines.debit - journal_entry_lines.credit) as balance'),
-            ])
+        ];
+
+        if ($mappingAvailable) {
+            $query->groupBy(
+                'accounting_accounts.ifrs_category',
+                'accounting_accounts.statement_report',
+                'accounting_accounts.statement_section',
+                'accounting_accounts.statement_subsection',
+                'accounting_accounts.statement_order',
+                'accounting_accounts.cash_flow_category'
+            );
+            $select = array_merge($select, [
+                'accounting_accounts.ifrs_category',
+                'accounting_accounts.statement_report',
+                'accounting_accounts.statement_section',
+                'accounting_accounts.statement_subsection',
+                'accounting_accounts.statement_order',
+                'accounting_accounts.cash_flow_category',
+            ]);
+        }
+
+        return $query
+            ->orderBy($mappingAvailable ? 'accounting_accounts.statement_order' : 'journal_entry_lines.account_code')
+            ->orderBy('journal_entry_lines.account_code')
+            ->select($select)
             ->get();
     }
 
@@ -3147,7 +3188,8 @@ class AccountingRuntimeService
 
     protected function statementRows(array $accountTypes, array $codePrefixes, array $filters = []): Collection
     {
-        return DB::table('journal_entry_lines')
+        $mappingAvailable = $this->accountMappingColumnsAvailable();
+        $query = DB::table('journal_entry_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->leftJoin('accounting_accounts', 'accounting_accounts.code', '=', 'journal_entry_lines.account_code')
             ->where('journal_entries.status', 'posted')
@@ -3160,15 +3202,39 @@ class AccountingRuntimeService
             })
             ->when(! empty($filters['date_from']), fn ($query) => $query->whereDate('journal_entries.entry_date', '>=', $filters['date_from']))
             ->when(! empty($filters['date_to']), fn ($query) => $query->whereDate('journal_entries.entry_date', '<=', $filters['date_to']))
-            ->groupBy('journal_entry_lines.account_code', 'journal_entry_lines.account_name', 'accounting_accounts.type')
-            ->orderBy('journal_entry_lines.account_code')
-            ->select([
+            ->groupBy('journal_entry_lines.account_code', 'journal_entry_lines.account_name', 'accounting_accounts.type');
+
+        $select = [
                 'journal_entry_lines.account_code',
                 'journal_entry_lines.account_name',
                 'accounting_accounts.type as account_type',
                 DB::raw('SUM(journal_entry_lines.debit) as debit_total'),
                 DB::raw('SUM(journal_entry_lines.credit) as credit_total'),
-            ])
+        ];
+
+        if ($mappingAvailable) {
+            $query->groupBy(
+                'accounting_accounts.ifrs_category',
+                'accounting_accounts.statement_report',
+                'accounting_accounts.statement_section',
+                'accounting_accounts.statement_subsection',
+                'accounting_accounts.statement_order',
+                'accounting_accounts.cash_flow_category'
+            );
+            $select = array_merge($select, [
+                'accounting_accounts.ifrs_category',
+                'accounting_accounts.statement_report',
+                'accounting_accounts.statement_section',
+                'accounting_accounts.statement_subsection',
+                'accounting_accounts.statement_order',
+                'accounting_accounts.cash_flow_category',
+            ]);
+        }
+
+        return $query
+            ->orderBy($mappingAvailable ? 'accounting_accounts.statement_order' : 'journal_entry_lines.account_code')
+            ->orderBy('journal_entry_lines.account_code')
+            ->select($select)
             ->get()
             ->filter(fn ($row): bool => round(abs((float) $row->debit_total - (float) $row->credit_total), 2) > 0)
             ->values();
@@ -3177,24 +3243,24 @@ class AccountingRuntimeService
     protected function ensureDefaultAccounts(): void
     {
         $defaults = [
-            ['1100 Accounts Receivable', 'Accounts Receivable', 'asset', 'debit'],
-            ['1000 Cash On Hand', 'Cash On Hand', 'asset', 'debit'],
-            ['1010 Bank Account', 'Bank Account', 'asset', 'debit'],
-            ['1300 Inventory Asset', 'Inventory Asset', 'asset', 'debit'],
-            ['1410 VAT Input Receivable', 'VAT Input Receivable', 'asset', 'debit'],
-            ['2000 Accounts Payable', 'Accounts Payable', 'liability', 'credit'],
-            ['2100 VAT Output Payable', 'VAT Output Payable', 'liability', 'credit'],
-            ['3900 Inventory Adjustment Offset', 'Inventory Adjustment Offset', 'equity', 'credit'],
-            ['4100 Service Labor Revenue', 'Service Labor Revenue', 'revenue', 'credit'],
-            ['4100 Service Revenue', 'Service Revenue', 'revenue', 'credit'],
-            ['4200 Parts Revenue', 'Parts Revenue', 'revenue', 'credit'],
-            ['5000 Cost Of Goods Sold', 'Cost Of Goods Sold', 'expense', 'debit'],
-            ['5100 Inventory Adjustment Expense', 'Inventory Adjustment Expense', 'expense', 'debit'],
-            ['5200 Operating Expense', 'Operating Expense', 'expense', 'debit'],
+            ['1100 Accounts Receivable', 'Accounts Receivable', 'asset', 'debit', 'current_assets', 'balance_sheet', 'Assets', 'Trade and other receivables', 110],
+            ['1000 Cash On Hand', 'Cash On Hand', 'asset', 'debit', 'current_assets', 'balance_sheet', 'Assets', 'Cash and cash equivalents', 100],
+            ['1010 Bank Account', 'Bank Account', 'asset', 'debit', 'current_assets', 'balance_sheet', 'Assets', 'Cash and cash equivalents', 101],
+            ['1300 Inventory Asset', 'Inventory Asset', 'asset', 'debit', 'current_assets', 'balance_sheet', 'Assets', 'Inventories', 130],
+            ['1410 VAT Input Receivable', 'VAT Input Receivable', 'asset', 'debit', 'current_assets', 'balance_sheet', 'Assets', 'Tax recoverable', 140],
+            ['2000 Accounts Payable', 'Accounts Payable', 'liability', 'credit', 'current_liabilities', 'balance_sheet', 'Liabilities', 'Trade and other payables', 200],
+            ['2100 VAT Output Payable', 'VAT Output Payable', 'liability', 'credit', 'current_liabilities', 'balance_sheet', 'Liabilities', 'Tax payable', 210],
+            ['3900 Inventory Adjustment Offset', 'Inventory Adjustment Offset', 'equity', 'credit', 'equity', 'balance_sheet', 'Equity', 'Retained earnings and reserves', 390],
+            ['4100 Service Labor Revenue', 'Service Labor Revenue', 'revenue', 'credit', 'revenue', 'profit_and_loss', 'Revenue', 'Service revenue', 410],
+            ['4100 Service Revenue', 'Service Revenue', 'revenue', 'credit', 'revenue', 'profit_and_loss', 'Revenue', 'Service revenue', 410],
+            ['4200 Parts Revenue', 'Parts Revenue', 'revenue', 'credit', 'revenue', 'profit_and_loss', 'Revenue', 'Parts revenue', 420],
+            ['5000 Cost Of Goods Sold', 'Cost Of Goods Sold', 'expense', 'debit', 'cost_of_sales', 'profit_and_loss', 'Expenses', 'Cost of sales', 500],
+            ['5100 Inventory Adjustment Expense', 'Inventory Adjustment Expense', 'expense', 'debit', 'operating_expenses', 'profit_and_loss', 'Expenses', 'Inventory adjustments', 510],
+            ['5200 Operating Expense', 'Operating Expense', 'expense', 'debit', 'operating_expenses', 'profit_and_loss', 'Expenses', 'Operating expenses', 520],
         ];
 
-        foreach ($defaults as [$code, $name, $type, $normalBalance]) {
-            AccountingAccount::query()->firstOrCreate(
+        foreach ($defaults as [$code, $name, $type, $normalBalance, $ifrsCategory, $statementReport, $statementSection, $statementSubsection, $statementOrder]) {
+            $account = AccountingAccount::query()->firstOrCreate(
                 ['code' => $code],
                 [
                     'name' => $name,
@@ -3203,7 +3269,83 @@ class AccountingRuntimeService
                     'is_active' => true,
                 ]
             );
+
+            if ($this->accountMappingColumnsAvailable()) {
+                $account->forceFill([
+                    'ifrs_category' => $account->ifrs_category ?: $ifrsCategory,
+                    'statement_report' => $account->statement_report ?: $statementReport,
+                    'statement_section' => $account->statement_section ?: $statementSection,
+                    'statement_subsection' => $account->statement_subsection ?: $statementSubsection,
+                    'statement_order' => $account->statement_order ?: $statementOrder,
+                    'cash_flow_category' => $account->cash_flow_category ?: $this->cashFlowCategoryForType($type),
+                ])->save();
+            }
         }
+    }
+
+    protected function accountMappingColumnsAvailable(): bool
+    {
+        return Schema::hasColumn('accounting_accounts', 'statement_section')
+            && Schema::hasColumn('accounting_accounts', 'statement_order');
+    }
+
+    protected function accountMappingPayload(array $data, string $code, string $type): array
+    {
+        $defaults = $this->defaultAccountMapping($code, $type);
+
+        return [
+            'ifrs_category' => $data['ifrs_category'] ?? $defaults['ifrs_category'],
+            'statement_report' => $data['statement_report'] ?? $defaults['statement_report'],
+            'statement_section' => $data['statement_section'] ?? $defaults['statement_section'],
+            'statement_subsection' => $data['statement_subsection'] ?? $defaults['statement_subsection'],
+            'statement_order' => (int) ($data['statement_order'] ?? $defaults['statement_order']),
+            'cash_flow_category' => $data['cash_flow_category'] ?? $defaults['cash_flow_category'],
+        ];
+    }
+
+    protected function defaultAccountMapping(string $code, string $type): array
+    {
+        return [
+            'ifrs_category' => match ($type) {
+                'asset' => 'current_assets',
+                'liability' => 'current_liabilities',
+                'equity' => 'equity',
+                'revenue' => 'revenue',
+                default => Str::startsWith($code, '5') ? 'operating_expenses' : 'expenses',
+            },
+            'statement_report' => in_array($type, ['revenue', 'expense'], true) ? 'profit_and_loss' : 'balance_sheet',
+            'statement_section' => match ($type) {
+                'asset' => 'Assets',
+                'liability' => 'Liabilities',
+                'equity' => 'Equity',
+                'revenue' => 'Revenue',
+                default => 'Expenses',
+            },
+            'statement_subsection' => match ($type) {
+                'asset' => 'Current assets',
+                'liability' => 'Current liabilities',
+                'equity' => 'Equity',
+                'revenue' => 'Revenue',
+                default => 'Operating expenses',
+            },
+            'statement_order' => match ($type) {
+                'asset' => 100,
+                'liability' => 200,
+                'equity' => 300,
+                'revenue' => 400,
+                default => 500,
+            },
+            'cash_flow_category' => $this->cashFlowCategoryForType($type),
+        ];
+    }
+
+    protected function cashFlowCategoryForType(string $type): string
+    {
+        return match ($type) {
+            'asset', 'liability', 'revenue', 'expense' => 'operating',
+            'equity' => 'financing',
+            default => 'not_applicable',
+        };
     }
 
     protected function ensureDefaultTaxRate(): AccountingTaxRate

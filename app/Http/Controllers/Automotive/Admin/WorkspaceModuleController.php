@@ -496,6 +496,12 @@ class WorkspaceModuleController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:asset,liability,equity,revenue,expense'],
             'normal_balance' => ['required', 'in:debit,credit'],
+            'ifrs_category' => ['nullable', 'string', 'max:80'],
+            'statement_report' => ['nullable', 'in:balance_sheet,profit_and_loss'],
+            'statement_section' => ['nullable', 'string', 'max:120'],
+            'statement_subsection' => ['nullable', 'string', 'max:120'],
+            'statement_order' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'cash_flow_category' => ['nullable', 'in:operating,investing,financing,not_applicable'],
             'is_active' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
