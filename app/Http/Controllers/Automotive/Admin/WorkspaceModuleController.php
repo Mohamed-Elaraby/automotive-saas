@@ -390,6 +390,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_audit_event_types' => $this->accountingRuntimeService->getAuditEventTypes(),
                 'accounting_audit_source_types' => $this->accountingRuntimeService->getAuditSourceTypes(),
                 'accounting_audit_actors' => $this->accountingRuntimeService->getAuditActors(),
+                'accountant_review_pack' => $this->accountingRuntimeService->accountantReviewPack($filters),
                 'profit_and_loss_statement' => $this->accountingRuntimeService->profitAndLoss($filters),
                 'balance_sheet_statement' => $this->accountingRuntimeService->balanceSheet($filters),
                 'accounting_statement_notes' => $this->accountingRuntimeService->getStatementNotes(),
@@ -952,6 +953,7 @@ class WorkspaceModuleController extends Controller
             'tax-summary',
             'receivables-aging',
             'payables-aging',
+            'accountant-review-pack',
         ], true), 404);
 
         $filters = $request->validate([
@@ -969,7 +971,31 @@ class WorkspaceModuleController extends Controller
         $headers = [];
         $rows = [];
 
-        if ($report === 'bank-reconciliation') {
+        if ($report === 'accountant-review-pack') {
+            $reviewPack = $this->accountingRuntimeService->accountantReviewPack($filters);
+
+            if ($format === 'print') {
+                return view('automotive.admin.modules.accounting-review-pack-print', compact('reviewPack'));
+            }
+
+            $headers = ['Evidence Section', 'Metric', 'Value', 'Evidence Source', 'Notes'];
+            $rows = collect($reviewPack['evidence_rows'] ?? [])
+                ->map(fn (array $row): array => [
+                    $row['section'],
+                    $row['metric'],
+                    $row['value'],
+                    $row['evidence_source'],
+                    $row['notes'],
+                ])
+                ->prepend([
+                    'Pack Metadata',
+                    'Accounting source of truth',
+                    $reviewPack['source_of_truth'] ?? 'journal_entries_and_journal_entry_lines',
+                    'review_pack_policy',
+                    'Review pack is export evidence and does not replace journals.',
+                ])
+                ->all();
+        } elseif ($report === 'bank-reconciliation') {
             $reportData = $this->accountingRuntimeService->bankReconciliationReport($filters);
 
             if ($format === 'print') {
@@ -1099,6 +1125,49 @@ class WorkspaceModuleController extends Controller
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 
+    public function downloadAccountingImportTemplate(string $template): StreamedResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::REPORTS_EXPORT);
+
+        $definition = match ($template) {
+            'manual-journal' => [
+                'filename' => 'manual-journal-template.csv',
+                'headers' => ['Entry Date', 'Memo', 'Approval Required', 'Line Account', 'Line Memo', 'Debit', 'Credit'],
+                'rows' => [
+                    ['2026-04-30', 'Month-end accrual', 'yes', '5200 Operating Expense', 'Accrual expense', '1500.00', '0.00'],
+                    ['2026-04-30', 'Month-end accrual', 'yes', '2000 Accounts Payable', 'Accrual liability', '0.00', '1500.00'],
+                ],
+            ],
+            'chart-of-accounts' => [
+                'filename' => 'chart-of-accounts-template.csv',
+                'headers' => ['Code', 'Name', 'Type', 'IFRS Category', 'Statement Report', 'Statement Section', 'Statement Subsection', 'Statement Order', 'Notes'],
+                'rows' => [
+                    ['1310', 'Prepaid Insurance', 'asset', 'current_assets', 'balance_sheet', 'Assets', 'Current Assets', '130', 'Example IFRS-mapped account'],
+                    ['6100', 'Office Expense', 'expense', 'operating_expenses', 'profit_and_loss', 'Expenses', 'Administrative', '610', 'Example operating expense'],
+                ],
+            ],
+            'statement-notes' => [
+                'filename' => 'financial-statement-notes-template.csv',
+                'headers' => ['Statement Type', 'Note Key', 'Title', 'Disclosure Text', 'Effective From', 'Effective To', 'Sort Order', 'Is Active'],
+                'rows' => [
+                    ['profit_and_loss', 'revenue_recognition', 'Revenue Recognition', 'Revenue is recognized when control transfers to the customer.', '2026-01-01', '', '10', '1'],
+                ],
+            ],
+            default => abort(404),
+        };
+
+        return response()->streamDownload(function () use ($definition): void {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, $definition['headers']);
+
+            foreach ($definition['rows'] as $row) {
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+        }, $definition['filename'], ['Content-Type' => 'text/csv']);
+    }
+
     protected function accountingReportTitle(string $report): string
     {
         return match ($report) {
@@ -1107,6 +1176,7 @@ class WorkspaceModuleController extends Controller
             'receivables-aging' => 'Receivables Aging',
             'payables-aging' => 'Payables Aging',
             'reconciliation-summary' => 'Reconciliation Summary',
+            'accountant-review-pack' => 'Accountant Review Pack',
             default => str($report)->replace('-', ' ')->title()->toString(),
         };
     }

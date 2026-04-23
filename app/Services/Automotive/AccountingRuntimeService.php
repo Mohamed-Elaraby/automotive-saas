@@ -875,6 +875,168 @@ class AccountingRuntimeService
             ->get(['id', 'name', 'email']);
     }
 
+    public function accountantReviewPack(array $filters = []): array
+    {
+        $journalEntries = $this->getJournalEntries($filters, 200);
+        $auditEntries = $this->getAuditEntries($filters, 200);
+        $pendingManualApprovals = $this->getPendingManualJournalApprovals(200);
+        $trialBalance = $this->trialBalance($filters);
+        $profitAndLoss = $this->profitAndLoss($filters);
+        $balanceSheet = $this->balanceSheet($filters);
+        $taxSummary = $this->taxSummary($filters);
+        $receivablesAging = $this->receivablesAging();
+        $payablesAging = $this->payablesAging();
+        $periodLockSummary = $this->periodLockSummary($filters['date_to'] ?? null);
+        $latestTaxFiling = Schema::hasTable('accounting_tax_filings')
+            ? AccountingTaxFiling::query()->latest('period_end')->latest('id')->first()
+            : null;
+        $latestFxRevaluation = Schema::hasTable('accounting_fx_revaluations')
+            ? AccountingFxRevaluation::query()->latest('revaluation_date')->latest('id')->first()
+            : null;
+        $latestCloseAdjustment = Schema::hasTable('accounting_period_close_adjustments')
+            ? AccountingPeriodCloseAdjustment::query()->latest('adjustment_date')->latest('id')->first()
+            : null;
+
+        $postedJournalEntries = $journalEntries->where('status', 'posted');
+        $reversedJournalEntries = $journalEntries->where('status', 'reversed');
+        $auditEventCoverage = $auditEntries
+            ->groupBy('event_type')
+            ->map(fn (Collection $entries): int => $entries->count())
+            ->sortDesc()
+            ->take(6);
+
+        $evidenceRows = collect([
+            [
+                'section' => 'Ledger Control',
+                'metric' => 'Accounting source of truth',
+                'value' => 'journal_entries + journal_entry_lines',
+                'evidence_source' => 'ledger_policy',
+                'notes' => 'Exports and review packs are evidence layers only.',
+            ],
+            [
+                'section' => 'Ledger Control',
+                'metric' => 'Posted journals in scope',
+                'value' => (string) $postedJournalEntries->count(),
+                'evidence_source' => 'journal_entries',
+                'notes' => 'Filtered journal population included in this pack.',
+            ],
+            [
+                'section' => 'Approvals',
+                'metric' => 'Pending manual journal approvals',
+                'value' => (string) $pendingManualApprovals->count(),
+                'evidence_source' => 'journal_entries',
+                'notes' => 'Pending approval journals remain unposted.',
+            ],
+            [
+                'section' => 'Statements',
+                'metric' => 'Trial balance accounts',
+                'value' => (string) $trialBalance->count(),
+                'evidence_source' => 'journal_entry_lines',
+                'notes' => 'Trial balance remains journal-driven.',
+            ],
+            [
+                'section' => 'Statements',
+                'metric' => 'Net income',
+                'value' => (string) data_get($profitAndLoss, 'summary.Net Income', 0),
+                'evidence_source' => 'journal_entry_lines',
+                'notes' => 'Profit and loss summary for the selected scope.',
+            ],
+            [
+                'section' => 'Statements',
+                'metric' => 'Balance sheet difference',
+                'value' => (string) data_get($balanceSheet, 'summary.Difference', 0),
+                'evidence_source' => 'journal_entry_lines',
+                'notes' => 'Should trend to zero after complete posting.',
+            ],
+            [
+                'section' => 'Tax',
+                'metric' => 'Net tax payable',
+                'value' => (string) ($taxSummary['net_payable'] ?? 0),
+                'evidence_source' => 'journal_entry_lines',
+                'notes' => 'Derived from journal-tagged tax accounts.',
+            ],
+            [
+                'section' => 'Receivables',
+                'metric' => 'Open receivables',
+                'value' => (string) ($receivablesAging['total_open'] ?? 0),
+                'evidence_source' => 'accounting_events_and_payments',
+                'notes' => 'Open customer balances for follow-up.',
+            ],
+            [
+                'section' => 'Payables',
+                'metric' => 'Open payables',
+                'value' => (string) ($payablesAging['total_open'] ?? 0),
+                'evidence_source' => 'vendor_bills_and_payments',
+                'notes' => 'Open supplier balances for follow-up.',
+            ],
+            [
+                'section' => 'Close Control',
+                'metric' => 'Current period status',
+                'value' => (string) ($periodLockSummary['current_status'] ?? 'open'),
+                'evidence_source' => 'accounting_period_locks',
+                'notes' => 'Period close status as of the report date.',
+            ],
+            [
+                'section' => 'Close Control',
+                'metric' => 'Latest tax filing status',
+                'value' => (string) ($latestTaxFiling?->status ?? 'not_prepared'),
+                'evidence_source' => 'accounting_tax_filings',
+                'notes' => $latestTaxFiling?->filing_number ?: 'No tax filing prepared yet.',
+            ],
+            [
+                'section' => 'FX Control',
+                'metric' => 'Latest FX revaluation',
+                'value' => (string) ($latestFxRevaluation?->revaluation_number ?? 'not_posted'),
+                'evidence_source' => 'accounting_fx_revaluations',
+                'notes' => $latestFxRevaluation?->journalEntry?->journal_number ?: 'No FX revaluation journal posted yet.',
+            ],
+            [
+                'section' => 'Close Control',
+                'metric' => 'Latest close adjustment',
+                'value' => (string) ($latestCloseAdjustment?->adjustment_number ?? 'not_created'),
+                'evidence_source' => 'accounting_period_close_adjustments',
+                'notes' => $latestCloseAdjustment?->review_status ?: 'No close adjustment recorded yet.',
+            ],
+            [
+                'section' => 'Audit',
+                'metric' => 'Audit entries in scope',
+                'value' => (string) $auditEntries->count(),
+                'evidence_source' => 'accounting_audit_entries',
+                'notes' => 'User and system actions supporting month-end review.',
+            ],
+            [
+                'section' => 'Audit',
+                'metric' => 'Latest audit timestamp',
+                'value' => (string) optional($auditEntries->first()?->created_at)->format('Y-m-d H:i'),
+                'evidence_source' => 'accounting_audit_entries',
+                'notes' => 'Most recent accounting control activity captured.',
+            ],
+        ])->filter(fn (array $row): bool => $row['value'] !== '');
+
+        return [
+            'generated_at' => now(),
+            'filters' => $filters,
+            'source_of_truth' => 'journal_entries_and_journal_entry_lines',
+            'summary' => [
+                'posted_journal_count' => $postedJournalEntries->count(),
+                'reversed_journal_count' => $reversedJournalEntries->count(),
+                'pending_manual_approval_count' => $pendingManualApprovals->count(),
+                'audit_entry_count' => $auditEntries->count(),
+                'open_receivables' => $receivablesAging['total_open'] ?? 0,
+                'open_payables' => $payablesAging['total_open'] ?? 0,
+                'net_income' => data_get($profitAndLoss, 'summary.Net Income', 0),
+                'net_tax_payable' => $taxSummary['net_payable'] ?? 0,
+            ],
+            'evidence_rows' => $evidenceRows->values(),
+            'recent_journals' => $journalEntries->take(8)->values(),
+            'recent_audits' => $auditEntries->take(8)->values(),
+            'audit_event_coverage' => $auditEventCoverage,
+            'latest_tax_filing' => $latestTaxFiling,
+            'latest_fx_revaluation' => $latestFxRevaluation,
+            'latest_close_adjustment' => $latestCloseAdjustment,
+        ];
+    }
+
     public function getReceivableEvents(int $limit = 25): Collection
     {
         return AccountingEvent::query()

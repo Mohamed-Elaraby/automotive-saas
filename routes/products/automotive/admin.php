@@ -180,6 +180,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.bank-accounts.store');
                 Route::get('/general-ledger/exports/{report}', [WorkspaceModuleController::class, 'exportAccountingReport'])
                     ->name('modules.general-ledger.exports');
+                Route::get('/general-ledger/import-templates/{template}', [WorkspaceModuleController::class, 'downloadAccountingImportTemplate'])
+                    ->name('modules.general-ledger.import-templates');
                 Route::post('/general-ledger/manual-journal-entries', [WorkspaceModuleController::class, 'storeManualJournalEntry'])
                     ->name('modules.general-ledger.manual-journal-entries.store');
                 Route::get('/general-ledger/journal-entries/{journalEntry}', [WorkspaceModuleController::class, 'showJournalEntry'])

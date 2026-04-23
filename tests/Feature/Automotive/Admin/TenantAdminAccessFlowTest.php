@@ -981,6 +981,82 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertSee('GAIN', false);
     }
 
+    public function test_accountant_review_pack_and_import_templates_are_exported_without_changing_journal_source_of_truth(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->post("http://{$domain}/automotive/admin/general-ledger/manual-journal-entries?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-05-03',
+            'memo' => 'Month-end review pack journal',
+            'currency' => 'USD',
+            'approval_required' => '0',
+            'lines' => [
+                ['account_code' => '5200 Operating Expense', 'memo' => 'Review pack expense', 'debit' => '250.00', 'credit' => '0.00'],
+                ['account_code' => '2000 Accounts Payable', 'memo' => 'Review pack payable', 'debit' => '0.00', 'credit' => '250.00'],
+            ],
+        ])->assertRedirect();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $journalCountBeforeExports = DB::connection('tenant')->table('journal_entries')->count();
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Import / Export And Accountant Review Pack', false);
+        $ledgerResponse->assertSee('Download Review Pack CSV', false);
+        $ledgerResponse->assertSee('Download Manual Journal Template', false);
+        $ledgerResponse->assertSee('Download Chart Of Accounts Template', false);
+
+        $reviewPackCsv = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/accountant-review-pack?workspace_product=accounting&format=csv");
+        $reviewPackCsv->assertOk();
+        $reviewPackCsvContent = $reviewPackCsv->streamedContent();
+        $this->assertStringContainsString('Evidence Section', $reviewPackCsvContent);
+        $this->assertStringContainsString('Accounting source of truth', $reviewPackCsvContent);
+        $this->assertStringContainsString('journal_entries_and_journal_entry_lines', $reviewPackCsvContent);
+        $this->assertStringContainsString('Pending manual journal approvals', $reviewPackCsvContent);
+
+        $reviewPackPrint = $this->get("http://{$domain}/automotive/admin/general-ledger/exports/accountant-review-pack?workspace_product=accounting&format=print");
+        $reviewPackPrint->assertOk();
+        $reviewPackPrint->assertSee('Accountant Review Pack', false);
+        $reviewPackPrint->assertSee('Recent Journals', false);
+        $reviewPackPrint->assertSee('Recent Audit Entries', false);
+
+        $manualJournalTemplate = $this->get("http://{$domain}/automotive/admin/general-ledger/import-templates/manual-journal?workspace_product=accounting");
+        $manualJournalTemplate->assertOk();
+        $manualJournalTemplateContent = $manualJournalTemplate->streamedContent();
+        $this->assertStringContainsString('"Entry Date"', $manualJournalTemplateContent);
+        $this->assertStringContainsString('"Approval Required"', $manualJournalTemplateContent);
+        $this->assertStringContainsString('Month-end accrual', $manualJournalTemplateContent);
+
+        $chartTemplate = $this->get("http://{$domain}/automotive/admin/general-ledger/import-templates/chart-of-accounts?workspace_product=accounting");
+        $chartTemplate->assertOk();
+        $this->assertStringContainsString('"IFRS Category"', $chartTemplate->streamedContent());
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $journalCountAfterExports = DB::connection('tenant')->table('journal_entries')->count();
+            $this->assertSame($journalCountBeforeExports, $journalCountAfterExports);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'manual_journal_created',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

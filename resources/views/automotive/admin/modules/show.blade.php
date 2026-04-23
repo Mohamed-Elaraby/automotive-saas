@@ -236,6 +236,7 @@
                         <li class="nav-item"><a class="nav-link" href="#accounting-payables">Payables</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-cash">Cash</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-tax">Tax</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-review-pack">Review Pack</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-settings">Settings</a></li>
                         <li class="nav-item"><a class="nav-link" href="#accounting-audit">Audit</a></li>
                     </ul>
@@ -378,6 +379,62 @@
 
                 @php($profitAndLossStatement = $moduleData['profit_and_loss_statement'] ?? ['sections' => [], 'summary' => []])
                 @php($balanceSheetStatement = $moduleData['balance_sheet_statement'] ?? ['sections' => [], 'summary' => []])
+                @php($accountantReviewPack = $moduleData['accountant_review_pack'] ?? ['summary' => [], 'evidence_rows' => collect(), 'recent_journals' => collect(), 'recent_audits' => collect(), 'audit_event_coverage' => collect()])
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-review-pack">
+                    <div>
+                        <h5 class="mb-0">Import / Export And Accountant Review Pack</h5>
+                        <div class="text-muted small">Export evidence for review and download CSV templates without changing ledger truth.</div>
+                    </div>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                </div>
+                <div class="row">
+                    <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Posted Journals</div><h4 class="mb-1">{{ number_format((int) data_get($accountantReviewPack, 'summary.posted_journal_count', 0)) }}</h4><p class="mb-0 text-muted">Journal population included in the review scope.</p></div></div></div>
+                    <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Pending Approvals</div><h4 class="mb-1">{{ number_format((int) data_get($accountantReviewPack, 'summary.pending_manual_approval_count', 0)) }}</h4><p class="mb-0 text-muted">Manual journals still waiting for control approval.</p></div></div></div>
+                    <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Audit Entries</div><h4 class="mb-1">{{ number_format((int) data_get($accountantReviewPack, 'summary.audit_entry_count', 0)) }}</h4><p class="mb-0 text-muted">Audit evidence captured for the selected scope.</p></div></div></div>
+                    <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Net Income</div><h4 class="mb-1">{{ number_format((float) data_get($accountantReviewPack, 'summary.net_income', 0), 2) }}</h4><p class="mb-0 text-muted">Journal-driven P&amp;L signal for the pack.</p></div></div></div>
+                </div>
+                <div class="row">
+                    <div class="col-xl-7 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Accountant Review Pack</h5></div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <a class="btn btn-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'accountant-review-pack'] + $workspaceQuery + $journalFilters) }}">Download Review Pack CSV</a>
+                                    <a class="btn btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'accountant-review-pack', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Review Pack</a>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead><tr><th>Section</th><th>Metric</th><th>Value</th><th>Evidence Source</th></tr></thead>
+                                        <tbody>
+                                        @foreach(collect($accountantReviewPack['evidence_rows'] ?? [])->take(8) as $row)
+                                            <tr>
+                                                <td>{{ $row['section'] }}</td>
+                                                <td>{{ $row['metric'] }}</td>
+                                                <td>{{ $row['value'] }}</td>
+                                                <td><span class="badge bg-light text-dark border">{{ $row['evidence_source'] }}</span></td>
+                                            </tr>
+                                        @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-muted small mt-3">Accounting source of truth: {{ str_replace('_', ' + ', data_get($accountantReviewPack, 'source_of_truth', 'journal_entries_and_journal_entry_lines')) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-5 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-header"><h5 class="card-title mb-0">Import Templates</h5></div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'manual-journal'] + $workspaceQuery) }}">Download Manual Journal Template</a>
+                                    <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'chart-of-accounts'] + $workspaceQuery) }}">Download Chart Of Accounts Template</a>
+                                    <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'statement-notes'] + $workspaceQuery) }}">Download Statement Notes Template</a>
+                                </div>
+                                <div class="text-muted small mt-3">Templates support controlled import preparation only. Final accounting impact still requires the normal journal-driven workflow.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Financial Statement Builder</h5></div>
                     <div class="card-body">
