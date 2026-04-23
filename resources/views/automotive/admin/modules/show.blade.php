@@ -476,6 +476,99 @@
                     </div>
                 </div>
 
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Multi-Currency And FX Revaluation</h5></div>
+                    <div class="card-body">
+                        @php($setupProfile = $moduleData['accounting_setup_summary']['profile'] ?? null)
+                        <div class="alert alert-light border small mb-3">
+                            Base currency: <strong>{{ $setupProfile->base_currency ?? 'USD' }}</strong>. Revaluation journals remain the accounting source of truth for unrealized FX.
+                        </div>
+                        <div class="row">
+                            <div class="col-xl-5">
+                                <h6 class="mb-3">Exchange Rates</h6>
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.exchange-rates.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Base</label><input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Foreign</label><input type="text" name="foreign_currency" maxlength="3" class="form-control" value="{{ old('foreign_currency', 'EUR') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Rate Date</label><input type="date" name="rate_date" class="form-control" value="{{ old('rate_date', now()->toDateString()) }}"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Rate To Base</label><input type="number" step="0.00000001" min="0.00000001" name="rate_to_base" class="form-control" value="{{ old('rate_to_base', '4.00000000') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'manual_close_rate') }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Exchange Rate</button>
+                                </form>
+                            </div>
+                            <div class="col-xl-7">
+                                <h6 class="mb-3">Recent Exchange Rates</h6>
+                                @forelse(($moduleData['accounting_exchange_rates'] ?? collect()) as $rate)
+                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                        <div>
+                                            <div class="fw-semibold">{{ $rate->foreign_currency }}/{{ $rate->base_currency }}</div>
+                                            <div class="text-muted small">{{ optional($rate->rate_date)->format('Y-m-d') }}{{ $rate->source ? ' · '.$rate->source : '' }}</div>
+                                        </div>
+                                        <div class="fw-semibold">{{ number_format((float) $rate->rate_to_base, 8) }}</div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No exchange rates have been configured yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-xl-5">
+                                <h6 class="mb-3">FX Revaluation</h6>
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.fx-revaluations.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Rate Date</label><input type="date" name="rate_date" class="form-control" value="{{ old('rate_date', now()->toDateString()) }}"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Foreign Currency</label><input type="text" name="foreign_currency" maxlength="3" class="form-control" value="{{ old('foreign_currency', 'EUR') }}"></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Account</label><input type="text" name="account_code" list="account-catalog-options" class="form-control" value="{{ old('account_code', '1010 Bank Account') }}"></div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3"><label class="form-label">Foreign Amount</label><input type="number" step="0.01" min="0.01" name="foreign_amount" class="form-control" value="{{ old('foreign_amount', '1000.00') }}"></div>
+                                        <div class="col-md-6 mb-3"><label class="form-label">Carrying Base Amount</label><input type="number" step="0.01" min="0" name="carrying_base_amount" class="form-control" value="{{ old('carrying_base_amount', '3800.00') }}"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3"><label class="form-label">FX Gain Account</label><input type="text" name="fx_gain_account" list="account-catalog-options" class="form-control" value="{{ old('fx_gain_account', '4310 Foreign Exchange Gain') }}"></div>
+                                        <div class="col-md-6 mb-3"><label class="form-label">FX Loss Account</label><input type="text" name="fx_loss_account" list="account-catalog-options" class="form-control" value="{{ old('fx_loss_account', '5310 Foreign Exchange Loss') }}"></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo', 'Month-end FX revaluation') }}"></div>
+                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                    <button type="submit" class="btn btn-primary">Post FX Revaluation</button>
+                                </form>
+                            </div>
+                            <div class="col-xl-7">
+                                <h6 class="mb-3">Recent FX Revaluations</h6>
+                                @forelse(($moduleData['accounting_fx_revaluations'] ?? collect()) as $revaluation)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <div class="fw-semibold">{{ $revaluation->account_code }} · {{ $revaluation->foreign_currency }}/{{ $revaluation->base_currency }}</div>
+                                                <div class="text-muted small">{{ optional($revaluation->rate_date)->format('Y-m-d') }} · {{ strtoupper($revaluation->gain_loss_direction) }}</div>
+                                                <div class="text-muted small">Foreign {{ number_format((float) $revaluation->foreign_amount, 2) }} · Carrying {{ number_format((float) $revaluation->carrying_base_amount, 2) }} · Revalued {{ number_format((float) $revaluation->revalued_base_amount, 2) }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-semibold">{{ number_format((float) $revaluation->gain_loss_amount, 2) }}</div>
+                                                @if($revaluation->journalEntry)
+                                                    <a href="{{ route('automotive.admin.modules.general-ledger.journal-entries.show', ['journalEntry' => $revaluation->journalEntry->id] + $workspaceQuery) }}" class="btn btn-sm btn-outline-light mt-2">Open Journal</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No FX revaluations have been posted yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 @php($aging = $moduleData['receivables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-receivables">
                     <div>

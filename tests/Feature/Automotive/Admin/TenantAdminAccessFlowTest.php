@@ -887,6 +887,100 @@ class TenantAdminAccessFlowTest extends TestCase
         $response->assertSee('APPROVED', false);
     }
 
+    public function test_multi_currency_exchange_rates_and_fx_revaluation_post_journal_entries(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $rateResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/exchange-rates?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'base_currency' => 'USD',
+            'foreign_currency' => 'EUR',
+            'rate_date' => '2026-04-30',
+            'rate_to_base' => 4.10000000,
+            'source' => 'closing_rate',
+            'notes' => 'Month-end rate',
+        ]);
+
+        $rateResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        $revaluationResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/fx-revaluations?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'entry_date' => '2026-04-30',
+            'rate_date' => '2026-04-30',
+            'foreign_currency' => 'EUR',
+            'account_code' => '1010 Bank Account',
+            'foreign_amount' => 1000,
+            'carrying_base_amount' => 3800,
+            'fx_gain_account' => '4310 Foreign Exchange Gain',
+            'fx_loss_account' => '5310 Foreign Exchange Loss',
+            'memo' => 'April FX revaluation',
+            'notes' => 'Unrealized gain test',
+        ]);
+        $revaluationResponse->assertSessionHasNoErrors();
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_exchange_rates', [
+                'base_currency' => 'USD',
+                'foreign_currency' => 'EUR',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_accounts', [
+                'code' => '4310 Foreign Exchange Gain',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_accounts', [
+                'code' => '5310 Foreign Exchange Loss',
+            ], 'tenant');
+
+            $revaluation = DB::connection('tenant')->table('accounting_fx_revaluations')->latest('id')->first();
+            $this->assertNotNull($revaluation);
+            $this->assertSame('gain', $revaluation->gain_loss_direction);
+            $this->assertSame(300.0, (float) $revaluation->gain_loss_amount);
+
+            $journal = DB::connection('tenant')->table('journal_entries')->where('id', $revaluation->journal_entry_id)->first();
+            $this->assertNotNull($journal);
+            $this->assertSame('posted', $journal->status);
+            $this->assertStringStartsWith('FXR-', $journal->journal_number);
+
+            $lines = DB::connection('tenant')->table('journal_entry_lines')
+                ->where('journal_entry_id', $journal->id)
+                ->orderBy('id')
+                ->get();
+
+            $this->assertCount(2, $lines);
+            $this->assertSame('1010 Bank Account', $lines[0]->account_code);
+            $this->assertSame(300.0, (float) $lines[0]->debit);
+            $this->assertSame('4310 Foreign Exchange Gain', $lines[1]->account_code);
+            $this->assertSame(300.0, (float) $lines[1]->credit);
+
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'exchange_rate_saved',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'fx_revaluation_posted',
+            ], 'tenant');
+            $journalId = $journal->id;
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $revaluationResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger/journal-entries/{$journalId}?workspace_product=accounting");
+
+        $response = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $response->assertOk();
+        $response->assertSee('Multi-Currency And FX Revaluation', false);
+        $response->assertSee('Recent Exchange Rates', false);
+        $response->assertSee('Recent FX Revaluations', false);
+        $response->assertSee('EUR/USD', false);
+        $response->assertSee('GAIN', false);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

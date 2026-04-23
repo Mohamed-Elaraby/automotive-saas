@@ -364,6 +364,8 @@ class WorkspaceModuleController extends Controller
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
                 'accounting_tax_filings' => $this->accountingRuntimeService->getTaxFilings(),
                 'accounting_tax_compliance_summary' => $this->accountingRuntimeService->taxComplianceSummary($filters),
+                'accounting_exchange_rates' => $this->accountingRuntimeService->getExchangeRates(),
+                'accounting_fx_revaluations' => $this->accountingRuntimeService->getFxRevaluations(),
                 'accounting_bank_accounts' => $this->accountingRuntimeService->getBankAccounts(),
                 'accounting_setup_summary' => $this->accountingRuntimeService->setupSummary(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
@@ -869,6 +871,69 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Bank or cash account saved successfully.');
+    }
+
+    public function storeAccountingExchangeRate(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'base_currency' => ['required', 'string', 'size:3'],
+            'foreign_currency' => ['required', 'string', 'size:3'],
+            'rate_date' => ['required', 'date'],
+            'rate_to_base' => ['required', 'numeric', 'gt:0'],
+            'source' => ['nullable', 'string', 'max:80'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->saveExchangeRate($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Exchange rate saved successfully.');
+    }
+
+    public function storeAccountingFxRevaluation(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::MANUAL_JOURNALS_POST);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'entry_date' => ['required', 'date'],
+            'rate_date' => ['required', 'date'],
+            'foreign_currency' => ['required', 'string', 'size:3'],
+            'account_code' => ['required', 'string', 'max:120'],
+            'foreign_amount' => ['required', 'numeric', 'gt:0'],
+            'carrying_base_amount' => ['required', 'numeric', 'gte:0'],
+            'fx_gain_account' => ['nullable', 'string', 'max:120'],
+            'fx_loss_account' => ['nullable', 'string', 'max:120'],
+            'memo' => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $revaluation = $this->accountingRuntimeService->createFxRevaluation($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger.journal-entries.show', [
+                'journalEntry' => $revaluation->journal_entry_id,
+                'workspace_product' => $validated['workspace_product'] ?: 'accounting',
+            ])
+            ->with('success', 'FX revaluation journal posted successfully.');
     }
 
     public function exportAccountingReport(Request $request, string $report): View|StreamedResponse

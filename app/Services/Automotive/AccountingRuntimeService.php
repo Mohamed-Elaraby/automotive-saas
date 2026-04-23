@@ -7,7 +7,9 @@ use App\Models\AccountingAuditEntry;
 use App\Models\AccountingBankAccount;
 use App\Models\AccountingDepositBatch;
 use App\Models\AccountingEvent;
+use App\Models\AccountingExchangeRate;
 use App\Models\AccountingInvoice;
+use App\Models\AccountingFxRevaluation;
 use App\Models\AccountingPayment;
 use App\Models\AccountingPeriodCloseAdjustment;
 use App\Models\AccountingPeriodLock;
@@ -306,6 +308,201 @@ class AccountingRuntimeService
         ], $approvedBy);
 
         return $filing->refresh();
+    }
+
+    public function getExchangeRates(int $limit = 20): Collection
+    {
+        if (! Schema::hasTable('accounting_exchange_rates')) {
+            return collect();
+        }
+
+        return AccountingExchangeRate::query()
+            ->latest('rate_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function saveExchangeRate(array $data, ?int $createdBy = null): AccountingExchangeRate
+    {
+        if (! Schema::hasTable('accounting_exchange_rates')) {
+            throw ValidationException::withMessages([
+                'exchange_rate' => 'Run tenant migrations before using exchange rates.',
+            ]);
+        }
+
+        $baseCurrency = strtoupper((string) $data['base_currency']);
+        $foreignCurrency = strtoupper((string) $data['foreign_currency']);
+
+        if ($baseCurrency === $foreignCurrency) {
+            throw ValidationException::withMessages([
+                'foreign_currency' => 'Foreign currency must be different from the base currency.',
+            ]);
+        }
+
+        $rate = AccountingExchangeRate::query()->updateOrCreate(
+            [
+                'base_currency' => $baseCurrency,
+                'foreign_currency' => $foreignCurrency,
+                'rate_date' => $data['rate_date'],
+            ],
+            [
+                'rate_to_base' => round((float) $data['rate_to_base'], 8),
+                'source' => $data['source'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $createdBy,
+            ]
+        );
+
+        $this->recordAudit('exchange_rate_saved', $rate, "Exchange rate {$foreignCurrency}/{$baseCurrency} saved for {$rate->rate_date->toDateString()}.", [
+            'base_currency' => $baseCurrency,
+            'foreign_currency' => $foreignCurrency,
+            'rate_to_base' => (float) $rate->rate_to_base,
+        ], $createdBy);
+
+        return $rate;
+    }
+
+    public function getFxRevaluations(int $limit = 15): Collection
+    {
+        if (! Schema::hasTable('accounting_fx_revaluations')) {
+            return collect();
+        }
+
+        return AccountingFxRevaluation::query()
+            ->with('journalEntry')
+            ->latest('rate_date')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function createFxRevaluation(array $data, ?int $createdBy = null): AccountingFxRevaluation
+    {
+        if (! Schema::hasTable('accounting_exchange_rates') || ! Schema::hasTable('accounting_fx_revaluations')) {
+            throw ValidationException::withMessages([
+                'fx_revaluation' => 'Run tenant migrations before using multi-currency revaluation.',
+            ]);
+        }
+
+        $profile = $this->getSetupProfile();
+        $baseCurrency = strtoupper((string) ($profile?->base_currency ?: 'USD'));
+        $foreignCurrency = strtoupper((string) $data['foreign_currency']);
+        $rateDate = Carbon::parse($data['rate_date'])->toDateString();
+        $foreignAmount = round((float) $data['foreign_amount'], 2);
+        $carryingBaseAmount = round((float) $data['carrying_base_amount'], 2);
+        $accountCode = $this->normalizeAccountCode((string) $data['account_code']);
+        $fxGainAccount = $this->normalizeAccountCode((string) ($data['fx_gain_account'] ?? '4310 Foreign Exchange Gain'));
+        $fxLossAccount = $this->normalizeAccountCode((string) ($data['fx_loss_account'] ?? '5310 Foreign Exchange Loss'));
+
+        $this->ensureAccountsFromCodes([$accountCode, $fxGainAccount, $fxLossAccount]);
+
+        $account = AccountingAccount::query()->where('code', $accountCode)->first();
+
+        if (! $account || ! $account->is_active) {
+            throw ValidationException::withMessages([
+                'account_code' => 'Select an active account for FX revaluation.',
+            ]);
+        }
+
+        $rate = AccountingExchangeRate::query()
+            ->where('base_currency', $baseCurrency)
+            ->where('foreign_currency', $foreignCurrency)
+            ->whereDate('rate_date', $rateDate)
+            ->first();
+
+        if (! $rate) {
+            throw ValidationException::withMessages([
+                'foreign_currency' => 'No exchange rate is configured for the selected currency and date.',
+            ]);
+        }
+
+        if ($foreignAmount <= 0) {
+            throw ValidationException::withMessages([
+                'foreign_amount' => 'Foreign amount must be greater than zero.',
+            ]);
+        }
+
+        $revaluedBaseAmount = round($foreignAmount * (float) $rate->rate_to_base, 2);
+        $delta = round($revaluedBaseAmount - $carryingBaseAmount, 2);
+
+        if ($delta == 0.0) {
+            throw ValidationException::withMessages([
+                'carrying_base_amount' => 'The translated amount equals the carrying amount. No revaluation journal is needed.',
+            ]);
+        }
+
+        $this->assertPeriodOpen($data['entry_date'] ?? $rateDate, 'posting FX revaluation');
+
+        return DB::transaction(function () use ($data, $createdBy, $account, $baseCurrency, $foreignCurrency, $rateDate, $foreignAmount, $carryingBaseAmount, $revaluedBaseAmount, $delta, $fxGainAccount, $fxLossAccount, $rate): AccountingFxRevaluation {
+            $journal = JournalEntry::query()->create([
+                'journal_number' => $this->nextJournalNumber('FXR'),
+                'source_type' => 'fx_revaluation',
+                'source_id' => null,
+                'status' => 'posted',
+                'entry_date' => $data['entry_date'] ?? $rateDate,
+                'currency' => $baseCurrency,
+                'debit_total' => abs($delta),
+                'credit_total' => abs($delta),
+                'memo' => $data['memo'] ?? "FX revaluation for {$account->code}",
+                'created_by' => $createdBy,
+                'posted_at' => now(),
+            ]);
+
+            $normalDebit = $account->normal_balance === 'debit';
+            $accountIncrease = $delta > 0;
+            $accountLineDebit = ($normalDebit && $accountIncrease) || (! $normalDebit && ! $accountIncrease) ? abs($delta) : 0;
+            $accountLineCredit = $accountLineDebit > 0 ? 0 : abs($delta);
+
+            $journal->lines()->create([
+                'account_code' => $account->code,
+                'account_name' => $account->name,
+                'line_type' => $accountLineDebit > 0 ? 'debit' : 'credit',
+                'debit' => $accountLineDebit,
+                'credit' => $accountLineCredit,
+                'memo' => "FX revaluation of {$foreignCurrency} balance.",
+            ]);
+
+            $isGain = ($normalDebit && $delta > 0) || (! $normalDebit && $delta < 0);
+            $offsetAccount = $isGain ? $fxGainAccount : $fxLossAccount;
+            $offsetName = $this->resolveAccountName($offsetAccount, $isGain ? 'Foreign Exchange Gain' : 'Foreign Exchange Loss');
+
+            $journal->lines()->create([
+                'account_code' => $offsetAccount,
+                'account_name' => $offsetName,
+                'line_type' => $isGain ? 'credit' : 'debit',
+                'debit' => $isGain ? 0 : abs($delta),
+                'credit' => $isGain ? abs($delta) : 0,
+                'memo' => $isGain ? 'Recognize unrealized FX gain.' : 'Recognize unrealized FX loss.',
+            ]);
+
+            $revaluation = AccountingFxRevaluation::query()->create([
+                'journal_entry_id' => $journal->id,
+                'account_code' => $account->code,
+                'base_currency' => $baseCurrency,
+                'foreign_currency' => $foreignCurrency,
+                'rate_date' => $rateDate,
+                'exchange_rate' => $rate->rate_to_base,
+                'foreign_amount' => $foreignAmount,
+                'carrying_base_amount' => $carryingBaseAmount,
+                'revalued_base_amount' => $revaluedBaseAmount,
+                'gain_loss_amount' => abs($delta),
+                'gain_loss_direction' => $isGain ? 'gain' : 'loss',
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $createdBy,
+            ]);
+
+            $this->recordAudit('fx_revaluation_posted', $revaluation, "FX revaluation {$journal->journal_number} posted for {$account->code}.", [
+                'journal_entry_id' => $journal->id,
+                'foreign_currency' => $foreignCurrency,
+                'base_currency' => $baseCurrency,
+                'exchange_rate' => (float) $rate->rate_to_base,
+                'gain_loss_direction' => $revaluation->gain_loss_direction,
+                'gain_loss_amount' => (float) $revaluation->gain_loss_amount,
+            ], $createdBy);
+
+            return $revaluation->load('journalEntry');
+        });
     }
 
     public function getPeriodCloseAdjustments(?int $periodLockId = null, int $limit = 25): Collection

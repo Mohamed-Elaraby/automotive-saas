@@ -769,12 +769,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 8 of 10: Multi-Currency And Exchange Revaluation
+### Professional Accounting Roadmap - Package 9 of 10: Import/Export, Audit Evidence, And Accountant Review Pack
 Recommended scope:
-- add multi-currency configuration and reporting without breaking current single-currency tenants
-- support exchange-rate driven reporting and controlled revaluation workflows
-- keep realized/unrealized FX effects journal-driven
-- preserve metadata/configuration layers as helpers only
+- improve accountant-facing export packs and review evidence for audits and month-end signoff
+- package journal-driven reports with clearer evidence metadata
+- keep imports/exports and review packs outside the accounting source-of-truth boundary
+- preserve journals and journal lines as the authoritative ledger
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -788,8 +788,8 @@ Professional Accounting Roadmap progress:
 5. Financial Statement Builder And Notes Foundation - completed
 6. Advanced Period Close And Adjustments - completed
 7. Tax/VAT Compliance Expansion - completed
-8. Multi-Currency And Exchange Revaluation - next
-9. Import/Export, Audit Evidence, And Accountant Review Pack - pending
+8. Multi-Currency And Exchange Revaluation - completed
+9. Import/Export, Audit Evidence, And Accountant Review Pack - next
 10. Production Hardening, Permissions Matrix, And Market Acceptance - pending
 
 Persistent accounting rules:
@@ -3626,3 +3626,66 @@ Verification:
 
 Next package:
 - Package 8 of 10: Multi-Currency And Exchange Revaluation
+
+## 40) Professional Accounting Roadmap Package 8 - Multi-Currency And Exchange Revaluation
+Status:
+- completed
+- this is package 8 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- General Ledger now includes a `Multi-Currency And FX Revaluation` workspace
+- tenants can save exchange rates by:
+  - base currency
+  - foreign currency
+  - rate date
+  - rate to base
+  - source and notes
+- tenants can post FX revaluation journals from a configured exchange rate
+- FX revaluation creates:
+  - a real posted journal entry
+  - journal lines for the revalued account and the FX gain/loss account
+  - a linked FX revaluation metadata record
+- unrealized FX gain/loss remains journal-driven
+- exchange rates and FX revaluation metadata are helpers and audit context only; they do not replace journals
+- audit trail now records:
+  - `exchange_rate_saved`
+  - `fx_revaluation_posted`
+
+Database note:
+- this package added new tenant migrations/tables:
+  - `database/migrations/tenant/2026_04_23_140000_create_accounting_exchange_rates_and_fx_revaluations_table.php`
+  - `accounting_exchange_rates`
+  - `accounting_fx_revaluations`
+- after deploying this package, run tenant migrations
+
+Important files changed:
+- `app/Models/AccountingExchangeRate.php`
+- `app/Models/AccountingFxRevaluation.php`
+- `database/migrations/tenant/2026_04_23_140000_create_accounting_exchange_rates_and_fx_revaluations_table.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingExchangeRate.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingFxRevaluation.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_23_140000_create_accounting_exchange_rates_and_fx_revaluations_table.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=multi_currency_exchange_rates_and_fx_revaluation_post_journal_entries`
+  - result: 1 passed, 29 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='multi_currency_exchange_rates_and_fx_revaluation_post_journal_entries|tax_vat_filings_are_prepared_from_journal_driven_tax_summary|period_close_adjustments_are_journal_backed_and_reviewed_before_final_close|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 75 assertions
+
+Next package:
+- Package 9 of 10: Import/Export, Audit Evidence, And Accountant Review Pack
