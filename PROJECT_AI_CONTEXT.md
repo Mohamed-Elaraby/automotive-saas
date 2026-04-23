@@ -769,13 +769,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 5 of 10: Financial Statement Builder And Notes Foundation
+### Professional Accounting Roadmap - Package 6 of 10: Advanced Period Close And Adjustments
 Recommended scope:
-- add a clearer financial statement builder surface for P&L and balance sheet outputs
-- prepare statement notes/disclosures foundation without turning notes into the accounting source of truth
-- use IFRS account mappings for sections and ordering
-- keep all statement amounts journal-driven
-- preserve tenant customization of account mappings and templates
+- strengthen close-period workflows for adjustments, review checkpoints, and statement readiness
+- add clearer support for end-of-period correction and closing entries
+- keep locked periods journal-safe and avoid silent backdating
+- preserve journal entries and journal lines as the accounting source of truth
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -786,8 +785,8 @@ Professional Accounting Roadmap progress:
 2. First-Time Setup Wizard - completed
 3. General Ledger UX Simplification - completed
 4. IFRS-Ready Chart Of Accounts And Mapping Layer - completed
-5. Financial Statement Builder And Notes Foundation - next
-6. Advanced Period Close And Adjustments - pending
+5. Financial Statement Builder And Notes Foundation - completed
+6. Advanced Period Close And Adjustments - next
 7. Tax/VAT Compliance Expansion - pending
 8. Multi-Currency And Exchange Revaluation - pending
 9. Import/Export, Audit Evidence, And Accountant Review Pack - pending
@@ -3453,3 +3452,62 @@ Verification:
 
 Next package:
 - Package 5 of 10: Financial Statement Builder And Notes Foundation
+
+## 37) Professional Accounting Roadmap Package 5 - Financial Statement Builder And Notes Foundation
+Status:
+- completed
+- this is package 5 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- General Ledger now includes a `Financial Statement Builder` surface
+- the page shows in-workspace P&L and Balance Sheet summaries using journal-driven statement data
+- financial statement notes/disclosures now have a dedicated tenant model and UI
+- statement notes are metadata only:
+  - they do not create journal entries
+  - they do not change statement amounts
+  - statement amounts remain derived from journals and journal lines
+- saving a note records an `accounting_statement_note_saved` audit entry
+- statement notes support:
+  - statement type
+  - note key
+  - title
+  - disclosure text
+  - effective date range
+  - sort order
+  - active/inactive state
+
+Database note:
+- this package added a new tenant migration:
+  - `database/migrations/tenant/2026_04_23_110000_create_accounting_statement_notes_table.php`
+- after deploying this package, run tenant migrations
+
+Important files changed:
+- `app/Models/AccountingStatementNote.php`
+- `database/migrations/tenant/2026_04_23_110000_create_accounting_statement_notes_table.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingStatementNote.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_23_110000_create_accounting_statement_notes_table.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=financial_statement_builder_and_notes_remain_journal_driven`
+  - result: 1 passed, 14 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='financial_statement_builder_and_notes_remain_journal_driven|accounting_accounts_support_ifrs_statement_mapping_without_changing_journal_source_of_truth|accounting_first_time_setup_wizard_configures_defaults_idempotently|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 56 assertions
+
+Next package:
+- Package 6 of 10: Advanced Period Close And Adjustments

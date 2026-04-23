@@ -13,6 +13,7 @@ use App\Models\AccountingPeriodLock;
 use App\Models\AccountingPolicy;
 use App\Models\AccountingPostingGroup;
 use App\Models\AccountingSetupProfile;
+use App\Models\AccountingStatementNote;
 use App\Models\AccountingTaxRate;
 use App\Models\AccountingVendorBill;
 use App\Models\AccountingVendorBillAdjustment;
@@ -156,6 +157,55 @@ class AccountingRuntimeService
 
                 return $account;
             });
+    }
+
+    public function getStatementNotes(?string $statementType = null): Collection
+    {
+        return AccountingStatementNote::query()
+            ->with(['creator:id,name,email', 'updater:id,name,email'])
+            ->when($statementType, fn ($query) => $query->where('statement_type', $statementType))
+            ->where('is_active', true)
+            ->orderBy('statement_type')
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->get();
+    }
+
+    public function saveStatementNote(array $data, ?int $createdBy = null): AccountingStatementNote
+    {
+        return DB::transaction(function () use ($data, $createdBy): AccountingStatementNote {
+            $noteKey = Str::slug((string) ($data['note_key'] ?? $data['title']), '_');
+            $existing = AccountingStatementNote::query()
+                ->where('statement_type', $data['statement_type'])
+                ->where('note_key', $noteKey)
+                ->first();
+
+            $note = AccountingStatementNote::query()->updateOrCreate(
+                [
+                    'statement_type' => $data['statement_type'],
+                    'note_key' => $noteKey,
+                ],
+                [
+                    'title' => $data['title'],
+                    'disclosure_text' => $data['disclosure_text'],
+                    'effective_from' => $data['effective_from'] ?? null,
+                    'effective_to' => $data['effective_to'] ?? null,
+                    'sort_order' => (int) ($data['sort_order'] ?? 100),
+                    'is_active' => ! array_key_exists('is_active', $data) || (bool) $data['is_active'],
+                    'created_by' => $existing?->created_by ?: $createdBy,
+                    'updated_by' => $createdBy,
+                ]
+            );
+
+            $this->recordAudit('accounting_statement_note_saved', $note, "Accounting statement note {$note->title} " . ($existing ? 'updated' : 'created') . '.', [
+                'statement_type' => $note->statement_type,
+                'note_key' => $note->note_key,
+                'sort_order' => $note->sort_order,
+                'source_of_truth' => 'journal_entries_and_journal_entry_lines_for_amounts_only',
+            ], $createdBy);
+
+            return $note;
+        });
     }
 
     public function getSetupProfile(): ?AccountingSetupProfile

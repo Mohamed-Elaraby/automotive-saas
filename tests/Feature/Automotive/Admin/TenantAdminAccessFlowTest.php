@@ -496,6 +496,138 @@ class TenantAdminAccessFlowTest extends TestCase
         $ledgerResponse->assertSee('JE-IFRS-001', false);
     }
 
+    public function test_financial_statement_builder_and_notes_remain_journal_driven(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            DB::connection('tenant')->table('journal_entries')->insert([
+                [
+                    'id' => 1,
+                    'journal_number' => 'JE-STMT-001',
+                    'status' => 'posted',
+                    'entry_date' => '2026-04-23',
+                    'currency' => 'USD',
+                    'debit_total' => 300,
+                    'credit_total' => 300,
+                    'memo' => 'Statement builder proof',
+                    'posted_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'id' => 2,
+                    'journal_number' => 'JE-STMT-002',
+                    'status' => 'posted',
+                    'entry_date' => '2026-04-23',
+                    'currency' => 'USD',
+                    'debit_total' => 300,
+                    'credit_total' => 300,
+                    'memo' => 'Balance sheet proof',
+                    'posted_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            DB::connection('tenant')->table('journal_entry_lines')->insert([
+                [
+                    'journal_entry_id' => 1,
+                    'account_code' => '5200 Operating Expense',
+                    'account_name' => 'Operating Expense',
+                    'line_type' => 'debit',
+                    'debit' => 300,
+                    'credit' => 0,
+                    'memo' => 'Expense line',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => 1,
+                    'account_code' => '1000 Cash On Hand',
+                    'account_name' => 'Cash On Hand',
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => 300,
+                    'memo' => 'Cash line',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => 2,
+                    'account_code' => '1000 Cash On Hand',
+                    'account_name' => 'Cash On Hand',
+                    'line_type' => 'debit',
+                    'debit' => 300,
+                    'credit' => 0,
+                    'memo' => 'Cash asset line',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => 2,
+                    'account_code' => '3900 Inventory Adjustment Offset',
+                    'account_name' => 'Inventory Adjustment Offset',
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => 300,
+                    'memo' => 'Equity line',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $noteResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/statement-notes?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'statement_type' => 'profit_and_loss',
+            'note_key' => 'revenue_recognition',
+            'title' => 'Revenue Recognition',
+            'disclosure_text' => 'Revenue is recognized when the performance obligation is satisfied.',
+            'sort_order' => 10,
+            'is_active' => '1',
+        ]);
+
+        $noteResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_statement_notes', [
+                'statement_type' => 'profit_and_loss',
+                'note_key' => 'revenue_recognition',
+                'title' => 'Revenue Recognition',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'accounting_statement_note_saved',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $response = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+
+        $response->assertOk();
+        $response->assertSee('Financial Statement Builder', false);
+        $response->assertSee('Financial Statement Notes', false);
+        $response->assertSee('Net Income', false);
+        $response->assertSee('Difference', false);
+        $response->assertSee('Revenue Recognition', false);
+        $response->assertSee('JE-STMT-001', false);
+        $response->assertSee('JE-STMT-002', false);
+    }
+
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
     {
         [$tenant, $domain, $email, $password] = $this->prepareTenantWorkspace('active');

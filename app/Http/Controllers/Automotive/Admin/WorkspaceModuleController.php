@@ -385,6 +385,9 @@ class WorkspaceModuleController extends Controller
                 'accounting_audit_event_types' => $this->accountingRuntimeService->getAuditEventTypes(),
                 'accounting_audit_source_types' => $this->accountingRuntimeService->getAuditSourceTypes(),
                 'accounting_audit_actors' => $this->accountingRuntimeService->getAuditActors(),
+                'profit_and_loss_statement' => $this->accountingRuntimeService->profitAndLoss($filters),
+                'balance_sheet_statement' => $this->accountingRuntimeService->balanceSheet($filters),
+                'accounting_statement_notes' => $this->accountingRuntimeService->getStatementNotes(),
                 'pending_manual_journal_approvals' => $this->accountingRuntimeService->getPendingManualJournalApprovals(25),
                 'accounting_permissions' => $this->accountingPermissionMatrix(),
                 'integration_contracts' => $this->workspaceIntegrationContractService->contracts(),
@@ -518,6 +521,36 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Accounting account saved successfully.');
+    }
+
+    public function storeAccountingStatementNote(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::ACCOUNTS_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'statement_type' => ['required', 'in:profit_and_loss,balance_sheet'],
+            'note_key' => ['nullable', 'string', 'max:120'],
+            'title' => ['required', 'string', 'max:255'],
+            'disclosure_text' => ['required', 'string', 'max:5000'],
+            'effective_from' => ['nullable', 'date'],
+            'effective_to' => ['nullable', 'date'],
+            'sort_order' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->saveStatementNote($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Financial statement note saved successfully.');
     }
 
     public function deactivateAccountingAccount(Request $request, AccountingAccount $account): RedirectResponse

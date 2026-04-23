@@ -376,6 +376,106 @@
                     </div>
                 </div>
 
+                @php($profitAndLossStatement = $moduleData['profit_and_loss_statement'] ?? ['sections' => [], 'summary' => []])
+                @php($balanceSheetStatement = $moduleData['balance_sheet_statement'] ?? ['sections' => [], 'summary' => []])
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Financial Statement Builder</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xl-6">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                                        <div>
+                                            <div class="fw-semibold">Profit And Loss</div>
+                                            <div class="text-muted small">Journal-driven operating view.</div>
+                                        </div>
+                                        <a class="btn btn-sm btn-outline-light" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}">Print</a>
+                                    </div>
+                                    @foreach(($profitAndLossStatement['sections'] ?? []) as $section)
+                                        <div class="border-bottom pb-2 mb-2">
+                                            <div class="d-flex justify-content-between"><span class="fw-semibold">{{ $section['label'] }}</span><span>{{ number_format((float) ($section['total'] ?? 0), 2) }}</span></div>
+                                            @foreach(($section['rows'] ?? collect())->take(4) as $row)
+                                                <div class="d-flex justify-content-between text-muted small"><span>{{ $row->account_name }}{{ !empty($row->statement_subsection) ? ' · '.$row->statement_subsection : '' }}</span><span>{{ number_format((float) $row->amount, 2) }}</span></div>
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                    <div class="d-flex justify-content-between fw-semibold"><span>Net Income</span><span>{{ number_format((float) data_get($profitAndLossStatement, 'summary.Net Income', 0), 2) }}</span></div>
+                                </div>
+                            </div>
+                            <div class="col-xl-6">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                                        <div>
+                                            <div class="fw-semibold">Balance Sheet</div>
+                                            <div class="text-muted small">IFRS-mapped statement structure.</div>
+                                        </div>
+                                        <a class="btn btn-sm btn-outline-light" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}">Print</a>
+                                    </div>
+                                    @foreach(($balanceSheetStatement['sections'] ?? []) as $section)
+                                        <div class="border-bottom pb-2 mb-2">
+                                            <div class="d-flex justify-content-between"><span class="fw-semibold">{{ $section['label'] }}</span><span>{{ number_format((float) ($section['total'] ?? 0), 2) }}</span></div>
+                                            @foreach(($section['rows'] ?? collect())->take(4) as $row)
+                                                <div class="d-flex justify-content-between text-muted small"><span>{{ $row->account_name }}{{ !empty($row->statement_subsection) ? ' · '.$row->statement_subsection : '' }}</span><span>{{ number_format((float) $row->amount, 2) }}</span></div>
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                    <div class="d-flex justify-content-between fw-semibold"><span>Difference</span><span>{{ number_format((float) data_get($balanceSheetStatement, 'summary.Difference', 0), 2) }}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h5 class="card-title mb-0">Financial Statement Notes</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xl-5">
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.statement-notes.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-5 mb-3"><label class="form-label">Statement</label><select name="statement_type" class="form-select"><option value="profit_and_loss">Profit &amp; Loss</option><option value="balance_sheet">Balance Sheet</option></select></div>
+                                        <div class="col-md-7 mb-3"><label class="form-label">Title</label><input type="text" name="title" class="form-control" value="{{ old('title') }}" placeholder="Revenue recognition"></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3"><label class="form-label">Key</label><input type="text" name="note_key" class="form-control" value="{{ old('note_key') }}" placeholder="revenue_recognition"></div>
+                                        <div class="col-md-4 mb-3"><label class="form-label">Sort</label><input type="number" min="1" max="999" name="sort_order" class="form-control" value="{{ old('sort_order', 100) }}"></div>
+                                        <div class="col-md-4 mb-3 d-flex align-items-end"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="statement_note_active" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}><label class="form-check-label" for="statement_note_active">Active</label></div></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3"><label class="form-label">Effective From</label><input type="date" name="effective_from" class="form-control" value="{{ old('effective_from') }}"></div>
+                                        <div class="col-md-6 mb-3"><label class="form-label">Effective To</label><input type="date" name="effective_to" class="form-control" value="{{ old('effective_to') }}"></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Disclosure</label><textarea name="disclosure_text" class="form-control" rows="5">{{ old('disclosure_text') }}</textarea></div>
+                                    <button type="submit" class="btn btn-primary">Save Statement Note</button>
+                                </form>
+                            </div>
+                            <div class="col-xl-7">
+                                @forelse(($moduleData['accounting_statement_notes'] ?? collect())->groupBy('statement_type') as $statementType => $notes)
+                                    <div class="border rounded p-3 mb-3">
+                                        <div class="fw-semibold mb-2">{{ $statementType === 'profit_and_loss' ? 'Profit And Loss Notes' : 'Balance Sheet Notes' }}</div>
+                                        @foreach($notes as $note)
+                                            <div class="border-bottom pb-2 mb-2">
+                                                <div class="d-flex justify-content-between gap-2">
+                                                    <div>
+                                                        <div class="fw-semibold">{{ $note->title }}</div>
+                                                        <div class="text-muted small">{{ $note->note_key }}{{ $note->effective_from ? ' · '.$note->effective_from->format('Y-m-d') : '' }}{{ $note->effective_to ? ' to '.$note->effective_to->format('Y-m-d') : '' }}</div>
+                                                    </div>
+                                                    <span class="badge bg-light text-dark">#{{ $note->sort_order }}</span>
+                                                </div>
+                                                <div class="text-muted small mt-2">{{ $note->disclosure_text }}</div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No financial statement notes have been configured yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 @php($aging = $moduleData['receivables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-receivables">
                     <div>
