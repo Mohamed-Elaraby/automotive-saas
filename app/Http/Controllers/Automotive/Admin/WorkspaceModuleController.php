@@ -362,6 +362,8 @@ class WorkspaceModuleController extends Controller
                 'period_close_adjustments' => $this->accountingRuntimeService->getPeriodCloseAdjustments(null, 25),
                 'accounting_policies' => $this->accountingRuntimeService->getPolicies(),
                 'accounting_tax_rates' => $this->accountingRuntimeService->getTaxRates(),
+                'accounting_tax_filings' => $this->accountingRuntimeService->getTaxFilings(),
+                'accounting_tax_compliance_summary' => $this->accountingRuntimeService->taxComplianceSummary($filters),
                 'accounting_bank_accounts' => $this->accountingRuntimeService->getBankAccounts(),
                 'accounting_setup_summary' => $this->accountingRuntimeService->setupSummary(),
                 'receivable_events' => $this->accountingRuntimeService->getReceivableEvents(25),
@@ -789,6 +791,53 @@ class WorkspaceModuleController extends Controller
         return redirect()
             ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
             ->with('success', 'Tax rate saved successfully.');
+    }
+
+    public function storeAccountingTaxFiling(Request $request): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::TAX_RATES_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+            'period_start' => ['required', 'date'],
+            'period_end' => ['required', 'date'],
+            'return_type' => ['nullable', 'in:vat_return,tax_return'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->createTaxFiling($validated, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors())
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Tax filing prepared successfully.');
+    }
+
+    public function approveAccountingTaxFiling(Request $request, \App\Models\AccountingTaxFiling $filing): RedirectResponse
+    {
+        $this->authorizeAccounting(AccountingPermissionService::TAX_RATES_MANAGE);
+
+        $validated = $request->validate([
+            'workspace_product' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $this->accountingRuntimeService->approveTaxFiling($filing, auth('automotive_admin')->id());
+        } catch (ValidationException $exception) {
+            return redirect()
+                ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+                ->withErrors($exception->errors());
+        }
+
+        return redirect()
+            ->route('automotive.admin.modules.general-ledger', ['workspace_product' => $validated['workspace_product'] ?: 'accounting'])
+            ->with('success', 'Tax filing approved successfully.');
     }
 
     public function storeAccountingBankAccount(Request $request): RedirectResponse

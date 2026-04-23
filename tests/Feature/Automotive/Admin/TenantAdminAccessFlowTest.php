@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Models\Domain;
 use Tests\TestCase;
 
@@ -735,6 +736,155 @@ class TenantAdminAccessFlowTest extends TestCase
         $afterReview = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
         $afterReview->assertOk();
         $afterReview->assertSee('REVIEWED', false);
+    }
+
+    public function test_tax_vat_filings_are_prepared_from_journal_driven_tax_summary(): void
+    {
+        [$tenant, $domain, $email, $password] = $this->prepareAccountingOnlyTenantWorkspace();
+
+        $this->post("http://{$domain}/automotive/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            DB::connection('tenant')->table('journal_entries')->insert([
+                [
+                    'id' => 10,
+                    'journal_number' => 'JE-TAX-001',
+                    'status' => 'posted',
+                    'entry_date' => '2026-04-20',
+                    'currency' => 'USD',
+                    'debit_total' => 50,
+                    'credit_total' => 50,
+                    'memo' => 'Input tax proof',
+                    'posted_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'id' => 11,
+                    'journal_number' => 'JE-TAX-002',
+                    'status' => 'posted',
+                    'entry_date' => '2026-04-21',
+                    'currency' => 'USD',
+                    'debit_total' => 75,
+                    'credit_total' => 75,
+                    'memo' => 'Output tax proof',
+                    'posted_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+
+            DB::connection('tenant')->table('journal_entry_lines')->insert([
+                [
+                    'journal_entry_id' => 10,
+                    'account_code' => '1410 VAT Input Receivable',
+                    'account_name' => 'VAT Input Receivable',
+                    'line_type' => 'debit',
+                    'debit' => 50,
+                    'credit' => 0,
+                    'memo' => 'Input tax',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => 10,
+                    'account_code' => '2000 Accounts Payable',
+                    'account_name' => 'Accounts Payable',
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => 50,
+                    'memo' => 'Offset',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => 11,
+                    'account_code' => '2100 VAT Output Payable',
+                    'account_name' => 'VAT Output Payable',
+                    'line_type' => 'credit',
+                    'debit' => 0,
+                    'credit' => 75,
+                    'memo' => 'Output tax',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'journal_entry_id' => 11,
+                    'account_code' => '1100 Accounts Receivable',
+                    'account_name' => 'Accounts Receivable',
+                    'line_type' => 'debit',
+                    'debit' => 75,
+                    'credit' => 0,
+                    'memo' => 'Offset',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $prepareResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/tax-filings?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+            'period_start' => '2026-04-01',
+            'period_end' => '2026-04-30',
+            'return_type' => 'vat_return',
+            'notes' => 'April VAT filing',
+        ]);
+
+        $prepareResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $filing = DB::connection('tenant')->table('accounting_tax_filings')->latest('id')->first();
+            $this->assertNotNull($filing);
+            $this->assertSame('draft', $filing->status);
+            $this->assertSame(50.0, (float) $filing->input_tax_total);
+            $this->assertSame(75.0, (float) $filing->output_tax_total);
+            $this->assertSame(25.0, (float) $filing->net_tax_due);
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'tax_filing_created',
+            ], 'tenant');
+            $filingId = $filing->id;
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $approveResponse = $this->post("http://{$domain}/automotive/admin/general-ledger/tax-filings/{$filingId}/approve?workspace_product=accounting", [
+            'workspace_product' => 'accounting',
+        ]);
+
+        $approveResponse->assertRedirect("http://{$domain}/workspace/admin/general-ledger?workspace_product=accounting");
+
+        tenancy()->initialize($tenant);
+
+        try {
+            $this->assertDatabaseHas('accounting_tax_filings', [
+                'id' => $filingId,
+                'status' => 'approved',
+            ], 'tenant');
+            $this->assertDatabaseHas('accounting_audit_entries', [
+                'event_type' => 'tax_filing_approved',
+            ], 'tenant');
+        } finally {
+            tenancy()->end();
+            DB::purge('tenant');
+        }
+
+        $response = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $response->assertOk();
+        $response->assertSee('Prepare Tax Filing', false);
+        $response->assertSee('Recent Tax Filings', false);
+        $response->assertSee('Net Tax Due', false);
+        $response->assertSee('APPROVED', false);
     }
 
     public function test_parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible(): void
@@ -4333,7 +4483,7 @@ class TenantAdminAccessFlowTest extends TestCase
      */
     protected function prepareTenantWorkspace(string $subscriptionStatus): array
     {
-        $tenantId = 'tenant-flow-' . uniqid();
+        $tenantId = 'tenant-flow-' . Str::uuid()->toString();
         $domain = $tenantId . '.example.test';
         $password = 'secret-pass';
         $email = $tenantId . '@example.test';
@@ -4420,7 +4570,7 @@ class TenantAdminAccessFlowTest extends TestCase
      */
     protected function prepareAccountingOnlyTenantWorkspace(): array
     {
-        $tenantId = 'accounting-only-' . uniqid();
+        $tenantId = 'accounting-only-' . Str::uuid()->toString();
         $domain = $tenantId . '.example.test';
         $password = 'secret-pass';
         $email = $tenantId . '@example.test';

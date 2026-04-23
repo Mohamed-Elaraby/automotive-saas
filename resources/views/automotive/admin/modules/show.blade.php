@@ -671,6 +671,13 @@
                 <div class="card">
                     <div class="card-header"><h5 class="card-title mb-0">Tax And VAT Settings</h5></div>
                     <div class="card-body">
+                        @php($taxComplianceSummary = $moduleData['accounting_tax_compliance_summary'] ?? ['input_total' => 0, 'output_total' => 0, 'net_payable' => 0, 'latest_filing' => null, 'open_status' => 'needs_review'])
+                        <div class="row mb-3">
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Input Tax</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['input_total'], 2) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Output Tax</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['output_total'], 2) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Net Tax Due</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['net_payable'], 2) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Filing Status</div><div class="fw-semibold">{{ strtoupper(str_replace('_', ' ', $taxComplianceSummary['open_status'])) }}</div></div></div>
+                        </div>
                         <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-rates.store', $workspaceQuery) }}">
                             @csrf
                             <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
@@ -699,6 +706,49 @@
                             @empty
                                 <p class="text-muted mb-0">No tax rates are configured yet.</p>
                             @endforelse
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-xl-5">
+                                <h6 class="mb-3">Prepare Tax Filing</h6>
+                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-filings.store', $workspaceQuery) }}">
+                                    @csrf
+                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3"><label class="form-label">Period Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                        <div class="col-md-6 mb-3"><label class="form-label">Period End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                    </div>
+                                    <div class="mb-3"><label class="form-label">Return Type</label><select name="return_type" class="form-select"><option value="vat_return">VAT Return</option><option value="tax_return">Tax Return</option></select></div>
+                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                    <button type="submit" class="btn btn-primary">Prepare Tax Filing</button>
+                                </form>
+                            </div>
+                            <div class="col-xl-7">
+                                <h6 class="mb-3">Recent Tax Filings</h6>
+                                @forelse(($moduleData['accounting_tax_filings'] ?? collect()) as $filing)
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between gap-3">
+                                            <div>
+                                                <div class="fw-semibold">{{ $filing->filing_number }}</div>
+                                                <div class="text-muted small">{{ optional($filing->period_start)->format('Y-m-d') }} to {{ optional($filing->period_end)->format('Y-m-d') }} · {{ strtoupper(str_replace('_', ' ', $filing->return_type)) }}</div>
+                                                <div class="text-muted small">Input {{ number_format((float) $filing->input_tax_total, 2) }} · Output {{ number_format((float) $filing->output_tax_total, 2) }} · Net {{ number_format((float) $filing->net_tax_due, 2) }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge {{ $filing->status === 'approved' ? 'bg-success' : 'bg-warning text-dark' }}">{{ strtoupper($filing->status) }}</span>
+                                                @if($filing->status !== 'approved')
+                                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-filings.approve', ['filing' => $filing->id] + $workspaceQuery) }}" class="mt-2">
+                                                        @csrf
+                                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Approve Filing</button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-muted mb-0">No tax filings have been prepared yet.</p>
+                                @endforelse
+                            </div>
                         </div>
                     </div>
                 </div>

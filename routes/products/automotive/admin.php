@@ -168,6 +168,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.general-ledger.policies.store');
                 Route::post('/general-ledger/tax-rates', [WorkspaceModuleController::class, 'storeAccountingTaxRate'])
                     ->name('modules.general-ledger.tax-rates.store');
+                Route::post('/general-ledger/tax-filings', [WorkspaceModuleController::class, 'storeAccountingTaxFiling'])
+                    ->name('modules.general-ledger.tax-filings.store');
+                Route::post('/general-ledger/tax-filings/{filing}/approve', [WorkspaceModuleController::class, 'approveAccountingTaxFiling'])
+                    ->name('modules.general-ledger.tax-filings.approve');
                 Route::post('/general-ledger/bank-accounts', [WorkspaceModuleController::class, 'storeAccountingBankAccount'])
                     ->name('modules.general-ledger.bank-accounts.store');
                 Route::get('/general-ledger/exports/{report}', [WorkspaceModuleController::class, 'exportAccountingReport'])

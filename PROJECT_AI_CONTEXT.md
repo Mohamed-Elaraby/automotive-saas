@@ -769,12 +769,12 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 7 of 10: Tax/VAT Compliance Expansion
+### Professional Accounting Roadmap - Package 8 of 10: Multi-Currency And Exchange Revaluation
 Recommended scope:
-- expand tax/VAT workflows beyond the current basic rate setup and tax summary
-- improve operational tax controls, reporting visibility, and compliance exports
-- keep tax amounts journal-driven wherever posted transactions exist
-- preserve notes, settings, and tax configuration as metadata only
+- add multi-currency configuration and reporting without breaking current single-currency tenants
+- support exchange-rate driven reporting and controlled revaluation workflows
+- keep realized/unrealized FX effects journal-driven
+- preserve metadata/configuration layers as helpers only
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
 - keep integration architecture closed unless a real blocker appears
@@ -787,8 +787,8 @@ Professional Accounting Roadmap progress:
 4. IFRS-Ready Chart Of Accounts And Mapping Layer - completed
 5. Financial Statement Builder And Notes Foundation - completed
 6. Advanced Period Close And Adjustments - completed
-7. Tax/VAT Compliance Expansion - next
-8. Multi-Currency And Exchange Revaluation - pending
+7. Tax/VAT Compliance Expansion - completed
+8. Multi-Currency And Exchange Revaluation - next
 9. Import/Export, Audit Evidence, And Accountant Review Pack - pending
 10. Production Hardening, Permissions Matrix, And Market Acceptance - pending
 
@@ -3569,3 +3569,60 @@ Verification:
 
 Next package:
 - Package 7 of 10: Tax/VAT Compliance Expansion
+
+## 39) Professional Accounting Roadmap Package 7 - Tax/VAT Compliance Expansion
+Status:
+- completed
+- this is package 7 of 10 in the Professional Accounting Roadmap
+
+Current behavior:
+- General Ledger tax area now includes a tax compliance dashboard
+- tax/VAT compliance now surfaces:
+  - input tax total
+  - output tax total
+  - net tax due
+  - filing status
+- a tenant can now prepare tax filings for a selected period
+- tax filing totals are computed from the journal-driven tax summary for that period
+- tax filings can then be approved as compliance records
+- tax filing records are metadata/compliance controls only; they do not create tax amounts outside the journals
+- audit trail now records:
+  - `tax_filing_created`
+  - `tax_filing_approved`
+- accounting-only tenants continue to use the tax workflow without Automotive or Parts Inventory dependencies
+
+Database note:
+- this package added a new tenant migration:
+  - `database/migrations/tenant/2026_04_23_130000_create_accounting_tax_filings_table.php`
+- after deploying this package, run tenant migrations
+
+Important files changed:
+- `app/Models/AccountingTaxFiling.php`
+- `database/migrations/tenant/2026_04_23_130000_create_accounting_tax_filings_table.php`
+- `app/Services/Automotive/AccountingRuntimeService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `routes/products/automotive/admin.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Verification:
+- `php -l app/Services/Automotive/AccountingRuntimeService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l app/Models/AccountingTaxFiling.php`
+  - result: no syntax errors
+- `php -l database/migrations/tenant/2026_04_23_130000_create_accounting_tax_filings_table.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=tax_vat_filings_are_prepared_from_journal_driven_tax_summary`
+  - result: 1 passed, 19 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='tax_vat_filings_are_prepared_from_journal_driven_tax_summary|period_close_adjustments_are_journal_backed_and_reviewed_before_final_close|financial_statement_builder_and_notes_remain_journal_driven|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 60 assertions
+
+Next package:
+- Package 8 of 10: Multi-Currency And Exchange Revaluation

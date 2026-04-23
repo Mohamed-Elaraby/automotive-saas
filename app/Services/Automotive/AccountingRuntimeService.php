@@ -16,6 +16,7 @@ use App\Models\AccountingPostingGroup;
 use App\Models\AccountingSetupProfile;
 use App\Models\AccountingStatementNote;
 use App\Models\AccountingTaxRate;
+use App\Models\AccountingTaxFiling;
 use App\Models\AccountingVendorBill;
 use App\Models\AccountingVendorBillAdjustment;
 use App\Models\AccountingVendorBillPayment;
@@ -207,6 +208,104 @@ class AccountingRuntimeService
 
             return $note;
         });
+    }
+
+    public function getTaxFilings(int $limit = 12): Collection
+    {
+        if (! Schema::hasTable('accounting_tax_filings')) {
+            return collect();
+        }
+
+        return AccountingTaxFiling::query()
+            ->with(['submitter:id,name,email', 'approver:id,name,email'])
+            ->latest('period_end')
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function taxComplianceSummary(array $filters = []): array
+    {
+        $summary = $this->taxSummary($filters);
+        $latestFiling = Schema::hasTable('accounting_tax_filings')
+            ? AccountingTaxFiling::query()->latest('period_end')->latest('id')->first()
+            : null;
+
+        return [
+            'input_total' => $summary['input_total'],
+            'output_total' => $summary['output_total'],
+            'net_payable' => $summary['net_payable'],
+            'latest_filing' => $latestFiling,
+            'open_status' => $latestFiling?->status === 'approved' ? 'up_to_date' : 'needs_review',
+        ];
+    }
+
+    public function createTaxFiling(array $data, ?int $createdBy = null): AccountingTaxFiling
+    {
+        if (! Schema::hasTable('accounting_tax_filings')) {
+            throw ValidationException::withMessages([
+                'tax_filing' => 'Run tenant migrations before using tax filing workflow.',
+            ]);
+        }
+
+        $periodStart = Carbon::parse($data['period_start'])->toDateString();
+        $periodEnd = Carbon::parse($data['period_end'])->toDateString();
+
+        if ($periodEnd < $periodStart) {
+            throw ValidationException::withMessages([
+                'period_end' => 'Tax filing end date must be on or after the start date.',
+            ]);
+        }
+
+        $summary = $this->taxSummary([
+            'date_from' => $periodStart,
+            'date_to' => $periodEnd,
+        ]);
+
+        $filing = AccountingTaxFiling::query()->create([
+            'filing_number' => $this->nextJournalNumber('TAX'),
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+            'status' => 'draft',
+            'return_type' => $data['return_type'] ?? 'vat_return',
+            'input_tax_total' => $summary['input_total'],
+            'output_tax_total' => $summary['output_total'],
+            'net_tax_due' => $summary['net_payable'],
+            'notes' => $data['notes'] ?? null,
+            'submitted_by' => $createdBy,
+            'submitted_at' => now(),
+        ]);
+
+        $this->recordAudit('tax_filing_created', $filing, "Tax filing {$filing->filing_number} prepared for {$periodStart} to {$periodEnd}.", [
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+            'input_tax_total' => (float) $filing->input_tax_total,
+            'output_tax_total' => (float) $filing->output_tax_total,
+            'net_tax_due' => (float) $filing->net_tax_due,
+        ], $createdBy);
+
+        return $filing;
+    }
+
+    public function approveTaxFiling(AccountingTaxFiling $filing, ?int $approvedBy = null): AccountingTaxFiling
+    {
+        if ($filing->status === 'approved') {
+            throw ValidationException::withMessages([
+                'tax_filing' => 'This tax filing is already approved.',
+            ]);
+        }
+
+        $filing->forceFill([
+            'status' => 'approved',
+            'approved_by' => $approvedBy,
+            'approved_at' => now(),
+        ])->save();
+
+        $this->recordAudit('tax_filing_approved', $filing, "Tax filing {$filing->filing_number} approved.", [
+            'net_tax_due' => (float) $filing->net_tax_due,
+        ], $approvedBy);
+
+        return $filing->refresh();
     }
 
     public function getPeriodCloseAdjustments(?int $periodLockId = null, int $limit = 25): Collection
