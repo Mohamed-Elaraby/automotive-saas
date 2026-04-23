@@ -769,12 +769,11 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Package 10 of 10: Production Hardening, Permissions Matrix, And Market Acceptance
+### Professional Accounting Roadmap - Complete
 Recommended scope:
-- harden the accounting runtime for production edge cases and tenant safety
-- finalize the permissions matrix and remaining accounting control gaps
-- validate the accounting-only tenant path as a market-ready standalone product
-- tighten UI/UX details that affect acceptance for ordinary business users
+- the 10-package accounting roadmap is complete
+- next work should be bug-driven or market-feedback-driven instead of opening a new accounting foundation package
+- preserve the current tenant-safe accounting controls and permission model
 - preserve journals and journal lines as the authoritative ledger
 - do not bypass journals as the accounting source of truth
 - continue to support accounting-only tenants without requiring Automotive or Parts Inventory
@@ -791,7 +790,7 @@ Professional Accounting Roadmap progress:
 7. Tax/VAT Compliance Expansion - completed
 8. Multi-Currency And Exchange Revaluation - completed
 9. Import/Export, Audit Evidence, And Accountant Review Pack - completed
-10. Production Hardening, Permissions Matrix, And Market Acceptance - next
+10. Production Hardening, Permissions Matrix, And Market Acceptance - completed
 
 Persistent accounting rules:
 - For future accounting changes, keep journals as the accounting source of truth.
@@ -3731,5 +3730,58 @@ Verification:
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='accountant_review_pack_and_import_templates_are_exported_without_changing_journal_source_of_truth|multi_currency_exchange_rates_and_fx_revaluation_post_journal_entries|tax_vat_filings_are_prepared_from_journal_driven_tax_summary|period_close_adjustments_are_journal_backed_and_reviewed_before_final_close|verifies_accounting_only_tenant_runtime_readiness'`
   - result: 5 passed, 100 assertions
 
-Next package:
+Package completed:
 - Package 10 of 10: Production Hardening, Permissions Matrix, And Market Acceptance
+
+Completed behavior:
+- added a centralized accounting permission matrix definition service with human-readable labels
+- General Ledger now shows an `Accounting Access` summary with:
+  - role
+  - access mode
+  - allowed sensitive action count
+  - quick visibility into blocked vs allowed capabilities
+- key sensitive UI actions are now hidden when the current user lacks permission, including:
+  - first-time setup
+  - report exports and print outputs
+  - accountant review pack export
+  - import template downloads
+  - tax filing preparation
+  - period close / period lock actions
+  - exchange rate maintenance
+  - FX revaluation posting
+  - manual journal creation
+- journal detail pages now show accounting access context so approvers/reviewers understand why actions are or are not available
+- accounting-only tenants remain supported and the permission hardening stays inside the shared workspace model
+
+Important files added/changed:
+- `app/Services/Automotive/AccountingPermissionService.php`
+- `app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+- `resources/views/automotive/admin/modules/show.blade.php`
+- `resources/views/automotive/admin/modules/journal-entry-show.blade.php`
+- `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+- `PROJECT_AI_CONTEXT.md`
+
+Database impact:
+- no new tables in this package
+- no tenant migrate required for this package
+
+Verification:
+- `php -l app/Services/Automotive/AccountingPermissionService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/WorkspaceModuleController.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/modules/journal-entry-show.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: no syntax errors
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_runtime_requires_permissions_for_sensitive_actions`
+  - result: 1 passed, 15 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=high_risk_manual_journals_require_approval_before_posting`
+  - result: 1 passed, 43 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php tests/Feature/Tenancy/VerifyIntegrationReadinessCommandTest.php --filter='accountant_review_pack_and_import_templates_are_exported_without_changing_journal_source_of_truth|accounting_runtime_requires_permissions_for_sensitive_actions|high_risk_manual_journals_require_approval_before_posting|verifies_accounting_only_tenant_runtime_readiness'`
+  - result: 4 passed, 88 assertions
+
+Next package:
+- no remaining package in the current Professional Accounting Roadmap

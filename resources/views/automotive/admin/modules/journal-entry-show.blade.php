@@ -40,6 +40,10 @@
                     <div class="card flex-fill">
                         <div class="card-header"><h5 class="card-title mb-0">Journal Actions</h5></div>
                         <div class="card-body">
+                            <div class="alert alert-light border">
+                                <div class="fw-semibold mb-1">Accounting Access</div>
+                                <div class="text-muted small">Role {{ str_replace('_', ' ', strtoupper($accountingPermissionSummary['role'] ?? 'legacy_full_access')) }} · {{ $accountingPermissionSummary['mode_label'] ?? 'Full Access' }}</div>
+                            </div>
                             @if($journalEntry->status === 'pending_approval' && ($accountingPermissions['manual_journals_approve'] ?? true))
                                 <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.journal-entries.approve', ['journalEntry' => $journalEntry->id] + $workspaceQuery) }}" class="mb-2">
                                     @csrf
@@ -65,7 +69,7 @@
                                     <button type="submit" class="btn btn-outline-danger w-100">Reverse Journal Entry</button>
                                 </form>
                             @else
-                                <p class="text-muted mb-0">No reversal action is available for this journal entry.</p>
+                                <p class="text-muted mb-0">No action is available for this journal entry under your current permissions and its current status.</p>
                             @endif
                         </div>
                     </div>

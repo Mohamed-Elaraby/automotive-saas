@@ -2332,6 +2332,17 @@ class TenantAdminAccessFlowTest extends TestCase
         ]);
         $manualResponse->assertForbidden();
 
+        $ledgerResponse = $this->get("http://{$domain}/automotive/admin/general-ledger?workspace_product=accounting");
+        $ledgerResponse->assertOk();
+        $ledgerResponse->assertSee('Accounting Access', false);
+        $ledgerResponse->assertSee('Read Only', false);
+        $ledgerResponse->assertSee('Allowed 0/19 sensitive actions', false);
+        $ledgerResponse->assertSee('You do not have permission to change accounting setup or chart controls.', false);
+        $ledgerResponse->assertSee('You do not have permission to export reports or print review outputs.', false);
+        $ledgerResponse->assertSee('You do not have permission to create manual journals.', false);
+        $ledgerResponse->assertDontSee('Export Journal CSV', false);
+        $ledgerResponse->assertDontSee('Download Review Pack CSV', false);
+
         tenancy()->initialize($tenant);
 
         try {

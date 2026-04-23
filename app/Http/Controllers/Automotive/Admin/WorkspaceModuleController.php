@@ -396,6 +396,7 @@ class WorkspaceModuleController extends Controller
                 'accounting_statement_notes' => $this->accountingRuntimeService->getStatementNotes(),
                 'pending_manual_journal_approvals' => $this->accountingRuntimeService->getPendingManualJournalApprovals(25),
                 'accounting_permissions' => $this->accountingPermissionMatrix(),
+                'accounting_permission_summary' => $this->accountingPermissionService->summary(auth('automotive_admin')->user()),
                 'integration_contracts' => $this->workspaceIntegrationContractService->contracts(),
                 'recent_integration_handoffs' => $this->workspaceIntegrationHandoffService->recent(25),
             ]
@@ -413,6 +414,7 @@ class WorkspaceModuleController extends Controller
         $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
         $journalEntry->load(['lines', 'postingGroup', 'creator', 'accountingEvent']);
         $accountingPermissions = $this->accountingPermissionMatrix();
+        $accountingPermissionSummary = $this->accountingPermissionService->summary(auth('automotive_admin')->user());
 
         return view('automotive.admin.modules.journal-entry-show', compact(
             'journalEntry',
@@ -420,7 +422,8 @@ class WorkspaceModuleController extends Controller
             'focusedWorkspaceProduct',
             'workspaceQuery',
             'workspaceIntegrations',
-            'accountingPermissions'
+            'accountingPermissions',
+            'accountingPermissionSummary'
         ));
     }
 
@@ -2038,28 +2041,6 @@ class WorkspaceModuleController extends Controller
 
     protected function accountingPermissionMatrix(): array
     {
-        $user = auth('automotive_admin')->user();
-
-        return [
-            'manual_journals_create' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_CREATE),
-            'manual_journals_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_POST),
-            'manual_journals_approve' => $this->accountingPermissionService->can($user, AccountingPermissionService::MANUAL_JOURNALS_APPROVE),
-            'source_events_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::SOURCE_EVENTS_POST),
-            'ar_invoices_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::AR_INVOICES_MANAGE),
-            'ar_invoices_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::AR_INVOICES_POST),
-            'inventory_movements_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::INVENTORY_MOVEMENTS_POST),
-            'vendor_bills_post' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILLS_POST),
-            'vendor_bills_adjust' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILLS_ADJUST),
-            'vendor_bill_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::VENDOR_BILL_PAYMENTS_RECORD),
-            'customer_payments_record' => $this->accountingPermissionService->can($user, AccountingPermissionService::CUSTOMER_PAYMENTS_RECORD),
-            'deposit_batches_create' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CREATE),
-            'deposit_batches_correct' => $this->accountingPermissionService->can($user, AccountingPermissionService::DEPOSIT_BATCHES_CORRECT),
-            'reconciliation_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::RECONCILIATION_MANAGE),
-            'journals_reverse' => $this->accountingPermissionService->can($user, AccountingPermissionService::JOURNALS_REVERSE),
-            'periods_lock' => $this->accountingPermissionService->can($user, AccountingPermissionService::PERIODS_LOCK),
-            'accounts_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::ACCOUNTS_MANAGE),
-            'tax_rates_manage' => $this->accountingPermissionService->can($user, AccountingPermissionService::TAX_RATES_MANAGE),
-            'reports_export' => $this->accountingPermissionService->can($user, AccountingPermissionService::REPORTS_EXPORT),
-        ];
+        return $this->accountingPermissionService->matrix(auth('automotive_admin')->user());
     }
 }

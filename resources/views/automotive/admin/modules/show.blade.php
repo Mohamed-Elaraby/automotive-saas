@@ -136,6 +136,8 @@
                 @php($journalFilters = $moduleData['journal_filters'] ?? [])
                 @php($setupSummary = $moduleData['accounting_setup_summary'] ?? ['profile' => null, 'items' => [], 'complete' => false])
                 @php($setupProfile = $setupSummary['profile'] ?? null)
+                @php($accountingPermissions = $moduleData['accounting_permissions'] ?? [])
+                @php($accountingPermissionSummary = $moduleData['accounting_permission_summary'] ?? ['role' => 'legacy_full_access', 'mode' => 'full_access', 'mode_label' => 'Full Access', 'allowed_count' => 0, 'total_count' => 0, 'items' => collect()])
                 @php($commandReceivables = $moduleData['receivables_aging'] ?? ['total_open' => 0, 'overdue_total' => 0])
                 @php($commandPayables = $moduleData['payables_summary'] ?? ['open_count' => 0, 'open_amount' => 0, 'due_soon_count' => 0])
                 @php($commandReconciliation = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'deposited_count' => 0, 'vendor_payment_count' => 0])
@@ -242,6 +244,36 @@
                     </ul>
                 </div>
 
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                            <div>
+                                <div class="text-muted small mb-1">Accounting Access</div>
+                                <h5 class="mb-1">{{ $accountingPermissionSummary['mode_label'] ?? 'Full Access' }}</h5>
+                                <div class="text-muted small">Role: {{ str_replace('_', ' ', strtoupper($accountingPermissionSummary['role'] ?? 'legacy_full_access')) }} · Allowed {{ $accountingPermissionSummary['allowed_count'] ?? 0 }}/{{ $accountingPermissionSummary['total_count'] ?? 0 }} sensitive actions</div>
+                            </div>
+                            <span class="badge {{ ($accountingPermissionSummary['mode'] ?? 'full_access') === 'read_only' ? 'bg-secondary' : (($accountingPermissionSummary['mode'] ?? 'full_access') === 'restricted_access' ? 'bg-warning text-dark' : 'bg-success') }}">
+                                {{ $accountingPermissionSummary['mode_label'] ?? 'Full Access' }}
+                            </span>
+                        </div>
+                        <div class="row mt-3">
+                            @foreach(collect($accountingPermissionSummary['items'] ?? [])->take(6) as $permissionItem)
+                                <div class="col-xl-4 col-md-6 mb-2">
+                                    <div class="d-flex justify-content-between border rounded px-3 py-2">
+                                        <span class="small">{{ $permissionItem['label'] }}</span>
+                                        <span class="badge {{ !empty($permissionItem['allowed']) ? 'bg-success' : 'bg-light text-dark border' }}">{{ !empty($permissionItem['allowed']) ? 'Allowed' : 'Blocked' }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        @if(($accountingPermissionSummary['mode'] ?? '') !== 'full_access')
+                            <div class="alert alert-light border mb-0 mt-2">
+                                Sensitive actions are hidden unless your assigned accounting permissions allow them. Reports, setup, journals, tax, and close controls follow this matrix.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-first-time-setup">
                     <div>
                         <h5 class="mb-0">First-Time Setup</h5>
@@ -253,59 +285,63 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-xl-8">
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.first-time-setup.store', $workspaceQuery) }}">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="row">
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Base Currency</label>
-                                            <input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}">
+                                @if($accountingPermissions['accounts_manage'] ?? true)
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.first-time-setup.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Base Currency</label>
+                                                <input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Fiscal Start Month</label>
+                                                <select name="fiscal_year_start_month" class="form-select">
+                                                    @for($month = 1; $month <= 12; $month++)
+                                                        <option value="{{ $month }}" @selected((int) old('fiscal_year_start_month', $setupProfile->fiscal_year_start_month ?? 1) === $month)>{{ $month }}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Fiscal Start Day</label>
+                                                <input type="number" min="1" max="31" name="fiscal_year_start_day" class="form-control" value="{{ old('fiscal_year_start_day', $setupProfile->fiscal_year_start_day ?? 1) }}">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Chart Template</label>
+                                                <select name="chart_template" class="form-select">
+                                                    <option value="service_business" @selected(old('chart_template', $setupProfile->chart_template ?? 'service_business') === 'service_business')>Service Business</option>
+                                                    <option value="trading_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'trading_business')>Trading Business</option>
+                                                    <option value="general_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'general_business')>General Business</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Fiscal Start Month</label>
-                                            <select name="fiscal_year_start_month" class="form-select">
-                                                @for($month = 1; $month <= 12; $month++)
-                                                    <option value="{{ $month }}" @selected((int) old('fiscal_year_start_month', $setupProfile->fiscal_year_start_month ?? 1) === $month)>{{ $month }}</option>
-                                                @endfor
-                                            </select>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label class="form-label">Tax Mode</label>
+                                                <select name="tax_mode" class="form-select">
+                                                    <option value="vat_standard" @selected(old('tax_mode', $setupProfile->tax_mode ?? 'vat_standard') === 'vat_standard')>VAT Standard</option>
+                                                    <option value="no_tax" @selected(old('tax_mode', $setupProfile->tax_mode ?? '') === 'no_tax')>No Tax</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Default Tax Rate %</label><input type="number" step="0.0001" min="0" max="100" name="default_tax_rate" class="form-control" value="{{ old('default_tax_rate', data_get($setupProfile?->payload, 'tax_rate', 5)) }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Revenue Account</label><input type="text" name="default_revenue_account" list="account-catalog-options" class="form-control" value="{{ old('default_revenue_account', $setupProfile->default_revenue_account ?? '4100 Service Revenue') }}"></div>
                                         </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Fiscal Start Day</label>
-                                            <input type="number" min="1" max="31" name="fiscal_year_start_day" class="form-control" value="{{ old('fiscal_year_start_day', $setupProfile->fiscal_year_start_day ?? 1) }}">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3"><label class="form-label">Receivable Account</label><input type="text" name="default_receivable_account" list="account-catalog-options" class="form-control" value="{{ old('default_receivable_account', $setupProfile->default_receivable_account ?? '1100 Accounts Receivable') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Payable Account</label><input type="text" name="default_payable_account" list="account-catalog-options" class="form-control" value="{{ old('default_payable_account', $setupProfile->default_payable_account ?? '2000 Accounts Payable') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Expense Account</label><input type="text" name="default_expense_account" list="account-catalog-options" class="form-control" value="{{ old('default_expense_account', $setupProfile->default_expense_account ?? '5200 Operating Expense') }}"></div>
                                         </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Chart Template</label>
-                                            <select name="chart_template" class="form-select">
-                                                <option value="service_business" @selected(old('chart_template', $setupProfile->chart_template ?? 'service_business') === 'service_business')>Service Business</option>
-                                                <option value="trading_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'trading_business')>Trading Business</option>
-                                                <option value="general_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'general_business')>General Business</option>
-                                            </select>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3"><label class="form-label">Cash Account</label><input type="text" name="default_cash_account" list="account-catalog-options" class="form-control" value="{{ old('default_cash_account', $setupProfile->default_cash_account ?? '1000 Cash On Hand') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Bank Account</label><input type="text" name="default_bank_account" list="account-catalog-options" class="form-control" value="{{ old('default_bank_account', $setupProfile->default_bank_account ?? '1010 Bank Account') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Input Tax Account</label><input type="text" name="default_input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_input_tax_account', $setupProfile->default_input_tax_account ?? '1410 VAT Input Receivable') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">Output Tax Account</label><input type="text" name="default_output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_output_tax_account', $setupProfile->default_output_tax_account ?? '2100 VAT Output Payable') }}"></div>
                                         </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Tax Mode</label>
-                                            <select name="tax_mode" class="form-select">
-                                                <option value="vat_standard" @selected(old('tax_mode', $setupProfile->tax_mode ?? 'vat_standard') === 'vat_standard')>VAT Standard</option>
-                                                <option value="no_tax" @selected(old('tax_mode', $setupProfile->tax_mode ?? '') === 'no_tax')>No Tax</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Default Tax Rate %</label><input type="number" step="0.0001" min="0" max="100" name="default_tax_rate" class="form-control" value="{{ old('default_tax_rate', data_get($setupProfile?->payload, 'tax_rate', 5)) }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Revenue Account</label><input type="text" name="default_revenue_account" list="account-catalog-options" class="form-control" value="{{ old('default_revenue_account', $setupProfile->default_revenue_account ?? '4100 Service Revenue') }}"></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3"><label class="form-label">Receivable Account</label><input type="text" name="default_receivable_account" list="account-catalog-options" class="form-control" value="{{ old('default_receivable_account', $setupProfile->default_receivable_account ?? '1100 Accounts Receivable') }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Payable Account</label><input type="text" name="default_payable_account" list="account-catalog-options" class="form-control" value="{{ old('default_payable_account', $setupProfile->default_payable_account ?? '2000 Accounts Payable') }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Expense Account</label><input type="text" name="default_expense_account" list="account-catalog-options" class="form-control" value="{{ old('default_expense_account', $setupProfile->default_expense_account ?? '5200 Operating Expense') }}"></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-3 mb-3"><label class="form-label">Cash Account</label><input type="text" name="default_cash_account" list="account-catalog-options" class="form-control" value="{{ old('default_cash_account', $setupProfile->default_cash_account ?? '1000 Cash On Hand') }}"></div>
-                                        <div class="col-md-3 mb-3"><label class="form-label">Bank Account</label><input type="text" name="default_bank_account" list="account-catalog-options" class="form-control" value="{{ old('default_bank_account', $setupProfile->default_bank_account ?? '1010 Bank Account') }}"></div>
-                                        <div class="col-md-3 mb-3"><label class="form-label">Input Tax Account</label><input type="text" name="default_input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_input_tax_account', $setupProfile->default_input_tax_account ?? '1410 VAT Input Receivable') }}"></div>
-                                        <div class="col-md-3 mb-3"><label class="form-label">Output Tax Account</label><input type="text" name="default_output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_output_tax_account', $setupProfile->default_output_tax_account ?? '2100 VAT Output Payable') }}"></div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Complete Accounting Setup</button>
-                                </form>
+                                        <button type="submit" class="btn btn-primary">Complete Accounting Setup</button>
+                                    </form>
+                                @else
+                                    <div class="alert alert-light border mb-0">You do not have permission to change accounting setup or chart controls.</div>
+                                @endif
                             </div>
                             <div class="col-xl-4">
                                 <div class="border rounded p-3 h-100">
@@ -350,30 +386,34 @@
                                 <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
                             </div>
                         </form>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries'] + $workspaceQuery + $journalFilters) }}">Export Journal CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance'] + $workspaceQuery + $journalFilters) }}">Export Trial Balance CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">Export Revenue CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss'] + $workspaceQuery + $journalFilters) }}">Export P&amp;L CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet'] + $workspaceQuery + $journalFilters) }}">Export Balance Sheet CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary'] + $workspaceQuery + $journalFilters) }}">Export Tax Summary CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">Export Payments CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging'] + $workspaceQuery + $journalFilters) }}">Export Receivables Aging CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging'] + $workspaceQuery + $journalFilters) }}">Export Payables Aging CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation'] + $workspaceQuery + $journalFilters) }}">Export Bank Reconciliation CSV</a>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary'] + $workspaceQuery + $journalFilters) }}">Export Reconciliation Summary CSV</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Trial Balance</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Revenue</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print P&amp;L</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Balance Sheet</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payments</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Tax Summary</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Receivables Aging</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payables Aging</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Bank Reconciliation</a>
-                            <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Reconciliation Summary</a>
-                        </div>
+                        @if($accountingPermissions['reports_export'] ?? true)
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries'] + $workspaceQuery + $journalFilters) }}">Export Journal CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance'] + $workspaceQuery + $journalFilters) }}">Export Trial Balance CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">Export Revenue CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss'] + $workspaceQuery + $journalFilters) }}">Export P&amp;L CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet'] + $workspaceQuery + $journalFilters) }}">Export Balance Sheet CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary'] + $workspaceQuery + $journalFilters) }}">Export Tax Summary CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">Export Payments CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging'] + $workspaceQuery + $journalFilters) }}">Export Receivables Aging CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging'] + $workspaceQuery + $journalFilters) }}">Export Payables Aging CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation'] + $workspaceQuery + $journalFilters) }}">Export Bank Reconciliation CSV</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary'] + $workspaceQuery + $journalFilters) }}">Export Reconciliation Summary CSV</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Trial Balance</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Revenue</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print P&amp;L</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Balance Sheet</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payments</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Tax Summary</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Receivables Aging</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payables Aging</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Bank Reconciliation</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Reconciliation Summary</a>
+                            </div>
+                        @else
+                            <p class="text-muted mb-0">You do not have permission to export reports or print review outputs.</p>
+                        @endif
                     </div>
                 </div>
 
@@ -395,13 +435,17 @@
                 </div>
                 <div class="row">
                     <div class="col-xl-7 d-flex">
-                        <div class="card flex-fill">
+                            <div class="card flex-fill">
                             <div class="card-header"><h5 class="card-title mb-0">Accountant Review Pack</h5></div>
                             <div class="card-body">
-                                <div class="d-flex flex-wrap gap-2 mb-3">
-                                    <a class="btn btn-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'accountant-review-pack'] + $workspaceQuery + $journalFilters) }}">Download Review Pack CSV</a>
-                                    <a class="btn btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'accountant-review-pack', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Review Pack</a>
-                                </div>
+                                @if($accountingPermissions['reports_export'] ?? true)
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        <a class="btn btn-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'accountant-review-pack'] + $workspaceQuery + $journalFilters) }}">Download Review Pack CSV</a>
+                                        <a class="btn btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'accountant-review-pack', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Review Pack</a>
+                                    </div>
+                                @else
+                                    <div class="alert alert-light border">You do not have permission to export the accountant review pack.</div>
+                                @endif
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead><tr><th>Section</th><th>Metric</th><th>Value</th><th>Evidence Source</th></tr></thead>
@@ -425,11 +469,15 @@
                         <div class="card flex-fill">
                             <div class="card-header"><h5 class="card-title mb-0">Import Templates</h5></div>
                             <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'manual-journal'] + $workspaceQuery) }}">Download Manual Journal Template</a>
-                                    <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'chart-of-accounts'] + $workspaceQuery) }}">Download Chart Of Accounts Template</a>
-                                    <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'statement-notes'] + $workspaceQuery) }}">Download Statement Notes Template</a>
-                                </div>
+                                @if($accountingPermissions['reports_export'] ?? true)
+                                    <div class="d-grid gap-2">
+                                        <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'manual-journal'] + $workspaceQuery) }}">Download Manual Journal Template</a>
+                                        <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'chart-of-accounts'] + $workspaceQuery) }}">Download Chart Of Accounts Template</a>
+                                        <a class="btn btn-outline-primary text-start" href="{{ route('automotive.admin.modules.general-ledger.import-templates', ['template' => 'statement-notes'] + $workspaceQuery) }}">Download Statement Notes Template</a>
+                                    </div>
+                                @else
+                                    <p class="text-muted mb-0">Import templates are available only to users who can export accounting reports.</p>
+                                @endif
                                 <div class="text-muted small mt-3">Templates support controlled import preparation only. Final accounting impact still requires the normal journal-driven workflow.</div>
                             </div>
                         </div>
@@ -543,21 +591,25 @@
                         <div class="row">
                             <div class="col-xl-5">
                                 <h6 class="mb-3">Exchange Rates</h6>
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.exchange-rates.store', $workspaceQuery) }}">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3"><label class="form-label">Base</label><input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Foreign</label><input type="text" name="foreign_currency" maxlength="3" class="form-control" value="{{ old('foreign_currency', 'EUR') }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Rate Date</label><input type="date" name="rate_date" class="form-control" value="{{ old('rate_date', now()->toDateString()) }}"></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3"><label class="form-label">Rate To Base</label><input type="number" step="0.00000001" min="0.00000001" name="rate_to_base" class="form-control" value="{{ old('rate_to_base', '4.00000000') }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'manual_close_rate') }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Exchange Rate</button>
-                                </form>
+                                @if($accountingPermissions['accounts_manage'] ?? true)
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.exchange-rates.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3"><label class="form-label">Base</label><input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Foreign</label><input type="text" name="foreign_currency" maxlength="3" class="form-control" value="{{ old('foreign_currency', 'EUR') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Rate Date</label><input type="date" name="rate_date" class="form-control" value="{{ old('rate_date', now()->toDateString()) }}"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3"><label class="form-label">Rate To Base</label><input type="number" step="0.00000001" min="0.00000001" name="rate_to_base" class="form-control" value="{{ old('rate_to_base', '4.00000000') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Source</label><input type="text" name="source" class="form-control" value="{{ old('source', 'manual_close_rate') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Save Exchange Rate</button>
+                                    </form>
+                                @else
+                                    <p class="text-muted mb-0">You do not have permission to maintain exchange rates.</p>
+                                @endif
                             </div>
                             <div class="col-xl-7">
                                 <h6 class="mb-3">Recent Exchange Rates</h6>
@@ -578,27 +630,31 @@
                         <div class="row">
                             <div class="col-xl-5">
                                 <h6 class="mb-3">FX Revaluation</h6>
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.fx-revaluations.store', $workspaceQuery) }}">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="row">
-                                        <div class="col-md-4 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Rate Date</label><input type="date" name="rate_date" class="form-control" value="{{ old('rate_date', now()->toDateString()) }}"></div>
-                                        <div class="col-md-4 mb-3"><label class="form-label">Foreign Currency</label><input type="text" name="foreign_currency" maxlength="3" class="form-control" value="{{ old('foreign_currency', 'EUR') }}"></div>
-                                    </div>
-                                    <div class="mb-3"><label class="form-label">Account</label><input type="text" name="account_code" list="account-catalog-options" class="form-control" value="{{ old('account_code', '1010 Bank Account') }}"></div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3"><label class="form-label">Foreign Amount</label><input type="number" step="0.01" min="0.01" name="foreign_amount" class="form-control" value="{{ old('foreign_amount', '1000.00') }}"></div>
-                                        <div class="col-md-6 mb-3"><label class="form-label">Carrying Base Amount</label><input type="number" step="0.01" min="0" name="carrying_base_amount" class="form-control" value="{{ old('carrying_base_amount', '3800.00') }}"></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3"><label class="form-label">FX Gain Account</label><input type="text" name="fx_gain_account" list="account-catalog-options" class="form-control" value="{{ old('fx_gain_account', '4310 Foreign Exchange Gain') }}"></div>
-                                        <div class="col-md-6 mb-3"><label class="form-label">FX Loss Account</label><input type="text" name="fx_loss_account" list="account-catalog-options" class="form-control" value="{{ old('fx_loss_account', '5310 Foreign Exchange Loss') }}"></div>
-                                    </div>
-                                    <div class="mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo', 'Month-end FX revaluation') }}"></div>
-                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
-                                    <button type="submit" class="btn btn-primary">Post FX Revaluation</button>
-                                </form>
+                                @if($accountingPermissions['manual_journals_post'] ?? true)
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.fx-revaluations.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Rate Date</label><input type="date" name="rate_date" class="form-control" value="{{ old('rate_date', now()->toDateString()) }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">Foreign Currency</label><input type="text" name="foreign_currency" maxlength="3" class="form-control" value="{{ old('foreign_currency', 'EUR') }}"></div>
+                                        </div>
+                                        <div class="mb-3"><label class="form-label">Account</label><input type="text" name="account_code" list="account-catalog-options" class="form-control" value="{{ old('account_code', '1010 Bank Account') }}"></div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3"><label class="form-label">Foreign Amount</label><input type="number" step="0.01" min="0.01" name="foreign_amount" class="form-control" value="{{ old('foreign_amount', '1000.00') }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">Carrying Base Amount</label><input type="number" step="0.01" min="0" name="carrying_base_amount" class="form-control" value="{{ old('carrying_base_amount', '3800.00') }}"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3"><label class="form-label">FX Gain Account</label><input type="text" name="fx_gain_account" list="account-catalog-options" class="form-control" value="{{ old('fx_gain_account', '4310 Foreign Exchange Gain') }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">FX Loss Account</label><input type="text" name="fx_loss_account" list="account-catalog-options" class="form-control" value="{{ old('fx_loss_account', '5310 Foreign Exchange Loss') }}"></div>
+                                        </div>
+                                        <div class="mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo', 'Month-end FX revaluation') }}"></div>
+                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">Post FX Revaluation</button>
+                                    </form>
+                                @else
+                                    <p class="text-muted mb-0">You do not have permission to post FX revaluation journals.</p>
+                                @endif
                             </div>
                             <div class="col-xl-7">
                                 <h6 class="mb-3">Recent FX Revaluations</h6>
@@ -670,7 +726,6 @@
                     </div>
                 </div>
 
-                @php($accountingPermissions = $moduleData['accounting_permissions'] ?? [])
                 <div class="row">
                     <div class="col-xl-5 d-flex">
                         <div class="card flex-fill">
@@ -861,17 +916,21 @@
                         <div class="row">
                             <div class="col-xl-5">
                                 <h6 class="mb-3">Prepare Tax Filing</h6>
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-filings.store', $workspaceQuery) }}">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3"><label class="form-label">Period Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
-                                        <div class="col-md-6 mb-3"><label class="form-label">Period End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
-                                    </div>
-                                    <div class="mb-3"><label class="form-label">Return Type</label><select name="return_type" class="form-select"><option value="vat_return">VAT Return</option><option value="tax_return">Tax Return</option></select></div>
-                                    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
-                                    <button type="submit" class="btn btn-primary">Prepare Tax Filing</button>
-                                </form>
+                                @if($accountingPermissions['tax_rates_manage'] ?? true)
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-filings.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3"><label class="form-label">Period Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">Period End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                        </div>
+                                        <div class="mb-3"><label class="form-label">Return Type</label><select name="return_type" class="form-select"><option value="vat_return">VAT Return</option><option value="tax_return">Tax Return</option></select></div>
+                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">Prepare Tax Filing</button>
+                                    </form>
+                                @else
+                                    <p class="text-muted mb-0">You do not have permission to prepare tax filings.</p>
+                                @endif
                             </div>
                             <div class="col-xl-7">
                                 <h6 class="mb-3">Recent Tax Filings</h6>
@@ -1182,31 +1241,35 @@
                         </div>
                     </div>
                     <div class="col-xl-4 d-flex">
-                        <div class="card flex-fill">
+                            <div class="card flex-fill">
                             <div class="card-header"><h5 class="card-title mb-0">Period Locks</h5></div>
                             <div class="card-body">
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.closing', $workspaceQuery) }}" class="mb-3">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="row">
-                                        <div class="col-6 mb-2"><label class="form-label">Close Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
-                                        <div class="col-6 mb-2"><label class="form-label">Close End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
-                                    </div>
-                                    <div class="mb-2"><label class="form-label">Close Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
-                                    <button type="submit" class="btn btn-outline-primary">Start Close Review</button>
-                                </form>
-                                <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.store', $workspaceQuery) }}">
-                                    @csrf
-                                    <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                    <div class="row">
-                                        <div class="col-6 mb-2"><label class="form-label">Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
-                                        <div class="col-6 mb-2"><label class="form-label">End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
-                                    </div>
-                                    <div class="mb-2"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
-                                    <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="period_lock_override" name="allow_lock_override" value="1" {{ old('allow_lock_override') ? 'checked' : '' }}><label class="form-check-label" for="period_lock_override">Controlled override</label></div>
-                                    <div class="mb-2"><label class="form-label">Override Reason</label><input type="text" name="lock_override_reason" class="form-control" value="{{ old('lock_override_reason') }}"></div>
-                                    <button type="submit" class="btn btn-primary">Lock Period</button>
-                                </form>
+                                @if($accountingPermissions['periods_lock'] ?? true)
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.closing', $workspaceQuery) }}" class="mb-3">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-6 mb-2"><label class="form-label">Close Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                            <div class="col-6 mb-2"><label class="form-label">Close End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                        </div>
+                                        <div class="mb-2"><label class="form-label">Close Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                        <button type="submit" class="btn btn-outline-primary">Start Close Review</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.period-locks.store', $workspaceQuery) }}">
+                                        @csrf
+                                        <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                        <div class="row">
+                                            <div class="col-6 mb-2"><label class="form-label">Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                            <div class="col-6 mb-2"><label class="form-label">End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                        </div>
+                                        <div class="mb-2"><label class="form-label">Notes</label><input type="text" name="notes" class="form-control" value="{{ old('notes') }}"></div>
+                                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="period_lock_override" name="allow_lock_override" value="1" {{ old('allow_lock_override') ? 'checked' : '' }}><label class="form-check-label" for="period_lock_override">Controlled override</label></div>
+                                        <div class="mb-2"><label class="form-label">Override Reason</label><input type="text" name="lock_override_reason" class="form-control" value="{{ old('lock_override_reason') }}"></div>
+                                        <button type="submit" class="btn btn-primary">Lock Period</button>
+                                    </form>
+                                @else
+                                    <p class="text-muted mb-0">You do not have permission to start close reviews or lock periods.</p>
+                                @endif
                                 <hr>
                                 @forelse(($moduleData['accounting_period_locks'] ?? collect()) as $lock)
                                     <div class="border-bottom pb-2 mb-2">
@@ -1799,36 +1862,40 @@
                                 <option value="{{ $account->code }}">{{ $account->name }}</option>
                             @endforeach
                         </datalist>
-                        <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.manual-journal-entries.store', $workspaceQuery) }}">
-                            @csrf
-                            <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                            <div class="row">
-                                <div class="col-md-3 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Currency</label><input type="text" name="currency" maxlength="3" class="form-control" value="{{ old('currency', 'USD') }}"></div>
-                                <div class="col-md-7 mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo') }}" placeholder="Adjustment, accrual, correction"></div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle">
-                                    <thead><tr><th>Account Code</th><th>Account Name</th><th>Line Memo</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr></thead>
-                                    <tbody>
-                                    @for($lineIndex = 0; $lineIndex < 4; $lineIndex++)
-                                        <tr>
-                                            <td><input type="text" name="lines[{{ $lineIndex }}][account_code]" list="account-catalog-options" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_code") }}"></td>
-                                            <td><input type="text" name="lines[{{ $lineIndex }}][account_name]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_name") }}"></td>
-                                            <td><input type="text" name="lines[{{ $lineIndex }}][memo]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.memo") }}"></td>
-                                            <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][debit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.debit") }}"></td>
-                                            <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][credit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.credit") }}"></td>
-                                        </tr>
-                                    @endfor
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" role="switch" id="manual_journal_requires_approval" name="requires_approval" value="1" {{ old('requires_approval') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="manual_journal_requires_approval">Submit for approval</label>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Create Manual Journal</button>
-                        </form>
+                        @if($accountingPermissions['manual_journals_create'] ?? true)
+                            <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.manual-journal-entries.store', $workspaceQuery) }}">
+                                @csrf
+                                <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3"><label class="form-label">Entry Date</label><input type="date" name="entry_date" class="form-control" value="{{ old('entry_date', now()->toDateString()) }}"></div>
+                                    <div class="col-md-2 mb-3"><label class="form-label">Currency</label><input type="text" name="currency" maxlength="3" class="form-control" value="{{ old('currency', 'USD') }}"></div>
+                                    <div class="col-md-7 mb-3"><label class="form-label">Memo</label><input type="text" name="memo" class="form-control" value="{{ old('memo') }}" placeholder="Adjustment, accrual, correction"></div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle">
+                                        <thead><tr><th>Account Code</th><th>Account Name</th><th>Line Memo</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr></thead>
+                                        <tbody>
+                                        @for($lineIndex = 0; $lineIndex < 4; $lineIndex++)
+                                            <tr>
+                                                <td><input type="text" name="lines[{{ $lineIndex }}][account_code]" list="account-catalog-options" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_code") }}"></td>
+                                                <td><input type="text" name="lines[{{ $lineIndex }}][account_name]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.account_name") }}"></td>
+                                                <td><input type="text" name="lines[{{ $lineIndex }}][memo]" class="form-control form-control-sm" value="{{ old("lines.$lineIndex.memo") }}"></td>
+                                                <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][debit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.debit") }}"></td>
+                                                <td><input type="number" step="0.01" min="0" name="lines[{{ $lineIndex }}][credit]" class="form-control form-control-sm text-end" value="{{ old("lines.$lineIndex.credit") }}"></td>
+                                            </tr>
+                                        @endfor
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="manual_journal_requires_approval" name="requires_approval" value="1" {{ old('requires_approval') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="manual_journal_requires_approval">Submit for approval</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Create Manual Journal</button>
+                            </form>
+                        @else
+                            <p class="text-muted mb-0">You do not have permission to create manual journals.</p>
+                        @endif
                     </div>
                 </div>
 
