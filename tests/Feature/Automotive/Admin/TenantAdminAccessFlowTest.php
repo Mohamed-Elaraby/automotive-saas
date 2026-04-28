@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Mcamara\LaravelLocalization\LaravelLocalization;
 use Stancl\Tenancy\Database\Models\Domain;
 use Tests\TestCase;
 
@@ -54,7 +55,16 @@ class TenantAdminAccessFlowTest extends TestCase
             }
         }
 
+        putenv(LaravelLocalization::ENV_ROUTE_KEY);
+
         parent::tearDown();
+    }
+
+    protected function refreshApplicationWithLocale(string $locale): void
+    {
+        $this->tearDown();
+        putenv(LaravelLocalization::ENV_ROUTE_KEY . '=' . $locale);
+        $this->setUp();
     }
 
     public function test_active_tenant_admin_can_log_in_and_open_dashboard(): void
@@ -107,6 +117,8 @@ class TenantAdminAccessFlowTest extends TestCase
 
     public function test_arabic_prefixed_tenant_routes_resolve_without_404(): void
     {
+        $this->refreshApplicationWithLocale('ar');
+
         [, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
 
         $this->get("http://{$domain}/ar/workspace/login")
@@ -127,7 +139,7 @@ class TenantAdminAccessFlowTest extends TestCase
         $this->post("http://{$domain}/ar/workspace/admin/login", [
             'email' => $email,
             'password' => $password,
-        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+        ])->assertRedirect("http://{$domain}/ar/workspace/admin/dashboard");
 
         $this->get("http://{$domain}/ar/workspace/admin/dashboard")
             ->assertOk()
@@ -144,6 +156,8 @@ class TenantAdminAccessFlowTest extends TestCase
 
     public function test_arabic_prefixed_central_admin_routes_resolve_without_404(): void
     {
+        $this->refreshApplicationWithLocale('ar');
+
         $this->get('/ar/admin/login')
             ->assertOk()
             ->assertSee('dir="rtl"', false);

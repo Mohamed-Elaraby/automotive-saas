@@ -935,16 +935,26 @@ Status:
 Important routing fix completed before continuing this package:
 - fixed 404s caused by forcing all web and tenant routes through an optional first-segment `{locale?}` prefix
 - current approach:
-  - routes are registered unprefixed for stable stancl/tenancy route resolution
-  - `ResolveLocalePrefixForRouting` runs before routing, detects supported locale prefixes such as `/ar`, strips the locale internally, and sets the Laravel/Mcamara locale
+  - routes follow the official Mcamara README pattern:
+    - `prefix => LaravelLocalization::setLocale()`
+    - `middleware => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath']`
+  - `routes/web.php` is wrapped in the official localization group
+  - tenant product routes in `routes/tenant.php` are wrapped in the same official localization group inside the stancl tenancy middleware group
   - default English URLs remain unprefixed
   - Arabic URLs remain under `/ar/...`
   - old URLs such as `/workspace/login`, `/workspace/admin/login`, `/automotive/admin/login`, and `/admin/login` continue to work
-  - dynamic route-prefix registration with `LaravelLocalization::setLocale()` was removed from `routes/web.php` and `routes/tenant.php` because it still produced 404s on tenant domains in real Arabic-prefixed requests
+  - custom locale normalization middleware was removed
+  - custom central root domain loop was removed from `routes/web.php`; root route is registered normally inside the localized group
 - verified:
-  - route list shows `workspace/login` without `{locale?}` prefix
-  - route list shows `workspace/admin/dashboard` without `{locale?}` prefix
-  - route list shows `admin/login`, `automotive/admin/login`, and `workspace/admin/login`
+  - `php artisan route:trans:list ar` shows Arabic-prefixed routes including:
+    - `ar/admin/login`
+    - `ar/admin/dashboard`
+    - `ar/workspace/login`
+    - `ar/workspace/register`
+    - `ar/workspace/admin/login`
+    - `ar/workspace/admin/dashboard`
+    - `ar/workspace/admin/users`
+    - `ar/workspace/admin/branches`
   - real Laravel HTTP tests passed for Arabic-prefixed tenant routes:
     - `/ar/workspace/login`
     - `/ar/workspace/register`
@@ -979,7 +989,6 @@ Completed so far in Package 3:
   - workshop operations shared module overview, setup cards, tables, and work-order show labels
 
 Verification completed:
-- `php -l app/Http/Middleware/ResolveLocalePrefixForRouting.php`
 - `php -l app/Http/Kernel.php`
 - `php -l routes/web.php`
 - `php -l routes/tenant.php`
@@ -989,6 +998,8 @@ Verification completed:
 - `git diff --check`
 - `php artisan view:cache`
   - result: Blade templates cached successfully
+- `php artisan route:trans:list ar`
+  - result: Arabic-prefixed central, tenant, portal, product, and admin routes are listed
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed'`
   - result: 2 passed, 18 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='active_tenant_admin_can_log_in_and_open_dashboard|workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works|arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible'`

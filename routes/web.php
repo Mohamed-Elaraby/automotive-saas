@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\SystemErrorLogController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,20 +38,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-$centralRootHosts = array_values(array_unique(array_filter(array_merge(
-    (array) config('tenancy.central_domains', []),
-    [parse_url((string) config('app.url'), PHP_URL_HOST)]
-))));
-
-foreach ($centralRootHosts as $index => $host) {
-    $route = Route::domain($host)->get('/', function () {
-        return view('index');
-    });
-
-    if ($index === 0) {
-        $route->name('home');
-    }
-}
+Route::group([
+    'prefix' => LaravelLocalization::setLocale(),
+    'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'],
+], function () {
+Route::get('/', function () {
+    return view('index');
+})->name('home');
 
 Auth::routes();
 
@@ -1556,3 +1550,4 @@ Route::get('/add-debit-notes', function () {
 
 
 //Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+});
