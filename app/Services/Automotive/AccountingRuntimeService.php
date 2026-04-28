@@ -891,10 +891,10 @@ class AccountingRuntimeService
             ? AccountingTaxFiling::query()->latest('period_end')->latest('id')->first()
             : null;
         $latestFxRevaluation = Schema::hasTable('accounting_fx_revaluations')
-            ? AccountingFxRevaluation::query()->latest('revaluation_date')->latest('id')->first()
+            ? AccountingFxRevaluation::query()->latest('id')->first()
             : null;
         $latestCloseAdjustment = Schema::hasTable('accounting_period_close_adjustments')
-            ? AccountingPeriodCloseAdjustment::query()->latest('adjustment_date')->latest('id')->first()
+            ? AccountingPeriodCloseAdjustment::query()->latest('id')->first()
             : null;
 
         $postedJournalEntries = $journalEntries->where('status', 'posted');
