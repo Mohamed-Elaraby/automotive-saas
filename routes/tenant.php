@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -15,25 +14,20 @@ Route::middleware([
     'refresh.route.lookups',
 ])->group(function () {
 
-    Route::group([
-        'prefix' => LaravelLocalization::setLocale(),
-        'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'],
-    ], function (): void {
-        Route::get('/', function () {
-            return 'TENANT HOME: ' . tenant('id');
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | Product Routes (Tenant scoped)
-        |--------------------------------------------------------------------------
-        | كل product له ملفات routes منفصلة: admin + front
-        */
-        if (! app()->bound('routes.automotive.admin.loaded')) {
-            app()->instance('routes.automotive.admin.loaded', true);
-
-            require base_path('routes/products/automotive/admin.php');
-        }
+    Route::get('/', function () {
+        return 'TENANT HOME: ' . tenant('id');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product Routes (Tenant scoped)
+    |--------------------------------------------------------------------------
+    | كل product له ملفات routes منفصلة: admin + front
+    */
+    if (! app()->bound('routes.automotive.admin.loaded')) {
+        app()->instance('routes.automotive.admin.loaded', true);
+
+        require base_path('routes/products/automotive/admin.php');
+    }
 
 });

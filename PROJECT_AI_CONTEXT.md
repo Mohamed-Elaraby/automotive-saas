@@ -935,16 +935,27 @@ Status:
 Important routing fix completed before continuing this package:
 - fixed 404s caused by forcing all web and tenant routes through an optional first-segment `{locale?}` prefix
 - current approach:
-  - routes use Mcamara's dynamic `LaravelLocalization::setLocale()` route prefix
+  - routes are registered unprefixed for stable stancl/tenancy route resolution
+  - `ResolveLocalePrefixForRouting` runs before routing, detects supported locale prefixes such as `/ar`, strips the locale internally, and sets the Laravel/Mcamara locale
   - default English URLs remain unprefixed
   - Arabic URLs remain under `/ar/...`
   - old URLs such as `/workspace/login`, `/workspace/admin/login`, `/automotive/admin/login`, and `/admin/login` continue to work
-  - the temporary normalization middleware was removed because it could force default URLs through `/en/...`
+  - dynamic route-prefix registration with `LaravelLocalization::setLocale()` was removed from `routes/web.php` and `routes/tenant.php` because it still produced 404s on tenant domains in real Arabic-prefixed requests
 - verified:
   - route list shows `workspace/login` without `{locale?}` prefix
   - route list shows `workspace/admin/dashboard` without `{locale?}` prefix
   - route list shows `admin/login`, `automotive/admin/login`, and `workspace/admin/login`
-  - tenant admin access flow tests passed after the route registration change
+  - real Laravel HTTP tests passed for Arabic-prefixed tenant routes:
+    - `/ar/workspace/login`
+    - `/ar/workspace/register`
+    - `/ar/workspace/portal`
+    - `/ar/workspace/admin/login`
+    - `/ar/workspace/admin/dashboard`
+    - `/ar/workspace/admin/users`
+    - `/ar/workspace/admin/branches`
+  - real Laravel HTTP tests passed for Arabic-prefixed central admin routes:
+    - `/ar/admin/login`
+    - `/ar/admin/dashboard`
 
 Completed so far in Package 3:
 - added Tenant Admin translation files:
@@ -968,6 +979,7 @@ Completed so far in Package 3:
   - workshop operations shared module overview, setup cards, tables, and work-order show labels
 
 Verification completed:
+- `php -l app/Http/Middleware/ResolveLocalePrefixForRouting.php`
 - `php -l app/Http/Kernel.php`
 - `php -l routes/web.php`
 - `php -l routes/tenant.php`
@@ -977,8 +989,10 @@ Verification completed:
 - `git diff --check`
 - `php artisan view:cache`
   - result: Blade templates cached successfully
-- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='active_tenant_admin_can_log_in_and_open_dashboard|accounting_only_tenant_can_use_workspace_without_other_products|parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible'`
-  - result: 3 passed, 47 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed'`
+  - result: 2 passed, 18 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='active_tenant_admin_can_log_in_and_open_dashboard|workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works|arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible'`
+  - result: 6 passed, 75 assertions
 
 Package 3 notes:
 - no migrations were added

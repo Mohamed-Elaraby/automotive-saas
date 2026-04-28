@@ -105,6 +105,53 @@ class TenantAdminAccessFlowTest extends TestCase
         $workspaceRootAfterLogin->assertRedirect("http://{$domain}/workspace/admin/dashboard");
     }
 
+    public function test_arabic_prefixed_tenant_routes_resolve_without_404(): void
+    {
+        [, $domain, $email, $password] = $this->prepareTenantWorkspace('active');
+
+        $this->get("http://{$domain}/ar/workspace/login")
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+
+        $this->get("http://{$domain}/ar/workspace/admin/login")
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+
+        $this->get("http://{$domain}/ar/workspace/register")
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+
+        $this->get("http://{$domain}/ar/workspace/portal")
+            ->assertRedirect();
+
+        $this->post("http://{$domain}/ar/workspace/admin/login", [
+            'email' => $email,
+            'password' => $password,
+        ])->assertRedirect("http://{$domain}/workspace/admin/dashboard");
+
+        $this->get("http://{$domain}/ar/workspace/admin/dashboard")
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+
+        $this->get("http://{$domain}/ar/workspace/admin/users")
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+
+        $this->get("http://{$domain}/ar/workspace/admin/branches")
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+    }
+
+    public function test_arabic_prefixed_central_admin_routes_resolve_without_404(): void
+    {
+        $this->get('/ar/admin/login')
+            ->assertOk()
+            ->assertSee('dir="rtl"', false);
+
+        $this->get('/ar/admin/dashboard')
+            ->assertRedirect();
+    }
+
     public function test_suspended_tenant_admin_is_redirected_to_billing_after_login(): void
     {
         [, $domain, $email, $password] = $this->prepareTenantWorkspace('suspended');
