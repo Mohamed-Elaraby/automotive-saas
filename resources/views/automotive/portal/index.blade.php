@@ -11,39 +11,39 @@
                 <div class="col-lg-10">
                     <div class="mb-3 border-bottom pb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div>
-                            <h6 class="mb-1">Profile</h6>
-                            <p class="text-muted mb-0">Your shared customer portal for onboarding, subscription status, and workspace access.</p>
+                            <h6 class="mb-1">{{ __('shared.profile') }}</h6>
+                            <p class="text-muted mb-0">{{ __('shared.portal_intro') }}</p>
                         </div>
 
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             @if($allowSystemAccess && !empty($systemUrl))
                                 <a href="{{ $systemUrl }}" target="_blank" class="btn btn-primary">
-                                    Open My Workspace
+                                    {{ __('shared.open_my_workspace') }}
                                 </a>
                             @else
                                 <form method="POST" action="{{ route('automotive.logout') }}" class="d-inline">
                                     @csrf
                                     <button type="submit" class="btn btn-outline-white">
-                                        Sign Out
+                                        {{ __('shared.sign_out') }}
                                     </button>
                                 </form>
 
                                 @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
                                     <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
-                                        Manage Workspace Billing
+                                        {{ __('shared.manage_workspace_billing') }}
                                     </a>
                                 @else
                                     <a href="#products-catalog" class="btn btn-outline-white">
-                                        Choose Product
+                                        {{ __('shared.choose_product') }}
                                     </a>
                                 @endif
 
                                 <a href="#products-catalog" class="btn btn-outline-white">
-                                    View Products
+                                    {{ __('shared.view_products') }}
                                 </a>
 
                                 <a href="{{ route('automotive.portal.settings') }}" class="btn btn-outline-white">
-                                    Account &amp; Settings
+                                    {{ __('shared.account_settings') }}
                                 </a>
                             @endif
                         </div>
@@ -120,11 +120,11 @@
                                 <span class="bg-dark avatar avatar-sm me-2 flex-shrink-0">
                                     <i class="isax isax-info-circle fs-14"></i>
                                 </span>
-                                <h6 class="fs-16 fw-semibold mb-0">General Information</h6>
+                                <h6 class="fs-16 fw-semibold mb-0">{{ __('shared.general_information') }}</h6>
                             </div>
 
                             <div class="mb-3">
-                                <span class="text-gray-9 fw-bold mb-2 d-flex">Profile Summary</span>
+                                <span class="text-gray-9 fw-bold mb-2 d-flex">{{ __('shared.profile_summary') }}</span>
                                 <div class="d-flex align-items-center">
                                     <div class="avatar avatar-xxl border border-dashed bg-light me-3 flex-shrink-0">
                                         <div class="position-relative d-flex align-items-center justify-content-center h-100">

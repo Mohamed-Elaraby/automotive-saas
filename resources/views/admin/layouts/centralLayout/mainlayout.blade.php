@@ -10,31 +10,31 @@
 @endphp
 
 @if (!Route::is(['layout-mini', 'layout-rtl', 'layout-single', 'layout-transparent', 'layout-without-header', 'layout-dark']))
-    <html lang="en">
+    <html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}">
 @endif
 
 @if (Route::is(['layout-mini']))
-    <html lang="en" data-layout="mini">
+    <html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}" data-layout="mini">
 @endif
 
 @if (Route::is(['layout-dark']))
-    <html lang="en" data-bs-theme="dark" data-sidebar="light" data-color="primary" data-topbar="white" data-layout="default" data-size="default" data-width="fluid">
+    <html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}" data-bs-theme="dark" data-sidebar="light" data-color="primary" data-topbar="white" data-layout="default" data-size="default" data-width="fluid">
 @endif
 
 @if (Route::is(['layout-rtl']))
-    <html lang="en" dir="rtl">
+    <html lang="{{ app()->getLocale() }}" dir="rtl">
 @endif
 
 @if (Route::is(['layout-single']))
-    <html lang="en" data-layout="single">
+    <html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}" data-layout="single">
 @endif
 
 @if (Route::is(['layout-transparent']))
-    <html lang="en" data-layout="transparent">
+    <html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}" data-layout="transparent">
 @endif
 
 @if (Route::is(['layout-without-header']))
-    <html lang="en" data-layout="without-header">
+    <html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}" data-layout="without-header">
 @endif
 
 @component('admin.layouts.components.title-meta')

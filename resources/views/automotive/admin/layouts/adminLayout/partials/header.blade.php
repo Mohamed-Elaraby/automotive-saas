@@ -8,39 +8,39 @@
     $customerPortalUrl = route('automotive.portal');
 
     $tenantAdminRouteLabels = [
-        'automotive.admin.dashboard' => 'Dashboard',
-        'automotive.admin.users.*' => 'Users',
-        'automotive.admin.branches.*' => 'Branches',
-        'automotive.admin.products.*' => 'Stock Items',
-        'automotive.admin.inventory-adjustments.*' => 'Inventory Adjustments',
-        'automotive.admin.stock-transfers.*' => 'Stock Transfers',
-        'automotive.admin.inventory-report.*' => 'Inventory Report',
-        'automotive.admin.stock-movements.*' => 'Stock Movement Report',
-        'automotive.admin.billing.*' => 'Subscription Access',
-        'automotive.admin.modules.workshop-operations' => 'Workshop Operations',
-        'automotive.admin.modules.supplier-catalog' => 'Supplier Catalog',
-        'automotive.admin.modules.general-ledger' => 'General Ledger',
+        'automotive.admin.dashboard' => __('shared.dashboard'),
+        'automotive.admin.users.*' => __('shared.users'),
+        'automotive.admin.branches.*' => __('shared.branches'),
+        'automotive.admin.products.*' => __('shared.stock_items'),
+        'automotive.admin.inventory-adjustments.*' => __('shared.inventory_adjustments'),
+        'automotive.admin.stock-transfers.*' => __('shared.stock_transfers'),
+        'automotive.admin.inventory-report.*' => __('shared.inventory_report'),
+        'automotive.admin.stock-movements.*' => __('shared.stock_movement_report'),
+        'automotive.admin.billing.*' => __('shared.subscription_access'),
+        'automotive.admin.modules.workshop-operations' => __('shared.workshop_operations'),
+        'automotive.admin.modules.supplier-catalog' => __('shared.supplier_catalog'),
+        'automotive.admin.modules.general-ledger' => __('shared.general_ledger'),
     ];
 
     $headerShortcut = match ($focusedWorkspaceProductFamily) {
         'parts_inventory' => [
             'route' => 'automotive.admin.inventory-report.index',
-            'label' => 'Inventory Report',
+            'label' => __('shared.inventory_report'),
             'icon' => 'isax-chart-35',
         ],
         'accounting' => [
             'route' => 'automotive.admin.modules.general-ledger',
-            'label' => 'General Ledger',
+            'label' => __('shared.general_ledger'),
             'icon' => 'isax-wallet-3',
         ],
         default => [
             'route' => 'automotive.admin.modules.workshop-operations',
-            'label' => 'Workshop Operations',
+            'label' => __('shared.workshop_operations'),
             'icon' => 'isax-car',
         ],
     };
 
-    $currentTenantAdminSection = 'Workspace';
+    $currentTenantAdminSection = __('shared.workspace');
 
     foreach ($tenantAdminRouteLabels as $pattern => $label) {
         if (request()->routeIs($pattern)) {
@@ -77,7 +77,7 @@
                         <ol class="breadcrumb breadcrumb-divide mb-0">
                             <li class="breadcrumb-item d-flex align-items-center">
                                 <a href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
-                                    <i class="isax isax-home-2 me-1"></i>Tenant Admin
+                                    <i class="isax isax-home-2 me-1"></i>{{ __('shared.tenant_admin') }}
                                 </a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">{{ $currentTenantAdminSection }}</li>
@@ -88,10 +88,10 @@
                 @if($isTenantAdminImpersonating)
                     <div class="alert alert-warning border-0 py-2 px-3 mb-0 me-3 d-flex align-items-center flex-wrap gap-2">
                         <div class="fw-medium">
-                            Impersonation Mode:
+                            {{ __('shared.impersonation_mode') }}:
                             <span class="fw-normal">
                                 {{ $tenantAdminImpersonation['central_admin_email'] ?? 'unknown' }}
-                                as
+                                {{ __('shared.as') }}
                                 {{ $tenantAdminImpersonation['tenant_user_email'] ?? ($tenantAdminUser?->email ?? 'tenant user') }}
                             </span>
                         </div>
@@ -99,15 +99,17 @@
                         <form method="POST" action="{{ route('automotive.admin.stop-impersonation') }}" class="d-inline">
                             @csrf
                             <button type="submit" class="btn btn-sm btn-dark">
-                                Stop
+                                {{ __('shared.stop') }}
                             </button>
                         </form>
                     </div>
                 @endif
 
                 <div class="d-flex align-items-center">
+                    @include('shared.partials.language-switcher')
+
                     <a href="{{ $customerPortalUrl }}" class="btn btn-primary me-2 d-none d-lg-inline-flex align-items-center">
-                        <i class="isax isax-profile-circle me-1"></i>Customer Portal
+                        <i class="isax isax-profile-circle me-1"></i>{{ __('shared.customer_portal') }}
                     </a>
 
                     <div class="me-2 theme-item">
@@ -141,13 +143,13 @@
                             </div>
 
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
-                                <i class="isax isax-element-45 me-2"></i>Dashboard
+                                <i class="isax isax-element-45 me-2"></i>{{ __('shared.dashboard') }}
                             </a>
                             <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
                                 <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
                             </a>
                             <a class="dropdown-item d-flex align-items-center" href="{{ $customerPortalUrl }}">
-                                <i class="isax isax-profile-circle me-2"></i>Customer Portal
+                                <i class="isax isax-profile-circle me-2"></i>{{ __('shared.customer_portal') }}
                             </a>
 
                             <hr class="dropdown-divider my-2">
@@ -155,7 +157,7 @@
                             <form method="POST" action="{{ route('automotive.admin.logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item logout d-flex align-items-center border-0 bg-transparent w-100">
-                                    <i class="isax isax-logout me-2"></i>Sign Out
+                                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_out') }}
                                 </button>
                             </form>
                         </div>
@@ -175,18 +177,18 @@
         </a>
         <div class="dropdown-menu p-2 mt-0">
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.admin.dashboard', $workspaceQuery) }}">
-                <i class="isax isax-element-45 me-2"></i>Dashboard
+                <i class="isax isax-element-45 me-2"></i>{{ __('shared.dashboard') }}
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route($headerShortcut['route'], $workspaceQuery) }}">
                 <i class="isax {{ $headerShortcut['icon'] }} me-2"></i>{{ $headerShortcut['label'] }}
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ $customerPortalUrl }}">
-                <i class="isax isax-profile-circle me-2"></i>Customer Portal
+                <i class="isax isax-profile-circle me-2"></i>{{ __('shared.customer_portal') }}
             </a>
             <form method="POST" action="{{ route('automotive.admin.logout') }}">
                 @csrf
                 <button type="submit" class="dropdown-item logout d-flex align-items-center border-0 bg-transparent w-100">
-                    <i class="isax isax-logout me-2"></i>Sign Out
+                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_out') }}
                 </button>
             </form>
         </div>

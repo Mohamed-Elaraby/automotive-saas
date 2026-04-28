@@ -36,12 +36,12 @@
                         <ul class="dropdown-menu dropdown-menu-start p-2">
                             <li>
                                 <a href="{{ route('admin.plans.create') }}" class="dropdown-item d-flex align-items-center">
-                                    <i class="isax isax-add-circle me-2"></i>New Plan
+                                    <i class="isax isax-add-circle me-2"></i>{{ __('shared.new_plan') }}
                                 </a>
                             </li>
                             <li>
                                 <a href="{{ route('admin.plans.index') }}" class="dropdown-item d-flex align-items-center">
-                                    <i class="isax isax-transaction-minus me-2"></i>All Plans
+                                    <i class="isax isax-transaction-minus me-2"></i>{{ __('shared.all_plans') }}
                                 </a>
                             </li>
                         </ul>
@@ -53,43 +53,43 @@
                             @if(Route::is('admin.dashboard'))
                                 <li class="breadcrumb-item d-flex align-items-center">
                                     <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
+                                        <i class="isax isax-home-2 me-1"></i>{{ __('shared.home') }}
                                     </a>
                                 </li>
-                                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ __('shared.dashboard') }}</li>
                             @endif
 
                             @if(Route::is('admin.plans.index'))
                                 <li class="breadcrumb-item d-flex align-items-center">
                                     <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
+                                        <i class="isax isax-home-2 me-1"></i>{{ __('shared.home') }}
                                     </a>
                                 </li>
-                                <li class="breadcrumb-item active" aria-current="page">Plans</li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ __('shared.plans') }}</li>
                             @endif
 
                             @if(Route::is('admin.plans.create'))
                                 <li class="breadcrumb-item d-flex align-items-center">
                                     <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
+                                        <i class="isax isax-home-2 me-1"></i>{{ __('shared.home') }}
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.plans.index') }}">Plans</a>
+                                    <a href="{{ route('admin.plans.index') }}">{{ __('shared.plans') }}</a>
                                 </li>
-                                <li class="breadcrumb-item active" aria-current="page">Create</li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ __('shared.create') }}</li>
                             @endif
 
                             @if(Route::is('admin.plans.edit'))
                                 <li class="breadcrumb-item d-flex align-items-center">
                                     <a href="{{ route('admin.dashboard') }}">
-                                        <i class="isax isax-home-2 me-1"></i>Home
+                                        <i class="isax isax-home-2 me-1"></i>{{ __('shared.home') }}
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item d-flex align-items-center">
-                                    <a href="{{ route('admin.plans.index') }}">Plans</a>
+                                    <a href="{{ route('admin.plans.index') }}">{{ __('shared.plans') }}</a>
                                 </li>
-                                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ __('shared.edit') }}</li>
                             @endif
                         </ol>
                     </nav>
@@ -99,41 +99,14 @@
 
                     <!-- Search -->
                     <div class="input-icon-end position-relative me-2">
-                        <input type="text" class="form-control" placeholder="Search">
+                        <input type="text" class="form-control" placeholder="{{ __('shared.search') }}">
                         <span class="input-icon-addon">
                             <i class="isax isax-search-normal"></i>
                         </span>
                     </div>
                     <!-- /Search -->
 
-                    <!-- Language Dropdown -->
-                    <div class="nav-item dropdown has-arrow flag-nav me-2">
-                        <a class="btn btn-menubar" data-bs-toggle="dropdown" href="javascript:void(0);" role="button">
-                            <img src="{{ url('theme/img/flags/us.svg') }}" alt="Language" class="img-fluid">
-                        </a>
-                        <ul class="dropdown-menu p-2">
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/us.svg') }}" alt="flag" class="me-2">English
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/de.svg') }}" alt="flag" class="me-2">German
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/fr.svg') }}" alt="flag" class="me-2">French
-                                </a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <img src="{{ url('theme/img/flags/ae.svg') }}" alt="flag" class="me-2">Arabic
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    @include('shared.partials.language-switcher')
 
                     <!-- Notification -->
                 @include('admin.layouts.centralLayout.partials.topbar-notifications')
@@ -167,15 +140,15 @@
                             </div>
 
                             <a class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
-                                <i class="isax isax-profile-circle me-2"></i>Profile Settings
+                                <i class="isax isax-profile-circle me-2"></i>{{ __('shared.profile_settings') }}
                             </a>
 
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('admin.plans.index') }}">
-                                <i class="isax isax-document-text me-2"></i>Plans
+                                <i class="isax isax-document-text me-2"></i>{{ __('shared.plans') }}
                             </a>
 
                             <div class="form-check form-switch form-check-reverse d-flex align-items-center justify-content-between dropdown-item mb-0">
-                                <label class="form-check-label" for="notify"><i class="isax isax-notification me-2"></i>Notifications</label>
+                                <label class="form-check-label" for="notify"><i class="isax isax-notification me-2"></i>{{ __('shared.notifications') }}</label>
                                 <input class="form-check-input" type="checkbox" role="switch" id="notify">
                             </div>
 
@@ -184,7 +157,7 @@
                             @if(auth('admin')->check())
                                 <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.logout') }}"
                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                    <i class="isax isax-logout me-2"></i>Sign Out
+                                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_out') }}
                                 </a>
 
                                 <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" class="d-none">
@@ -192,7 +165,7 @@
                                 </form>
                             @else
                                 <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.login') }}">
-                                    <i class="isax isax-logout me-2"></i>Sign In
+                                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_in') }}
                                 </a>
                             @endif
                         </div>
@@ -215,13 +188,13 @@
                 <i class="isax isax-profile-circle me-2"></i>Profile Settings
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route('admin.plans.index') }}">
-                <i class="isax isax-document-text me-2"></i>Plans
+                <i class="isax isax-document-text me-2"></i>{{ __('shared.plans') }}
             </a>
 
             @if(auth('admin')->check())
                 <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.logout') }}"
                    onclick="event.preventDefault(); document.getElementById('mobile-logout-form').submit();">
-                    <i class="isax isax-logout me-2"></i>Sign Out
+                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_out') }}
                 </a>
 
                 <form id="mobile-logout-form" action="{{ route('admin.logout') }}" method="POST" class="d-none">
@@ -229,7 +202,7 @@
                 </form>
             @else
                 <a class="dropdown-item logout d-flex align-items-center" href="{{ route('admin.login') }}">
-                    <i class="isax isax-logout me-2"></i>Sign In
+                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_in') }}
                 </a>
             @endif
         </div>

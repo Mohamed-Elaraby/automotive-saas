@@ -11,7 +11,7 @@ $portalSeverityClassMap = [
     'warning' => 'bg-warning',
     'error' => 'bg-danger',
 ];
-$portalBreadcrumb = $portalBreadcrumb ?? (request()->routeIs('automotive.portal.settings') ? 'Account & Settings' : 'Overview');
+$portalBreadcrumb = $portalBreadcrumb ?? (request()->routeIs('automotive.portal.settings') ? __('shared.account_settings') : __('shared.portal_overview'));
 $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExplicitProductSelection)
     ? $selectedPortalBillingUrl
     : route('automotive.portal') . '#products-catalog';
@@ -45,7 +45,7 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
                         <ol class="breadcrumb breadcrumb-divide mb-0">
                             <li class="breadcrumb-item d-flex align-items-center">
                                 <a href="{{ route('automotive.portal') }}">
-                                    <i class="isax isax-home-2 me-1"></i>Customer Portal
+                                    <i class="isax isax-home-2 me-1"></i>{{ __('shared.customer_portal') }}
                                 </a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">{{ $portalBreadcrumb }}</li>
@@ -54,6 +54,8 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
                 </div>
 
                 <div class="d-flex align-items-center">
+                    @include('shared.partials.language-switcher')
+
                     <div class="dropdown me-2">
                         <a href="javascript:void(0);" class="btn btn-menubar position-relative" id="portal-notification-popup" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                             <i class="isax isax-notification-bing5"></i>
@@ -66,7 +68,7 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
 
                         <div class="dropdown-menu p-0 dropdown-menu-end dropdown-menu-lg" style="min-height: 240px;">
                             <div class="p-2 border-bottom d-flex align-items-center justify-content-between">
-                                <h6 class="m-0 fs-16 fw-semibold">Notifications</h6>
+                                <h6 class="m-0 fs-16 fw-semibold">{{ __('shared.notifications') }}</h6>
                                 <span id="portal-topbar-notification-count-pill" class="badge bg-light text-dark">{{ $portalTopbarNotificationCount }}</span>
                             </div>
 
@@ -107,7 +109,7 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
                                         </div>
                                     @empty
                                         <div class="dropdown-item notification-item py-4 text-center text-muted" id="portal-topbar-notification-empty-state">
-                                            No notifications yet.
+                                            {{ __('shared.no_notifications_yet') }}
                                         </div>
                                     @endforelse
                                 </div>
@@ -146,20 +148,20 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
                             </div>
 
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal') }}">
-                                <i class="isax isax-home-2 me-2"></i>Portal Overview
+                                <i class="isax isax-home-2 me-2"></i>{{ __('shared.portal_overview') }}
                             </a>
 
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.settings') }}">
-                                <i class="isax isax-setting-2 me-2"></i>Account &amp; Settings
+                                <i class="isax isax-setting-2 me-2"></i>{{ __('shared.account_settings') }}
                             </a>
 
                             <a class="dropdown-item d-flex align-items-center" href="{{ $portalWorkspaceBillingUrl }}">
-                                <i class="isax isax-crown me-2"></i>{{ !empty($hasExplicitProductSelection) ? 'Workspace Billing' : 'Choose Product' }}
+                                <i class="isax isax-crown me-2"></i>{{ !empty($hasExplicitProductSelection) ? __('shared.workspace_billing') : __('shared.choose_product') }}
                             </a>
 
                             @if(!empty($systemUrl) && $allowSystemAccess)
                                 <a class="dropdown-item d-flex align-items-center" href="{{ $systemUrl }}" target="_blank">
-                                    <i class="isax isax-export-1 me-2"></i>Open My System
+                                    <i class="isax isax-export-1 me-2"></i>{{ __('shared.open_my_system') }}
                                 </a>
                             @endif
 
@@ -168,7 +170,7 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
                             <form method="POST" action="{{ route('automotive.logout') }}">
                                 @csrf
                                 <button type="submit" class="dropdown-item logout d-flex align-items-center border-0 bg-transparent w-100">
-                                    <i class="isax isax-logout me-2"></i>Sign Out
+                                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_out') }}
                                 </button>
                             </form>
                         </div>
@@ -188,23 +190,23 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
         </a>
         <div class="dropdown-menu p-2 mt-0">
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal') }}">
-                <i class="isax isax-home-2 me-2"></i>Portal Overview
+                <i class="isax isax-home-2 me-2"></i>{{ __('shared.portal_overview') }}
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route('automotive.portal.settings') }}">
-                <i class="isax isax-setting-2 me-2"></i>Account &amp; Settings
+                <i class="isax isax-setting-2 me-2"></i>{{ __('shared.account_settings') }}
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ $portalWorkspaceBillingUrl }}">
-                <i class="isax isax-crown me-2"></i>{{ !empty($hasExplicitProductSelection) ? 'Workspace Billing' : 'Choose Product' }}
+                <i class="isax isax-crown me-2"></i>{{ !empty($hasExplicitProductSelection) ? __('shared.workspace_billing') : __('shared.choose_product') }}
             </a>
             @if(!empty($systemUrl) && $allowSystemAccess)
                 <a class="dropdown-item d-flex align-items-center" href="{{ $systemUrl }}" target="_blank">
-                    <i class="isax isax-export-1 me-2"></i>Open My System
+                    <i class="isax isax-export-1 me-2"></i>{{ __('shared.open_my_system') }}
                 </a>
             @endif
             <form method="POST" action="{{ route('automotive.logout') }}">
                 @csrf
                 <button type="submit" class="dropdown-item logout d-flex align-items-center border-0 bg-transparent w-100">
-                    <i class="isax isax-logout me-2"></i>Sign Out
+                    <i class="isax isax-logout me-2"></i>{{ __('shared.sign_out') }}
                 </button>
             </form>
         </div>

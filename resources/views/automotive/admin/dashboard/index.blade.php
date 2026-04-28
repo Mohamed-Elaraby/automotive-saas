@@ -11,9 +11,9 @@
         <div class="content content-two">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
                 <div>
-                    <div class="text-muted small mb-1">{{ $focusedExperience['eyebrow'] ?? 'Workspace Focus' }}</div>
-                    <h4 class="mb-1">{{ $focusedExperience['title'] ?? 'Dashboard' }}</h4>
-                    <p class="mb-0 text-muted">{{ $focusedExperience['description'] ?? 'Shared workspace overview.' }}</p>
+                    <div class="text-muted small mb-1">{{ $focusedExperience['eyebrow'] ?? __('shared.workspace_focus') }}</div>
+                    <h4 class="mb-1">{{ $focusedExperience['title'] ?? __('shared.dashboard') }}</h4>
+                    <p class="mb-0 text-muted">{{ $focusedExperience['description'] ?? __('shared.shared_workspace_overview') }}</p>
                 </div>
 
                 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -30,11 +30,11 @@
                     <div class="card-body">
                         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                             <div>
-                                <div class="text-muted small mb-1">Focused Workspace Product</div>
+                                <div class="text-muted small mb-1">{{ __('shared.focused_workspace_product') }}</div>
                                 <h5 class="mb-1">{{ $focusedWorkspaceProduct['product_name'] }}</h5>
                                 <p class="text-muted mb-2">
-                                    {{ $focusedWorkspaceProduct['plan_name'] ?: 'No plan mapped yet' }} ·
-                                    {{ $focusedWorkspaceProduct['is_accessible'] ? 'Connected to this workspace' : $focusedWorkspaceProduct['status_label'] }}
+                                    {{ $focusedWorkspaceProduct['plan_name'] ?: __('shared.no_plan_mapped_yet') }} ·
+                                    {{ $focusedWorkspaceProduct['is_accessible'] ? __('shared.connected_to_workspace') : $focusedWorkspaceProduct['status_label'] }}
                                 </p>
                                 @if(!empty($focusedWorkspaceProduct['capabilities']))
                                     <div class="d-flex flex-wrap gap-2">
@@ -67,7 +67,7 @@
                     <div class="card flex-fill">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="text-gray-6">Users</span>
+                                <span class="text-gray-6">{{ __('shared.users') }}</span>
                                 <span class="avatar avatar-sm bg-primary-transparent rounded-circle">
                                     <i class="isax isax-profile-2user text-primary"></i>
                                 </span>
@@ -75,9 +75,9 @@
                             <h3 class="mb-1">{{ $usersCount }}</h3>
                             <p class="mb-0 text-muted">
                                 @if (!is_null($userLimit['limit']))
-                                    Limit: {{ $userLimit['limit'] }} | Remaining: {{ $userLimit['remaining'] }}
+                                    {{ __('shared.limit') }}: {{ $userLimit['limit'] }} | {{ __('shared.remaining') }}: {{ $userLimit['remaining'] }}
                                 @else
-                                    Unlimited
+                                    {{ __('shared.unlimited') }}
                                 @endif
                             </p>
                         </div>
@@ -88,7 +88,7 @@
                     <div class="card flex-fill">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="text-gray-6">Branches</span>
+                                <span class="text-gray-6">{{ __('shared.branches') }}</span>
                                 <span class="avatar avatar-sm bg-secondary-transparent rounded-circle">
                                     <i class="isax isax-buildings text-secondary"></i>
                                 </span>
@@ -96,9 +96,9 @@
                             <h3 class="mb-1">{{ $branchesCount }}</h3>
                             <p class="mb-0 text-muted">
                                 @if (!is_null($branchLimit['limit']))
-                                    Limit: {{ $branchLimit['limit'] }} | Remaining: {{ $branchLimit['remaining'] }}
+                                    {{ __('shared.limit') }}: {{ $branchLimit['limit'] }} | {{ __('shared.remaining') }}: {{ $branchLimit['remaining'] }}
                                 @else
-                                    Unlimited
+                                    {{ __('shared.unlimited') }}
                                 @endif
                             </p>
                         </div>
@@ -109,12 +109,12 @@
                     <div class="card flex-fill">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="text-gray-6">Current Plan</span>
+                                <span class="text-gray-6">{{ __('shared.current_plan') }}</span>
                                 <span class="avatar avatar-sm bg-info-transparent rounded-circle">
                                     <i class="isax isax-crown text-info"></i>
                                 </span>
                             </div>
-                            <h3 class="mb-1">{{ $plan?->name ?? 'No plan' }}</h3>
+                            <h3 class="mb-1">{{ $plan?->name ?? __('shared.no_plan') }}</h3>
                             <p class="mb-0 text-muted">{{ $subscription->status ?? 'unknown' }}</p>
                         </div>
                     </div>
@@ -124,13 +124,13 @@
                     <div class="card flex-fill">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="text-gray-6">Workspace Products</span>
+                                <span class="text-gray-6">{{ __('shared.workspace_products') }}</span>
                                 <span class="avatar avatar-sm bg-success-transparent rounded-circle">
                                     <i class="isax isax-layer text-success"></i>
                                 </span>
                             </div>
                             <h3 class="mb-1">{{ $workspaceProductsCount }}</h3>
-                            <p class="mb-0 text-muted">Products attached to the same tenant workspace</p>
+                            <p class="mb-0 text-muted">{{ __('shared.products_attached_to_workspace') }}</p>
                         </div>
                     </div>
                 </div>

@@ -13,7 +13,7 @@
     $isTenantAdminAuthRoute = Route::is($tenantAdminAuthRoutes);
 @endphp
 
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}">
 
 @component('automotive.admin.layouts.components.title-meta')
 @endcomponent

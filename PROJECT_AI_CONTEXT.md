@@ -766,21 +766,99 @@ Verification:
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
   - result: 12 passed, 196 assertions
 
-## 15.2) Recommended Next Package
-When a new AI session starts from this file, the next package to start immediately is:
+## 15.2) Recently Completed Package
+This package was completed in the current work cycle:
 
 ### Multilingual Platform Package - Laravel Localization Foundation
+Status:
+- completed
+
+Scope completed:
+- installed `mcamara/laravel-localization`
+- added Laravel localization configuration for two languages only:
+  - English (`en`) as the primary/default language
+  - Arabic (`ar`) as the second language
+- kept the default English URLs unprefixed so existing routes continue to work
+- enabled Arabic URLs with `/ar/...`
+- added Mcamara middleware aliases:
+  - `localize`
+  - `localizationRedirect`
+  - `localeSessionRedirect`
+  - `localeCookieRedirect`
+  - `localeViewPath`
+- wrapped central web routes and tenant routes with Mcamara locale-aware routing
+- preserved dynamic route resolution and did not use `php artisan route:cache`
+- added a shared language switcher partial and exposed it in:
+  - Central Admin header
+  - Customer Portal header
+  - Tenant Admin header
+- added shared UI translation files:
+  - `lang/en/shared.php`
+  - `lang/ar/shared.php`
+- updated layout `<html>` language and direction attributes from the active locale:
+  - English uses `ltr`
+  - Arabic uses `rtl`
+- translated the first shared labels in:
+  - top navigation/header labels
+  - Customer Portal entry surface
+  - Tenant Admin dashboard summary labels
+
+Important files added/changed:
+- `composer.json`
+- `composer.lock`
+- `config/laravellocalization.php`
+- `app/Http/Kernel.php`
+- `routes/web.php`
+- `routes/tenant.php`
+- `lang/en/shared.php`
+- `lang/ar/shared.php`
+- `resources/views/shared/partials/language-switcher.blade.php`
+- `resources/views/admin/layouts/centralLayout/mainlayout.blade.php`
+- `resources/views/admin/layouts/centralLayout/partials/header.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/mainlayout.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/partials/header.blade.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `resources/views/automotive/admin/layouts/adminLayout/mainlayout.blade.php`
+- `resources/views/automotive/admin/layouts/adminLayout/partials/header.blade.php`
+- `resources/views/automotive/admin/dashboard/index.blade.php`
+
+Verification:
+- `php -l config/laravellocalization.php`
+- `php -l routes/web.php`
+- `php -l routes/tenant.php`
+- `php -l app/Http/Kernel.php`
+- `php artisan route:list --path=workspace`
+- `php artisan route:list --path=admin`
+- `php artisan config:clear`
+- `php artisan view:clear`
+- lightweight HTTP kernel checks:
+  - `/workspace/login` returned `200` and rendered `lang="en"`
+  - `/ar/workspace/login` returned `200` and rendered `lang="ar"` plus `dir="rtl"`
+  - `/ar/admin/login` returned `200`
+- targeted regression suite passed:
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+  - result: 82 passed, 1346 assertions
+
+Notes:
+- no migrations were added
+- no accounting, billing, or integration logic was changed
+- `php artisan route:cache` was not used
+
+## 15.3) Recommended Next Package
+When a new AI session starts from this file, the next package to start immediately is:
+
+### Multilingual Platform Package 2 - Progressive UI Translation Expansion
 Recommended scope:
-- add multilingual support across the platform using Laravel Mcamara / `mcamara/laravel-localization`
-- start with two languages:
-  - English as the primary/default language
-  - Arabic as the second language
-- implement language-aware routing carefully without breaking tenancy, product routes, customer portal routes, tenant admin routes, or central admin routes
-- add a clear language switcher in the relevant layouts
-- prepare translation files for shared UI labels first, then expand module-by-module
-- preserve current accounting behavior exactly; do not change accounting logic while adding localization
-- continue to support accounting-only tenants and integrated multi-product tenants
-- keep integration architecture closed unless a real blocker appears
+- continue translating UI module-by-module using the existing `lang/en/shared.php` and `lang/ar/shared.php` foundation
+- expand from shared headers and dashboard surfaces into:
+  - Customer Portal product catalog and billing status page
+  - Tenant Admin module pages
+  - Central Admin products/plans/subscriptions surfaces
+- keep route behavior unchanged:
+  - English remains the default unprefixed URL
+  - Arabic remains available under `/ar/...`
+- continue to support Customer Portal, Tenant Admin Workspace, Central Admin, Product routes, Tenant routes, accounting-only tenants, and integrated tenants
+- do not change accounting, billing, or integration architecture unless a real blocker appears
 - continue to avoid `php artisan route:cache`
 
 Professional Accounting Roadmap progress:
@@ -801,10 +879,10 @@ Persistent accounting rules:
 - do not reopen integration architecture unless a real blocker appears
 
 Next implementation package:
-- Multilingual Platform Package 1: Laravel Mcamara Localization Foundation
+- Multilingual Platform Package 2: Progressive UI Translation Expansion
 - primary language: English
 - second language: Arabic
-- expected package/library: `mcamara/laravel-localization`
+- existing package/library: `mcamara/laravel-localization`
 
 ## 15.2.1) Accounting System Current State Before Next Chat
 This section is the detailed handoff for continuing accounting work in a fresh AI session.
