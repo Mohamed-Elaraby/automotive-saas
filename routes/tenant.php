@@ -17,6 +17,7 @@ Route::middleware([
 
     Route::group([
         'prefix' => LaravelLocalization::setLocale(),
+        'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'],
     ], function (): void {
         Route::get('/', function () {
             return 'TENANT HOME: ' . tenant('id');

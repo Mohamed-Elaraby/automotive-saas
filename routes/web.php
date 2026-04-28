@@ -45,6 +45,7 @@ $centralRootHosts = array_values(array_unique(array_filter(array_merge(
 
 Route::group([
     'prefix' => LaravelLocalization::setLocale(),
+    'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'],
 ], function () use ($centralRootHosts): void {
 
 foreach ($centralRootHosts as $index => $host) {
