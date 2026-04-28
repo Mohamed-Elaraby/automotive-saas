@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\SystemErrorLogController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,9 +44,7 @@ $centralRootHosts = array_values(array_unique(array_filter(array_merge(
 ))));
 
 Route::group([
-    'prefix' => '{locale?}',
-    'where' => ['locale' => 'en|ar'],
-    'middleware' => ['locale.route'],
+    'prefix' => LaravelLocalization::setLocale(),
 ], function () use ($centralRootHosts): void {
 
 foreach ($centralRootHosts as $index => $host) {

@@ -933,19 +933,18 @@ Status:
 - completed
 
 Important routing fix completed before continuing this package:
-- fixed 404s caused by using a dynamic `LaravelLocalization::setLocale()` / optional first-segment locale route prefix with stancl tenancy and Laravel route matching
+- fixed 404s caused by forcing all web and tenant routes through an optional first-segment `{locale?}` prefix
 - current approach:
-  - routes remain registered with `{locale?}` and `locale.route`
-  - `NormalizeLocalePrefixForRouting` normalizes unprefixed web requests internally to the default locale before route matching
-  - old URLs such as `/workspace/login` and `/admin/login` continue to work
-  - Arabic URLs such as `/ar/workspace/login` and `/ar/admin/login` continue to work
+  - routes use Mcamara's dynamic `LaravelLocalization::setLocale()` route prefix
+  - default English URLs remain unprefixed
+  - Arabic URLs remain under `/ar/...`
+  - old URLs such as `/workspace/login`, `/workspace/admin/login`, `/automotive/admin/login`, and `/admin/login` continue to work
+  - the temporary normalization middleware was removed because it could force default URLs through `/en/...`
 - verified:
-  - `/workspace/login` returned `200`
-  - `/ar/workspace/login` returned `200`
-  - `/admin/login` returned `200`
-  - `/ar/admin/login` returned `200`
-  - `/workspace/register` returned `200`
-  - `/ar/workspace/register` returned `200`
+  - route list shows `workspace/login` without `{locale?}` prefix
+  - route list shows `workspace/admin/dashboard` without `{locale?}` prefix
+  - route list shows `admin/login`, `automotive/admin/login`, and `workspace/admin/login`
+  - tenant admin access flow tests passed after the route registration change
 
 Completed so far in Package 3:
 - added Tenant Admin translation files:
@@ -969,8 +968,7 @@ Completed so far in Package 3:
   - workshop operations shared module overview, setup cards, tables, and work-order show labels
 
 Verification completed:
-- `php -l app/Http/Middleware/NormalizeLocalePrefixForRouting.php`
-- `php -l app/Http/Middleware/SetLocaleFromRoute.php`
+- `php -l app/Http/Kernel.php`
 - `php -l routes/web.php`
 - `php -l routes/tenant.php`
 - `php -l lang/en/tenant.php`
