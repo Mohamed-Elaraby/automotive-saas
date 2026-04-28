@@ -19,6 +19,7 @@ class WorkspaceHostResolverTest extends TestCase
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.spareparts.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.system.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->canonicalBaseHost('demo.seven-scapital.com'));
+        $this->assertSame('client-1.seven-scapital.com', $resolver->canonicalBaseHost('client_1.seven-scapital.com'));
         $this->assertSame('example.test', $resolver->canonicalBaseHost('example.test'));
     }
 
@@ -28,6 +29,16 @@ class WorkspaceHostResolverTest extends TestCase
 
         $this->assertSame('demo.seven-scapital.com', $resolver->tenantDomain('demo', 'automotive.seven-scapital.com'));
         $this->assertSame('demo.seven-scapital.com', $resolver->tenantDomain('demo', 'system.seven-scapital.com'));
+        $this->assertSame('client-1.seven-scapital.com', $resolver->tenantDomain('client_1', 'seven-scapital.com'));
         $this->assertSame('trial.example.test', $resolver->tenantDomain('trial', 'example.test'));
+    }
+
+    public function test_it_normalizes_workspace_subdomains_for_valid_hosts(): void
+    {
+        $resolver = app(WorkspaceHostResolver::class);
+
+        $this->assertSame('client-1', $resolver->normalizeSubdomain('client_1'));
+        $this->assertSame('client-1', $resolver->normalizeSubdomain(' Client__1 '));
+        $this->assertSame('client-1-demo', $resolver->normalizeSubdomain('client_1 demo'));
     }
 }

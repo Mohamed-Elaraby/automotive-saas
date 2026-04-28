@@ -934,6 +934,7 @@ Status:
 
 Important routing fix completed before continuing this package:
 - fixed 404s caused by forcing all web and tenant routes through an optional first-segment `{locale?}` prefix
+- fixed production tenant-host 404s caused by invalid underscore subdomains such as `client_1.seven-scapital.com`
 - current approach:
   - routes follow the official Mcamara README pattern:
     - `prefix => LaravelLocalization::setLocale()`
@@ -945,6 +946,10 @@ Important routing fix completed before continuing this package:
   - old URLs such as `/workspace/login`, `/workspace/admin/login`, `/automotive/admin/login`, and `/admin/login` continue to work
   - custom locale normalization middleware was removed
   - custom central root domain loop was removed from `routes/web.php`; root route is registered normally inside the localized group
+  - workspace subdomains are normalized to DNS-safe hyphen format:
+    - `client_1` becomes `client-1`
+    - old underscore hosts receive a 308 redirect to the hyphen host
+    - if an old underscore domain exists in the `domains` table, `CanonicalizeWorkspaceHost` creates the matching hyphen alias for the same tenant before redirecting
 - verified:
   - `php artisan route:trans:list ar` shows Arabic-prefixed routes including:
     - `ar/admin/login`
@@ -966,6 +971,10 @@ Important routing fix completed before continuing this package:
   - real Laravel HTTP tests passed for Arabic-prefixed central admin routes:
     - `/ar/admin/login`
     - `/ar/admin/dashboard`
+  - real Laravel HTTP tests passed for the reported invalid host shape:
+    - `https://client_1.seven-scapital.com/ar/workspace/login`
+    - redirects to `https://client-1.seven-scapital.com/ar/workspace/login`
+    - creates `client-1.seven-scapital.com` domain alias when an old `client_1.seven-scapital.com` tenant domain exists
 
 Completed so far in Package 3:
 - added Tenant Admin translation files:
@@ -990,6 +999,11 @@ Completed so far in Package 3:
 
 Verification completed:
 - `php -l app/Http/Kernel.php`
+- `php -l app/Http/Middleware/CanonicalizeWorkspaceHost.php`
+- `php -l app/Services/Tenancy/WorkspaceHostResolver.php`
+- `php -l app/Http/Controllers/Automotive/Front/Auth/RegisterController.php`
+- `php -l app/Services/Automotive/StartTrialService.php`
+- `php -l app/Services/Automotive/ProvisionTenantWorkspaceService.php`
 - `php -l routes/web.php`
 - `php -l routes/tenant.php`
 - `php -l lang/en/tenant.php`
@@ -1004,6 +1018,8 @@ Verification completed:
   - result: 2 passed, 18 assertions
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='active_tenant_admin_can_log_in_and_open_dashboard|workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works|arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible'`
   - result: 6 passed, 75 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Tenancy/WorkspaceHostResolverTest.php tests/Feature/Tenancy/CanonicalizeWorkspaceHostMiddlewareTest.php`
+  - result: 9 passed, 34 assertions
 
 Package 3 notes:
 - no migrations were added

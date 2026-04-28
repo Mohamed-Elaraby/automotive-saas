@@ -19,8 +19,12 @@ class ProvisionTenantWorkspaceService
 
     public function ensureProvisioned(string $tenantId): void
     {
+        $originalTenantId = strtolower(trim($tenantId));
+        $tenantId = $this->workspaceHostResolver->normalizeSubdomain($tenantId);
+
         $profile = CustomerOnboardingProfile::query()
             ->where('subdomain', $tenantId)
+            ->orWhere('subdomain', $originalTenantId)
             ->firstOrFail();
 
         $centralUser = User::query()->findOrFail((int) $profile->user_id);

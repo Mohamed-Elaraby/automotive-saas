@@ -69,6 +69,7 @@ public function previewCoupon(
     }
 
     $data = $validator->validated();
+    $data['subdomain'] = $this->workspaceHostResolver->normalizeSubdomain((string) $data['subdomain']);
 
     $trialPlan = Plan::query()
         ->where('slug', 'trial')
@@ -77,7 +78,7 @@ public function previewCoupon(
 
     $result = $trialSignupCouponService->validateForTrialSignup(
         couponCode: $data['coupon_code'],
-            tenantId: strtolower(trim($data['subdomain'])),
+            tenantId: $data['subdomain'],
             planId: $trialPlan?->id
         );
 
@@ -111,6 +112,10 @@ public function previewCoupon(
 
 public function submit(Request $request): RedirectResponse
 {
+    $request->merge([
+        'subdomain' => $this->workspaceHostResolver->normalizeSubdomain((string) $request->input('subdomain')),
+    ]);
+
     $validator = Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255'],
         'email' => [
@@ -124,7 +129,7 @@ public function submit(Request $request): RedirectResponse
         'subdomain' => [
             'required',
             'string',
-            'alpha_dash',
+            'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
             'min:3',
             'max:50',
             Rule::unique('customer_onboarding_profiles', 'subdomain'),
@@ -133,7 +138,7 @@ public function submit(Request $request): RedirectResponse
     ]);
 
     $validator->after(function ($validator) use ($request) {
-        $subdomain = strtolower(trim((string) $request->input('subdomain')));
+        $subdomain = $this->workspaceHostResolver->normalizeSubdomain((string) $request->input('subdomain'));
         $baseHost = $this->workspaceHostResolver->canonicalBaseHost($request->getHost());
 
         if (! $this->subdomainIsAvailable($subdomain, $baseHost)) {
@@ -157,7 +162,7 @@ public function submit(Request $request): RedirectResponse
         ['user_id' => $user->id],
         [
             'company_name' => $data['company_name'],
-            'subdomain' => strtolower(trim((string) $data['subdomain'])),
+            'subdomain' => $this->workspaceHostResolver->normalizeSubdomain((string) $data['subdomain']),
             'coupon_code' => strtoupper(trim((string) ($data['coupon_code'] ?? ''))),
             'base_host' => $this->workspaceHostResolver->canonicalBaseHost($request->getHost()),
             'password_payload' => Crypt::encryptString((string) $data['password']),

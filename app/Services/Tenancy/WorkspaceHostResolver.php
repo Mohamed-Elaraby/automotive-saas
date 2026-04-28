@@ -15,6 +15,7 @@ class WorkspaceHostResolver
         $host = preg_replace('#^https?://#', '', $host) ?? $host;
         $host = preg_replace('#:\d+$#', '', $host) ?? $host;
         $host = trim($host, '/');
+        $host = str_replace('_', '-', $host);
 
         if (str_starts_with($host, 'www.')) {
             $host = substr($host, 4);
@@ -30,7 +31,7 @@ class WorkspaceHostResolver
 
     public function tenantDomain(string $subdomain, ?string $host): string
     {
-        $subdomain = strtolower(trim($subdomain));
+        $subdomain = $this->normalizeSubdomain($subdomain);
         $baseHost = $this->canonicalBaseHost($host);
 
         if ($subdomain === '') {
@@ -46,5 +47,15 @@ class WorkspaceHostResolver
         }
 
         return $subdomain . '.' . $baseHost;
+    }
+
+    public function normalizeSubdomain(string $subdomain): string
+    {
+        $subdomain = strtolower(trim($subdomain));
+        $subdomain = str_replace('_', '-', $subdomain);
+        $subdomain = preg_replace('/[^a-z0-9-]+/', '-', $subdomain) ?? $subdomain;
+        $subdomain = preg_replace('/-+/', '-', $subdomain) ?? $subdomain;
+
+        return trim($subdomain, '-');
     }
 }

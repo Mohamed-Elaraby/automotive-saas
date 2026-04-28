@@ -29,7 +29,7 @@ public function start(array $data): array
 {
     $centralConnection = config('tenancy.database.central_connection') ?? config('database.default');
 
-    $sub = strtolower(trim($data['subdomain']));
+    $sub = $this->workspaceHostResolver->normalizeSubdomain((string) $data['subdomain']);
     $baseHost = $this->workspaceHostResolver->canonicalBaseHost($data['base_host'] ?? 'seven-scapital.com');
     $couponCode = strtoupper(trim((string) ($data['coupon_code'] ?? '')));
 
