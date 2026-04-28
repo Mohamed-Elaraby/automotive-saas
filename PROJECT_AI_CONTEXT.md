@@ -769,14 +769,17 @@ Verification:
 ## 15.2) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Professional Accounting Roadmap - Complete
+### Multilingual Platform Package - Laravel Localization Foundation
 Recommended scope:
-- the 10-package accounting roadmap is complete
-- next work should be bug-driven or market-feedback-driven instead of opening a new accounting foundation package
-- preserve the current tenant-safe accounting controls and permission model
-- preserve journals and journal lines as the authoritative ledger
-- do not bypass journals as the accounting source of truth
-- continue to support accounting-only tenants without requiring Automotive or Parts Inventory
+- add multilingual support across the platform using Laravel Mcamara / `mcamara/laravel-localization`
+- start with two languages:
+  - English as the primary/default language
+  - Arabic as the second language
+- implement language-aware routing carefully without breaking tenancy, product routes, customer portal routes, tenant admin routes, or central admin routes
+- add a clear language switcher in the relevant layouts
+- prepare translation files for shared UI labels first, then expand module-by-module
+- preserve current accounting behavior exactly; do not change accounting logic while adding localization
+- continue to support accounting-only tenants and integrated multi-product tenants
 - keep integration architecture closed unless a real blocker appears
 - continue to avoid `php artisan route:cache`
 
@@ -796,6 +799,12 @@ Persistent accounting rules:
 - For future accounting changes, keep journals as the accounting source of truth.
 - Continue to avoid `php artisan route:cache`.
 - do not reopen integration architecture unless a real blocker appears
+
+Next implementation package:
+- Multilingual Platform Package 1: Laravel Mcamara Localization Foundation
+- primary language: English
+- second language: Arabic
+- expected package/library: `mcamara/laravel-localization`
 
 ## 15.2.1) Accounting System Current State Before Next Chat
 This section is the detailed handoff for continuing accounting work in a fresh AI session.
@@ -837,7 +846,271 @@ Current accounting foundations already completed:
 - audit entries are compliance evidence only; journal entries and journal lines remain the accounting source of truth
 - `tenancy:verify-integration-readiness` now checks accounting runtime tables, active workspace products, default accounts, default posting group, default accounting policy, default tax rate, period lock overlaps, and stale integration handoffs
 - end-to-end production acceptance now covers automotive, parts inventory, receivables, payables, tax, manual journals, reversals, period locks, and readiness verification in one tenant workflow
-- accounting completion roadmap packages 1 through 13 are complete
+- professional accounting roadmap packages 1 through 10 are complete
+
+## 15.2.2) Accounting System Arabic Business Summary
+This section exists so a new AI session can explain the accounting system to the project owner, HR, or non-technical stakeholders in Arabic.
+
+### الفكرة العامة
+نظام المحاسبة أصبح منتجًا مستقلًا داخل منصة SaaS متعددة العملاء.
+العميل يستطيع الاشتراك في المحاسبة وحدها، أو استخدامها مع نظام الورشة ونظام قطع الغيار داخل نفس مساحة العمل.
+
+أهم قاعدة:
+- القيود اليومية هي مصدر الحقيقة المحاسبية.
+- أي تقرير مالي أو رصيد أو تسوية يجب أن يعتمد على `journal_entries` و`journal_entry_lines`.
+- لا يوجد تقرير مالي يجب أن يصبح مصدر أرقام مستقل عن القيود.
+
+### شاشة دفتر الأستاذ العام
+`General Ledger` يعني دفتر الأستاذ العام.
+هذه هي الشاشة الرئيسية للمحاسبة داخل مساحة العمل.
+منها المستخدم يدير:
+- الإعداد الأولي
+- دليل الحسابات
+- القيود اليومية
+- الموافقات
+- العملاء والتحصيلات
+- الموردين والمدفوعات
+- البنك والصندوق
+- الضرائب
+- إقفال الفترات
+- فروق العملة
+- التقارير
+- سجل المراجعة
+
+### مركز الأوامر المالي
+داخل `General Ledger` يظهر `Finance Command Center`.
+وظيفته إعطاء المستخدم اختصارات واضحة:
+- `Setup`: الإعداد
+- `Work Queue`: قائمة المراجعة والترحيل
+- `Money In`: الأموال الداخلة وفواتير العملاء
+- `Money Out`: الأموال الخارجة وفواتير الموردين
+- `Bank Review`: البنك والتسويات
+- `Reports`: التقارير المالية
+
+### الإعداد أول مرة
+`First-Time Setup` يعني إعداد المحاسبة لأول مرة.
+المستخدم يحدد:
+- العملة الأساسية
+- بداية السنة المالية
+- نوع الضريبة
+- حساب البنك
+- حساب الصندوق
+- حساب العملاء
+- حساب الموردين
+- حساب الإيرادات
+- حساب المصروفات
+- حساب ضريبة المدخلات
+- حساب ضريبة المخرجات
+
+بعد الضغط على `Complete Accounting Setup` يتم تجهيز النظام للعمل، بدون إنشاء قيود مالية وهمية.
+
+### دليل الحسابات
+`Chart Of Accounts` يعني دليل الحسابات.
+هو قائمة الحسابات التي تستخدمها الشركة، مثل:
+- البنك
+- الصندوق
+- العملاء
+- الموردين
+- الإيرادات
+- المصروفات
+- الضريبة
+
+كل حساب له نوع:
+- أصل
+- التزام
+- حقوق ملكية
+- إيراد
+- مصروف
+
+تمت إضافة ربط IFRS للحسابات.
+`IFRS Mapping` يعني تصنيف الحسابات حتى تظهر في القوائم المالية بشكل منظم حسب معايير التقارير المالية الدولية.
+
+### القيود اليومية
+`Journal Entry` يعني قيد يومية.
+القيد هو التسجيل الرسمي لأي عملية مالية.
+
+`Journal Entry Lines` تعني سطور القيد.
+كل قيد يتكون من سطور مدينة ودائنة.
+
+`Posting` يعني ترحيل القيد.
+بعد الترحيل يؤثر القيد في الأرصدة والتقارير.
+
+`Reversal` يعني عكس القيد.
+لو حدث خطأ في قيد مرحل، النظام لا يحذف القيد، بل ينشئ قيدًا عكسيًا للحفاظ على الأثر المحاسبي.
+
+### الموافقات
+`Approval Workflow` يعني دورة موافقات.
+القيود اليدوية عالية المخاطر لا ترحل مباشرة.
+المسار:
+- المحاسب ينشئ القيد
+- النظام يضعه في انتظار الموافقة
+- المسؤول المالي يوافق أو يرفض
+- بعد الموافقة يمكن ترحيله
+
+كل موافقة أو رفض أو ترحيل يتم تسجيله في سجل المراجعة.
+
+### فواتير العملاء والتحصيلات
+`Receivables` تعني العملاء أو المبالغ المستحقة من العملاء.
+النظام يدعم:
+- إنشاء فواتير العملاء
+- ترحيل الفاتورة إلى قيد محاسبي
+- تسجيل تحصيلات العملاء
+- تسوية المبالغ المفتوحة
+- طباعة كشف حساب العميل
+- تقرير أعمار ديون العملاء
+
+`Aging` يعني أعمار الديون.
+يوضح الفواتير المفتوحة حسب مدة التأخير.
+
+### الموردون والمدفوعات
+`Payables` تعني الموردين أو المبالغ المستحقة على الشركة للموردين.
+النظام يدعم:
+- تسجيل فواتير الموردين
+- ترحيل فاتورة المورد إلى قيد
+- تسجيل مدفوعات الموردين
+- إشعارات دائنة أو خصومات للموردين
+- تقرير أعمار الموردين
+
+### البنك والصندوق
+النظام يدعم حسابات البنك والصندوق.
+الوظائف الموجودة:
+- تسجيل التحصيلات
+- تسجيل المدفوعات
+- تجميع التحصيلات في دفعات إيداع
+- تسوية البنك
+- تصحيح المدفوعات أو الإيداعات
+
+`Reconciliation` تعني التسوية أو المطابقة.
+مثالها تسوية البنك، أي مقارنة ما في النظام مع كشف البنك.
+
+### الضرائب
+`Tax/VAT` يعني الضرائب أو ضريبة القيمة المضافة.
+النظام يدعم:
+- معدلات الضريبة
+- ضريبة المدخلات
+- ضريبة المخرجات
+- صافي الضريبة المستحقة
+- إعداد إقرار ضريبي
+- الموافقة على الإقرار
+
+`Tax Filing` يعني الإقرار الضريبي لفترة معينة.
+أرقام الضريبة يجب أن تظل مبنية على القيود.
+
+### إقفال الفترات
+`Period Close` يعني إقفال فترة محاسبية مثل شهر أو سنة.
+النظام يدعم:
+- بدء مراجعة الإقفال
+- قائمة تحقق قبل القفل
+- تسويات الإقفال
+- مراجعة التسويات
+- قفل الفترة
+
+بعد قفل الفترة لا يتم تعديلها مباشرة.
+أي تصحيح يجب أن يتم بقيد تصحيحي في فترة مفتوحة.
+
+### تسويات الإقفال
+`Period Close Adjustments` تعني تسويات الإقفال.
+أمثلة:
+- مصروف مستحق
+- إعادة تصنيف
+- تصحيح
+- قيد إقفال
+
+كل تسوية إقفال يجب أن تنشئ قيدًا محاسبيًا حقيقيًا، وتحتاج مراجعة قبل الإقفال النهائي.
+
+### العملات الأجنبية
+`FX Revaluation` يعني إعادة تقييم العملات الأجنبية.
+النظام يدعم:
+- أسعار صرف
+- إعادة تقييم رصيد عملة أجنبية
+- إنشاء قيد ربح أو خسارة فروق عملة
+
+`Exchange Rates` يعني أسعار الصرف.
+يتم استخدامها لحساب فرق العملة.
+
+### التقارير المالية
+النظام يدعم تقارير:
+- دفتر اليومية
+- ميزان المراجعة
+- قائمة الأرباح والخسائر
+- الميزانية العمومية
+- ملخص الإيرادات
+- ملخص الضريبة
+- أعمار ديون العملاء
+- أعمار الموردين
+- تسوية البنك
+- ملف مراجعة للمحاسب
+
+`Trial Balance` يعني ميزان المراجعة.
+`Profit And Loss` يعني قائمة الأرباح والخسائر.
+`Balance Sheet` يعني الميزانية العمومية.
+`Accountant Review Pack` يعني ملف مراجعة للمحاسب، يجمع الأدلة والملخصات المهمة للمراجعة.
+
+### سجل المراجعة
+`Audit Trail` يعني سجل المراجعة.
+يسجل:
+- من أنشأ القيد
+- من وافق
+- من رفض
+- من رحل
+- من عكس قيد
+- من سجل ضريبة
+- من قفل فترة
+- من أجرى تسوية
+
+وظيفته الرقابة ومنع التلاعب وتسهيل المراجعة الداخلية والخارجية.
+
+### الصلاحيات
+النظام يدعم صلاحيات محاسبية.
+أمثلة:
+- مستخدم مشاهدة فقط
+- مستخدم ينشئ قيود
+- مستخدم يوافق على القيود
+- مستخدم يرحل القيود
+- مستخدم يقفل الفترات
+- مستخدم يصدر التقارير
+
+إذا لم يملك المستخدم صلاحية، الزر لا يظهر له في الواجهة.
+
+### التكامل مع الأنظمة الأخرى
+إذا كان العميل مشتركًا في نظام الورشة:
+- يمكن إرسال أمر الشغل المكتمل إلى المحاسبة
+- المحاسب يراجعه
+- ثم يرحله إلى قيد
+
+إذا كان العميل مشتركًا في نظام قطع الغيار:
+- يمكن ترحيل حركات المخزون محاسبيًا
+- يمكن عكس أثر المخزون وتكلفة البضاعة في القيود
+
+إذا كان العميل مشتركًا في المحاسبة فقط:
+- يستطيع استخدام المحاسبة منفردة بدون الورشة أو قطع الغيار
+
+### أسماء الجداول ووظائفها
+`journal_entries`: جدول القيود اليومية. يحفظ رأس القيد مثل الرقم والتاريخ والحالة والإجماليات.
+`journal_entry_lines`: جدول سطور القيود. يحفظ الحسابات المدينة والدائنة داخل كل قيد.
+`accounting_accounts`: جدول دليل الحسابات. يحفظ الحسابات وأنواعها وتصنيفها.
+`accounting_posting_groups`: جدول قواعد الترحيل. يحدد الحسابات الافتراضية التي يستخدمها النظام عند الترحيل.
+`accounting_audit_entries`: جدول سجل المراجعة. يحفظ من فعل ماذا ومتى.
+`accounting_setup_profiles`: جدول إعداد المحاسبة لأول مرة. يحفظ العملة والسنة المالية والحسابات الافتراضية.
+`accounting_tax_rates`: جدول معدلات الضرائب. يحفظ نسبة الضريبة وحساباتها.
+`accounting_tax_filings`: جدول الإقرارات الضريبية. يحفظ الإقرار وفترته وحالته.
+`accounting_bank_accounts`: جدول حسابات البنك والصندوق.
+`accounting_payments`: جدول تحصيلات العملاء.
+`accounting_deposit_batches`: جدول دفعات الإيداع البنكية.
+`accounting_invoices`: جدول فواتير العملاء.
+`accounting_vendor_bills`: جدول فواتير الموردين.
+`accounting_vendor_bill_payments`: جدول مدفوعات الموردين.
+`accounting_vendor_bill_adjustments`: جدول تعديلات فواتير الموردين والإشعارات الدائنة.
+`accounting_period_locks`: جدول إقفال الفترات.
+`accounting_period_close_adjustments`: جدول تسويات الإقفال.
+`accounting_statement_notes`: جدول ملاحظات وإفصاحات القوائم المالية.
+`accounting_exchange_rates`: جدول أسعار الصرف.
+`accounting_fx_revaluations`: جدول إعادة تقييم العملات الأجنبية.
+
+### جملة مختصرة للاجتماعات
+تم بناء نظام محاسبة مستقل ومتكامل داخل منصة SaaS متعددة العملاء. النظام يدعم دليل الحسابات، القيود اليومية، الترحيل، الموافقات، فواتير العملاء، فواتير الموردين، المدفوعات، البنك، الضرائب، إقفال الفترات، فروق العملة، التقارير المالية، وسجل مراجعة كامل. أهم نقطة أن كل الأرقام المالية مبنية على القيود اليومية، وليس على أرقام منفصلة، مما يجعل النظام قابلًا للمراجعة والتوسع والتكامل مع باقي الأنظمة.
+
+## 15.2.3) Additional Accounting Technical Details
 - fiscal close posting controls now block posting inside locked periods
 - overlapping period locks are rejected
 - accounting permission gates now protect sensitive actions:
