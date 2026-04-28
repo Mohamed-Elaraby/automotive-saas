@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -16,8 +15,9 @@ Route::middleware([
 ])->group(function () {
 
     Route::group([
-        'prefix' => LaravelLocalization::setLocale(),
-        'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localize'],
+        'prefix' => '{locale?}',
+        'where' => ['locale' => 'en|ar'],
+        'middleware' => ['locale.route'],
     ], function (): void {
         Route::get('/', function () {
             return 'TENANT HOME: ' . tenant('id');

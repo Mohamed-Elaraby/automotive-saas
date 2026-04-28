@@ -22,7 +22,7 @@
                     </li>
                 @empty
                     <li>
-                        <span class="dropdown-item-text text-muted">No quick actions available</span>
+                        <span class="dropdown-item-text text-muted">{{ __('tenant.no_quick_actions') }}</span>
                     </li>
                 @endforelse
             </ul>
@@ -34,7 +34,7 @@
                 <a href="{{ route('automotive.admin.dashboard', data_get($focusedWorkspaceProduct, 'product_code') ? ['workspace_product' => data_get($focusedWorkspaceProduct, 'product_code')] : []) }}"
                    data-bs-toggle="tooltip"
                    data-bs-placement="right"
-                   data-bs-title="Dashboard">
+                   data-bs-title="{{ __('shared.dashboard') }}">
                     <i class="isax isax-element-45"></i>
                 </a>
             </li>
@@ -45,7 +45,7 @@
                             class="border-0 bg-transparent p-0"
                             data-bs-toggle="tooltip"
                             data-bs-placement="right"
-                            data-bs-title="Logout">
+                            data-bs-title="{{ __('tenant.logout') }}">
                         <i class="isax isax-login-15"></i>
                     </button>
                 </form>
@@ -78,7 +78,7 @@
         <!-- Search -->
         <div class="sidebar-search">
             <div class="input-icon-end position-relative">
-                <input type="text" class="form-control" placeholder="Search">
+                <input type="text" class="form-control" placeholder="{{ __('shared.search') }}">
                 <span class="input-icon-addon">
                     <i class="isax isax-search-normal"></i>
                 </span>
@@ -91,7 +91,7 @@
             <div id="sidebar-menu" class="sidebar-menu">
                 <ul>
                     @if(($tenantWorkspaceProducts ?? collect())->isNotEmpty())
-                        <li class="menu-title"><span>Workspace Products</span></li>
+                        <li class="menu-title"><span>{{ __('tenant.workspace_products') }}</span></li>
                         <li>
                             <ul>
                                 @foreach($tenantWorkspaceProducts as $workspaceProduct)
@@ -100,7 +100,7 @@
                                             <i class="isax {{ $workspaceProduct['is_primary_workspace_product'] ? 'isax-car' : 'isax-layer' }}"></i>
                                             <span>{{ $workspaceProduct['product_name'] }}</span>
                                             <small class="ms-auto text-muted">
-                                                {{ $workspaceProduct['is_accessible'] ? 'Connected' : $workspaceProduct['status_label'] }}
+                                                {{ $workspaceProduct['is_accessible'] ? __('tenant.connected') : $workspaceProduct['status_label'] }}
                                             </small>
                                         </a>
                                     </li>
@@ -131,7 +131,7 @@
                             <a href="{{ route('automotive.admin.dashboard', data_get($focusedWorkspaceProduct, 'product_code') ? ['workspace_product' => data_get($focusedWorkspaceProduct, 'product_code')] : []) }}"
                                data-bs-toggle="tooltip"
                                data-bs-placement="top"
-                               data-bs-title="Dashboard">
+                               data-bs-title="{{ __('shared.dashboard') }}">
                                 <i class="isax isax-element-45"></i>
                             </a>
                         </li>
@@ -140,7 +140,7 @@
                                 <a href="{{ route('automotive.admin.inventory-report.index', data_get($focusedWorkspaceProduct, 'product_code') ? ['workspace_product' => data_get($focusedWorkspaceProduct, 'product_code')] : []) }}"
                                    data-bs-toggle="tooltip"
                                    data-bs-placement="top"
-                                   data-bs-title="Inventory Report">
+                                   data-bs-title="{{ __('shared.inventory_report') }}">
                                     <i class="isax isax-chart-35"></i>
                                 </a>
                             </li>
@@ -152,7 +152,7 @@
                                         class="border-0 bg-transparent p-0"
                                         data-bs-toggle="tooltip"
                                         data-bs-placement="top"
-                                        data-bs-title="Logout">
+                                        data-bs-title="{{ __('tenant.logout') }}">
                                     <i class="isax isax-login-15"></i>
                                 </button>
                             </form>

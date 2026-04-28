@@ -16,6 +16,7 @@ class Kernel extends HttpKernel
     protected $middleware = [
         // \App\Http\Middleware\TrustHosts::class,
         \App\Http\Middleware\TrustProxies::class,
+        \App\Http\Middleware\NormalizeLocalePrefixForRouting::class,
         \App\Http\Middleware\CanonicalizeWorkspaceHost::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
@@ -70,6 +71,7 @@ class Kernel extends HttpKernel
         'localeSessionRedirect' => \Mcamara\LaravelLocalization\Middleware\LocaleSessionRedirect::class,
         'localeCookieRedirect' => \Mcamara\LaravelLocalization\Middleware\LocaleCookieRedirect::class,
         'localeViewPath' => \Mcamara\LaravelLocalization\Middleware\LaravelLocalizationViewPath::class,
+        'locale.route' => \App\Http\Middleware\SetLocaleFromRoute::class,
         // Custom Middleware Made By The Developer
         'refresh.route.lookups' => \App\Http\Middleware\RefreshRouteLookups::class,
         'tenant.subscription.active' => \App\Http\Middleware\EnsureTenantSubscriptionIsActive::class,

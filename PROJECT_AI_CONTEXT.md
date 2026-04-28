@@ -929,6 +929,54 @@ Notes:
 When a new AI session starts from this file, the next package to start immediately is:
 
 ### Multilingual Platform Package 3 - Tenant Admin Shared And Product Module Translation
+Status:
+- in progress
+
+Important routing fix completed before continuing this package:
+- fixed 404s caused by using a dynamic `LaravelLocalization::setLocale()` / optional first-segment locale route prefix with stancl tenancy and Laravel route matching
+- current approach:
+  - routes remain registered with `{locale?}` and `locale.route`
+  - `NormalizeLocalePrefixForRouting` normalizes unprefixed web requests internally to the default locale before route matching
+  - old URLs such as `/workspace/login` and `/admin/login` continue to work
+  - Arabic URLs such as `/ar/workspace/login` and `/ar/admin/login` continue to work
+- verified:
+  - `/workspace/login` returned `200`
+  - `/ar/workspace/login` returned `200`
+  - `/admin/login` returned `200`
+  - `/ar/admin/login` returned `200`
+  - `/workspace/register` returned `200`
+  - `/ar/workspace/register` returned `200`
+
+Completed so far in Package 3:
+- added Tenant Admin translation files:
+  - `lang/en/tenant.php`
+  - `lang/ar/tenant.php`
+- translated Tenant Admin shell/dashboard layer:
+  - tenant admin sidebar static labels/tooltips
+  - tenant admin dashboard remaining static labels
+  - tenant admin footer labels
+  - dashboard stock/inventory summary labels
+  - focused product notes and entry CTAs
+
+Verification completed so far:
+- `php -l app/Http/Middleware/NormalizeLocalePrefixForRouting.php`
+- `php -l app/Http/Middleware/SetLocaleFromRoute.php`
+- `php -l routes/web.php`
+- `php -l routes/tenant.php`
+- `php -l lang/en/tenant.php`
+- `php -l lang/ar/tenant.php`
+- tenant translation-key consistency check for touched Tenant Admin views
+- `git diff --check`
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='active_tenant_admin_can_log_in_and_open_dashboard|accounting_only_tenant_can_use_workspace_without_other_products|parts_inventory_focus_shows_inventory_modules_and_routes_are_accessible'`
+  - result: 3 passed, 47 assertions
+
+Still remaining inside Package 3:
+- translate tenant admin users views
+- translate tenant admin branches views
+- translate stock item/product views
+- translate inventory adjustments/reports/stock transfers/movements views
+- translate supplier catalog/workshop high-traffic labels outside accounting runtime
+
 Recommended scope:
 - translate Tenant Admin shared workspace surfaces:
   - sidebar

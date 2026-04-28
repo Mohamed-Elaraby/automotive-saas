@@ -140,23 +140,23 @@
                 <div class="col-xxl-4 col-xl-5 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Tenant Overview</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.tenant_overview') }}</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                                <span class="text-gray-6">Tenant ID</span>
+                                <span class="text-gray-6">{{ __('tenant.tenant_id') }}</span>
                                 <strong>{{ $tenant->id }}</strong>
                             </div>
                             <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                                <span class="text-gray-6">Company</span>
+                                <span class="text-gray-6">{{ __('tenant.company') }}</span>
                                 <strong>{{ data_get($tenant->data, 'company_name', '—') }}</strong>
                             </div>
                             <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                                <span class="text-gray-6">Database</span>
+                                <span class="text-gray-6">{{ __('tenant.database') }}</span>
                                 <strong>{{ data_get($tenant->data, 'db_name', '—') }}</strong>
                             </div>
                             <div class="d-flex justify-content-between">
-                                <span class="text-gray-6">Logged User</span>
+                                <span class="text-gray-6">{{ __('tenant.logged_user') }}</span>
                                 <strong>{{ auth('automotive_admin')->user()?->name ?? '—' }}</strong>
                             </div>
                         </div>
@@ -166,21 +166,21 @@
                 <div class="col-xxl-4 col-xl-7 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Workspace Products</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.workspace_products') }}</h5>
                         </div>
                         <div class="card-body">
                             @if(($workspaceProducts ?? collect())->isEmpty())
-                                <p class="text-muted mb-0">No product subscriptions are attached to this workspace yet.</p>
+                                <p class="text-muted mb-0">{{ __('tenant.no_product_subscriptions') }}</p>
                             @else
                                 <div class="d-flex flex-column gap-3">
                                     @foreach($workspaceProducts as $workspaceProduct)
                                         <div class="d-flex justify-content-between align-items-start border-bottom pb-2">
                                             <div>
                                                 <div class="fw-semibold">{{ $workspaceProduct['product_name'] }}</div>
-                                                <div class="text-muted small">{{ $workspaceProduct['plan_name'] ?: 'No plan mapped yet' }}</div>
+                                                <div class="text-muted small">{{ $workspaceProduct['plan_name'] ?: __('shared.no_plan_mapped_yet') }}</div>
                                             </div>
                                             <span class="badge {{ $workspaceProduct['is_accessible'] ? 'bg-success' : 'bg-secondary' }}">
-                                                {{ $workspaceProduct['is_accessible'] ? 'Connected' : $workspaceProduct['status_label'] }}
+                                                {{ $workspaceProduct['is_accessible'] ? __('tenant.connected') : $workspaceProduct['status_label'] }}
                                             </span>
                                         </div>
                                     @endforeach
@@ -193,37 +193,37 @@
                 <div class="col-xxl-4 col-xl-12 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Focused Module Entry</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.focused_module_entry') }}</h5>
                         </div>
                         <div class="card-body">
                             @if ($focusedProductCode === 'parts_inventory')
-                                <p class="text-muted">Spare Parts now owns stock items, adjustments, transfers, and inventory reporting.</p>
+                                <p class="text-muted">{{ __('tenant.parts_focus_note') }}</p>
                                 <div class="d-grid gap-2">
                                     <a href="{{ route('automotive.admin.modules.supplier-catalog', $workspaceQuery) }}" class="btn btn-outline-light text-start">
-                                        <i class="isax isax-shop me-2"></i>Open Supplier Catalog
+                                        <i class="isax isax-shop me-2"></i>{{ __('tenant.open_supplier_catalog') }}
                                     </a>
                                     <a href="{{ route('automotive.admin.products.index', $workspaceQuery) }}" class="btn btn-outline-light text-start">
-                                        <i class="isax isax-box me-2"></i>Open Stock Items
+                                        <i class="isax isax-box me-2"></i>{{ __('tenant.open_stock_items') }}
                                     </a>
                                 </div>
                             @elseif ($focusedProductCode === 'accounting')
-                                <p class="text-muted">Accounting keeps its own capability entry point inside the same tenant workspace.</p>
+                                <p class="text-muted">{{ __('tenant.accounting_focus_note') }}</p>
                                 <div class="d-grid gap-2">
                                     <a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light text-start">
-                                        <i class="isax isax-wallet-3 me-2"></i>Open General Ledger
+                                        <i class="isax isax-wallet-3 me-2"></i>{{ __('tenant.open_general_ledger') }}
                                     </a>
                                 </div>
                             @else
-                                <p class="text-muted">Automotive Service is now limited to service-oriented workspace operations only.</p>
+                                <p class="text-muted">{{ __('tenant.automotive_focus_note') }}</p>
                                 <div class="d-grid gap-2">
                                     <a href="{{ route('automotive.admin.modules.workshop-operations', $workspaceQuery) }}" class="btn btn-outline-light text-start">
-                                        <i class="isax isax-car me-2"></i>Open Workshop Operations
+                                        <i class="isax isax-car me-2"></i>{{ __('tenant.open_workshop_operations') }}
                                     </a>
                                     <a href="{{ route('automotive.admin.users.index', $workspaceQuery) }}" class="btn btn-outline-light text-start">
-                                        <i class="isax isax-profile-2user me-2"></i>Manage Users
+                                        <i class="isax isax-profile-2user me-2"></i>{{ __('tenant.manage_users') }}
                                     </a>
                                     <a href="{{ route('automotive.admin.branches.index', $workspaceQuery) }}" class="btn btn-outline-light text-start">
-                                        <i class="isax isax-buildings me-2"></i>Manage Branches
+                                        <i class="isax isax-buildings me-2"></i>{{ __('tenant.manage_branches') }}
                                     </a>
                                 </div>
                             @endif
@@ -233,7 +233,7 @@
             </div>
 
             @include('automotive.admin.partials.workspace-integrations', [
-                'title' => 'Cross-Product Integrations',
+                'title' => __('tenant.cross_product_integrations'),
                 'columnClass' => 'col-xl-4',
             ])
 
@@ -243,7 +243,7 @@
                         <div class="card flex-fill">
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="text-gray-6">Stock Items</span>
+                                    <span class="text-gray-6">{{ __('shared.stock_items') }}</span>
                                     <span class="avatar avatar-sm bg-info-transparent rounded-circle">
                                         <i class="isax isax-box text-info"></i>
                                     </span>
@@ -251,9 +251,9 @@
                                 <h3 class="mb-1">{{ $productsCount }}</h3>
                                 <p class="mb-0 text-muted">
                                     @if (!is_null($productLimit['limit']))
-                                        Limit: {{ $productLimit['limit'] }} | Remaining: {{ $productLimit['remaining'] }}
+                                        {{ __('shared.limit') }}: {{ $productLimit['limit'] }} | {{ __('shared.remaining') }}: {{ $productLimit['remaining'] }}
                                     @else
-                                        Unlimited
+                                        {{ __('shared.unlimited') }}
                                     @endif
                                 </p>
                             </div>
@@ -264,13 +264,13 @@
                         <div class="card flex-fill">
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="text-gray-6">Inventory Records</span>
+                                    <span class="text-gray-6">{{ __('tenant.inventory_records') }}</span>
                                     <span class="avatar avatar-sm bg-success-transparent rounded-circle">
                                         <i class="isax isax-archive text-success"></i>
                                     </span>
                                 </div>
                                 <h3 class="mb-1">{{ $inventoriesCount }}</h3>
-                                <p class="mb-0 text-muted">Branch-product stock records</p>
+                                <p class="mb-0 text-muted">{{ __('tenant.branch_product_stock_records') }}</p>
                             </div>
                         </div>
                     </div>
@@ -279,13 +279,13 @@
                         <div class="card flex-fill">
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="text-gray-6">Stock Transfers</span>
+                                    <span class="text-gray-6">{{ __('shared.stock_transfers') }}</span>
                                     <span class="avatar avatar-sm bg-warning-transparent rounded-circle">
                                         <i class="isax isax-arrow-right-3 text-warning"></i>
                                     </span>
                                 </div>
                                 <h3 class="mb-1">{{ $stockTransfersCount }}</h3>
-                                <p class="mb-0 text-muted">Draft + posted transfers between branches</p>
+                                <p class="mb-0 text-muted">{{ __('tenant.draft_posted_transfers') }}</p>
                             </div>
                         </div>
                     </div>
@@ -294,13 +294,13 @@
                         <div class="card flex-fill">
                             <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="text-gray-6">Stock Movements</span>
+                                    <span class="text-gray-6">{{ __('tenant.stock_movements') }}</span>
                                     <span class="avatar avatar-sm bg-danger-transparent rounded-circle">
                                         <i class="isax isax-arrows-swap text-danger"></i>
                                     </span>
                                 </div>
                                 <h3 class="mb-1">{{ $stockMovementsCount }}</h3>
-                                <p class="mb-0 text-muted">Opening stock, adjustments, and transfers</p>
+                                <p class="mb-0 text-muted">{{ __('tenant.opening_stock_adjustments_transfers') }}</p>
                             </div>
                         </div>
                     </div>
@@ -310,7 +310,7 @@
                     <div class="col-xxl-4 col-xl-6 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Low Stock Snapshot</h5>
+                                <h5 class="card-title mb-0">{{ __('tenant.low_stock_snapshot') }}</h5>
                             </div>
                             <div class="card-body">
                                 @forelse ($lowStockItems as $item)
@@ -321,11 +321,11 @@
                                         </div>
                                         <div class="text-end">
                                             <span class="badge bg-danger">{{ $item->quantity }}</span>
-                                            <p class="mb-0 fs-12 text-muted">Min: {{ $item->product?->min_stock_alert ?? 0 }}</p>
+                                            <p class="mb-0 fs-12 text-muted">{{ __('tenant.min') }}: {{ $item->product?->min_stock_alert ?? 0 }}</p>
                                         </div>
                                     </div>
                                 @empty
-                                    <p class="mb-0 text-muted">No low stock items right now.</p>
+                                    <p class="mb-0 text-muted">{{ __('tenant.no_low_stock') }}</p>
                                 @endforelse
                             </div>
                         </div>
@@ -334,13 +334,13 @@
                     <div class="col-xxl-4 col-xl-6 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Recent Transfers</h5>
+                                <h5 class="card-title mb-0">{{ __('tenant.recent_transfers') }}</h5>
                             </div>
                             <div class="card-body">
                                 @forelse ($recentTransfers as $transfer)
                                     <div class="border-bottom pb-2 mb-2">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="fs-14 mb-1">Transfer #{{ $transfer->id }}</h6>
+                                            <h6 class="fs-14 mb-1">{{ __('tenant.transfer_number', ['id' => $transfer->id]) }}</h6>
                                             <span class="badge {{ ($transfer->status ?? 'draft') === 'posted' ? 'bg-success' : 'bg-warning' }}">
                                                 {{ ucfirst($transfer->status ?? 'draft') }}
                                             </span>
@@ -349,7 +349,7 @@
                                         <p class="mb-0 fs-12 text-muted">{{ optional($transfer->created_at)->format('Y-m-d H:i') }}</p>
                                     </div>
                                 @empty
-                                    <p class="mb-0 text-muted">No stock transfers yet.</p>
+                                    <p class="mb-0 text-muted">{{ __('tenant.no_stock_transfers') }}</p>
                                 @endforelse
                             </div>
                         </div>
@@ -358,7 +358,7 @@
                     <div class="col-xxl-4 col-xl-12 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Recent Stock Movements</h5>
+                                <h5 class="card-title mb-0">{{ __('tenant.recent_stock_movements') }}</h5>
                             </div>
                             <div class="card-body">
                                 @forelse ($recentMovements as $movement)
@@ -368,10 +368,10 @@
                                             <span class="badge bg-secondary">{{ strtoupper($movement->type ?? 'N/A') }}</span>
                                         </div>
                                         <p class="mb-1 fs-13 text-muted">{{ $movement->branch?->name ?? '—' }}</p>
-                                        <p class="mb-0 fs-12 text-muted">Qty: {{ $movement->quantity }} | {{ optional($movement->created_at)->format('Y-m-d H:i') }}</p>
+                                        <p class="mb-0 fs-12 text-muted">{{ __('tenant.qty') }}: {{ $movement->quantity }} | {{ optional($movement->created_at)->format('Y-m-d H:i') }}</p>
                                     </div>
                                 @empty
-                                    <p class="mb-0 text-muted">No stock movements found.</p>
+                                    <p class="mb-0 text-muted">{{ __('tenant.no_stock_movements') }}</p>
                                 @endforelse
                             </div>
                         </div>
@@ -382,16 +382,16 @@
                     <div class="col-xl-12 d-flex">
                         <div class="card flex-fill">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Focused Product Notes</h5>
+                                <h5 class="card-title mb-0">{{ __('tenant.focused_product_notes') }}</h5>
                             </div>
                             <div class="card-body">
                                 @if ($focusedProductCode === 'accounting')
                                     <p class="mb-0 text-muted">
-                                        Accounting now has its own focused entry inside the shared workspace. Inventory and transfer operations are intentionally excluded from this product context.
+                                        {{ __('tenant.accounting_product_note') }}
                                     </p>
                                 @else
                                     <p class="mb-0 text-muted">
-                                        Automotive Service is now intentionally lean. It keeps service-oriented workspace operations only, while stock items, inventory adjustments, reports, and transfers have been reassigned to Spare Parts.
+                                        {{ __('tenant.automotive_product_note') }}
                                     </p>
                                 @endif
                             </div>
