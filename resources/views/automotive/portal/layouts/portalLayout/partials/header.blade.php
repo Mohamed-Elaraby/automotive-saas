@@ -222,6 +222,8 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
         const countPill = document.getElementById('portal-topbar-notification-count-pill');
         const streamUrl = @json(route('automotive.portal.notifications.stream'));
         const csrfToken = @json(csrf_token());
+        const emptyNotificationsLabel = @json(__('shared.no_notifications_yet'));
+        const notificationFallbackLabel = @json(__('shared.notifications'));
 
         let lastKnownCount = Number({{ $portalTopbarNotificationCount }});
         let lastSeenNotificationIds = new Set(@json(collect($portalTopbarNotificationItems)->pluck('id')->values()));
@@ -256,7 +258,7 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
 
         function renderItems(items) {
             if (!Array.isArray(items) || items.length === 0) {
-                listContainer.innerHTML = '<div class="dropdown-item notification-item py-4 text-center text-muted" id="portal-topbar-notification-empty-state">No notifications yet.</div>';
+                listContainer.innerHTML = `<div class="dropdown-item notification-item py-4 text-center text-muted" id="portal-topbar-notification-empty-state">${escapeHtml(emptyNotificationsLabel)}</div>`;
                 return;
             }
 
@@ -272,7 +274,7 @@ $portalWorkspaceBillingUrl = !empty($selectedPortalBillingUrl) && !empty($hasExp
                             </div>
                             <div class="flex-grow-1">
                                 <a href="${escapeHtml(item.target_url || '#')}" class="text-decoration-none portal-notification-open-link" data-notification-id="${escapeHtml(item.id)}" data-mark-read-url="${escapeHtml(item.mark_read_url || '#')}">
-                                    <div class="fw-semibold text-dark mb-1">${escapeHtml(item.title || 'Notification')}</div>
+                                    <div class="fw-semibold text-dark mb-1">${escapeHtml(item.title || notificationFallbackLabel)}</div>
                                     <div class="text-muted small mb-1">${escapeHtml(item.message || '')}</div>
                                     <div class="text-muted small">${escapeHtml(item.notified_at || '-')}</div>
                                 </a>

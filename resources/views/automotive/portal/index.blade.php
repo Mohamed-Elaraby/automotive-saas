@@ -56,14 +56,14 @@
                                 <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
                                     @if($allowSystemAccess && !empty($systemUrl))
                                         <span class="small text-muted">
-                                            Use the Open My Workspace button at the top of this page.
+                                            {{ __('portal.use_open_workspace_button') }}
                                         </span>
                                     @else
                                         <a href="{{ route('automotive.portal', array_filter(['product' => session('checkout_completed_product')])) }}" class="btn btn-sm btn-outline-success">
-                                            Refresh Portal Status
+                                            {{ __('portal.refresh_portal_status') }}
                                         </a>
                                         <span class="small text-muted">
-                                            Stripe checkout finished. Workspace access will appear here as soon as subscription sync completes.
+                                            {{ __('portal.checkout_finished_pending_sync') }}
                                         </span>
                                     @endif
                                 </div>
@@ -83,33 +83,29 @@
 
                     @if($hasPendingPaidCheckout)
                         <div class="alert alert-warning mb-3">
-                            Your last checkout was not completed. Your current subscription state has not changed yet, and you can continue checkout when you are ready.
+                            {{ __('portal.last_checkout_not_completed') }}
                         </div>
                     @elseif($status === 'trialing')
                         <div class="alert alert-info mb-3">
-                            Your account is currently on a free trial.
+                            {{ __('portal.account_on_free_trial') }}
                             @if(!is_null($trialDaysRemaining))
-                                You have <strong>{{ max((int) $trialDaysRemaining, 0) }}</strong> day(s) remaining before the trial ends.
+                                {!! __('portal.trial_days_remaining', ['days' => '<strong>' . max((int) $trialDaysRemaining, 0) . '</strong>']) !!}
                             @endif
                         </div>
                     @elseif($status === 'past_due' || $status === 'suspended' || $status === 'expired')
                         <div class="alert alert-warning mb-3">
                             @if($status === 'expired' && $canStartPaidCheckout)
-                                Your previous subscription is
-                                <strong>EXPIRED</strong>.
-                                You can choose a paid plan below to start a new Stripe checkout.
+                                {!! __('portal.previous_subscription_expired') !!}
                             @else
-                                Your current subscription status is
-                                <strong>{{ strtoupper(str_replace('_', ' ', $status)) }}</strong>.
-                                Please review your plan and billing before opening the system workspace.
+                                {!! __('portal.current_subscription_status_message', ['status' => '<strong>' . e(strtoupper(str_replace('_', ' ', $status))) . '</strong>']) !!}
                             @endif
                         </div>
                     @elseif(!$hasAnyWorkspace)
                         <div class="alert alert-primary mb-3">
                             @if($freeTrialEnabled)
-                                Your account is ready. Choose how you want to continue: start a free trial or subscribe to a paid plan.
+                                {{ __('portal.account_ready_trial_or_paid') }}
                             @else
-                                Your account is ready. Choose a paid plan and continue to checkout.
+                                {{ __('portal.account_ready_paid') }}
                             @endif
                         </div>
                     @endif
@@ -148,7 +144,7 @@
                                         </span>
                                         @if(!empty($visibleCouponCode))
                                             <span class="badge bg-soft-success text-success mt-2">
-                                                Reserved Coupon: {{ $visibleCouponCode }}
+                                                {{ __('portal.reserved_coupon') }}: {{ $visibleCouponCode }}
                                             </span>
                                         @endif
                                     </div>
@@ -159,43 +155,43 @@
                                 <div class="row gx-3">
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Full Name</label>
+                                                    <label class="form-label">{{ __('portal.full_name') }}</label>
                                             <input type="text" class="form-control" value="{{ $user->name ?? '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Email</label>
+                                                    <label class="form-label">{{ __('portal.email') }}</label>
                                             <input type="text" class="form-control" value="{{ $user->email ?? '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Company Name</label>
+                                                    <label class="form-label">{{ __('portal.company_name') }}</label>
                                             <input type="text" class="form-control" value="{{ $profile->company_name ?? '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Reserved Subdomain</label>
+                                                    <label class="form-label">{{ __('portal.reserved_subdomain') }}</label>
                                             <input type="text" class="form-control" value="{{ $profile->subdomain ?? '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Primary Domain</label>
+                                                    <label class="form-label">{{ __('portal.primary_domain') }}</label>
                                             <input type="text" class="form-control" value="{{ $primaryDomainValue ?: '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">System Access</label>
-                                            <input type="text" class="form-control" value="{{ $allowSystemAccess ? 'Available' : 'Not Available Yet' }}" readonly>
+                                                    <label class="form-label">{{ __('portal.system_access') }}</label>
+                                                    <input type="text" class="form-control" value="{{ $allowSystemAccess ? __('portal.available') : __('portal.not_available_yet') }}" readonly>
                                         </div>
                                     </div>
                                 </div>
@@ -206,48 +202,48 @@
                                     <span class="bg-dark avatar avatar-sm me-2 flex-shrink-0">
                                         <i class="isax isax-info-circle fs-14"></i>
                                     </span>
-                                    <h6 class="fs-16 fw-semibold mb-0">Subscription Information</h6>
+                                    <h6 class="fs-16 fw-semibold mb-0">{{ __('portal.subscription_information') }}</h6>
                                 </div>
 
                                 <div class="row gx-3">
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Current Plan</label>
-                                            <input type="text" class="form-control" value="{{ $plan->name ?? $plan->slug ?? 'No Plan Yet' }}" readonly>
+                                                    <label class="form-label">{{ __('shared.current_plan') }}</label>
+                                                    <input type="text" class="form-control" value="{{ $plan->name ?? $plan->slug ?? __('portal.no_plan_yet') }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Current Status</label>
+                                                    <label class="form-label">{{ __('portal.current_status') }}</label>
                                             <input type="text" class="form-control" value="{{ $status ? strtoupper(str_replace('_', ' ', $status)) : 'NOT STARTED' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Billing Period</label>
+                                                    <label class="form-label">{{ __('portal.billing_period') }}</label>
                                             <input type="text" class="form-control" value="{{ !empty($subscription->billing_period) ? strtoupper((string) $subscription->billing_period) : '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Trial Ends At</label>
+                                                    <label class="form-label">{{ __('portal.trial_ends_at') }}</label>
                                             <input type="text" class="form-control" value="{{ $trialEndsAt ? $trialEndsAt->format('Y-m-d H:i:s') : '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Days Remaining</label>
+                                                    <label class="form-label">{{ __('portal.days_remaining') }}</label>
                                             <input type="text" class="form-control" value="{{ !is_null($trialDaysRemaining) ? max((int) $trialDaysRemaining, 0) : '-' }}" readonly>
                                         </div>
                                     </div>
 
                                     <div class="col-lg-4 col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Gateway</label>
+                                                    <label class="form-label">{{ __('portal.gateway') }}</label>
                                             <input type="text" class="form-control" value="{{ $subscription->gateway ?? '-' }}" readonly>
                                         </div>
                                     </div>
@@ -259,7 +255,7 @@
                                     <span class="bg-dark avatar avatar-sm me-2 flex-shrink-0">
                                         <i class="isax isax-info-circle fs-14"></i>
                                     </span>
-                                    <h6 class="fs-16 fw-semibold mb-0">Domain Information</h6>
+                                    <h6 class="fs-16 fw-semibold mb-0">{{ __('portal.domain_information') }}</h6>
                                 </div>
 
                                 @if($domains->count() > 0)
@@ -270,12 +266,12 @@
                                                     <div class="fw-semibold mb-2">{{ $domain['domain'] }}</div>
                                                     @if($allowSystemAccess && !empty($systemUrl))
                                                         <p class="text-muted fs-13 mb-0">
-                                                            Use the Open My Workspace button at the top of this page.
+                                                            {{ __('portal.use_open_workspace_button') }}
                                                         </p>
                                                     @else
                                                         <div class="d-flex flex-wrap gap-2">
                                                             <a href="{{ $domain['url'] }}" target="_blank" class="btn btn-sm btn-outline-white">
-                                                                Open Domain
+                                                                {{ __('portal.open_domain') }}
                                                             </a>
                                                         </div>
                                                     @endif
@@ -285,7 +281,7 @@
                                     </div>
                                 @else
                                     <div class="alert alert-light border">
-                                        Your domain will appear here after trial or paid activation.
+                                        {{ __('portal.domain_after_activation') }}
                                     </div>
                                 @endif
                             </div>
@@ -294,18 +290,18 @@
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex flex-wrap gap-2">
                                         <a href="{{ $hasExplicitProductSelection ? '#paid-plans' : '#products-catalog' }}" class="btn btn-outline-white">
-                                            {{ $hasExplicitProductSelection ? 'View Paid Plans' : 'Choose Product First' }}
+                                            {{ $hasExplicitProductSelection ? __('portal.view_paid_plans') : __('portal.choose_product_first') }}
                                         </a>
 
                                         @if(!empty($selectedPortalBillingUrl) && $hasExplicitProductSelection)
                                             <a href="{{ $selectedPortalBillingUrl }}" class="btn btn-outline-white">
-                                                Open Billing Control
+                                                {{ __('portal.open_billing_control') }}
                                             </a>
                                         @endif
                                     </div>
 
                                     <button type="button" class="btn btn-outline-white" disabled>
-                                        Profile Overview Only
+                                        {{ __('portal.profile_overview_only') }}
                                     </button>
                                 </div>
                             @endunless
@@ -317,11 +313,11 @@
                             <div class="mb-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                     <div>
-                                        <h6 class="mb-1">Products Catalog</h6>
-                                        <p class="text-muted mb-0">Start with one product today, then attach more modules to the same workspace later.</p>
+                                        <h6 class="mb-1">{{ __('portal.products_catalog') }}</h6>
+                                        <p class="text-muted mb-0">{{ __('portal.products_catalog_intro') }}</p>
                                     </div>
                                     <span class="badge bg-soft-info text-info">
-                                        One workspace, many connected products
+                                        {{ __('portal.one_workspace_many_products') }}
                                     </span>
                                 </div>
                             </div>
@@ -342,7 +338,7 @@
                                                 <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
                                                     <div>
                                                         <h5 class="mb-1">{{ $productRow['name'] }}</h5>
-                                                        <p class="text-muted mb-0">{{ $productRow['description'] ?: 'Product catalog item.' }}</p>
+                                                        <p class="text-muted mb-0">{{ $productRow['description'] ?: __('portal.product_catalog_item') }}</p>
                                                     </div>
                                                     <span class="badge {{ $statusBadgeClass }}">
                                                         {{ $productRow['status_label'] }}
@@ -350,27 +346,27 @@
                                                 </div>
 
                                                 <div class="mb-3">
-                                                    <div class="text-muted fs-13 mb-1">Product Code</div>
+                                                    <div class="text-muted fs-13 mb-1">{{ __('portal.product_code') }}</div>
                                                     <div class="fw-semibold">{{ strtoupper((string) $productRow['code']) }}</div>
                                                 </div>
 
                                                 <div class="mb-3">
                                                     @if($productRow['is_subscribed'])
-                                                        <p class="mb-1 text-success">This product is already attached to your workspace.</p>
+                                                        <p class="mb-1 text-success">{{ __('portal.product_attached') }}</p>
                                                         @if(!empty($productRow['activation_portal_status']['message']))
                                                             <p class="mb-0 text-muted fs-13">{{ $productRow['activation_portal_status']['message'] }}</p>
                                                         @endif
                                                     @elseif($productRow['is_automotive'])
-                                                        <p class="mb-1 text-muted">This product is currently active in your workspace catalog.</p>
+                                                        <p class="mb-1 text-muted">{{ __('portal.product_active_catalog') }}</p>
                                                     @else
-                                                        <p class="mb-1 text-muted">This product will connect to the same tenant workspace when enabled.</p>
+                                                        <p class="mb-1 text-muted">{{ __('portal.product_connects_workspace') }}</p>
                                                     @endif
                                                 </div>
 
                                                 <div class="mt-auto d-flex flex-wrap gap-2">
                                                     @if($productRow['is_subscribed'] && $allowSystemAccess && !empty($systemUrl))
                                                         <span class="badge bg-soft-success text-success align-self-start">
-                                                            Workspace Ready
+                                                            {{ __('portal.workspace_ready') }}
                                                         </span>
                                                     @else
                                                         <a href="{{ $productRow['action_url'] }}" class="btn btn-outline-white">
@@ -392,37 +388,37 @@
                             @php
                                 $plansByPeriod = collect($paidPlans ?? [])->groupBy(fn ($plan) => (string) ($plan->billing_period ?? 'monthly'));
                                 $periodTabs = collect([
-                                    'monthly' => 'Monthly',
-                                    'yearly' => 'Yearly',
-                                    'one_time' => 'One Time',
+                                    'monthly' => __('portal.monthly'),
+                                    'yearly' => __('portal.yearly'),
+                                    'one_time' => __('portal.one_time'),
                                 ])->filter(fn ($label, $period) => $plansByPeriod->has($period));
                                 $activePeriod = (string) ($periodTabs->keys()->first() ?? 'monthly');
-                                $selectedProductName = (string) ($selectedProduct['name'] ?? 'Selected Product');
+                                $selectedProductName = (string) ($selectedProduct['name'] ?? __('portal.selected_product'));
                                 $selectedProductDescription = (string) ($selectedProduct['description'] ?? '');
                             @endphp
 
                             <div class="mb-4">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                     <div>
-                                        <h6 class="mb-1">Product Subscription Options</h6>
+                                        <h6 class="mb-1">{{ __('portal.product_subscription_options') }}</h6>
                                         <p class="text-muted mb-0">
                                             @if(empty($selectedProduct))
-                                                Choose a product from the catalog above first. Trial and paid options will load here for the product you select.
+                                                {{ __('portal.choose_product_options_load') }}
                                             @elseif($selectedProductSupportsCheckout)
                                                 @if(!$hasAnyWorkspace && empty($selectedProductWasExplicit))
-                                                    Choose a product from the catalog first, then review its trial and paid options here.
+                                                    {{ __('portal.choose_product_review_options') }}
                                                 @else
-                                                    Review trial and paid options for <strong>{{ $selectedProductName }}</strong>, compare the real limits, then continue with the right subscription flow.
+                                                    {!! __('portal.review_trial_paid_for', ['product' => '<strong>' . e($selectedProductName) . '</strong>']) !!}
                                                 @endif
                                             @else
-                                                Review activation and enablement status for <strong>{{ $selectedProductName }}</strong>. Additional products that are not directly billable yet will ask for enablement first.
+                                                {!! __('portal.review_enablement_for', ['product' => '<strong>' . e($selectedProductName) . '</strong>']) !!}
                                             @endif
                                         </p>
                                     </div>
 
                                     @if(!empty($visibleCouponCode))
                                         <span class="badge bg-soft-success text-success">
-                                            Reserved Coupon: {{ $visibleCouponCode }}
+                                            {{ __('portal.reserved_coupon') }}: {{ $visibleCouponCode }}
                                         </span>
                                     @endif
                                 </div>
@@ -430,7 +426,7 @@
 
                             @if(($selectedProductCapabilities ?? collect())->isNotEmpty())
                                 <div class="alert alert-light border mb-4">
-                                    <div class="fw-semibold mb-2">Included Product Capabilities</div>
+                                    <div class="fw-semibold mb-2">{{ __('portal.included_product_capabilities') }}</div>
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach($selectedProductCapabilities as $capabilityName)
                                             <span class="badge bg-white text-dark border">{{ $capabilityName }}</span>
@@ -441,10 +437,10 @@
 
                             @if(!empty($selectedProductSubscription) && !empty($selectedProductProvisioningStatus))
                                 <div class="alert alert-{{ $selectedProductProvisioningStatus['severity'] ?? 'secondary' }} mb-4">
-                                    <div class="fw-semibold mb-1">{{ $selectedProductProvisioningStatus['label'] ?? 'Provisioning Status' }}</div>
-                                    <div>{{ $selectedProductProvisioningStatus['message'] ?? 'Workspace product provisioning status is being resolved.' }}</div>
+                                    <div class="fw-semibold mb-1">{{ $selectedProductProvisioningStatus['label'] ?? __('portal.provisioning_status') }}</div>
+                                    <div>{{ $selectedProductProvisioningStatus['message'] ?? __('portal.provisioning_resolving') }}</div>
                                     @if(($selectedProductProvisioningStatus['state'] ?? '') === 'provisioning_failed' && !empty($selectedProductProvisioningStatus['error']))
-                                        <div class="small mt-2 text-muted">Diagnostic: {{ $selectedProductProvisioningStatus['error'] }}</div>
+                                        <div class="small mt-2 text-muted">{{ __('portal.diagnostic') }}: {{ $selectedProductProvisioningStatus['error'] }}</div>
                                     @endif
                                 </div>
                             @endif
@@ -453,16 +449,16 @@
                                 <div class="alert alert-primary border mb-4">
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                                         <div>
-                                            <div class="fw-semibold mb-1">{{ $selectedProductName }} Free Trial</div>
+                                            <div class="fw-semibold mb-1">{{ $selectedProductName }} {{ __('portal.free_trial') }}</div>
                                             <div class="text-muted">
-                                                Start a dedicated trial for this product. Current admin setting will provision <strong>{{ (int) ($selectedProductTrialDays ?? 14) }}</strong> day(s).
+                                                {!! __('portal.free_trial_intro', ['days' => '<strong>' . (int) ($selectedProductTrialDays ?? 14) . '</strong>']) !!}
                                             </div>
                                         </div>
                                         <form method="POST" action="{{ route('automotive.portal.start-trial') }}" class="d-inline">
                                             @csrf
                                             <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
                                             <button type="submit" class="btn btn-primary">
-                                                Start {{ $selectedProductName }} Free Trial
+                                                {{ __('portal.start_product_free_trial', ['product' => $selectedProductName]) }}
                                             </button>
                                         </form>
                                     </div>
@@ -475,48 +471,48 @@
                                     $selectedProductEnablementStatus = (string) ($selectedProductEnablementRequest->status ?? '');
                                 @endphp
                                 <div class="alert alert-info">
-                                    {{ $selectedProductName }} is visible in the shared workspace catalog.
+                                    {{ __('portal.product_visible_catalog', ['product' => $selectedProductName]) }}
                                     @if(!$hasAnyWorkspace)
-                                        This product is visible in the shared workspace catalog, but it does not have a direct trial or paid checkout configured yet.
+                                        {{ __('portal.no_direct_checkout_yet') }}
                                     @else
-                                        {{ $selectedProductName }} is visible in the shared workspace catalog.
-                                        Submit or review enablement first. Billing checkout becomes available here after approval.
+                                        {{ __('portal.product_visible_catalog', ['product' => $selectedProductName]) }}
+                                        {{ __('portal.submit_enablement_first') }}
                                     @endif
                                 </div>
 
                                 @if($selectedProductEnablementStatus === 'rejected')
                                     <div class="alert alert-warning">
-                                        Your last enablement request for {{ $selectedProductName }} was rejected. You can submit a new request when ready.
+                                        {{ __('portal.enablement_rejected', ['product' => $selectedProductName]) }}
                                     </div>
                                 @elseif($selectedProductEnablementStatus === 'approved')
                                     <div class="alert alert-success">
-                                        Your enablement request for {{ $selectedProductName }} was approved and the product is now attached to your workspace.
+                                        {{ __('portal.enablement_approved_message', ['product' => $selectedProductName]) }}
                                     </div>
                                 @endif
 
                                 <div class="mb-4 d-flex flex-wrap gap-2">
                                     @if(empty($selectedProduct['is_active']))
                                         <button type="button" class="btn btn-outline-white" disabled>
-                                            Product Coming Soon
+                                            {{ __('portal.product_coming_soon') }}
                                         </button>
                                     @elseif(!empty($selectedProduct['is_subscribed']))
                                         <button type="button" class="btn btn-success" disabled>
-                                            Product Already Attached
+                                            {{ __('portal.product_already_attached') }}
                                         </button>
                                     @elseif($selectedProductEnablementStatus === 'pending')
                                         <button type="button" class="btn btn-outline-white" disabled>
-                                            Enablement Request Pending
+                                            {{ __('portal.enablement_request_pending') }}
                                         </button>
                                     @elseif($selectedProductEnablementStatus === 'approved')
                                         <button type="button" class="btn btn-success" disabled>
-                                            Enablement Approved
+                                            {{ __('portal.enablement_approved') }}
                                         </button>
                                     @else
                                         <form method="POST" action="{{ route('automotive.portal.products.request-enable') }}">
                                             @csrf
                                             <input type="hidden" name="product_id" value="{{ $selectedProduct['id'] }}">
                                             <button type="submit" class="btn btn-primary">
-                                                {{ $selectedProductEnablementStatus === 'rejected' ? 'Request Product Enablement Again' : 'Request Product Enablement' }}
+                                                {{ $selectedProductEnablementStatus === 'rejected' ? __('portal.request_product_enablement_again') : __('portal.request_product_enablement') }}
                                             </button>
                                         </form>
                                     @endif
@@ -524,7 +520,7 @@
 
                                 @if($paidPlans->count() === 0)
                                     <div class="alert alert-light border mb-0">
-                                        {{ $selectedProductName }} does not have active paid plans configured yet. This portal section is now ready for product-level enablement once plans are added.
+                                        {{ __('portal.no_active_paid_plans_for_product', ['product' => $selectedProductName]) }}
                                     </div>
                                 @else
                                     <div class="row">
@@ -541,14 +537,14 @@
                                                         <div class="border-bottom">
                                                             <div class="mb-3">
                                                                 <h5 class="mb-1">{{ $paidPlan->name }}</h5>
-                                                                <p class="mb-0">{{ $paidPlan->description ?: ($selectedProductDescription ?: 'Configured product plan.') }}</p>
+                                                                <p class="mb-0">{{ $paidPlan->description ?: ($selectedProductDescription ?: __('portal.configured_product_plan')) }}</p>
                                                             </div>
                                                             <div class="mb-3">
                                                                 <h3 class="d-flex align-items-center mb-1">
                                                                     {{ str_replace(' ' . $paidPlan->currency_code, '', $paidPlan->display_price) }}
                                                                 </h3>
                                                                 <p class="mb-0">
-                                                                    {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} billing
+                                                                    {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} {{ __('portal.billing') }}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -566,7 +562,7 @@
                                                         </div>
                                                         <div class="mt-auto">
                                                             <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
-                                                                <i class="isax isax-lock me-1"></i> Approval Required Before Checkout
+                                                                <i class="isax isax-lock me-1"></i> {{ __('portal.approval_required_before_checkout') }}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -577,30 +573,28 @@
                                 @endif
                             @elseif($selectedProductHasLiveBilling)
                                 <div class="alert alert-info mb-0">
-                                    This workspace product already has a live Stripe subscription. Further billing changes should be managed from its billing area.
+                                    {{ __('portal.already_live_subscription') }}
                                 </div>
                             @elseif($paidPlans->count() === 0)
                                 <div class="alert alert-light border mb-0">
-                                    No active paid plans are available right now.
+                                    {{ __('portal.no_active_paid_plans') }}
                                 </div>
                             @else
                                 @if(!($selectedProduct['is_automotive'] ?? false) && $selectedProductHasPendingCheckout)
                                     <div class="alert alert-warning mb-3">
-                                        Your last checkout for {{ $selectedProductName }} is still pending. Continue the product checkout below, or wait for Stripe webhook sync if payment already completed.
+                                        {{ __('portal.pending_checkout_for_product', ['product' => $selectedProductName]) }}
                                     </div>
                                 @elseif(!($selectedProduct['is_automotive'] ?? false) && $selectedProductHasLiveBilling)
                                     <div class="alert alert-info mb-3">
-                                        {{ $selectedProductName }} already has a live billed subscription on this workspace. Changes should be managed from the tenant billing area.
+                                        {{ __('portal.live_billed_subscription_for_product', ['product' => $selectedProductName]) }}
                                     </div>
                                 @elseif(!($selectedProduct['is_automotive'] ?? false) && in_array($selectedProductStatus ?? '', ['past_due', 'suspended'], true))
                                     <div class="alert alert-warning mb-3">
-                                        {{ $selectedProductName }} is currently <strong>{{ strtoupper(str_replace('_', ' ', (string) $selectedProductStatus)) }}</strong>.
-                                        Review billing below and continue checkout when ready.
+                                        {!! __('portal.product_currently_status', ['product' => e($selectedProductName), 'status' => '<strong>' . e(strtoupper(str_replace('_', ' ', (string) $selectedProductStatus))) . '</strong>']) !!}
                                     </div>
                                 @elseif(!($selectedProduct['is_automotive'] ?? false) && in_array($selectedProductStatus ?? '', ['expired', 'canceled', 'cancelled'], true))
                                     <div class="alert alert-warning mb-3">
-                                        Your previous {{ $selectedProductName }} subscription is <strong>{{ strtoupper(str_replace('_', ' ', (string) $selectedProductStatus)) }}</strong>.
-                                        You can start a new checkout below.
+                                        {!! __('portal.previous_subscription_status', ['product' => e($selectedProductName), 'status' => '<strong>' . e(strtoupper(str_replace('_', ' ', (string) $selectedProductStatus))) . '</strong>']) !!}
                                     </div>
                                 @endif
 
@@ -629,9 +623,9 @@
                                                             && !in_array((string) $status, ['trialing', ''], true);
 
                                                         $priceSuffix = match ((string) $paidPlan->billing_period) {
-                                                            'yearly' => '/year',
-                                                            'one_time' => ' one-time',
-                                                            default => '/month',
+                                                            'yearly' => __('portal.year_suffix'),
+                                                            'one_time' => __('portal.one_time_suffix'),
+                                                            default => __('portal.month_suffix'),
                                                         };
                                                         $featureList = collect($paidPlan->features_array ?? [])->take(6);
                                                         $limitLines = collect($paidPlan->limits_array ?? [])->map(function ($limit) {
@@ -646,12 +640,12 @@
                                                                         <div class="d-flex align-items-center justify-content-between position-relative gap-2">
                                                                             <div>
                                                                                 <h5 class="mb-1">{{ $paidPlan->name }}</h5>
-                                                                                <p class="mb-0">{{ $paidPlan->description ?: 'Configured paid plan for production billing.' }}</p>
+                                                                                <p class="mb-0">{{ $paidPlan->description ?: __('portal.configured_paid_plan') }}</p>
                                                                             </div>
                                                                             @if($isCurrentPaidPlan && $status === 'active')
-                                                                                <span class="badge bg-success position-absolute top-0 end-0">Current</span>
+                                                                                <span class="badge bg-success position-absolute top-0 end-0">{{ __('portal.current') }}</span>
                                                                             @elseif($loop->first)
-                                                                                <span class="badge bg-soft-info text-info position-absolute top-0 end-0">Popular</span>
+                                                                                <span class="badge bg-soft-info text-info position-absolute top-0 end-0">{{ __('portal.popular') }}</span>
                                                                             @endif
                                                                         </div>
                                                                     </div>
@@ -663,13 +657,13 @@
                                                                             </span>
                                                                         </h3>
                                                                         <p class="mb-0">
-                                                                            {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} billing
+                                                                            {{ strtoupper((string) ($paidPlan->slug ?? 'PLAN')) }} · {{ $paidPlan->currency_code }} {{ __('portal.billing') }}
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                                 <div class="mt-3 mb-3">
                                                                     <div class="mb-1">
-                                                                        <h6 class="fs-16 mb-2">What you get:</h6>
+                                                                        <h6 class="fs-16 mb-2">{{ __('portal.what_you_get') }}</h6>
                                                                     </div>
                                                                     <div>
                                                                         @foreach($limitLines as $limitLine)
@@ -683,7 +677,7 @@
                                                                             </p>
                                                                         @empty
                                                                             @if($limitLines->isEmpty())
-                                                                                <p class="text-muted mb-0">No extra features are configured for this plan yet.</p>
+                                                                                <p class="text-muted mb-0">{{ __('portal.no_extra_features') }}</p>
                                                                             @endif
                                                                         @endforelse
                                                                     </div>
@@ -691,7 +685,7 @@
                                                                 <div class="mt-auto">
                                                                     @if($isCurrentPaidPlan && $status === 'active')
                                                                         <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
-                                                                            <i class="isax isax-bill me-1"></i> Current Plan
+                                                                            <i class="isax isax-bill me-1"></i> {{ __('portal.current_plan_button') }}
                                                                         </button>
                                                                     @elseif(($selectedProduct['is_automotive'] ?? false) ? $canStartPaidCheckout : !$selectedProductHasLiveBilling)
                                                                         <form method="POST" action="{{ route('automotive.portal.subscribe') }}">
@@ -703,19 +697,19 @@
                                                                             <button type="submit" class="d-flex align-items-center justify-content-center btn border w-100">
                                                                                 <i class="isax isax-shopping-cart me-1"></i>
                                                                                 @if(($selectedProduct['is_automotive'] ?? false) && $status === 'trialing')
-                                                                                    Upgrade to {{ $paidPlan->name }}
+                                                                                    {{ __('portal.upgrade_to_plan', ['plan' => $paidPlan->name]) }}
                                                                                 @elseif(($selectedProduct['is_automotive'] ?? false) && $status === 'past_due')
-                                                                                    Continue Checkout
+                                                                                    {{ __('portal.continue_checkout') }}
                                                                                 @elseif(!($selectedProduct['is_automotive'] ?? false) && !empty($selectedProductSubscription?->gateway_checkout_session_id) && empty($selectedProductSubscription?->gateway_subscription_id))
-                                                                                    Continue Product Checkout
+                                                                                    {{ __('portal.continue_product_checkout') }}
                                                                                 @else
-                                                                                    Select &amp; Continue
+                                                                                    {{ __('portal.select_continue') }}
                                                                                 @endif
                                                                             </button>
                                                                         </form>
                                                                     @else
                                                                         <button type="button" class="d-flex align-items-center justify-content-center btn border w-100" disabled>
-                                                                            <i class="isax isax-bill me-1"></i> Billing Managed In System
+                                                                            <i class="isax isax-bill me-1"></i> {{ __('portal.billing_managed_in_system') }}
                                                                         </button>
                                                                     @endif
                                                                 </div>

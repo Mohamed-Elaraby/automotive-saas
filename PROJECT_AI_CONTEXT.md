@@ -844,21 +844,106 @@ Notes:
 - no accounting, billing, or integration logic was changed
 - `php artisan route:cache` was not used
 
-## 15.3) Recommended Next Package
+## 15.3) Recently Completed Package
+This package was completed in the current work cycle.
+
+### Multilingual Platform Package 2 - Customer Portal Translation Expansion
+Status:
+- completed
+
+Package count:
+- completed: 2 of 6 multilingual packages
+- remaining: 4 of 6 multilingual packages
+
+Scope completed:
+- added dedicated Customer Portal translation files:
+  - `lang/en/portal.php`
+  - `lang/ar/portal.php`
+- translated the active Customer Portal surfaces:
+  - portal login
+  - portal registration
+  - portal forgot password
+  - portal reset password
+  - portal account/settings
+  - portal overview/profile/product catalog
+  - portal product subscription options
+  - portal billing status page
+  - portal header notification fallback labels
+  - portal sidebar labels and CTAs
+  - portal footer labels
+- translated shared billing partial labels used by the portal billing page:
+  - `resources/views/automotive/admin/billing/partials/status-card.blade.php`
+  - `resources/views/automotive/admin/billing/partials/plan-selector.blade.php`
+- preserved dynamic business content as runtime data:
+  - product names/descriptions
+  - plan names/descriptions
+  - Stripe/invoice data
+  - database-driven provisioning messages
+- kept route behavior unchanged:
+  - English default URLs remain unprefixed
+  - Arabic remains available under `/ar/...`
+- no accounting, billing, or integration logic was changed
+- `php artisan route:cache` was not used
+
+Important files added/changed:
+- `lang/en/portal.php`
+- `lang/ar/portal.php`
+- `resources/views/automotive/portal/auth/login.blade.php`
+- `resources/views/automotive/portal/auth/register.blade.php`
+- `resources/views/automotive/portal/auth/forgot-password.blade.php`
+- `resources/views/automotive/portal/auth/reset-password.blade.php`
+- `resources/views/automotive/portal/settings.blade.php`
+- `resources/views/automotive/portal/index.blade.php`
+- `resources/views/automotive/portal/billing/status.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/partials/header.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/partials/sidebar.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/components/footer.blade.php`
+- `resources/views/automotive/admin/billing/partials/status-card.blade.php`
+- `resources/views/automotive/admin/billing/partials/plan-selector.blade.php`
+
+Verification:
+- `php -l lang/en/portal.php`
+- `php -l lang/ar/portal.php`
+- translation-key consistency check across portal views and shared billing partials
+- `php artisan view:clear`
+- `php artisan config:clear`
+- lightweight HTTP kernel checks:
+  - `/workspace/login` returned `200`
+  - `/ar/workspace/login` returned `200`
+  - `/ar/workspace/register` returned `200`
+  - `/ar/workspace/login` rendered Arabic UI text and `dir="rtl"`
+- `git diff --check`
+- targeted regression tests:
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+    - result: 39 passed, 218 assertions
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/BillingPageTest.php`
+    - result: 12 passed, 47 assertions
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=accounting_only_tenant_can_use_workspace_without_other_products`
+    - result: 1 passed, 24 assertions
+
+Notes:
+- no migrations were added
+- one attempted combined filter command returned "No tests found"; it was replaced by explicit targeted commands above
+
+## 15.4) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Multilingual Platform Package 2 - Progressive UI Translation Expansion
+### Multilingual Platform Package 3 - Tenant Admin Shared And Product Module Translation
 Recommended scope:
-- continue translating UI module-by-module using the existing `lang/en/shared.php` and `lang/ar/shared.php` foundation
-- expand from shared headers and dashboard surfaces into:
-  - Customer Portal product catalog and billing status page
-  - Tenant Admin module pages
-  - Central Admin products/plans/subscriptions surfaces
-- keep route behavior unchanged:
-  - English remains the default unprefixed URL
-  - Arabic remains available under `/ar/...`
-- continue to support Customer Portal, Tenant Admin Workspace, Central Admin, Product routes, Tenant routes, accounting-only tenants, and integrated tenants
-- do not change accounting, billing, or integration architecture unless a real blocker appears
+- translate Tenant Admin shared workspace surfaces:
+  - sidebar
+  - dashboard remaining labels
+  - users
+  - branches
+  - stock/inventory shared product screens
+  - supplier catalog
+  - workshop operations/work orders high-traffic labels
+- do not change tenant middleware, product activation logic, accounting posting logic, billing, or integration architecture
+- continue supporting:
+  - accounting-only tenants
+  - integrated multi-product tenants
+  - product-scoped module access
+- keep English default URLs unprefixed and Arabic URLs under `/ar/...`
 - continue to avoid `php artisan route:cache`
 
 Professional Accounting Roadmap progress:
@@ -879,10 +964,12 @@ Persistent accounting rules:
 - do not reopen integration architecture unless a real blocker appears
 
 Next implementation package:
-- Multilingual Platform Package 2: Progressive UI Translation Expansion
+- Multilingual Platform Package 3: Tenant Admin Shared And Product Module Translation
 - primary language: English
 - second language: Arabic
 - existing package/library: `mcamara/laravel-localization`
+- completed multilingual packages: 2 of 6
+- remaining multilingual packages: 4 of 6
 
 ## 15.2.1) Accounting System Current State Before Next Chat
 This section is the detailed handoff for continuing accounting work in a fresh AI session.

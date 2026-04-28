@@ -8,16 +8,16 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-                <h5 class="mb-1">Choose Paid Plan</h5>
+                <h5 class="mb-1">{{ __('portal.choose_paid_plan') }}</h5>
                 <p class="text-muted mb-0">
-                    Select a subscription plan for {{ $billingProductName ?: 'the focused workspace product' }}. The page will refresh automatically to load pricing verification and Stripe preview for the selected plan.
+                    {{ __('portal.choose_paid_plan_intro', ['product' => $billingProductName ?: __('portal.focused_workspace_product_lower')]) }}
                 </p>
             </div>
         </div>
 
         @if($plans->isEmpty())
             <div class="alert alert-warning mb-0">
-                No paid plans are currently available.
+                {{ __('portal.no_paid_plans_currently_available') }}
             </div>
         @else
             <div class="row">
@@ -57,10 +57,10 @@
                                 @endif
 
                                 <ul class="mb-0 ps-3">
-                                    <li class="mb-1">Users: {{ $billingPlan->max_users ?? '-' }}</li>
-                                    <li class="mb-1">Branches: {{ $billingPlan->max_branches ?? '-' }}</li>
-                                    <li class="mb-1">Products: {{ $billingPlan->max_products ?? '-' }}</li>
-                                    <li class="mb-1">Storage: {{ $billingPlan->max_storage_mb ?? '-' }} MB</li>
+                                    <li class="mb-1">{{ __('shared.users') }}: {{ $billingPlan->max_users ?? '-' }}</li>
+                                    <li class="mb-1">{{ __('shared.branches') }}: {{ $billingPlan->max_branches ?? '-' }}</li>
+                                    <li class="mb-1">{{ __('portal.products') }}: {{ $billingPlan->max_products ?? '-' }}</li>
+                                    <li class="mb-1">{{ __('portal.storage') }}: {{ $billingPlan->max_storage_mb ?? '-' }} MB</li>
 
                                     @foreach(($billingPlan->features_array ?? []) as $featureKey => $enabled)
                                         @if($enabled)

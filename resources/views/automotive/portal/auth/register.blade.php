@@ -11,14 +11,17 @@
 
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pt-lg-4 pb-0 flex-fill">
                             <div class="mx-auto mb-5 text-center">
-                                Shared SaaS Portal
+                                {{ __('portal.brand') }}
+                                <div class="mt-3 d-inline-flex">
+                                    @include('shared.partials.language-switcher')
+                                </div>
                             </div>
 
                             <div class="card border-0 p-lg-3 shadow-lg rounded-2">
                                 <div class="card-body">
                                     <div class="text-center mb-3">
-                                        <h5 class="mb-2">Create Account</h5>
-                                        <p class="mb-0">Register first, reserve your preferred subdomain, then continue from the portal</p>
+                                        <h5 class="mb-2">{{ __('portal.create_account') }}</h5>
+                                        <p class="mb-0">{{ __('portal.register_intro') }}</p>
                                     </div>
 
                                     @if($errors->any())
@@ -32,58 +35,58 @@
                                     @endif
 
                                     <div class="mb-3">
-                                        <label class="form-label">Full Name</label>
+                                        <label class="form-label">{{ __('portal.full_name') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-user"></i>
                                             </span>
-                                            <input id="name" type="text" name="name" value="{{ old('name') }}" class="form-control border-start-0 ps-0" placeholder="Enter Full Name" required>
+                                            <input id="name" type="text" name="name" value="{{ old('name') }}" class="form-control border-start-0 ps-0" placeholder="{{ __('portal.enter_full_name') }}" required>
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Business Email</label>
+                                        <label class="form-label">{{ __('portal.business_email') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-sms-notification"></i>
                                             </span>
-                                            <input id="email" type="email" name="email" value="{{ old('email') }}" class="form-control border-start-0 ps-0" placeholder="Enter Email Address" required>
+                                            <input id="email" type="email" name="email" value="{{ old('email') }}" class="form-control border-start-0 ps-0" placeholder="{{ __('portal.enter_email_address') }}" required>
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Company Name</label>
+                                        <label class="form-label">{{ __('portal.company_name') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-buildings"></i>
                                             </span>
-                                            <input id="company_name" type="text" name="company_name" value="{{ old('company_name') }}" class="form-control border-start-0 ps-0" placeholder="Enter Company Name" required>
+                                            <input id="company_name" type="text" name="company_name" value="{{ old('company_name') }}" class="form-control border-start-0 ps-0" placeholder="{{ __('portal.enter_company_name') }}" required>
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Subdomain</label>
+                                        <label class="form-label">{{ __('portal.subdomain') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-global"></i>
                                             </span>
-                                            <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" class="form-control border-start-0 ps-0" placeholder="Enter Preferred Subdomain" required>
+                                            <input id="subdomain" type="text" name="subdomain" value="{{ old('subdomain') }}" class="form-control border-start-0 ps-0" placeholder="{{ __('portal.enter_preferred_subdomain') }}" required>
                                         </div>
-                                        <small class="text-muted d-block mt-2">Example: mido -> mido.your-workspace-domain.com</small>
+                                        <small class="text-muted d-block mt-2">{{ __('portal.subdomain_example') }}</small>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Coupon Code</label>
+                                        <label class="form-label">{{ __('portal.coupon_code') }}</label>
                                         <div class="d-flex gap-2">
-                                            <input id="coupon_code" type="text" name="coupon_code" value="{{ old('coupon_code') }}" class="form-control" placeholder="Optional coupon code">
-                                            <button type="button" id="checkCouponButton" class="btn btn-outline-primary flex-shrink-0 w-auto">Check Coupon</button>
+                                            <input id="coupon_code" type="text" name="coupon_code" value="{{ old('coupon_code') }}" class="form-control" placeholder="{{ __('portal.optional_coupon_code') }}">
+                                            <button type="button" id="checkCouponButton" class="btn btn-outline-primary flex-shrink-0 w-auto">{{ __('portal.check_coupon') }}</button>
                                         </div>
-                                        <small class="text-muted d-block mt-2">Optional. If valid for trial reservation, it will be stored on your account and reused later from the portal.</small>
+                                        <small class="text-muted d-block mt-2">{{ __('portal.coupon_help') }}</small>
                                         <div id="couponPreviewBox" class="mt-3"></div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Password</label>
+                                        <label class="form-label">{{ __('portal.password') }}</label>
                                         <div class="pass-group input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-lock"></i>
@@ -94,7 +97,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Confirm Password</label>
+                                        <label class="form-label">{{ __('portal.confirm_password') }}</label>
                                         <div class="pass-group input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-lock"></i>
@@ -105,13 +108,13 @@
                                     </div>
 
                                     <div class="mb-1">
-                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">Create Account &amp; Continue</button>
+                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">{{ __('portal.create_account_continue') }}</button>
                                     </div>
 
                                     <div class="text-center mt-3">
                                         <h6 class="fw-normal fs-14 text-dark mb-0">
-                                            Already have an account?
-                                            <a href="{{ route('automotive.login') }}" class="hover-a"> Sign in to your portal</a>
+                                            {{ __('portal.already_have_account') }}
+                                            <a href="{{ route('automotive.login') }}" class="hover-a"> {{ __('portal.sign_in_to_your_portal') }}</a>
                                         </h6>
                                     </div>
                                 </div>
@@ -130,6 +133,24 @@
             const couponInput = document.getElementById('coupon_code');
             const previewBox = document.getElementById('couponPreviewBox');
             const csrfToken = document.querySelector('input[name="_token"]')?.value ?? '';
+            const labels = {
+                enterBoth: @json(__('portal.enter_both_subdomain_coupon')),
+                checking: @json(__('portal.checking')),
+                checkCoupon: @json(__('portal.check_coupon')),
+                valid: @json(__('portal.coupon_valid')),
+                coupon: @json(__('portal.coupon_code')),
+                name: @json(__('portal.name')),
+                discount: @json(__('portal.discount')),
+                firstBillingCycleOnly: @json(__('portal.first_billing_cycle_only')),
+                appliesToAllPlans: @json(__('portal.applies_to_all_plans')),
+                planValidation: @json(__('portal.plan_validation')),
+                yes: @json(__('portal.yes')),
+                no: @json(__('portal.no')),
+                deferred: @json(__('portal.plan_validation_deferred')),
+                validatedNow: @json(__('portal.validated_now')),
+                cannotUse: @json(__('portal.coupon_cannot_be_used')),
+                unable: @json(__('portal.unable_validate_coupon')),
+            };
 
             function showPreview(type, html) {
                 previewBox.className = type === 'success'
@@ -152,12 +173,12 @@
                 const couponCode = couponInput.value.trim();
 
                 if (!subdomain || !couponCode) {
-                    showPreview('error', '<strong>Please enter both subdomain and coupon code first.</strong>');
+                    showPreview('error', `<strong>${escapeHtml(labels.enterBoth)}</strong>`);
                     return;
                 }
 
                 button.disabled = true;
-                button.textContent = 'Checking...';
+                button.textContent = labels.checking;
 
                 try {
                     const response = await fetch('{{ route('automotive.register.coupon-preview') }}', {
@@ -183,14 +204,14 @@
                             : `${coupon.discount_value} ${coupon.currency_code || ''}`.trim();
 
                         const html = `
-                            <strong>${escapeHtml(data.message || 'Coupon is valid.')}</strong>
+                            <strong>${escapeHtml(data.message || labels.valid)}</strong>
                             <div class="mt-2">
-                                <div><strong>Coupon:</strong> ${escapeHtml(coupon.code || '')}</div>
-                                <div><strong>Name:</strong> ${escapeHtml(coupon.name || '')}</div>
-                                <div><strong>Discount:</strong> ${escapeHtml(discountLabel)}</div>
-                                <div><strong>First billing cycle only:</strong> ${coupon.first_billing_cycle_only ? 'Yes' : 'No'}</div>
-                                <div><strong>Applies to all plans:</strong> ${coupon.applies_to_all_plans ? 'Yes' : 'No'}</div>
-                                <div><strong>Plan validation:</strong> ${meta.plan_validation_deferred ? 'Will run later when the paid plan is selected.' : 'Validated now.'}</div>
+                                <div><strong>${escapeHtml(labels.coupon)}:</strong> ${escapeHtml(coupon.code || '')}</div>
+                                <div><strong>${escapeHtml(labels.name)}:</strong> ${escapeHtml(coupon.name || '')}</div>
+                                <div><strong>${escapeHtml(labels.discount)}:</strong> ${escapeHtml(discountLabel)}</div>
+                                <div><strong>${escapeHtml(labels.firstBillingCycleOnly)}:</strong> ${coupon.first_billing_cycle_only ? escapeHtml(labels.yes) : escapeHtml(labels.no)}</div>
+                                <div><strong>${escapeHtml(labels.appliesToAllPlans)}:</strong> ${coupon.applies_to_all_plans ? escapeHtml(labels.yes) : escapeHtml(labels.no)}</div>
+                                <div><strong>${escapeHtml(labels.planValidation)}:</strong> ${meta.plan_validation_deferred ? escapeHtml(labels.deferred) : escapeHtml(labels.validatedNow)}</div>
                             </div>
                         `;
 
@@ -198,7 +219,7 @@
                     } else {
                         const errors = data.errors || {};
                         const couponErrors = Array.isArray(errors.coupon_code) ? errors.coupon_code : [];
-                        const genericMessage = data.message || 'This coupon cannot be used right now.';
+                        const genericMessage = data.message || labels.cannotUse;
 
                         let html = `<strong>${escapeHtml(genericMessage)}</strong>`;
 
@@ -209,10 +230,10 @@
                         showPreview('error', html);
                     }
                 } catch (error) {
-                    showPreview('error', '<strong>Unable to validate the coupon right now. Please try again.</strong>');
+                    showPreview('error', `<strong>${escapeHtml(labels.unable)}</strong>`);
                 } finally {
                     button.disabled = false;
-                    button.textContent = 'Check Coupon';
+                    button.textContent = labels.checkCoupon;
                 }
             }
 

@@ -11,14 +11,17 @@
 
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class="mx-auto mb-5 text-center">
-                                Shared SaaS Portal
+                                {{ __('portal.brand') }}
+                                <div class="mt-3 d-inline-flex">
+                                    @include('shared.partials.language-switcher')
+                                </div>
                             </div>
 
                             <div class="card border-0 p-lg-3 shadow-lg">
                                 <div class="card-body">
                                     <div class="text-center mb-3">
-                                        <h5 class="mb-2">Sign In</h5>
-                                        <p class="mb-0">Sign in to continue to your shared workspace portal</p>
+                                        <h5 class="mb-2">{{ __('shared.sign_in') }}</h5>
+                                        <p class="mb-0">{{ __('portal.sign_in_intro') }}</p>
                                     </div>
 
                                     @if(session('success'))
@@ -36,7 +39,7 @@
                                     @endif
 
                                     <div class="mb-3">
-                                        <label class="form-label">Business Email</label>
+                                        <label class="form-label">{{ __('portal.business_email') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-sms-notification"></i>
@@ -47,7 +50,7 @@
                                                 name="email"
                                                 value="{{ old('email') }}"
                                                 class="form-control border-start-0 ps-0"
-                                                placeholder="Enter Email Address"
+                                                placeholder="{{ __('portal.enter_email_address') }}"
                                                 required
                                                 autofocus
                                             >
@@ -55,7 +58,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Password</label>
+                                        <label class="form-label">{{ __('portal.password') }}</label>
                                         <div class="pass-group input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-lock"></i>
@@ -75,22 +78,22 @@
                                     <div class="d-flex align-items-center justify-content-between mb-3">
                                         <div class="form-check form-check-md mb-0">
                                             <input class="form-check-input" id="remember" name="remember" type="checkbox" value="1" {{ old('remember') ? 'checked' : '' }}>
-                                            <label for="remember" class="form-check-label mt-0">Remember Me</label>
+                                            <label for="remember" class="form-check-label mt-0">{{ __('portal.remember_me') }}</label>
                                         </div>
 
                                         <div class="text-end">
-                                            <a href="{{ route('automotive.password.request') }}">Forgot Password?</a>
+                                            <a href="{{ route('automotive.password.request') }}">{{ __('portal.forgot_password') }}</a>
                                         </div>
                                     </div>
 
                                     <div class="mb-1">
-                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">Sign In To Portal</button>
+                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">{{ __('portal.sign_in_to_portal') }}</button>
                                     </div>
 
                                     <div class="text-center mt-3">
                                         <h6 class="fw-normal fs-14 text-dark mb-0">
-                                            Need an account?
-                                            <a href="{{ route('automotive.register') }}" class="hover-a"> Create one here</a>
+                                            {{ __('portal.need_account') }}
+                                            <a href="{{ route('automotive.register') }}" class="hover-a"> {{ __('portal.create_one_here') }}</a>
                                         </h6>
                                     </div>
                                 </div>

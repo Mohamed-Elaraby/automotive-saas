@@ -13,14 +13,17 @@
 
                         <div class="d-flex flex-column justify-content-lg-center p-4 p-lg-0 pb-0 flex-fill">
                             <div class="mx-auto mb-5 text-center">
-                                Shared SaaS Portal
+                                {{ __('portal.brand') }}
+                                <div class="mt-3 d-inline-flex">
+                                    @include('shared.partials.language-switcher')
+                                </div>
                             </div>
 
                             <div class="card border-0 p-lg-3 shadow-lg rounded-2">
                                 <div class="card-body">
                                     <div class="text-center mb-3">
-                                        <h5 class="mb-2">Reset Password</h5>
-                                        <p class="mb-0">Enter your new password below.</p>
+                                        <h5 class="mb-2">{{ __('portal.reset_password') }}</h5>
+                                        <p class="mb-0">{{ __('portal.reset_password_intro') }}</p>
                                     </div>
 
                                     @if($errors->any())
@@ -34,7 +37,7 @@
                                     @endif
 
                                     <div class="mb-3">
-                                        <label class="form-label">Email Address</label>
+                                        <label class="form-label">{{ __('portal.email_address') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-sms-notification"></i>
@@ -44,14 +47,14 @@
                                                 name="email"
                                                 value="{{ old('email', $email ?? '') }}"
                                                 class="form-control border-start-0 ps-0"
-                                                placeholder="Enter Email Address"
+                                                placeholder="{{ __('portal.enter_email_address') }}"
                                                 required
                                             >
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">New Password</label>
+                                        <label class="form-label">{{ __('portal.new_password') }}</label>
                                         <div class="pass-group input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-lock"></i>
@@ -68,7 +71,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Confirm Password</label>
+                                        <label class="form-label">{{ __('portal.confirm_password') }}</label>
                                         <div class="pass-group input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-lock"></i>
@@ -85,13 +88,13 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">Reset Password</button>
+                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">{{ __('portal.reset_password') }}</button>
                                     </div>
 
                                     <div class="text-center">
                                         <h6 class="fw-normal fs-14 text-dark mb-0">
-                                            Return to
-                                            <a href="{{ route('automotive.login') }}" class="hover-a"> Sign In</a>
+                                            {{ __('portal.return_to') }}
+                                            <a href="{{ route('automotive.login') }}" class="hover-a"> {{ __('shared.sign_in') }}</a>
                                         </h6>
                                     </div>
                                 </div>
