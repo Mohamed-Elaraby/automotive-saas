@@ -1,6 +1,6 @@
 @props([
-'title' => 'No data found',
-'message' => 'There are no records to display.',
+'title' => __('tenant.no_data_found'),
+'message' => __('tenant.no_records_display'),
 ])
 
 <div class="card">

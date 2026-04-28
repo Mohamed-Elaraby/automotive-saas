@@ -6,12 +6,12 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Edit Branch',
-                'subtitle' => 'Update branch details.',
+                'title' => __('tenant.edit_branch'),
+                'subtitle' => __('tenant.edit_branch_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Branches', 'url' => route('automotive.admin.branches.index')],
-                    ['label' => 'Edit Branch'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('shared.branches'), 'url' => route('automotive.admin.branches.index')],
+                    ['label' => __('tenant.edit_branch')],
                 ],
             ])
 

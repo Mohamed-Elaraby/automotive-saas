@@ -23,17 +23,17 @@
             @endphp
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Inventory Adjustments',
-                'subtitle' => 'Track opening balances and stock adjustments.',
+                'title' => __('tenant.inventory_adjustments'),
+                'subtitle' => __('tenant.inventory_adjustments_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Inventory Adjustments'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('tenant.inventory_adjustments')],
                 ],
             ])
 
             <div class="mb-3">
                 <a href="{{ route('automotive.admin.inventory-adjustments.create') }}" class="btn btn-primary">
-                    <i class="isax isax-add me-1"></i> New Adjustment
+                    <i class="isax isax-add me-1"></i> {{ __('tenant.new_adjustment') }}
                 </a>
             </div>
 
@@ -46,13 +46,13 @@
                             <thead class="thead-light">
                             <tr>
                                 <th>#</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Branch</th>
-                                <th>Product</th>
-                                <th>Qty</th>
-                                <th>Notes</th>
-                                <th>Created By</th>
+                                <th>{{ __('tenant.date') }}</th>
+                                <th>{{ __('tenant.type') }}</th>
+                                <th>{{ __('tenant.branch') }}</th>
+                                <th>{{ __('tenant.product') }}</th>
+                                <th>{{ __('tenant.qty') }}</th>
+                                <th>{{ __('tenant.notes') }}</th>
+                                <th>{{ __('tenant.created_by') }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -89,8 +89,8 @@
                     @if($adjustmentCollection->isEmpty())
                         <div class="mt-3">
                             @include('automotive.admin.partials.empty-state', [
-                                'title' => 'No inventory adjustments found',
-                                'message' => 'Create your first opening balance or stock adjustment.',
+                                'title' => __('tenant.no_inventory_adjustments_found'),
+                                'message' => __('tenant.no_inventory_adjustments_message'),
                             ])
                         </div>
                     @endif

@@ -6,12 +6,12 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Create Branch',
-                'subtitle' => 'Add a new branch.',
+                'title' => __('tenant.create_branch'),
+                'subtitle' => __('tenant.create_branch_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Branches', 'url' => route('automotive.admin.branches.index')],
-                    ['label' => 'Create Branch'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('shared.branches'), 'url' => route('automotive.admin.branches.index')],
+                    ['label' => __('tenant.create_branch')],
                 ],
             ])
 

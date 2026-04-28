@@ -19,9 +19,9 @@
 <div class="row">
     <div class="col-lg-6 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">From Branch <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.from_branch') }} <span class="text-danger">*</span></label>
             <select name="from_branch_id" class="form-control @error('from_branch_id') is-invalid @enderror" required>
-                <option value="">Select source branch</option>
+                <option value="">{{ __('tenant.select_source_branch') }}</option>
                 @foreach($branches as $branch)
                     <option value="{{ $branch->id }}"
                         {{ (string) old('from_branch_id', $stockTransfer->from_branch_id ?? '') === (string) $branch->id ? 'selected' : '' }}>
@@ -37,9 +37,9 @@
 
     <div class="col-lg-6 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">To Branch <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.to_branch') }} <span class="text-danger">*</span></label>
             <select name="to_branch_id" class="form-control @error('to_branch_id') is-invalid @enderror" required>
-                <option value="">Select destination branch</option>
+                <option value="">{{ __('tenant.select_destination_branch') }}</option>
                 @foreach($branches as $branch)
                     <option value="{{ $branch->id }}"
                         {{ (string) old('to_branch_id', $stockTransfer->to_branch_id ?? '') === (string) $branch->id ? 'selected' : '' }}>
@@ -55,7 +55,7 @@
 
     <div class="col-12">
         <div class="form-group mb-3">
-            <label class="form-label">Notes</label>
+            <label class="form-label">{{ __('tenant.notes') }}</label>
             <textarea
                 name="notes"
                 rows="3"
@@ -69,7 +69,7 @@
 
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <label class="form-label mb-0">Items <span class="text-danger">*</span></label>
+            <label class="form-label mb-0">{{ __('tenant.items') }} <span class="text-danger">*</span></label>
         </div>
 
         @error('items')
@@ -80,8 +80,8 @@
             <table class="table table-bordered align-middle">
                 <thead class="thead-light">
                 <tr>
-                    <th style="width: 70%;">Product</th>
-                    <th style="width: 30%;">Quantity</th>
+                    <th style="width: 70%;">{{ __('tenant.product') }}</th>
+                    <th style="width: 30%;">{{ __('tenant.quantity') }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -93,7 +93,7 @@
                                 class="form-control @error('items.'.$index.'.product_id') is-invalid @enderror"
                                 required
                             >
-                                <option value="">Select product</option>
+                                <option value="">{{ __('tenant.select_product') }}</option>
                                 @foreach($products as $product)
                                     <option value="{{ $product->id }}"
                                         {{ (string) ($item['product_id'] ?? '') === (string) $product->id ? 'selected' : '' }}>
@@ -126,18 +126,18 @@
         </div>
 
         <small class="text-muted">
-            Current form is aligned with the controller validation: from_branch_id, to_branch_id, items.
+            {{ __('tenant.stock_transfer_form_hint') }}
         </small>
     </div>
 
     <div class="col-12 mt-3">
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="isax isax-save-2 me-1"></i> Save Draft
+                <i class="isax isax-save-2 me-1"></i> {{ __('tenant.save_draft') }}
             </button>
 
             <a href="{{ route('automotive.admin.stock-transfers.index') }}" class="btn btn-light">
-                Cancel
+                {{ __('tenant.cancel') }}
             </a>
         </div>
     </div>

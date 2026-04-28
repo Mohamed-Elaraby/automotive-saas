@@ -6,12 +6,12 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Create Stock Transfer',
-                'subtitle' => 'Move stock between branches as a draft first.',
+                'title' => __('tenant.create_stock_transfer'),
+                'subtitle' => __('tenant.create_stock_transfer_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Stock Transfers', 'url' => route('automotive.admin.stock-transfers.index')],
-                    ['label' => 'Create Transfer'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('tenant.stock_transfers'), 'url' => route('automotive.admin.stock-transfers.index')],
+                    ['label' => __('tenant.create_transfer')],
                 ],
             ])
 

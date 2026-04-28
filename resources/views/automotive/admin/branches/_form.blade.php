@@ -3,7 +3,7 @@
 <div class="row">
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.name') }} <span class="text-danger">*</span></label>
             <input
                 type="text"
                 name="name"
@@ -19,7 +19,7 @@
 
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Code</label>
+            <label class="form-label">{{ __('tenant.code') }}</label>
             <input
                 type="text"
                 name="code"
@@ -34,7 +34,7 @@
 
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Phone</label>
+            <label class="form-label">{{ __('tenant.phone') }}</label>
             <input
                 type="text"
                 name="phone"
@@ -49,7 +49,7 @@
 
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Email</label>
+            <label class="form-label">{{ __('tenant.email') }}</label>
             <input
                 type="email"
                 name="email"
@@ -64,7 +64,7 @@
 
     <div class="col-12">
         <div class="form-group mb-3">
-            <label class="form-label">Address</label>
+            <label class="form-label">{{ __('tenant.address') }}</label>
             <textarea
                 name="address"
                 rows="3"
@@ -78,7 +78,7 @@
 
     <div class="col-lg-4 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">Min Stock Alert Default</label>
+            <label class="form-label">{{ __('tenant.min_stock_alert_default') }}</label>
             <input
                 type="number"
                 step="0.01"
@@ -95,13 +95,13 @@
 
     <div class="col-lg-4 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">Status <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.status') }} <span class="text-danger">*</span></label>
             <select name="is_active" class="form-control @error('is_active') is-invalid @enderror" required>
                 <option value="1" {{ (string) old('is_active', $branch->is_active ?? 1) === '1' ? 'selected' : '' }}>
-                    Active
+                    {{ __('tenant.active') }}
                 </option>
                 <option value="0" {{ (string) old('is_active', $branch->is_active ?? 1) === '0' ? 'selected' : '' }}>
-                    Inactive
+                    {{ __('tenant.inactive') }}
                 </option>
             </select>
             @error('is_active')
@@ -113,11 +113,11 @@
     <div class="col-12">
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="isax isax-save-2 me-1"></i> Save
+                <i class="isax isax-save-2 me-1"></i> {{ __('tenant.save') }}
             </button>
 
             <a href="{{ route('automotive.admin.branches.index') }}" class="btn btn-light">
-                Cancel
+                {{ __('tenant.cancel') }}
             </a>
         </div>
     </div>

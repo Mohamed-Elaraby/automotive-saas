@@ -52,12 +52,12 @@
             @endphp
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Transfer #'.$transfer->id,
-                'subtitle' => 'Review and post stock transfer.',
+                'title' => __('tenant.transfer_title', ['id' => $transfer->id]),
+                'subtitle' => __('tenant.review_post_stock_transfer'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Stock Transfers', 'url' => route('automotive.admin.stock-transfers.index')],
-                    ['label' => 'Transfer #'.$transfer->id],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('tenant.stock_transfers'), 'url' => route('automotive.admin.stock-transfers.index')],
+                    ['label' => __('tenant.transfer_title', ['id' => $transfer->id])],
                 ],
             ])
 
@@ -69,31 +69,31 @@
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <strong>Source Branch:</strong><br>
+                                    <strong>{{ __('tenant.source_branch') }}:</strong><br>
                                     {{ $fromBranchName }}
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>Destination Branch:</strong><br>
+                                    <strong>{{ __('tenant.destination_branch') }}:</strong><br>
                                     {{ $toBranchName }}
                                 </div>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <strong>Status:</strong><br>
+                                    <strong>{{ __('tenant.status') }}:</strong><br>
                                     <span class="badge {{ $transferStatus === 'posted' ? 'bg-success' : 'bg-warning text-dark' }}">
-                                        {{ ucfirst($transferStatus) }}
+                                        {{ __('tenant.'.($transferStatus === 'posted' ? 'posted' : 'draft')) }}
                                     </span>
                                 </div>
                                 <div class="col-md-6">
-                                    <strong>Created At:</strong><br>
+                                    <strong>{{ __('tenant.created_at_label') }}:</strong><br>
                                     {{ optional($transfer->created_at)->format('Y-m-d H:i') }}
                                 </div>
                             </div>
 
                             @if(!empty($transfer->notes))
                                 <div class="mb-3">
-                                    <strong>Notes:</strong><br>
+                                    <strong>{{ __('tenant.notes') }}:</strong><br>
                                     {{ $transfer->notes }}
                                 </div>
                             @endif
@@ -102,8 +102,8 @@
                                 <table class="table table-hover">
                                     <thead class="thead-light">
                                     <tr>
-                                        <th>Product</th>
-                                        <th>Quantity</th>
+                                        <th>{{ __('tenant.product') }}</th>
+                                        <th>{{ __('tenant.quantity') }}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -119,16 +119,16 @@
 
                             <div class="d-flex gap-2 mt-3">
                                 <a href="{{ route('automotive.admin.stock-transfers.index') }}" class="btn btn-light">
-                                    Back
+                                    {{ __('tenant.back') }}
                                 </a>
 
                                 @if($transferStatus === 'draft')
                                     <form action="{{ route('automotive.admin.stock-transfers.post', $transfer) }}"
                                           method="POST"
-                                          onsubmit="return confirm('Are you sure you want to post this transfer?');">
+                                          onsubmit="return confirm('{{ __('tenant.post_transfer_confirm') }}');">
                                         @csrf
                                         <button type="submit" class="btn btn-primary">
-                                            Post Transfer
+                                            {{ __('tenant.post_transfer') }}
                                         </button>
                                     </form>
                                 @endif
@@ -140,10 +140,10 @@
                 <div class="col-lg-4">
                     <div class="card">
                         <div class="card-body">
-                            <h6 class="mb-3">Summary</h6>
-                            <p class="mb-2"><strong>Transfer ID:</strong> #{{ $transfer->id }}</p>
-                            <p class="mb-2"><strong>Total Lines:</strong> {{ count($transferItems) }}</p>
-                            <p class="mb-0"><strong>Status:</strong> {{ ucfirst($transferStatus) }}</p>
+                            <h6 class="mb-3">{{ __('tenant.summary') }}</h6>
+                            <p class="mb-2"><strong>{{ __('tenant.transfer_id') }}:</strong> #{{ $transfer->id }}</p>
+                            <p class="mb-2"><strong>{{ __('tenant.total_lines') }}:</strong> {{ count($transferItems) }}</p>
+                            <p class="mb-0"><strong>{{ __('tenant.status') }}:</strong> {{ __('tenant.'.($transferStatus === 'posted' ? 'posted' : 'draft')) }}</p>
                         </div>
                     </div>
                 </div>

@@ -8,7 +8,7 @@
 <div class="row">
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Name <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.name') }} <span class="text-danger">*</span></label>
             <input
                 type="text"
                 name="name"
@@ -24,7 +24,7 @@
 
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.email') }} <span class="text-danger">*</span></label>
             <input
                 type="email"
                 name="email"
@@ -41,12 +41,12 @@
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
             <label class="form-label">
-                Password
+                {{ __('tenant.password') }}
                 @if(!$isEdit)
                     <span class="text-danger">*</span>
                 @endif
                 @if($isEdit)
-                    <small class="text-muted">(leave blank to keep current password)</small>
+                    <small class="text-muted">{{ __('tenant.password_keep_current') }}</small>
                 @endif
             </label>
 
@@ -66,7 +66,7 @@
     <div class="col-lg-6 col-md-12">
         <div class="form-group mb-3">
             <label class="form-label">
-                Password Confirmation
+                {{ __('tenant.password_confirmation') }}
                 @if(!$isEdit)
                     <span class="text-danger">*</span>
                 @endif
@@ -83,11 +83,11 @@
     <div class="col-12">
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="isax isax-save-2 me-1"></i> Save
+                <i class="isax isax-save-2 me-1"></i> {{ __('tenant.save') }}
             </button>
 
             <a href="{{ route('automotive.admin.users.index') }}" class="btn btn-light">
-                Cancel
+                {{ __('tenant.cancel') }}
             </a>
         </div>
     </div>

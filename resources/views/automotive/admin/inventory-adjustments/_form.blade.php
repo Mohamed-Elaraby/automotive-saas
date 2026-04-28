@@ -8,17 +8,17 @@
 <div class="row">
     <div class="col-lg-4 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">Type <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.type') }} <span class="text-danger">*</span></label>
             <select name="type" class="form-control @error('type') is-invalid @enderror" required>
-                <option value="">Select type</option>
+                <option value="">{{ __('tenant.select_type') }}</option>
                 <option value="opening" {{ old('type', $inventoryAdjustment->type ?? '') === 'opening' ? 'selected' : '' }}>
-                    Opening
+                    {{ __('tenant.opening') }}
                 </option>
                 <option value="adjustment_in" {{ old('type', $inventoryAdjustment->type ?? '') === 'adjustment_in' ? 'selected' : '' }}>
-                    Adjustment In
+                    {{ __('tenant.adjustment_in') }}
                 </option>
                 <option value="adjustment_out" {{ old('type', $inventoryAdjustment->type ?? '') === 'adjustment_out' ? 'selected' : '' }}>
-                    Adjustment Out
+                    {{ __('tenant.adjustment_out') }}
                 </option>
             </select>
             @error('type')
@@ -29,9 +29,9 @@
 
     <div class="col-lg-4 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">Branch <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.branch') }} <span class="text-danger">*</span></label>
             <select name="branch_id" class="form-control @error('branch_id') is-invalid @enderror" required>
-                <option value="">Select branch</option>
+                <option value="">{{ __('tenant.select_branch') }}</option>
                 @foreach($branches as $branch)
                     <option value="{{ $branch->id }}"
                         {{ (string) old('branch_id', $inventoryAdjustment->branch_id ?? '') === (string) $branch->id ? 'selected' : '' }}>
@@ -47,9 +47,9 @@
 
     <div class="col-lg-4 col-md-12">
         <div class="form-group mb-3">
-            <label class="form-label">Product <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.product') }} <span class="text-danger">*</span></label>
             <select name="product_id" class="form-control @error('product_id') is-invalid @enderror" required>
-                <option value="">Select product</option>
+                <option value="">{{ __('tenant.select_product') }}</option>
                 @foreach($products as $product)
                     <option value="{{ $product->id }}"
                         {{ (string) old('product_id', $inventoryAdjustment->product_id ?? '') === (string) $product->id ? 'selected' : '' }}>
@@ -65,7 +65,7 @@
 
     <div class="col-lg-4 col-md-6">
         <div class="form-group mb-3">
-            <label class="form-label">Quantity <span class="text-danger">*</span></label>
+            <label class="form-label">{{ __('tenant.quantity') }} <span class="text-danger">*</span></label>
             <input
                 type="number"
                 step="0.01"
@@ -83,7 +83,7 @@
 
     <div class="col-12">
         <div class="form-group mb-3">
-            <label class="form-label">Notes</label>
+            <label class="form-label">{{ __('tenant.notes') }}</label>
             <textarea
                 name="notes"
                 rows="3"
@@ -98,11 +98,11 @@
     <div class="col-12">
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="isax isax-save-2 me-1"></i> Save
+                <i class="isax isax-save-2 me-1"></i> {{ __('tenant.save') }}
             </button>
 
             <a href="{{ route('automotive.admin.inventory-adjustments.index') }}" class="btn btn-light">
-                Cancel
+                {{ __('tenant.cancel') }}
             </a>
         </div>
     </div>

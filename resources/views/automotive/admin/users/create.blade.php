@@ -6,12 +6,12 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Create User',
-                'subtitle' => 'Add a new tenant user.',
+                'title' => __('tenant.create_user'),
+                'subtitle' => __('tenant.create_user_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Users', 'url' => route('automotive.admin.users.index')],
-                    ['label' => 'Create User'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('shared.users'), 'url' => route('automotive.admin.users.index')],
+                    ['label' => __('tenant.create_user')],
                 ],
             ])
 

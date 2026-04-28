@@ -12,7 +12,7 @@
 
                 <div class="d-flex gap-2">
                     <a href="{{ route('automotive.admin.modules.workshop-operations', $workspaceQuery) }}" class="btn btn-outline-light">
-                        Back To Workshop Operations
+                        {{ __('tenant.back_to_workshop_operations') }}
                     </a>
                 </div>
             </div>
@@ -21,34 +21,34 @@
                 <div class="col-xl-8 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Work Order Overview</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.work_order_overview') }}</h5>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Focused Product</div>
-                                    <div>{{ $focusedWorkspaceProduct['product_name'] ?? 'Workspace Product' }}</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.focused_product') }}</div>
+                                    <div>{{ $focusedWorkspaceProduct['product_name'] ?? __('tenant.workspace_product') }}</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Status</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.status') }}</div>
                                     <span class="badge {{ in_array($workOrder->status, ['open', 'in_progress'], true) ? 'bg-success' : 'bg-secondary' }}">
                                         {{ strtoupper(str_replace('_', ' ', $workOrder->status)) }}
                                     </span>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Branch</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.branch') }}</div>
                                     <div>{{ $workOrder->branch?->name ?? '—' }}</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Created By</div>
-                                    <div>{{ $workOrder->creator?->name ?? 'System user' }}</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.created_by') }}</div>
+                                    <div>{{ $workOrder->creator?->name ?? __('tenant.system_user') }}</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Customer</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.customer') }}</div>
                                     <div>{{ $workOrder->customer?->name ?? '—' }}</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Vehicle</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.vehicle') }}</div>
                                     <div>
                                         @if($workOrder->vehicle)
                                             {{ $workOrder->vehicle->make }} {{ $workOrder->vehicle->model }}{{ $workOrder->vehicle->plate_number ? ' · '.$workOrder->vehicle->plate_number : '' }}
@@ -58,16 +58,16 @@
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Opened At</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.opened_at') }}</div>
                                     <div>{{ optional($workOrder->opened_at)->format('Y-m-d H:i') ?: '—' }}</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="text-muted small mb-1">Closed At</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.closed_at') }}</div>
                                     <div>{{ optional($workOrder->closed_at)->format('Y-m-d H:i') ?: '—' }}</div>
                                 </div>
                                 <div class="col-12">
-                                    <div class="text-muted small mb-1">Notes</div>
-                                    <div>{{ $workOrder->notes ?: 'No notes provided.' }}</div>
+                                    <div class="text-muted small mb-1">{{ __('tenant.notes') }}</div>
+                                    <div>{{ $workOrder->notes ?: __('tenant.no_notes_provided') }}</div>
                                 </div>
                             </div>
                         </div>
@@ -77,24 +77,24 @@
                 <div class="col-xl-4 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Financial Summary</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.financial_summary') }}</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Labor Subtotal</span>
+                                <span class="text-muted">{{ __('tenant.labor_subtotal') }}</span>
                                 <strong>{{ number_format($summary['labor_subtotal'] ?? 0, 2) }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Parts Subtotal</span>
+                                <span class="text-muted">{{ __('tenant.parts_subtotal') }}</span>
                                 <strong>{{ number_format($summary['parts_subtotal'] ?? 0, 2) }}</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Lines Count</span>
+                                <span class="text-muted">{{ __('tenant.lines_count') }}</span>
                                 <strong>{{ $summary['lines_count'] ?? 0 }}</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between">
-                                <span>Grand Total</span>
+                                <span>{{ __('tenant.grand_total') }}</span>
                                 <strong>{{ number_format($summary['grand_total'] ?? 0, 2) }}</strong>
                             </div>
                         </div>
@@ -106,7 +106,7 @@
                 <div class="col-xl-12 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Accounting Handoff</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.accounting_handoff') }}</h5>
                         </div>
                         <div class="card-body">
                             @if($accountingEvent)
@@ -121,7 +121,7 @@
                                     </div>
                                 </div>
                             @else
-                                <p class="text-muted mb-0">No local accounting event has been posted for this work order yet.</p>
+                                <p class="text-muted mb-0">{{ __('tenant.no_local_accounting_event') }}</p>
                             @endif
                         </div>
                     </div>
@@ -132,7 +132,7 @@
                 <div class="col-xl-4 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Update Status</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.update_status') }}</h5>
                         </div>
                         <div class="card-body">
                             <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.work-orders.status', ['workOrder' => $workOrder->id] + $workspaceQuery) }}">
@@ -140,9 +140,9 @@
                                 <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? 'automotive_service' }}">
 
                                 <div class="mb-3">
-                                    <label class="form-label">Status</label>
+                                    <label class="form-label">{{ __('tenant.status') }}</label>
                                     <select name="status" class="form-select">
-                                        @foreach(['open' => 'Open', 'in_progress' => 'In Progress', 'completed' => 'Completed'] as $value => $label)
+                                        @foreach(['open' => __('tenant.open'), 'in_progress' => __('tenant.in_progress'), 'completed' => __('tenant.completed')] as $value => $label)
                                             <option value="{{ $value }}" {{ old('status', $workOrder->status) === $value ? 'selected' : '' }}>
                                                 {{ $label }}
                                             </option>
@@ -150,7 +150,7 @@
                                     </select>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Save Status</button>
+                                <button type="submit" class="btn btn-primary">{{ __('tenant.save_status') }}</button>
                             </form>
                         </div>
                     </div>
@@ -159,7 +159,7 @@
                 <div class="col-xl-8 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Add Labor / Service Line</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.add_labor_service_line') }}</h5>
                         </div>
                         <div class="card-body">
                             <form method="POST" action="{{ route('automotive.admin.modules.workshop-operations.work-orders.labor-lines.store', ['workOrder' => $workOrder->id] + $workspaceQuery) }}">
@@ -168,24 +168,24 @@
 
                                 <div class="row">
                                     <div class="col-md-5 mb-3">
-                                        <label class="form-label">Description</label>
-                                        <input type="text" name="description" class="form-control" value="{{ old('description') }}" placeholder="Brake inspection, oil change labor, etc.">
+                                        <label class="form-label">{{ __('tenant.description') }}</label>
+                                        <input type="text" name="description" class="form-control" value="{{ old('description') }}" placeholder="{{ __('tenant.labor_line_placeholder') }}">
                                     </div>
                                     <div class="col-md-2 mb-3">
-                                        <label class="form-label">Qty</label>
+                                        <label class="form-label">{{ __('tenant.qty') }}</label>
                                         <input type="number" step="0.001" min="0.001" name="quantity" class="form-control" value="{{ old('quantity', 1) }}">
                                     </div>
                                     <div class="col-md-2 mb-3">
-                                        <label class="form-label">Unit Price</label>
+                                        <label class="form-label">{{ __('tenant.unit_price') }}</label>
                                         <input type="number" step="0.01" min="0" name="unit_price" class="form-control" value="{{ old('unit_price', 0) }}">
                                     </div>
                                     <div class="col-md-3 mb-3">
-                                        <label class="form-label">Notes</label>
+                                        <label class="form-label">{{ __('tenant.notes') }}</label>
                                         <input type="text" name="notes" class="form-control" value="{{ old('notes') }}">
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-outline-primary">Add Labor Line</button>
+                                <button type="submit" class="btn btn-outline-primary">{{ __('tenant.add_labor_line') }}</button>
                             </form>
                         </div>
                     </div>
@@ -193,7 +193,7 @@
             </div>
 
             @include('automotive.admin.partials.workspace-integrations', [
-                'title' => 'Connected Product Integrations',
+                'title' => __('tenant.connected_product_integrations'),
                 'columnClass' => 'col-xl-6',
             ])
 
@@ -201,7 +201,7 @@
                 <div class="col-xl-12 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Work Order Lines</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.work_order_lines') }}</h5>
                         </div>
                         <div class="card-body">
                             @forelse($lines as $line)
@@ -214,7 +214,7 @@
                                                 @if(!empty($line->product_sku))
                                                     · {{ $line->product_sku }}
                                                 @endif
-                                                · {{ $line->creator_name ?? 'System user' }}
+                                                · {{ $line->creator_name ?? __('tenant.system_user') }}
                                             </div>
                                             @if($line->notes)
                                                 <div class="text-muted small">{{ $line->notes }}</div>
@@ -227,7 +227,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-muted mb-0">No work-order lines have been added yet.</p>
+                                <p class="text-muted mb-0">{{ __('tenant.no_work_order_lines') }}</p>
                             @endforelse
                         </div>
                     </div>
@@ -238,7 +238,7 @@
                 <div class="col-xl-12 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Consumed Spare Parts</h5>
+                            <h5 class="card-title mb-0">{{ __('tenant.consumed_spare_parts') }}</h5>
                         </div>
                         <div class="card-body">
                             @forelse($consumptions as $movement)
@@ -247,16 +247,16 @@
                                         <div>
                                             <h6 class="mb-1">{{ $movement->product_name }}</h6>
                                             <div class="text-muted small">{{ $movement->product_sku }} · {{ $movement->branch_name }}</div>
-                                            <div class="text-muted small">{{ $movement->creator_name ?: 'System user' }} · {{ optional($movement->movement_date)->format('Y-m-d H:i') }}</div>
+                                            <div class="text-muted small">{{ $movement->creator_name ?: __('tenant.system_user') }} · {{ optional($movement->movement_date)->format('Y-m-d H:i') }}</div>
                                         </div>
                                         <div class="text-end">
                                             <span class="badge bg-warning text-dark">{{ rtrim(rtrim((string) $movement->quantity, '0'), '.') }}</span>
-                                            <div class="text-muted small mt-1">{{ $movement->notes ?: 'Workshop consumption' }}</div>
+                                            <div class="text-muted small mt-1">{{ $movement->notes ?: __('tenant.workshop_consumption') }}</div>
                                         </div>
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-muted mb-0">No spare parts have been consumed for this work order yet.</p>
+                                <p class="text-muted mb-0">{{ __('tenant.no_spare_parts_consumed') }}</p>
                             @endforelse
                         </div>
                     </div>

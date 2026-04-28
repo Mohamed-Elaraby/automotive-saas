@@ -6,12 +6,12 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Create Inventory Adjustment',
-                'subtitle' => 'Apply opening balance or stock adjustment.',
+                'title' => __('tenant.create_inventory_adjustment'),
+                'subtitle' => __('tenant.create_inventory_adjustment_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Inventory Adjustments', 'url' => route('automotive.admin.inventory-adjustments.index')],
-                    ['label' => 'Create Adjustment'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('tenant.inventory_adjustments'), 'url' => route('automotive.admin.inventory-adjustments.index')],
+                    ['label' => __('tenant.create_adjustment')],
                 ],
             ])
 

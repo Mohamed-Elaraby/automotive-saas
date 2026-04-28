@@ -6,17 +6,17 @@
         <div class="content container-fluid">
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Users',
-                'subtitle' => 'Manage tenant users and access.',
+                'title' => __('shared.users'),
+                'subtitle' => __('tenant.users_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Users'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('shared.users')],
                 ],
             ])
 
             <div class="mb-3">
                 <a href="{{ route('automotive.admin.users.create') }}" class="btn btn-primary">
-                    <i class="isax isax-add me-1"></i> Add User
+                    <i class="isax isax-add me-1"></i> {{ __('tenant.add_user') }}
                 </a>
             </div>
 
@@ -28,10 +28,10 @@
                         <table class="table table-center table-hover datatable">
                             <thead class="thead-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Created At</th>
-                                <th class="text-end">Actions</th>
+                                <th>{{ __('tenant.name') }}</th>
+                                <th>{{ __('tenant.email') }}</th>
+                                <th>{{ __('tenant.created_at') }}</th>
+                                <th class="text-end">{{ __('tenant.actions') }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -44,16 +44,16 @@
                                         <div class="d-inline-flex gap-1">
                                             <a href="{{ route('automotive.admin.users.edit', $user) }}"
                                                class="btn btn-sm btn-outline-primary">
-                                                Edit
+                                                {{ __('tenant.edit') }}
                                             </a>
 
                                             <form action="{{ route('automotive.admin.users.destroy', $user) }}"
                                                   method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                                  onsubmit="return confirm('{{ __('tenant.delete_user_confirm') }}');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    Delete
+                                                    {{ __('tenant.delete') }}
                                                 </button>
                                             </form>
                                         </div>
@@ -68,8 +68,8 @@
                     @if($users->isEmpty())
                         <div class="mt-3">
                             @include('automotive.admin.partials.empty-state', [
-                                'title' => 'No users found',
-                                'message' => 'Create your first tenant user to start managing access.',
+                                'title' => __('tenant.no_users_found'),
+                                'message' => __('tenant.no_users_message'),
                             ])
                         </div>
                     @endif

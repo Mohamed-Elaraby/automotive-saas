@@ -13,11 +13,11 @@
             @endphp
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Stock Movement Report',
-                'subtitle' => 'Detailed stock movement history by branch, product, and movement type.',
+                'title' => __('tenant.stock_movement_report'),
+                'subtitle' => __('tenant.stock_movement_report_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Stock Movement Report'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('tenant.stock_movement_report')],
                 ],
             ])
 
@@ -29,9 +29,9 @@
                         <div class="row">
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group mb-3">
-                                    <label class="form-label">Branch</label>
+                                    <label class="form-label">{{ __('tenant.branch') }}</label>
                                     <select name="branch_id" class="form-control">
-                                        <option value="">All branches</option>
+                                        <option value="">{{ __('tenant.all_branches') }}</option>
                                         @foreach($branchRows as $branch)
                                             <option value="{{ $branch->id }}" {{ (string) request('branch_id', $branchId ?? '') === (string) $branch->id ? 'selected' : '' }}>
                                                 {{ $branch->name }}
@@ -43,9 +43,9 @@
 
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group mb-3">
-                                    <label class="form-label">Product</label>
+                                    <label class="form-label">{{ __('tenant.product') }}</label>
                                     <select name="product_id" class="form-control">
-                                        <option value="">All products</option>
+                                        <option value="">{{ __('tenant.all_products') }}</option>
                                         @foreach($productRows as $product)
                                             <option value="{{ $product->id }}" {{ (string) request('product_id', $productId ?? '') === (string) $product->id ? 'selected' : '' }}>
                                                 {{ $product->name }}
@@ -57,9 +57,9 @@
 
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group mb-3">
-                                    <label class="form-label">Type</label>
+                                    <label class="form-label">{{ __('tenant.type') }}</label>
                                     <select name="type" class="form-control">
-                                        <option value="">All types</option>
+                                        <option value="">{{ __('tenant.all_types') }}</option>
                                         @foreach($movementTypes as $movementType)
                                             <option value="{{ $movementType }}" {{ request('type', $type ?? '') === $movementType ? 'selected' : '' }}>
                                                 {{ ucfirst(str_replace('_', ' ', $movementType)) }}
@@ -71,20 +71,20 @@
 
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group mb-3">
-                                    <label class="form-label">Search</label>
+                                    <label class="form-label">{{ __('tenant.search') }}</label>
                                     <input
                                         type="text"
                                         name="search"
                                         class="form-control"
                                         value="{{ request('search', $search ?? '') }}"
-                                        placeholder="Product / SKU / branch / notes"
+                                        placeholder="{{ __('tenant.product_sku_branch_notes') }}"
                                     >
                                 </div>
                             </div>
 
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group mb-3">
-                                    <label class="form-label">Date From</label>
+                                    <label class="form-label">{{ __('tenant.date_from') }}</label>
                                     <input
                                         type="date"
                                         name="date_from"
@@ -96,7 +96,7 @@
 
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group mb-3">
-                                    <label class="form-label">Date To</label>
+                                    <label class="form-label">{{ __('tenant.date_to') }}</label>
                                     <input
                                         type="date"
                                         name="date_to"
@@ -109,10 +109,10 @@
                             <div class="col-lg-6 col-md-12 d-flex align-items-end">
                                 <div class="form-group mb-3 w-100 d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">
-                                        Filter
+                                        {{ __('tenant.filter') }}
                                     </button>
                                     <a href="{{ route('automotive.admin.stock-movements.index') }}" class="btn btn-light">
-                                        Reset
+                                        {{ __('tenant.reset') }}
                                     </a>
                                 </div>
                             </div>
@@ -124,14 +124,14 @@
                             <thead class="thead-light">
                             <tr>
                                 <th>#</th>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Branch</th>
-                                <th>Product</th>
-                                <th>SKU</th>
-                                <th>Quantity</th>
-                                <th>Notes</th>
-                                <th>Created By</th>
+                                <th>{{ __('tenant.date') }}</th>
+                                <th>{{ __('tenant.type') }}</th>
+                                <th>{{ __('tenant.branch') }}</th>
+                                <th>{{ __('tenant.product') }}</th>
+                                <th>{{ __('tenant.sku') }}</th>
+                                <th>{{ __('tenant.quantity') }}</th>
+                                <th>{{ __('tenant.notes') }}</th>
+                                <th>{{ __('tenant.created_by') }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -173,8 +173,8 @@
                     @if(($movementRows instanceof \Illuminate\Support\Collection && $movementRows->isEmpty()) || (method_exists($movementRows, 'count') && $movementRows->count() === 0))
                         <div class="mt-3">
                             @include('automotive.admin.partials.empty-state', [
-                                'title' => 'No stock movements found',
-                                'message' => 'No stock movement records match the selected filters.',
+                                'title' => __('tenant.no_stock_movements_found'),
+                                'message' => __('tenant.no_stock_movements_message'),
                             ])
                         </div>
                     @endif

@@ -10,17 +10,17 @@
             @endphp
 
             @include('automotive.admin.partials.page-header', [
-                'title' => 'Branches',
-                'subtitle' => 'Manage warehouse and store branches.',
+                'title' => __('shared.branches'),
+                'subtitle' => __('tenant.branches_subtitle'),
                 'breadcrumbs' => [
-                    ['label' => 'Dashboard', 'url' => route('automotive.admin.dashboard')],
-                    ['label' => 'Branches'],
+                    ['label' => __('shared.dashboard'), 'url' => route('automotive.admin.dashboard')],
+                    ['label' => __('shared.branches')],
                 ],
             ])
 
             <div class="mb-3">
                 <a href="{{ route('automotive.admin.branches.create') }}" class="btn btn-primary">
-                    <i class="isax isax-add me-1"></i> Add Branch
+                    <i class="isax isax-add me-1"></i> {{ __('tenant.add_branch') }}
                 </a>
             </div>
 
@@ -32,12 +32,12 @@
                         <table class="table table-center table-hover datatable">
                             <thead class="thead-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Code</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th class="text-end">Actions</th>
+                                <th>{{ __('tenant.name') }}</th>
+                                <th>{{ __('tenant.code') }}</th>
+                                <th>{{ __('tenant.phone') }}</th>
+                                <th>{{ __('tenant.email') }}</th>
+                                <th>{{ __('tenant.status') }}</th>
+                                <th class="text-end">{{ __('tenant.actions') }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -49,25 +49,25 @@
                                     <td>{{ $branch->email }}</td>
                                     <td>
                                         @if((bool) ($branch->is_active ?? true))
-                                            <span class="badge bg-success">Active</span>
+                                            <span class="badge bg-success">{{ __('tenant.active') }}</span>
                                         @else
-                                            <span class="badge bg-danger">Inactive</span>
+                                            <span class="badge bg-danger">{{ __('tenant.inactive') }}</span>
                                         @endif
                                     </td>
                                     <td class="text-end">
                                         <div class="d-inline-flex gap-1">
                                             <a href="{{ route('automotive.admin.branches.edit', $branch) }}"
                                                class="btn btn-sm btn-outline-primary">
-                                                Edit
+                                                {{ __('tenant.edit') }}
                                             </a>
 
                                             <form action="{{ route('automotive.admin.branches.destroy', $branch) }}"
                                                   method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to delete this branch?');">
+                                                  onsubmit="return confirm('{{ __('tenant.delete_branch_confirm') }}');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    Delete
+                                                    {{ __('tenant.delete') }}
                                                 </button>
                                             </form>
                                         </div>
@@ -82,8 +82,8 @@
                     @if($branchRows->isEmpty())
                         <div class="mt-3">
                             @include('automotive.admin.partials.empty-state', [
-                                'title' => 'No branches found',
-                                'message' => 'Create your first branch to manage stock locations.',
+                                'title' => __('tenant.no_branches_found'),
+                                'message' => __('tenant.no_branches_message'),
                             ])
                         </div>
                     @endif
