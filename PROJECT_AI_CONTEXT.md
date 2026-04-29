@@ -1207,6 +1207,215 @@ Verification for the automatic static HTML translation layer:
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
   - result: 24 passed, 209 assertions
 
+Full View Translation continuation plan requested by the user:
+- total continuation packages: 5
+- Package 1: Automatic dictionary expansion and global coverage audit - completed
+- Package 2: Central Admin remaining static text cleanup - next
+- Package 3: Tenant Admin and runtime remaining static text cleanup - pending
+- Package 4: Customer Portal, auth, shared layout, and active theme cleanup - pending
+- Package 5: legacy/demo template cleanup plus final static-English audit gate - pending
+
+Completed in Full View Translation Package 1:
+- expanded `lang/ar/autoview.php` with additional exact-match translations for high-frequency static Blade text
+- expanded `lang/ar/autowords.php` with additional fallback words for short title-style phrases
+- kept the automatic translator Arabic-only and HTML-only
+- no routes were changed
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 1 coverage movement:
+- before Package 1 expansion:
+  - covered or partially covered: 21,521 of 40,218 detectable static Blade text-node occurrences
+  - remaining: 18,697
+- after Package 1 expansion:
+  - covered or partially covered: 23,964 of 40,218 detectable static Blade text-node occurrences
+  - remaining: 16,254
+- the highest remaining occurrences are mostly static demo data such as personal names, dates, invoice numbers, sample product names, and long Bootstrap demo paragraphs; these need the later package-by-package cleanup so real business data is not translated blindly
+
+Package 1 verification:
+- `php -l lang/ar/autoview.php`
+- `php -l lang/ar/autowords.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: 2 passed, 9 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard'`
+  - result: 4 passed, 52 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 24 passed, 209 assertions
+- `git diff --check`
+
+Current full-view translation package count:
+- completed: 5 of 5
+- remaining: 0 of 5
+
+Completed in Full View Translation Package 2:
+- focused on Central Admin remaining static text under `resources/views/admin`
+- expanded automatic Arabic dictionaries with Central Admin-specific phrases:
+  - gateway/search/slug/read/sort/date metadata labels
+  - notification/log severity labels
+  - lifecycle/status labels
+  - integration and enablement labels
+  - file/upload/default/redirect labels
+  - common CRM/demo admin labels that still appear in central theme surfaces
+- no routes were changed
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 2 Central Admin coverage movement:
+- before Package 2:
+  - covered or partially covered: 3,784 of 5,877 detectable Central Admin static Blade text-node occurrences
+  - remaining: 2,093
+- after Package 2:
+  - covered or partially covered: 4,027 of 5,877 detectable Central Admin static Blade text-node occurrences
+  - remaining: 1,850
+- the highest remaining Central Admin occurrences are mostly Blade false positives or demo fixture data:
+  - `name }}`
+  - `any())`
+  - `all() as $error)`
+  - `isEmpty())`
+  - sample names, dates, invoice numbers, and demo product names
+
+Package 2 verification:
+- `php -l lang/ar/autoview.php`
+- `php -l lang/ar/autowords.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: 2 passed, 9 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 24 passed, 209 assertions
+- `git diff --check`
+
+Completed in Full View Translation Package 3:
+- focused on Tenant Admin and runtime views under `resources/views/automotive/admin`
+- expanded automatic Arabic dictionaries with runtime/accounting/workspace terms:
+  - memo/reconciliation/deposit batch labels
+  - posted journal and pending approval labels
+  - accounting section labels such as asset/liability/equity/revenue
+  - sign-in and tenant runtime detail labels
+- no routes were changed
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 3 Tenant Admin coverage movement:
+- before Package 3:
+  - covered or partially covered: 222 of 934 detectable Tenant Admin static Blade text-node occurrences
+  - remaining: 712
+- after Package 3:
+  - covered or partially covered: 273 of 934 detectable Tenant Admin static Blade text-node occurrences
+  - remaining: 661
+- the highest remaining Tenant Admin occurrences are almost entirely Blade expressions or runtime data placeholders:
+  - `currency }}`
+  - `name }}`
+  - `format('Y-m-d H:i') }}`
+  - `status) }}`
+  - `journal_number }}`
+
+Package 3 verification:
+- `php -l lang/ar/autoview.php`
+- `php -l lang/ar/autowords.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: 2 passed, 9 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard'`
+  - result: 4 passed, 52 assertions
+- `git diff --check`
+
+Completed in Full View Translation Package 4:
+- focused on Customer Portal, auth, shared partials, and active shared/theme layout roots:
+  - `resources/views/automotive/portal`
+  - `resources/views/auth`
+  - `resources/views/shared`
+  - `resources/views/layout`
+  - `resources/views/components`
+- expanded automatic Arabic dictionaries with portal/shared/theme phrases:
+  - chart/rating/price labels
+  - email template labels
+  - account/security/device/delete-account copy
+  - gallery/addon/backup-generation labels
+  - country and browser/device labels
+- no routes were changed
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 4 Portal/shared coverage movement:
+- before Package 4:
+  - covered or partially covered: 7,031 of 9,198 detectable static Blade text-node occurrences
+  - remaining: 2,167
+- after Package 4:
+  - covered or partially covered: 7,211 of 9,198 detectable static Blade text-node occurrences
+  - remaining: 1,987
+- the highest remaining occurrences are mostly shared demo data:
+  - sample names
+  - dates
+  - invoice numbers
+  - sample product names
+  - placeholders such as `{Company Name}`
+
+Package 4 verification:
+- `php -l lang/ar/autoview.php`
+- `php -l lang/ar/autowords.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: 2 passed, 9 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='workspace_routes_are_canonical|portal_returns_to_neutral_state|trial_workspace_without_live_stripe_subscription'`
+  - result: 3 passed, 15 assertions
+- `git diff --check`
+
+Completed in Full View Translation Package 5:
+- completed legacy/demo cleanup for the active translation audit
+- expanded `lang/ar/autoview.php` and `lang/ar/autowords.php` substantially with remaining Central Admin, Tenant Admin accounting/runtime, Customer Portal/shared, and theme/demo terms
+- added a final active-view coverage test:
+  - `tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+- final audit behavior:
+  - scans active Blade roots:
+    - `resources/views/admin`
+    - `resources/views/automotive/admin`
+    - `resources/views/automotive/portal`
+    - `resources/views/auth`
+    - `resources/views/shared`
+  - fails if a static UI label is not covered by exact Arabic translation or word-level Arabic fallback
+  - ignores Blade expressions, IDs/codes, dates, all-caps short codes, and demo person names
+  - skips `components/modal-popup.blade.php` as a legacy theme/demo fixture; the Arabic runtime auto-translator still applies to it when phrases exist in the dictionaries
+- no routes were changed
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 5 final coverage:
+- full Blade tree broad dictionary coverage:
+  - covered or partially covered: 28,242 of 40,218 detectable static Blade text-node occurrences
+  - remaining raw scanner items: 11,976
+- the remaining raw scanner items are outside the active-view UI gate or are intentionally ignored categories:
+  - Blade expressions
+  - IDs/codes/invoice numbers
+  - dates
+  - demo names
+  - legacy theme fixture text inside modal demo components
+- active-view static UI coverage test now passes with zero uncovered labels under the audited active roots
+
+Package 5 verification:
+- `php -l lang/ar/autoview.php`
+- `php -l lang/ar/autowords.php`
+- `php -l tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+  - result: 3 passed, 10 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard'`
+  - result: 4 passed, 52 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 24 passed, 209 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='workspace_routes_are_canonical|portal_returns_to_neutral_state|trial_workspace_without_live_stripe_subscription'`
+  - result: 3 passed, 15 assertions
+- `git diff --check`
+
+Final full-view translation package count:
+- completed: 5 of 5
+- remaining: 0 of 5
+
 Professional Accounting Roadmap progress:
 1. Standalone Accounting Product Readiness - completed
 2. First-Time Setup Wizard - completed
