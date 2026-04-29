@@ -1109,14 +1109,55 @@ Package 5 verification:
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Tenants/AdminTenantShowTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
   - result: 25 passed, 219 assertions
 
+Completed in Package 6:
+- completed final multilingual QA and RTL polish pass
+- translated remaining high-visibility Central Admin auth labels:
+  - login
+  - register
+  - forgot password
+  - reset password
+- translated Central Admin topbar notification controls:
+  - notifications title
+  - toast/sound toggles
+  - desktop alert permission states
+  - open/mark-read/view-all/close/fallback notification labels
+- made RTL Bootstrap loading locale-aware across:
+  - Central Admin layout head
+  - Tenant Admin layout head
+  - Customer Portal layout head
+- Arabic locale now loads `bootstrap.rtl.min.css` even when the current route is not the legacy `layout-rtl` demo route
+- verified Arabic-prefixed central, tenant, portal, and product routes are still listed and resolve in HTTP tests without 404
+- fixed a Blade compiled-view parse error in the notification labels JSON by moving translated labels to a PHP array before `@json`
+- no routes were changed in this package
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 6 verification:
+- `php -l lang/en/admin.php`
+- `php -l lang/ar/admin.php`
+- `php -l resources/views/admin/layouts/centralLayout/partials/head.blade.php`
+- `php -l resources/views/admin/layouts/centralLayout/partials/topbar-notifications.blade.php`
+- `php -l resources/views/automotive/admin/layouts/adminLayout/partials/head.blade.php`
+- `php -l resources/views/automotive/portal/layouts/portalLayout/partials/head.blade.php`
+- `php -l resources/views/admin/auth/login.blade.php`
+- `php -l resources/views/admin/auth/register.blade.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `git diff --check`
+- `php artisan route:trans:list ar | grep -E "ar/admin/login|ar/admin/dashboard|ar/workspace/login|ar/workspace/admin/login|ar/workspace/portal"`
+  - result: Arabic-prefixed critical central, tenant-admin, and portal routes are listed
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard'`
+  - result: 4 passed, 52 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Tenants/AdminTenantShowTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 25 passed, 219 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php`
+  - result: 39 passed, 218 assertions
+
 Recommended next package:
-- Multilingual Platform Package 6: Final QA + RTL Polish
-- scope:
-  - scan remaining high-visibility hardcoded labels across Customer Portal, Tenant Admin, Central Admin, and product runtime screens
-  - verify Arabic-prefixed central, tenant, portal, and product routes still resolve without 404
-  - polish RTL layout issues in shared/admin/portal surfaces
-  - keep English default URLs unprefixed and Arabic URLs under `/ar/...`
-  - continue to avoid `php artisan route:cache`
+- no remaining package in the current 6-package multilingual translation pass
+- completed multilingual packages: 6 of 6
+- remaining multilingual packages: 0 of 6
+- future translation work, if requested, should be treated as low-priority deep cleanup of old/demo/rarely used templates rather than part of this package pass
 
 Professional Accounting Roadmap progress:
 1. Standalone Accounting Product Readiness - completed
@@ -1136,12 +1177,12 @@ Persistent accounting rules:
 - do not reopen integration architecture unless a real blocker appears
 
 Next implementation package:
-- Multilingual Platform Package 6: Final QA + RTL Polish
+- none in the current multilingual package pass
 - primary language: English
 - second language: Arabic
 - existing package/library: `mcamara/laravel-localization`
-- completed multilingual packages: 5 of 6
-- remaining multilingual packages: 1 of 6
+- completed multilingual packages: 6 of 6
+- remaining multilingual packages: 0 of 6
 
 ## 15.2.1) Accounting System Current State Before Next Chat
 This section is the detailed handoff for continuing accounting work in a fresh AI session.

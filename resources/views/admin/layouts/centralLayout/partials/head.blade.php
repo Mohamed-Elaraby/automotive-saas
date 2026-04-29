@@ -15,12 +15,12 @@ DO NOT use /build for theme assets (reserved for Vite)
     <script src="{{ url('theme/js/theme-script.js')}}"></script>
 @endif
 
-@if (!Route::is(['layout-rtl']))
+@if (app()->getLocale() !== 'ar' && !Route::is(['layout-rtl']))
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url('theme/css/bootstrap.min.css') }}">
 @endif
 
-@if (Route::is(['layout-rtl']))
+@if (app()->getLocale() === 'ar' || Route::is(['layout-rtl']))
 	<!-- Bootstrap CSS -->
 	<link rel="stylesheet" href="{{ url('theme/css/bootstrap.rtl.min.css')}}">
 @endif

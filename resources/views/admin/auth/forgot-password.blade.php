@@ -17,8 +17,8 @@
                             <div class="card border-0 p-lg-3 shadow-lg rounded-2">
                                 <div class="card-body">
                                     <div class="text-center mb-3">
-                                        <h5 class="mb-2">Forgot Password</h5>
-                                        <p class="mb-0">No worries, we’ll send you reset instructions</p>
+                                        <h5 class="mb-2">{{ __('admin.forgot_password') }}</h5>
+                                        <p class="mb-0">{{ __('admin.forgot_password_intro') }}</p>
                                     </div>
 
                                     @if(session('status'))
@@ -36,7 +36,7 @@
                                     @endif
 
                                     <div class="mb-3">
-                                        <label class="form-label">Email Address</label>
+                                        <label class="form-label">{{ __('admin.email_address') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text border-end-0">
                                                 <i class="isax isax-sms-notification"></i>
@@ -46,20 +46,20 @@
                                                 name="email"
                                                 value="{{ old('email') }}"
                                                 class="form-control border-start-0 ps-0"
-                                                placeholder="Enter Email Address"
+                                                placeholder="{{ __('admin.enter_email_address') }}"
                                                 required
                                             >
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">Reset Password</button>
+                                        <button type="submit" class="btn bg-primary-gradient text-white w-100">{{ __('admin.reset_password') }}</button>
                                     </div>
 
                                     <div class="text-center">
                                         <h6 class="fw-normal fs-14 text-dark mb-0">
-                                            Return to
-                                            <a href="{{ route('admin.login') }}" class="hover-a"> Sign In</a>
+                                            {{ __('admin.return_to') }}
+                                            <a href="{{ route('admin.login') }}" class="hover-a"> {{ __('admin.sign_in') }}</a>
                                         </h6>
                                     </div>
                                 </div>

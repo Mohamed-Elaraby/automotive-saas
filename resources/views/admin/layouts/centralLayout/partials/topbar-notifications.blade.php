@@ -11,6 +11,15 @@ $severityClassMap = [
     'warning' => 'bg-warning',
     'error' => 'bg-danger',
 ];
+
+$notificationLabels = [
+    'unsupported' => __('admin.desktop_alerts_unsupported'),
+    'enabled' => __('admin.desktop_alerts_enabled'),
+    'blocked' => __('admin.desktop_alerts_blocked'),
+    'enable' => __('admin.enable_desktop_alerts'),
+    'notification' => __('admin.notification'),
+    'close' => __('admin.close'),
+];
 ?>
 
 <div class="notification_item me-2">
@@ -28,19 +37,19 @@ $severityClassMap = [
         <div class="p-2 border-bottom">
             <div class="row align-items-center">
                 <div class="col">
-                    <h6 class="m-0 fs-16 fw-semibold">Notifications</h6>
+                    <h6 class="m-0 fs-16 fw-semibold">{{ __('admin.notifications') }}</h6>
                 </div>
                 <div class="col-auto d-flex gap-2 align-items-center flex-wrap justify-content-end">
                     <div class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" id="notificationToastToggle" checked>
-                        <label class="form-check-label small" for="notificationToastToggle">Toasts</label>
+                        <label class="form-check-label small" for="notificationToastToggle">{{ __('admin.toasts') }}</label>
                     </div>
                     <div class="form-check form-switch m-0">
                         <input class="form-check-input" type="checkbox" id="notificationSoundToggle" checked>
-                        <label class="form-check-label small" for="notificationSoundToggle">Sound</label>
+                        <label class="form-check-label small" for="notificationSoundToggle">{{ __('admin.sound') }}</label>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-primary" id="desktopNotificationPermissionBtn">
-                        Enable Desktop Alerts
+                        {{ __('admin.enable_desktop_alerts') }}
                     </button>
                     <span id="topbar-notification-count-pill" class="badge bg-light text-dark">{{ $topbarNotificationCount }}</span>
                 </div>
@@ -91,14 +100,14 @@ $severityClassMap = [
                                         data-notification-id="{{ $notification['id'] ?? '' }}"
                                         data-mark-read-url="{{ $notification['mark_read_url'] ?? '#' }}"
                                     >
-                                        Open
+                                        {{ __('admin.open') }}
                                     </a>
 
                                     @if(!($notification['is_read'] ?? false))
                                         <form method="POST" action="{{ $notification['mark_read_url'] ?? '#' }}">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-dark">
-                                                Mark Read
+                                                {{ __('admin.mark_read') }}
                                             </button>
                                         </form>
                                     @endif
@@ -108,7 +117,7 @@ $severityClassMap = [
                     </div>
                 @empty
                     <div class="dropdown-item notification-item py-4 text-center text-muted" id="topbar-notification-empty-state">
-                        No notifications yet.
+                        {{ __('shared.no_notifications_yet') }}
                     </div>
                 @endforelse
             </div>
@@ -116,7 +125,7 @@ $severityClassMap = [
 
         <div class="p-2 rounded-bottom border-top text-center">
             <a href="{{ route('admin.notifications.index') }}" class="text-center fw-medium fs-14 mb-0">
-                View All
+                {{ __('admin.view_all') }}
             </a>
         </div>
     </div>
@@ -137,6 +146,7 @@ $severityClassMap = [
         const toastToggle = document.getElementById('notificationToastToggle');
         const soundToggle = document.getElementById('notificationSoundToggle');
         const desktopPermissionBtn = document.getElementById('desktopNotificationPermissionBtn');
+        const notificationLabels = @json($notificationLabels);
 
         let lastKnownCount = Number({{ $topbarNotificationCount }});
         let lastSeenNotificationIds = new Set(@json(collect($topbarNotificationItems)->pluck('id')->values()));
@@ -159,26 +169,26 @@ $severityClassMap = [
 
         function updateDesktopPermissionButton() {
             if (!('Notification' in window)) {
-                desktopPermissionBtn.textContent = 'Desktop Alerts Unsupported';
+                desktopPermissionBtn.textContent = notificationLabels.unsupported;
                 desktopPermissionBtn.disabled = true;
                 return;
             }
 
             if (Notification.permission === 'granted') {
-                desktopPermissionBtn.textContent = 'Desktop Alerts Enabled';
+                desktopPermissionBtn.textContent = notificationLabels.enabled;
                 desktopPermissionBtn.classList.remove('btn-outline-primary');
                 desktopPermissionBtn.classList.add('btn-outline-success');
                 return;
             }
 
             if (Notification.permission === 'denied') {
-                desktopPermissionBtn.textContent = 'Desktop Alerts Blocked';
+                desktopPermissionBtn.textContent = notificationLabels.blocked;
                 desktopPermissionBtn.classList.remove('btn-outline-primary');
                 desktopPermissionBtn.classList.add('btn-outline-danger');
                 return;
             }
 
-            desktopPermissionBtn.textContent = 'Enable Desktop Alerts';
+            desktopPermissionBtn.textContent = notificationLabels.enable;
             desktopPermissionBtn.classList.remove('btn-outline-success', 'btn-outline-danger');
             desktopPermissionBtn.classList.add('btn-outline-primary');
         }
@@ -225,7 +235,7 @@ $severityClassMap = [
             }
 
             const severity = String(item.severity || 'info').toUpperCase();
-            const title = `${severity} • ${item.title || 'Notification'}`;
+            const title = `${severity} • ${item.title || notificationLabels.notification}`;
             const body = `${(item.type || 'notification').replaceAll('_', ' ').toUpperCase()}\n${item.message || ''}`;
 
             const browserNotification = new Notification(title, {
@@ -259,9 +269,9 @@ $severityClassMap = [
             wrapper.innerHTML = `
             <div class="toast-header">
                 <span class="badge ${badgeClass} me-2">${escapeHtml(severity.toUpperCase())}</span>
-                <strong class="me-auto">${escapeHtml(item.title || 'Notification')}</strong>
+                <strong class="me-auto">${escapeHtml(item.title || notificationLabels.notification)}</strong>
                 <small>${escapeHtml(item.notified_at || '')}</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="${escapeHtml(notificationLabels.close)}"></button>
             </div>
             <div class="toast-body">
                 <div class="small text-muted mb-1">${escapeHtml((item.type || 'notification').replaceAll('_', ' ').toUpperCase())}</div>
