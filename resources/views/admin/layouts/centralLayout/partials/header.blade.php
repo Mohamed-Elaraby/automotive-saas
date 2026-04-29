@@ -134,8 +134,8 @@
                                     <img src="{{ url('theme/img/profiles/avatar-01.jpg') }}" alt="img" class="rounded-circle">
                                 </span>
                                 <div>
-                                    <h6 class="fs-14 fw-medium mb-1">{{ auth('admin')->user()?->name ?? 'Admin User' }}</h6>
-                                    <p class="fs-13">{{ auth('admin')->user()?->email ?? 'Administrator' }}</p>
+                                    <h6 class="fs-14 fw-medium mb-1">{{ auth('admin')->user()?->name ?? __('admin.admin_user') }}</h6>
+                                    <p class="fs-13">{{ auth('admin')->user()?->email ?? __('admin.administrator') }}</p>
                                 </div>
                             </div>
 
@@ -185,7 +185,7 @@
         </a>
         <div class="dropdown-menu p-2 mt-0">
             <a class="dropdown-item d-flex align-items-center" href="javascript:void(0);">
-                <i class="isax isax-profile-circle me-2"></i>Profile Settings
+                <i class="isax isax-profile-circle me-2"></i>{{ __('admin.profile_settings') }}
             </a>
             <a class="dropdown-item d-flex align-items-center" href="{{ route('admin.plans.index') }}">
                 <i class="isax isax-document-text me-2"></i>{{ __('shared.plans') }}

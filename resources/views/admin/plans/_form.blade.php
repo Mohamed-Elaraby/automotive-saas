@@ -16,14 +16,14 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.plan_name') }} <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" name="name" value="{{ old('name', $plan->name) }}" required data-plan-preview="name">
             </div>
 
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-semibold">Product <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.product') }} <span class="text-danger">*</span></label>
                 <select name="product_id" class="form-select" required data-plan-preview="product">
-                    <option value="">Select a product</option>
+                    <option value="">{{ __('admin.select_product') }}</option>
                     @foreach($availableProducts as $product)
                         <option
                             value="{{ $product->id }}"
@@ -37,22 +37,22 @@
             </div>
 
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-semibold">Slug <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.slug') }} <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" name="slug" value="{{ old('slug', $plan->slug) }}" required>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Price <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.price') }} <span class="text-danger">*</span></label>
                 <input type="number" step="0.01" min="0" class="form-control" name="price" value="{{ $previewPrice }}" required data-plan-preview="price">
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Currency <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.currency') }} <span class="text-danger">*</span></label>
                 <input type="text" class="form-control text-uppercase" maxlength="3" name="currency" value="{{ $previewCurrency }}" required data-plan-preview="currency">
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Billing Period <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.billing_period') }} <span class="text-danger">*</span></label>
                 <select name="billing_period" class="form-select" required data-plan-preview="billing_period">
                     @foreach (['trial', 'monthly', 'yearly', 'one_time'] as $period)
                         <option value="{{ $period }}" @selected(old('billing_period', $plan->billing_period) === $period)>
@@ -63,18 +63,18 @@
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Sort Order <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold">{{ __('admin.sort_order') }} <span class="text-danger">*</span></label>
                 <input type="number" min="0" class="form-control" name="sort_order" value="{{ old('sort_order', $plan->sort_order ?? 0) }}" required>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Trial Days</label>
+                <label class="form-label fw-semibold">{{ __('admin.trial_days') }}</label>
                 <input type="number" min="1" max="365" class="form-control" name="trial_days" value="{{ $previewTrialDays }}" data-plan-preview="trial_days">
                 <small class="text-muted d-block mt-1">Used only when billing period is `trial`.</small>
             </div>
 
             <div class="col-md-6 mb-3">
-                <label class="form-label fw-semibold">Stripe Price ID</label>
+                <label class="form-label fw-semibold">{{ __('admin.stripe_price_id') }}</label>
                 <input type="text" class="form-control" name="stripe_price_id" value="{{ old('stripe_price_id', $plan->stripe_price_id) }}" placeholder="price_xxxxxxxxxxxxxxxxx">
                 <small class="text-muted">Leave empty for trial plans or plans not linked to Stripe yet.</small>
             </div>
@@ -82,65 +82,65 @@
             <div class="col-md-6 mb-3 d-flex align-items-end">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active" {{ old('is_active', $plan->is_active ?? true) ? 'checked' : '' }}>
-                    <label class="form-check-label fw-semibold" for="is_active">Active</label>
+                    <label class="form-check-label fw-semibold" for="is_active">{{ __('admin.active') }}</label>
                 </div>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Max Users</label>
+                <label class="form-label fw-semibold">{{ __('admin.max_users') }}</label>
                 <input type="number" min="1" class="form-control" name="max_users" value="{{ old('max_users', $plan->max_users) }}" data-plan-preview="max_users">
                 <small class="text-muted d-block mt-1">Leave empty to hide a user cap from the portal card. If filled, this is the total active users allowed in the tenant workspace.</small>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Max Branches</label>
+                <label class="form-label fw-semibold">{{ __('admin.max_branches') }}</label>
                 <input type="number" min="1" class="form-control" name="max_branches" value="{{ old('max_branches', $plan->max_branches) }}" data-plan-preview="max_branches">
                 <small class="text-muted d-block mt-1">Leave empty when branch count should not be advertised as a packaged limit. If filled, it is the maximum branch records the tenant can operate.</small>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Max Products</label>
+                <label class="form-label fw-semibold">{{ __('admin.max_products') }}</label>
                 <input type="number" min="1" class="form-control" name="max_products" value="{{ old('max_products', $plan->max_products) }}" data-plan-preview="max_products">
                 <small class="text-muted d-block mt-1">Use this for the catalog ceiling customers are buying. Empty means the limit line stays out of the preview instead of showing a misleading placeholder.</small>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label fw-semibold">Max Storage (MB)</label>
+                <label class="form-label fw-semibold">{{ __('admin.max_storage_mb') }}</label>
                 <input type="number" min="1" class="form-control" name="max_storage_mb" value="{{ old('max_storage_mb', $plan->max_storage_mb) }}" data-plan-preview="max_storage_mb">
                 <small class="text-muted d-block mt-1">Storage is shown in MB in admin but appears as a customer-facing storage line in the portal preview. Leave empty if storage should not be marketed as a plan limit.</small>
             </div>
 
             <div class="col-12 mb-3">
                 <div class="rounded border bg-light p-3">
-                    <h6 class="mb-2">Limits Semantics</h6>
+                    <h6 class="mb-2">{{ __('admin.limits_semantics') }}</h6>
                     <ul class="mb-0 text-muted ps-3">
-                        <li>Only filled limits appear in the portal preview and paid plan cards.</li>
-                        <li>Empty does not mean zero. It means "do not advertise or enforce from this plan field".</li>
-                        <li>Use plan features for capabilities, and numeric limits only for measurable caps.</li>
+                        <li>{{ __('admin.limits_semantics_1') }}</li>
+                        <li>{{ __('admin.limits_semantics_2') }}</li>
+                        <li>{{ __('admin.limits_semantics_3') }}</li>
                     </ul>
                 </div>
             </div>
 
             <div class="col-12 mb-3">
-                <label class="form-label fw-semibold">Description</label>
+                <label class="form-label fw-semibold">{{ __('admin.description') }}</label>
                 <textarea name="description" rows="4" class="form-control" data-plan-preview="description">{{ old('description', $plan->description) }}</textarea>
             </div>
 
             <div class="col-12 mb-0">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                     <div>
-                        <label class="form-label fw-semibold mb-1">Plan Features</label>
-                        <p class="text-muted mb-0">Choose from the shared billing feature catalog used across all plans.</p>
+                        <label class="form-label fw-semibold mb-1">{{ __('admin.plan_features') }}</label>
+                        <p class="text-muted mb-0">{{ __('admin.plan_features_intro') }}</p>
                     </div>
                     <a href="{{ route('admin.billing-features.index') }}" class="btn btn-outline-white btn-sm">
-                        Manage Features Catalog
+                        {{ __('admin.manage_features_catalog') }}
                     </a>
                 </div>
 
                 <div class="border rounded p-3 bg-light">
                     @if($availableFeatures->isEmpty())
                         <div class="text-muted">
-                            No billing features are available yet. Create them first from the features catalog.
+                            {{ __('admin.no_billing_features') }}
                         </div>
                     @else
                         <div class="row">
@@ -169,15 +169,15 @@
                         </div>
                     @endif
                 </div>
-                <small class="text-muted">Use the catalog so the same feature names stay consistent across all plans.</small>
+                <small class="text-muted">{{ __('admin.feature_catalog_hint') }}</small>
             </div>
 
             <div class="col-12 mt-4">
                 <div class="card border">
                     <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div>
-                            <h6 class="mb-1">Portal Preview</h6>
-                            <p class="text-muted mb-0">This mirrors the customer portal card before you save the plan.</p>
+                            <h6 class="mb-1">{{ __('admin.portal_preview') }}</h6>
+                            <p class="text-muted mb-0">{{ __('admin.portal_preview_hint') }}</p>
                         </div>
                         <span class="badge badge-soft-info" id="plan-preview-billing-label">
                             {{ ucfirst(str_replace('_', ' ', (string) $previewBillingPeriod)) }}
@@ -196,12 +196,12 @@
                                                             @php
                                                                 $previewProduct = $availableProducts->firstWhere('id', $previewProductId);
                                                             @endphp
-                                                            {{ $previewProduct?->name ?: 'Select a product' }}
+                                                            {{ $previewProduct?->name ?: __('admin.select_product') }}
                                                         </div>
-                                                        <h5 class="mb-1" id="plan-preview-name">{{ old('name', $plan->name ?: 'New Plan') }}</h5>
-                                                        <p class="mb-0" id="plan-preview-description">{{ old('description', $plan->description ?: 'Plan description will appear here.') }}</p>
+                                                        <h5 class="mb-1" id="plan-preview-name">{{ old('name', $plan->name ?: __('admin.new_plan_name')) }}</h5>
+                                                        <p class="mb-0" id="plan-preview-description">{{ old('description', $plan->description ?: __('admin.plan_description_placeholder')) }}</p>
                                                     </div>
-                                                    <span class="badge bg-soft-info text-info">Preview</span>
+                                                    <span class="badge bg-soft-info text-info">{{ __('admin.preview') }}</span>
                                                 </div>
                                             </div>
                                             <div class="mb-3">

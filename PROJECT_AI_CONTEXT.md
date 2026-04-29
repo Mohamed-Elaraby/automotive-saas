@@ -1068,12 +1068,53 @@ Package 4 verification:
 - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard|arabic_prefixed'`
   - result: 4 passed, 52 assertions
 
+Completed in Package 5:
+- added Central Admin translation files:
+  - `lang/en/admin.php`
+  - `lang/ar/admin.php`
+- translated the Central Admin shell:
+  - sidebar labels and tooltips
+  - topbar profile fallback labels
+  - footer labels
+  - default admin page title fallback
+- translated high-traffic Central Admin product management surfaces:
+  - products index/create/edit/form
+  - Product Builder core labels, status badges, lifecycle snapshot, builder step buttons, validation summary, and recent plans empty state
+- translated high-traffic Central Admin tenant management surfaces:
+  - tenants index filters, stats, table headers, row action buttons, and status/gateway fallbacks
+  - tenant details header, lifecycle action buttons, plan-change warning, overview labels, and yes/no diagnostic badges
+- translated Central Admin plan management surfaces:
+  - plans index filters, table headers, limit summaries, status/action labels, and empty state
+  - plan create/edit headers and action buttons
+  - plan form primary labels, limits guidance, feature catalog labels, and portal preview labels
+- preserved central billing, product activation, tenant provisioning, and integration architecture
+- central admin routes remain available in English default URLs and Arabic under `/ar/admin/...`
+- no routes were changed in this package
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 5 verification:
+- `php -l lang/en/admin.php`
+- `php -l lang/ar/admin.php`
+- `php -l resources/views/admin/products/index.blade.php`
+- `php -l resources/views/admin/products/show.blade.php`
+- `php -l resources/views/admin/plans/index.blade.php`
+- `php -l resources/views/admin/tenants/index.blade.php`
+- `php -l resources/views/admin/tenants/show.blade.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `git diff --check`
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed'`
+  - result: 2 passed, 18 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Tenants/AdminTenantShowTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 25 passed, 219 assertions
+
 Recommended next package:
-- Multilingual Platform Package 5: Central Admin Translation
+- Multilingual Platform Package 6: Final QA + RTL Polish
 - scope:
-  - translate Central Admin shell and product/tenant management labels
-  - keep central admin routes available in English default URLs and Arabic under `/ar/admin/...`
-  - preserve billing, product activation, tenant provisioning, and integration architecture
+  - scan remaining high-visibility hardcoded labels across Customer Portal, Tenant Admin, Central Admin, and product runtime screens
+  - verify Arabic-prefixed central, tenant, portal, and product routes still resolve without 404
+  - polish RTL layout issues in shared/admin/portal surfaces
   - keep English default URLs unprefixed and Arabic URLs under `/ar/...`
   - continue to avoid `php artisan route:cache`
 
@@ -1095,12 +1136,12 @@ Persistent accounting rules:
 - do not reopen integration architecture unless a real blocker appears
 
 Next implementation package:
-- Multilingual Platform Package 5: Central Admin Translation
+- Multilingual Platform Package 6: Final QA + RTL Polish
 - primary language: English
 - second language: Arabic
 - existing package/library: `mcamara/laravel-localization`
-- completed multilingual packages: 4 of 6
-- remaining multilingual packages: 2 of 6
+- completed multilingual packages: 5 of 6
+- remaining multilingual packages: 1 of 6
 
 ## 15.2.1) Accounting System Current State Before Next Chat
 This section is the detailed handoff for continuing accounting work in a fresh AI session.

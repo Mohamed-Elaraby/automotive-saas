@@ -29,8 +29,8 @@
 
         $yesNoBadge = function (bool $value): string {
             return $value
-                ? '<span class="badge bg-success">Yes</span>'
-                : '<span class="badge bg-danger">No</span>';
+                ? '<span class="badge bg-success">'.e(__('admin.yes')).'</span>'
+                : '<span class="badge bg-danger">'.e(__('admin.no')).'</span>';
         };
     @endphp
 
@@ -38,32 +38,32 @@
         <div class="content">
             <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="content-page-header">
-                    <h5>Tenant Details</h5>
-                    <p class="text-muted mb-0">Operational tenant snapshot for central SaaS administration.</p>
+                    <h5>{{ __('admin.tenant_details') }}</h5>
+                    <p class="text-muted mb-0">{{ __('admin.tenant_details_intro') }}</p>
                 </div>
 
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Back</a>
+                    <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">{{ __('admin.back') }}</a>
 
                     @if(!empty($row['admin_login_url']))
                         <form method="POST" action="{{ route('admin.tenants.impersonate', $row['tenant_id'] ?? $tenant->getKey()) }}" class="d-inline">
                             @csrf
                             <button type="submit" class="btn btn-warning">
-                                Impersonate Tenant Admin
+                                {{ __('admin.impersonate_tenant_admin') }}
                             </button>
                         </form>
                     @endif
 
                     @if(!empty($row['subscription_show_url']))
-                        <a href="{{ $row['subscription_show_url'] }}" class="btn btn-primary">Open Subscription</a>
+                        <a href="{{ $row['subscription_show_url'] }}" class="btn btn-primary">{{ __('admin.open_subscription') }}</a>
                     @endif
 
                     @if(!empty($row['admin_login_url']))
-                        <a href="{{ $row['admin_login_url'] }}" target="_blank" class="btn btn-outline-primary">Tenant Admin Login</a>
+                        <a href="{{ $row['admin_login_url'] }}" target="_blank" class="btn btn-outline-primary">{{ __('admin.tenant_admin_login') }}</a>
                     @endif
 
                     @if(!empty($row['open_url']))
-                        <a href="{{ $row['open_url'] }}" target="_blank" class="btn btn-outline-secondary">Open Tenant Site</a>
+                        <a href="{{ $row['open_url'] }}" target="_blank" class="btn btn-outline-secondary">{{ __('admin.open_tenant_site') }}</a>
                     @endif
                 </div>
             </div>
@@ -90,7 +90,7 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Tenant ID</div>
+                            <div class="text-muted mb-1">{{ __('admin.tenant_id') }}</div>
                             <h6 class="mb-0">{{ $row['tenant_id'] ?? $tenant->getKey() }}</h6>
                         </div>
                     </div>
@@ -99,7 +99,7 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Company</div>
+                            <div class="text-muted mb-1">{{ __('admin.company') }}</div>
                             <h6 class="mb-0">{{ $row['company_name'] ?: '-' }}</h6>
                         </div>
                     </div>
@@ -108,7 +108,7 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Owner/Admin</div>
+                            <div class="text-muted mb-1">{{ __('admin.owner_admin') }}</div>
                             <h6 class="mb-0">{{ $row['owner_email'] ?: '-' }}</h6>
                         </div>
                     </div>
@@ -117,9 +117,9 @@
                 <div class="col-xl-3 col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
-                            <div class="text-muted mb-1">Subscription Status</div>
+                            <div class="text-muted mb-1">{{ __('admin.subscription_status') }}</div>
                             <span class="badge {{ $statusBadgeClass }}">
-                                {{ $subscriptionStatus ? strtoupper(str_replace('_', ' ', $subscriptionStatus)) : 'NO SUBSCRIPTION' }}
+                                {{ $subscriptionStatus ? strtoupper(str_replace('_', ' ', $subscriptionStatus)) : __('admin.no_subscription') }}
                             </span>
                         </div>
                     </div>
@@ -129,7 +129,7 @@
             @if($subscription)
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white">
-                        <h6 class="mb-0">Lifecycle Actions</h6>
+                        <h6 class="mb-0">{{ __('admin.lifecycle_actions') }}</h6>
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
@@ -138,7 +138,7 @@
                                     @csrf
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-danger">
-                                            Suspend Latest Subscription
+                                            {{ __('admin.suspend_latest_subscription') }}
                                         </button>
                                     </div>
                                 </form>
@@ -149,7 +149,7 @@
                                     @csrf
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-success">
-                                            Activate Latest Subscription
+                                            {{ __('admin.activate_latest_subscription') }}
                                         </button>
                                     </div>
                                 </form>
@@ -167,13 +167,13 @@
                                             name="days"
                                             value="7"
                                             class="form-control"
-                                            placeholder="Days"
+                                            placeholder="{{ __('admin.days') }}"
                                         >
                                         <button type="submit" class="btn btn-primary">
-                                            Extend Trial
+                                            {{ __('admin.extend_trial') }}
                                         </button>
                                     </div>
-                                    <small class="text-muted d-block mt-2">Adds the selected number of days to the current trial end date, or from now if the trial already expired.</small>
+                                    <small class="text-muted d-block mt-2">{{ __('admin.extend_trial_hint') }}</small>
                                 </form>
                             </div>
                         </div>
@@ -182,7 +182,7 @@
 
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white">
-                        <h6 class="mb-0">Change Plan</h6>
+                        <h6 class="mb-0">{{ __('admin.change_plan') }}</h6>
                     </div>
                     <div class="card-body">
                         @php
@@ -192,7 +192,7 @@
 
                         @if($isStripeLinked)
                             <div class="alert alert-warning mb-0">
-                                This subscription is linked to Stripe. Change the plan from the Stripe-aware billing flow to keep local billing data synchronized with Stripe.
+                                {{ __('admin.stripe_plan_change_warning') }}
                             </div>
                         @else
                             <form method="POST" action="{{ route('admin.tenants.change-plan', $row['tenant_id'] ?? $tenant->getKey()) }}">
@@ -200,13 +200,13 @@
 
                                 <div class="row g-3 align-items-end">
                                     <div class="col-xl-8">
-                                        <label class="form-label">Select Plan</label>
+                                        <label class="form-label">{{ __('admin.select_plan') }}</label>
                                         <select name="plan_id" class="form-select">
                                             @foreach($availablePlans as $plan)
                                                 @php
                                                     $planLabel = $plan->name ?: $plan->slug ?: ('Plan #' . $plan->id);
                                                     $periodLabel = $plan->billing_period ? strtoupper($plan->billing_period) : 'N/A';
-                                                    $activeLabel = (int) ($plan->is_active ?? 0) === 1 ? 'Active' : 'Inactive';
+                                                    $activeLabel = (int) ($plan->is_active ?? 0) === 1 ? __('admin.active') : __('admin.inactive');
                                                     $priceLabel = isset($plan->price) ? $plan->price : null;
                                                     $currencyLabel = $plan->currency_code ?? $plan->currency ?? '';
                                                 @endphp
@@ -220,14 +220,14 @@
                                     <div class="col-xl-4">
                                         <div class="d-grid">
                                             <button type="submit" class="btn btn-primary">
-                                                Change Latest Subscription Plan
+                                                {{ __('admin.change_latest_subscription_plan') }}
                                             </button>
                                         </div>
                                     </div>
                                 </div>
 
                                 <small class="text-muted d-block mt-2">
-                                    This action updates the latest local subscription only. Stripe-linked subscriptions are intentionally blocked from this form.
+                                    {{ __('admin.local_subscription_change_hint') }}
                                 </small>
                             </form>
                         @endif
@@ -239,30 +239,30 @@
                 <div class="col-xl-8">
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white">
-                            <h6 class="mb-0">Overview</h6>
+                            <h6 class="mb-0">{{ __('admin.overview') }}</h6>
                         </div>
                         <div class="card-body">
                             <table class="table table-sm table-striped align-middle mb-0">
                                 <tbody>
                                 <tr>
-                                    <th style="width: 240px;">Tenant ID</th>
+                                    <th style="width: 240px;">{{ __('admin.tenant_id') }}</th>
                                     <td>{{ $row['tenant_id'] ?? $tenant->getKey() }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Company</th>
+                                    <th>{{ __('admin.company') }}</th>
                                     <td>{{ $row['company_name'] ?: '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Owner/Admin</th>
+                                    <th>{{ __('admin.owner_admin') }}</th>
                                     <td>{{ $row['owner_email'] ?: '-' }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Primary Domain</th>
+                                    <th>{{ __('admin.primary_domain') }}</th>
                                     <td>
                                         @if(!empty($row['primary_domain']))
                                             <div>{{ $row['primary_domain'] }}</div>
                                             @if(!empty($row['open_url']))
-                                                <a href="{{ $row['open_url'] }}" target="_blank">Open Tenant</a>
+                                                <a href="{{ $row['open_url'] }}" target="_blank">{{ __('admin.open_tenant') }}</a>
                                             @endif
                                         @else
                                             -
@@ -270,7 +270,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>Tenant Admin Login</th>
+                                    <th>{{ __('admin.tenant_admin_login') }}</th>
                                     <td>
                                         @if(!empty($row['admin_login_url']))
                                             <a href="{{ $row['admin_login_url'] }}" target="_blank">{{ $row['admin_login_url'] }}</a>
@@ -280,11 +280,11 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th>Domains Count</th>
+                                    <th>{{ __('admin.domains_count') }}</th>
                                     <td>{{ $row['domains_count'] ?? 0 }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Created At</th>
+                                    <th>{{ __('admin.created_at') }}</th>
                                     <td>
                                         @if(!empty($row['created_at']))
                                             {{ \Illuminate\Support\Carbon::parse($row['created_at'])->format('Y-m-d H:i:s') }}

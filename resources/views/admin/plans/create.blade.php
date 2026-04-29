@@ -7,11 +7,11 @@
 
             <div class="d-flex d-block align-items-center justify-content-between flex-wrap gap-3 mb-3">
                 <div>
-                    <h6>Create Plan</h6>
-                    <p class="mb-0">Add a new billing plan to the central catalog.</p>
+                    <h6>{{ __('admin.create_plan') }}</h6>
+                    <p class="mb-0">{{ __('admin.create_plan_intro') }}</p>
                 </div>
                 <div>
-                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white">Back to Plans</a>
+                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white">{{ __('admin.back_to_plans') }}</a>
                 </div>
             </div>
 
@@ -31,15 +31,15 @@
                 @include('admin.plans._form')
 
                 <div class="d-flex align-items-center justify-content-end gap-2 mt-4">
-                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white">Cancel</a>
-                    <button type="submit" class="btn btn-primary">Save Plan</button>
+                    <a href="{{ route('admin.plans.index') }}" class="btn btn-outline-white">{{ __('admin.cancel') }}</a>
+                    <button type="submit" class="btn btn-primary">{{ __('admin.save_plan') }}</button>
                 </div>
             </form>
 
         </div>
 
         <div class="footer d-sm-flex align-items-center justify-content-between bg-white py-2 px-4 border-top">
-            <p class="text-dark mb-0">&copy; 2025 <a href="javascript:void(0);" class="link-primary">Kanakku</a>, All Rights Reserved</p>
+            <p class="text-dark mb-0">&copy; 2025 <a href="javascript:void(0);" class="link-primary">Kanakku</a>, {{ __('admin.all_rights_reserved') }}</p>
             <p class="text-dark">Version : 1.3.8</p>
         </div>
     </div>

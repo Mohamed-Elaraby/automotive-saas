@@ -6,11 +6,11 @@
         <div class="content">
             <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="content-page-header">
-                    <h5>Add Product</h5>
-                    <p class="text-muted mb-0">Create the base product record first. After saving, continue the full lifecycle from the product builder.</p>
+                    <h5>{{ __('admin.add_product') }}</h5>
+                    <p class="text-muted mb-0">{{ __('admin.create_product_intro') }}</p>
                 </div>
 
-                <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">Back to Products</a>
+                <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">{{ __('admin.back_to_products') }}</a>
             </div>
 
             <div class="card">
@@ -20,8 +20,8 @@
                         @include('admin.products._form')
 
                         <div class="mt-4 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Create Product</button>
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">Cancel</a>
+                            <button type="submit" class="btn btn-primary">{{ __('admin.create_product') }}</button>
+                            <a href="{{ route('admin.products.index') }}" class="btn btn-outline-white">{{ __('admin.cancel') }}</a>
                         </div>
                     </form>
                 </div>
