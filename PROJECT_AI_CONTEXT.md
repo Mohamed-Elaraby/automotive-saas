@@ -1159,6 +1159,54 @@ Recommended next package:
 - remaining multilingual packages: 0 of 6
 - future translation work, if requested, should be treated as low-priority deep cleanup of old/demo/rarely used templates rather than part of this package pass
 
+Completed after the full-views translation request:
+- added an Arabic-only automatic static HTML translation layer for hardcoded Blade text that has not yet been manually wrapped in `__()`
+- middleware:
+  - `app/Http/Middleware/TranslateStaticHtmlText.php`
+  - registered at the end of the `web` middleware group after route bindings
+- translation dictionaries:
+  - `lang/ar/autoview.php`
+    - exact-match Arabic translations for the most repeated static UI phrases across the Blade tree
+  - `lang/ar/autowords.php`
+    - fallback word-level Arabic translations for short title-style phrases not present in the exact-match catalog
+- safety rules:
+  - runs only when `app()->getLocale() === 'ar'`
+  - runs only for successful `text/html` responses
+  - does not run for English/default URLs
+  - skips `script`, `style`, `code`, `pre`, `textarea`, `svg`, and `canvas`
+  - translates text nodes and common UI attributes such as `placeholder`, `title`, `aria-label`, `data-bs-title`, and submit/button `value`
+  - exact-match translations are preferred; fallback word translations are only used for short safe phrases
+- coverage audit at implementation time:
+  - 480 Blade files exist
+  - 457 Blade files contain detectable text-node English
+  - exact catalog covered 14,971 detectable text-node occurrences
+  - exact catalog plus fallback covered or partially covered 21,521 detectable text-node occurrences
+- important limitation:
+  - this is a broad automatic translation safety net, not a complete human-quality rewrite of every old/demo/theme template phrase
+  - the active product, portal, tenant, accounting, and central admin surfaces remain the manually translated priority areas
+- no migrations were added
+- no routes were changed
+- `php artisan route:cache` was not used
+
+Verification for the automatic static HTML translation layer:
+- `php -l app/Http/Middleware/TranslateStaticHtmlText.php`
+- `php -l app/Http/Kernel.php`
+- `php -l lang/ar/autoview.php`
+- `php -l lang/ar/autowords.php`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: 2 passed, 9 assertions
+- Arabic HTTP kernel smoke checks:
+  - `/ar/admin/login` returned `200`, included Arabic sign-in text, and did not include `Email Address`
+  - `/ar/workspace/login` returned `200`, included `dir="rtl"`, and included Arabic sign-in text
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard'`
+  - result: 4 passed, 52 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='workspace_routes_are_canonical|portal_returns_to_neutral_state|trial_workspace_without_live_stripe_subscription'`
+  - result: 3 passed, 15 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 24 passed, 209 assertions
+
 Professional Accounting Roadmap progress:
 1. Standalone Accounting Product Readiness - completed
 2. First-Time Setup Wizard - completed
