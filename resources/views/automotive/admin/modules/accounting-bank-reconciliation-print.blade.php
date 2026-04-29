@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bank Reconciliation Report</title>
+    <title>{{ __('accounting.bank_reconciliation_report') }}</title>
     <style>
         body { font-family: Arial, sans-serif; color: #1f2937; margin: 32px; }
         h1, h2, h3 { margin: 0; }
@@ -20,45 +20,45 @@
     </style>
 </head>
 <body>
-    <button class="no-print" onclick="window.print()">Print</button>
+    <button class="no-print" onclick="window.print()">{{ __('accounting.print') }}</button>
     <div class="header">
         <div>
-            <h1>Bank Reconciliation Report</h1>
+            <h1>{{ __('accounting.bank_reconciliation_report') }}</h1>
             <div class="muted">
-                Deposit batches, direct receipts, and vendor payments
-                · Period {{ data_get($reportData, 'filters.date_from') ?: 'Beginning' }} to {{ data_get($reportData, 'filters.date_to') ?: now()->toDateString() }}
+                {{ __('accounting.bank_reconciliation_scope') }}
+                · {{ __('accounting.period') }} {{ data_get($reportData, 'filters.date_from') ?: __('accounting.beginning') }} {{ __('accounting.to') }} {{ data_get($reportData, 'filters.date_to') ?: now()->toDateString() }}
                 @if(data_get($reportData, 'filters.reconciliation_status'))
-                    · Reconciliation {{ strtoupper(data_get($reportData, 'filters.reconciliation_status')) }}
+                    · {{ __('accounting.reconciliation') }} {{ strtoupper(data_get($reportData, 'filters.reconciliation_status')) }}
                 @endif
                 @if(data_get($reportData, 'filters.deposit_account'))
-                    · Account {{ data_get($reportData, 'filters.deposit_account') }}
+                    · {{ __('accounting.account') }} {{ data_get($reportData, 'filters.deposit_account') }}
                 @endif
             </div>
         </div>
         <div class="right">
             <strong>{{ now()->format('Y-m-d H:i') }}</strong>
-            <div class="muted">Generated At</div>
+            <div class="muted">{{ __('accounting.generated_at') }}</div>
         </div>
     </div>
 
     <div class="summary">
-        <div class="box"><div class="muted">Posted Batches</div><h3>{{ $reportData['posted_count'] }}</h3></div>
-        <div class="box"><div class="muted">Posted Total</div><h3>{{ number_format((float) $reportData['posted_total'], 2) }}</h3></div>
-        <div class="box"><div class="muted">Reconciled Batches</div><h3>{{ $reportData['reconciled_count'] }}</h3></div>
-        <div class="box"><div class="muted">Reconciled Total</div><h3>{{ number_format((float) $reportData['reconciled_total'], 2) }}</h3></div>
+        <div class="box"><div class="muted">{{ __('accounting.posted_batches') }}</div><h3>{{ $reportData['posted_count'] }}</h3></div>
+        <div class="box"><div class="muted">{{ __('accounting.posted_total') }}</div><h3>{{ number_format((float) $reportData['posted_total'], 2) }}</h3></div>
+        <div class="box"><div class="muted">{{ __('accounting.reconciled_batches') }}</div><h3>{{ $reportData['reconciled_count'] }}</h3></div>
+        <div class="box"><div class="muted">{{ __('accounting.reconciled_total') }}</div><h3>{{ number_format((float) $reportData['reconciled_total'], 2) }}</h3></div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>Deposit</th>
-                <th>Date</th>
-                <th>Account</th>
-                <th>Status</th>
-                <th>Reference</th>
-                <th>Bank Match</th>
-                <th class="right">Payments</th>
-                <th class="right">Amount</th>
+                <th>{{ __('accounting.deposit') }}</th>
+                <th>{{ __('accounting.date') }}</th>
+                <th>{{ __('accounting.account') }}</th>
+                <th>{{ __('accounting.status') }}</th>
+                <th>{{ __('accounting.reference') }}</th>
+                <th>{{ __('accounting.bank_match') }}</th>
+                <th class="right">{{ __('accounting.payments') }}</th>
+                <th class="right">{{ __('accounting.amount') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -74,22 +74,22 @@
                     <td class="right">{{ number_format((float) $batch->total_amount, 2) }} {{ $batch->currency }}</td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="muted">No deposit batches match this report.</td></tr>
+                <tr><td colspan="8" class="muted">{{ __('accounting.no_deposit_batches_match') }}</td></tr>
             @endforelse
         </tbody>
     </table>
 
-    <h2 style="margin-top: 28px;">Direct Receipts</h2>
+    <h2 style="margin-top: 28px;">{{ __('accounting.direct_receipts') }}</h2>
     <table>
         <thead>
             <tr>
-                <th>Payment</th>
-                <th>Date</th>
-                <th>Account</th>
-                <th>Status</th>
-                <th>Reference</th>
-                <th>Bank Match</th>
-                <th class="right">Amount</th>
+                <th>{{ __('accounting.payment') }}</th>
+                <th>{{ __('accounting.date') }}</th>
+                <th>{{ __('accounting.account') }}</th>
+                <th>{{ __('accounting.status') }}</th>
+                <th>{{ __('accounting.reference') }}</th>
+                <th>{{ __('accounting.bank_match') }}</th>
+                <th class="right">{{ __('accounting.amount') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -104,22 +104,22 @@
                     <td class="right">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="muted">No direct receipts match this report.</td></tr>
+                <tr><td colspan="7" class="muted">{{ __('accounting.no_direct_receipts_match') }}</td></tr>
             @endforelse
         </tbody>
     </table>
 
-    <h2 style="margin-top: 28px;">Vendor Payments</h2>
+    <h2 style="margin-top: 28px;">{{ __('accounting.vendor_payments') }}</h2>
     <table>
         <thead>
             <tr>
-                <th>Payment</th>
-                <th>Date</th>
-                <th>Account</th>
-                <th>Status</th>
-                <th>Reference</th>
-                <th>Bank Match</th>
-                <th class="right">Amount</th>
+                <th>{{ __('accounting.payment') }}</th>
+                <th>{{ __('accounting.date') }}</th>
+                <th>{{ __('accounting.account') }}</th>
+                <th>{{ __('accounting.status') }}</th>
+                <th>{{ __('accounting.reference') }}</th>
+                <th>{{ __('accounting.bank_match') }}</th>
+                <th class="right">{{ __('accounting.amount') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -134,7 +134,7 @@
                     <td class="right">{{ number_format((float) $payment->amount, 2) }} {{ $payment->currency }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="muted">No vendor payments match this report.</td></tr>
+                <tr><td colspan="7" class="muted">{{ __('accounting.no_vendor_payments_match') }}</td></tr>
             @endforelse
         </tbody>
     </table>

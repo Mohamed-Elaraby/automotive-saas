@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Customer Statement</title>
+    <title>{{ __('accounting.customer_statement') }}</title>
     <style>
         body { color: #111827; font-family: Arial, sans-serif; margin: 32px; }
         h1 { font-size: 26px; margin: 0 0 6px; }
@@ -17,11 +17,11 @@
     </style>
 </head>
 <body>
-    <h1>Customer Statement</h1>
-    <div class="meta">{{ $statement['customer_name'] }} · Generated {{ now()->format('Y-m-d H:i') }}</div>
+    <h1>{{ __('accounting.customer_statement') }}</h1>
+    <div class="meta">{{ $statement['customer_name'] }} · {{ __('accounting.generated') }} {{ now()->format('Y-m-d H:i') }}</div>
 
     <table>
-        <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="right">Debit</th><th class="right">Credit</th><th class="right">Balance</th></tr></thead>
+        <thead><tr><th>{{ __('accounting.date') }}</th><th>{{ __('accounting.type') }}</th><th>{{ __('accounting.reference') }}</th><th>{{ __('accounting.description') }}</th><th class="right">{{ __('accounting.debit') }}</th><th class="right">{{ __('accounting.credit') }}</th><th class="right">{{ __('accounting.balance') }}</th></tr></thead>
         <tbody>
             @forelse($statement['rows'] as $row)
                 <tr>
@@ -34,16 +34,16 @@
                     <td class="right">{{ number_format((float) $row['balance'], 2) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7">No statement rows available.</td></tr>
+                <tr><td colspan="7">{{ __('accounting.no_statement_rows') }}</td></tr>
             @endforelse
         </tbody>
     </table>
 
     <table class="totals">
         <tbody>
-            <tr><th>Total Debits</th><td class="right">{{ number_format((float) $statement['debit_total'], 2) }}</td></tr>
-            <tr><th>Total Credits</th><td class="right">{{ number_format((float) $statement['credit_total'], 2) }}</td></tr>
-            <tr><th>Open Balance</th><td class="right">{{ number_format((float) $statement['open_balance'], 2) }}</td></tr>
+            <tr><th>{{ __('accounting.total_debits') }}</th><td class="right">{{ number_format((float) $statement['debit_total'], 2) }}</td></tr>
+            <tr><th>{{ __('accounting.total_credits') }}</th><td class="right">{{ number_format((float) $statement['credit_total'], 2) }}</td></tr>
+            <tr><th>{{ __('accounting.open_balance') }}</th><td class="right">{{ number_format((float) $statement['open_balance'], 2) }}</td></tr>
         </tbody>
     </table>
 </body>

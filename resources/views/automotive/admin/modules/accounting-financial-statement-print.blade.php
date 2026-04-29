@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,19 +20,19 @@
     </style>
 </head>
 <body>
-    <button class="no-print" onclick="window.print()">Print</button>
+    <button class="no-print" onclick="window.print()">{{ __('accounting.print') }}</button>
     <div class="header">
         <div>
             <h1>{{ $statement['title'] }}</h1>
             <div class="muted">
-                {{ data_get($statement, 'filters.date_from') ?: 'Beginning' }}
-                to
+                {{ data_get($statement, 'filters.date_from') ?: __('accounting.beginning') }}
+                {{ __('accounting.to') }}
                 {{ data_get($statement, 'filters.date_to') ?: now()->toDateString() }}
             </div>
         </div>
         <div class="right">
             <strong>{{ now()->format('Y-m-d H:i') }}</strong>
-            <div class="muted">Generated At</div>
+            <div class="muted">{{ __('accounting.generated_at') }}</div>
         </div>
     </div>
 
@@ -50,9 +50,9 @@
         <table>
             <thead>
                 <tr>
-                    <th>Account Code</th>
-                    <th>Account Name</th>
-                    <th class="right">Amount</th>
+                    <th>{{ __('accounting.account_code') }}</th>
+                    <th>{{ __('accounting.account_name') }}</th>
+                    <th class="right">{{ __('accounting.amount') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,10 +63,10 @@
                         <td class="right">{{ number_format((float) $row->amount, 2) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" class="muted">No accounts in this section.</td></tr>
+                    <tr><td colspan="3" class="muted">{{ __('accounting.no_accounts_in_section') }}</td></tr>
                 @endforelse
                 <tr>
-                    <th colspan="2">{{ $section['label'] }} Total</th>
+                    <th colspan="2">{{ __('accounting.section_total', ['section' => $section['label']]) }}</th>
                     <th class="right">{{ number_format((float) $section['total'], 2) }}</th>
                 </tr>
             </tbody>

@@ -928,9 +928,9 @@ Notes:
 ## 15.4) Recommended Next Package
 When a new AI session starts from this file, the next package to start immediately is:
 
-### Multilingual Platform Package 3 - Tenant Admin Shared And Product Module Translation
+### Multilingual Platform Package 5 - Central Admin Translation
 Status:
-- completed
+- next
 
 Important routing fix completed before continuing this package:
 - fixed 404s caused by forcing all web and tenant routes through an optional first-segment `{locale?}` prefix
@@ -1033,12 +1033,47 @@ Package 3 notes:
 - no accounting, billing, product activation, or integration architecture logic was changed
 - do not run `php artisan route:cache`; tenancy route resolution remains dynamic
 
+Completed in Package 4:
+- added accounting runtime translation files:
+  - `lang/en/accounting.php`
+  - `lang/ar/accounting.php`
+- translated high-visibility Tenant Admin accounting runtime labels in:
+  - `resources/views/automotive/admin/modules/show.blade.php`
+  - `resources/views/automotive/admin/modules/journal-entry-show.blade.php`
+- translated accounting print/runtime documents where appropriate:
+  - invoice print
+  - customer statement print
+  - bank reconciliation print
+  - generic accounting report print
+  - financial statement print
+  - accountant review pack print
+- added locale-aware `lang` and `dir` attributes to translated accounting print pages
+- preserved journal-led accounting behavior, posting logic, approvals, period close, VAT/tax, billing, and integration architecture
+- no routes were changed in this package
+- no migrations were added
+- `php artisan route:cache` was not used
+
+Package 4 verification:
+- `php -l lang/en/accounting.php`
+- `php -l lang/ar/accounting.php`
+- `php -l resources/views/automotive/admin/modules/show.blade.php`
+- `php -l resources/views/automotive/admin/modules/journal-entry-show.blade.php`
+- `php -l resources/views/automotive/admin/modules/accounting-invoice-print.blade.php`
+- `php -l resources/views/automotive/admin/modules/accounting-statement-print.blade.php`
+- `php -l resources/views/automotive/admin/modules/accounting-bank-reconciliation-print.blade.php`
+- `php artisan view:clear`
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `git diff --check`
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard|arabic_prefixed'`
+  - result: 4 passed, 52 assertions
+
 Recommended next package:
-- Multilingual Platform Package 4: Accounting Runtime Translation
+- Multilingual Platform Package 5: Central Admin Translation
 - scope:
-  - translate General Ledger/accounting runtime labels inside Tenant Admin
-  - translate accounting module print views where appropriate
-  - preserve journal-led accounting behavior, posting logic, approvals, period close, VAT/tax, billing, and integration architecture
+  - translate Central Admin shell and product/tenant management labels
+  - keep central admin routes available in English default URLs and Arabic under `/ar/admin/...`
+  - preserve billing, product activation, tenant provisioning, and integration architecture
   - keep English default URLs unprefixed and Arabic URLs under `/ar/...`
   - continue to avoid `php artisan route:cache`
 
@@ -1060,12 +1095,12 @@ Persistent accounting rules:
 - do not reopen integration architecture unless a real blocker appears
 
 Next implementation package:
-- Multilingual Platform Package 4: Accounting Runtime Translation
+- Multilingual Platform Package 5: Central Admin Translation
 - primary language: English
 - second language: Arabic
 - existing package/library: `mcamara/laravel-localization`
-- completed multilingual packages: 3 of 6
-- remaining multilingual packages: 3 of 6
+- completed multilingual packages: 4 of 6
+- remaining multilingual packages: 2 of 6
 
 ## 15.2.1) Accounting System Current State Before Next Chat
 This section is the detailed handoff for continuing accounting work in a fresh AI session.

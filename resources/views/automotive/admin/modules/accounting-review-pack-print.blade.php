@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
-    <title>Accountant Review Pack</title>
+    <title>{{ __('accounting.accountant_review_pack') }}</title>
     <style>
         body { font-family: Arial, sans-serif; color: #111827; margin: 24px; }
         h1, h2, h3 { margin: 0 0 12px; }
@@ -16,29 +16,29 @@
     </style>
 </head>
 <body>
-    <h1>Accountant Review Pack</h1>
+    <h1>{{ __('accounting.accountant_review_pack') }}</h1>
     <div class="meta">
-        <div><strong>Generated At:</strong> {{ optional($reviewPack['generated_at'] ?? null)->format('Y-m-d H:i') }}</div>
-        <div><strong>Accounting Source Of Truth:</strong> {{ str_replace('_', ' + ', $reviewPack['source_of_truth'] ?? 'journal_entries_and_journal_entry_lines') }}</div>
-        <div class="small">This pack is supporting evidence for review and signoff. Journals remain authoritative.</div>
+        <div><strong>{{ __('accounting.generated_at') }}:</strong> {{ optional($reviewPack['generated_at'] ?? null)->format('Y-m-d H:i') }}</div>
+        <div><strong>{{ __('accounting.accounting_source_of_truth') }}:</strong> {{ str_replace('_', ' + ', $reviewPack['source_of_truth'] ?? 'journal_entries_and_journal_entry_lines') }}</div>
+        <div class="small">{{ __('accounting.review_pack_print_hint') }}</div>
     </div>
 
     <div class="grid summary">
-        <div class="card"><strong>Posted Journals</strong><br>{{ number_format((int) data_get($reviewPack, 'summary.posted_journal_count', 0)) }}</div>
-        <div class="card"><strong>Pending Manual Approvals</strong><br>{{ number_format((int) data_get($reviewPack, 'summary.pending_manual_approval_count', 0)) }}</div>
-        <div class="card"><strong>Audit Entries</strong><br>{{ number_format((int) data_get($reviewPack, 'summary.audit_entry_count', 0)) }}</div>
-        <div class="card"><strong>Net Income</strong><br>{{ number_format((float) data_get($reviewPack, 'summary.net_income', 0), 2) }}</div>
+        <div class="card"><strong>{{ __('accounting.posted_journals') }}</strong><br>{{ number_format((int) data_get($reviewPack, 'summary.posted_journal_count', 0)) }}</div>
+        <div class="card"><strong>{{ __('accounting.pending_manual_approvals') }}</strong><br>{{ number_format((int) data_get($reviewPack, 'summary.pending_manual_approval_count', 0)) }}</div>
+        <div class="card"><strong>{{ __('accounting.audit_entries') }}</strong><br>{{ number_format((int) data_get($reviewPack, 'summary.audit_entry_count', 0)) }}</div>
+        <div class="card"><strong>{{ __('accounting.net_income') }}</strong><br>{{ number_format((float) data_get($reviewPack, 'summary.net_income', 0), 2) }}</div>
     </div>
 
-    <h2>Evidence Summary</h2>
+    <h2>{{ __('accounting.evidence_summary') }}</h2>
     <table>
         <thead>
             <tr>
-                <th>Section</th>
-                <th>Metric</th>
-                <th>Value</th>
-                <th>Evidence Source</th>
-                <th>Notes</th>
+                <th>{{ __('accounting.section') }}</th>
+                <th>{{ __('accounting.metric') }}</th>
+                <th>{{ __('accounting.value') }}</th>
+                <th>{{ __('accounting.evidence_source') }}</th>
+                <th>{{ __('accounting.notes') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -54,16 +54,16 @@
         </tbody>
     </table>
 
-    <h2>Recent Journals</h2>
+    <h2>{{ __('accounting.recent_journals') }}</h2>
     <table>
         <thead>
             <tr>
-                <th>Journal Number</th>
-                <th>Entry Date</th>
-                <th>Status</th>
-                <th>Memo</th>
-                <th>Debit</th>
-                <th>Credit</th>
+                <th>{{ __('accounting.journal_number') }}</th>
+                <th>{{ __('accounting.entry_date') }}</th>
+                <th>{{ __('accounting.status') }}</th>
+                <th>{{ __('accounting.memo') }}</th>
+                <th>{{ __('accounting.debit') }}</th>
+                <th>{{ __('accounting.credit') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -80,14 +80,14 @@
         </tbody>
     </table>
 
-    <h2>Recent Audit Entries</h2>
+    <h2>{{ __('accounting.recent_audit_entries') }}</h2>
     <table>
         <thead>
             <tr>
-                <th>Event Type</th>
-                <th>Description</th>
-                <th>Actor</th>
-                <th>Timestamp</th>
+                <th>{{ __('accounting.event_type') }}</th>
+                <th>{{ __('accounting.description') }}</th>
+                <th>{{ __('accounting.actor') }}</th>
+                <th>{{ __('accounting.timestamp') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -95,7 +95,7 @@
                 <tr>
                     <td>{{ $audit->event_type }}</td>
                     <td>{{ $audit->description }}</td>
-                    <td>{{ $audit->actor?->name ?: 'System user' }}</td>
+                    <td>{{ $audit->actor?->name ?: __('accounting.system_user') }}</td>
                     <td>{{ optional($audit->created_at)->format('Y-m-d H:i') }}</td>
                 </tr>
             @endforeach

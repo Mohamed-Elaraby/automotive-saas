@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,9 +17,9 @@
 <body>
     <h1>{{ $title }}</h1>
     <div class="meta">
-        Generated {{ now()->format('Y-m-d H:i') }}
+        {{ __('accounting.generated') }} {{ now()->format('Y-m-d H:i') }}
         @if(! empty($filters['date_from']) || ! empty($filters['date_to']))
-            · Period {{ $filters['date_from'] ?? '...' }} to {{ $filters['date_to'] ?? '...' }}
+            · {{ __('accounting.period') }} {{ $filters['date_from'] ?? '...' }} {{ __('accounting.to') }} {{ $filters['date_to'] ?? '...' }}
         @endif
     </div>
 
@@ -39,7 +39,7 @@
                     @endforeach
                 </tr>
             @empty
-                <tr><td colspan="{{ count($headers) }}">No rows available.</td></tr>
+                <tr><td colspan="{{ count($headers) }}">{{ __('accounting.no_rows_available') }}</td></tr>
             @endforelse
         </tbody>
     </table>

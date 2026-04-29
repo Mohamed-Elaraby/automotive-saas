@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,25 +19,25 @@
     </style>
 </head>
 <body>
-    <h1>Invoice {{ $document['invoice_number'] }}</h1>
-    <div class="meta">Generated {{ now()->format('Y-m-d H:i') }}</div>
+    <h1>{{ __('accounting.invoice') }} {{ $document['invoice_number'] }}</h1>
+    <div class="meta">{{ __('accounting.generated') }} {{ now()->format('Y-m-d H:i') }}</div>
 
     <div class="grid">
         <div>
-            <h2>Bill To</h2>
-            <div>{{ data_get($accountingEvent->payload, 'customer_name', 'Customer') }}</div>
+            <h2>{{ __('accounting.bill_to') }}</h2>
+            <div>{{ data_get($accountingEvent->payload, 'customer_name', __('accounting.customer')) }}</div>
             <div class="muted">{{ data_get($accountingEvent->payload, 'vehicle', '') }}</div>
         </div>
         <div>
-            <h2>Invoice Detail</h2>
-            <div>Event Date: {{ optional($accountingEvent->event_date)->format('Y-m-d') }}</div>
-            <div>Work Order: {{ data_get($accountingEvent->payload, 'work_order_number', '-') }}</div>
-            <div>Status: {{ strtoupper(str_replace('_', ' ', $accountingEvent->status)) }}</div>
+            <h2>{{ __('accounting.invoice_detail') }}</h2>
+            <div>{{ __('accounting.event_date') }}: {{ optional($accountingEvent->event_date)->format('Y-m-d') }}</div>
+            <div>{{ __('accounting.work_order') }}: {{ data_get($accountingEvent->payload, 'work_order_number', '-') }}</div>
+            <div>{{ __('accounting.status') }}: {{ strtoupper(str_replace('_', ' ', $accountingEvent->status)) }}</div>
         </div>
     </div>
 
     <table>
-        <thead><tr><th>Description</th><th class="right">Amount</th></tr></thead>
+        <thead><tr><th>{{ __('accounting.description') }}</th><th class="right">{{ __('accounting.amount') }}</th></tr></thead>
         <tbody>
             @foreach($document['lines'] as $line)
                 <tr><td>{{ $line['description'] }}</td><td class="right">{{ number_format((float) $line['amount'], 2) }}</td></tr>
@@ -47,15 +47,15 @@
 
     <table class="totals">
         <tbody>
-            <tr><th>Total</th><td class="right">{{ number_format((float) $accountingEvent->total_amount, 2) }} {{ $accountingEvent->currency }}</td></tr>
-            <tr><th>Paid Amount</th><td class="right">{{ number_format((float) $document['paid_amount'], 2) }} {{ $accountingEvent->currency }}</td></tr>
-            <tr><th>Open Balance</th><td class="right">{{ number_format((float) $document['open_amount'], 2) }} {{ $accountingEvent->currency }}</td></tr>
+            <tr><th>{{ __('accounting.total') }}</th><td class="right">{{ number_format((float) $accountingEvent->total_amount, 2) }} {{ $accountingEvent->currency }}</td></tr>
+            <tr><th>{{ __('accounting.paid_amount') }}</th><td class="right">{{ number_format((float) $document['paid_amount'], 2) }} {{ $accountingEvent->currency }}</td></tr>
+            <tr><th>{{ __('accounting.open_balance') }}</th><td class="right">{{ number_format((float) $document['open_amount'], 2) }} {{ $accountingEvent->currency }}</td></tr>
         </tbody>
     </table>
 
-    <h2>Payments</h2>
+    <h2>{{ __('accounting.payments') }}</h2>
     <table>
-        <thead><tr><th>Payment</th><th>Date</th><th>Status</th><th>Method</th><th class="right">Amount</th></tr></thead>
+        <thead><tr><th>{{ __('accounting.payment') }}</th><th>{{ __('accounting.date') }}</th><th>{{ __('accounting.status') }}</th><th>{{ __('accounting.method') }}</th><th class="right">{{ __('accounting.amount') }}</th></tr></thead>
         <tbody>
             @forelse($document['payments'] as $payment)
                 <tr>
@@ -66,7 +66,7 @@
                     <td class="right">{{ number_format((float) $payment->amount, 2) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5">No payments recorded.</td></tr>
+                <tr><td colspan="5">{{ __('accounting.no_payments_recorded') }}</td></tr>
             @endforelse
         </tbody>
     </table>

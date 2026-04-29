@@ -142,27 +142,27 @@
                 @php($commandPayables = $moduleData['payables_summary'] ?? ['open_count' => 0, 'open_amount' => 0, 'due_soon_count' => 0])
                 @php($commandReconciliation = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'deposited_count' => 0, 'vendor_payment_count' => 0])
                 <div class="row">
-                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Posting Groups</div><h4 class="mb-1">{{ ($moduleData['posting_groups'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Account mapping rules available for journal posting.</p></div></div></div>
-                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Events To Review</div><h4 class="mb-1">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Accounting events not yet posted to journal.</p></div></div></div>
-                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Journal Entries</div><h4 class="mb-1">{{ ($moduleData['recent_journal_entries'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">Posted accounting entries in this workspace.</p></div></div></div>
+                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('accounting.posting_groups') }}</div><h4 class="mb-1">{{ ($moduleData['posting_groups'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">{{ __('accounting.posting_groups_hint') }}</p></div></div></div>
+                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('accounting.events_to_review') }}</div><h4 class="mb-1">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">{{ __('accounting.events_to_review_hint') }}</p></div></div></div>
+                    <div class="col-xl-4 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('accounting.journal_entries') }}</div><h4 class="mb-1">{{ ($moduleData['recent_journal_entries'] ?? collect())->count() }}</h4><p class="mb-0 text-muted">{{ __('accounting.journal_entries_hint') }}</p></div></div></div>
                 </div>
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-command-center">
                     <div>
-                        <h5 class="mb-0">Finance Command Center</h5>
-                        <div class="text-muted small">Primary accounting work for this workspace.</div>
+                        <h5 class="mb-0">{{ __('accounting.finance_command_center') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.finance_command_center_hint') }}</div>
                     </div>
-                    <span class="badge {{ ($setupSummary['complete'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($setupSummary['complete'] ?? false) ? 'Setup Ready' : 'Setup Needed' }}</span>
+                    <span class="badge {{ ($setupSummary['complete'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($setupSummary['complete'] ?? false) ? __('accounting.setup_ready') : __('accounting.setup_needed') }}</span>
                 </div>
                 <div class="row">
                     <div class="col-xl-2 col-md-4 col-sm-6 d-flex">
                         <div class="card flex-fill">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div><div class="text-muted small">Setup</div><h6 class="mb-0">{{ ($setupSummary['complete'] ?? false) ? 'Ready' : 'Open' }}</h6></div>
+                                    <div><div class="text-muted small">{{ __('accounting.setup') }}</div><h6 class="mb-0">{{ ($setupSummary['complete'] ?? false) ? __('accounting.ready') : __('accounting.open') }}</h6></div>
                                     <i class="isax isax-setting-2 fs-4 text-primary"></i>
                                 </div>
-                                <a href="#accounting-first-time-setup" class="btn btn-sm btn-outline-primary mt-auto">Open Setup</a>
+                                <a href="#accounting-first-time-setup" class="btn btn-sm btn-outline-primary mt-auto">{{ __('accounting.open_setup') }}</a>
                             </div>
                         </div>
                     </div>
@@ -170,10 +170,10 @@
                         <div class="card flex-fill">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div><div class="text-muted small">Work Queue</div><h6 class="mb-0">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() + ($moduleData['reviewable_inventory_movements'] ?? collect())->count() + ($moduleData['pending_manual_journal_approvals'] ?? collect())->count() }}</h6></div>
+                                    <div><div class="text-muted small">{{ __('accounting.work_queue') }}</div><h6 class="mb-0">{{ ($moduleData['reviewable_accounting_events'] ?? collect())->count() + ($moduleData['reviewable_inventory_movements'] ?? collect())->count() + ($moduleData['pending_manual_journal_approvals'] ?? collect())->count() }}</h6></div>
                                     <i class="isax isax-task-square fs-4 text-info"></i>
                                 </div>
-                                <a href="#accounting-posting-queue" class="btn btn-sm btn-outline-primary mt-auto">Review Queue</a>
+                                <a href="#accounting-posting-queue" class="btn btn-sm btn-outline-primary mt-auto">{{ __('accounting.review_queue') }}</a>
                             </div>
                         </div>
                     </div>
@@ -181,10 +181,10 @@
                         <div class="card flex-fill">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div><div class="text-muted small">Money In</div><h6 class="mb-0">{{ number_format((float) ($commandReceivables['total_open'] ?? 0), 2) }}</h6></div>
+                                    <div><div class="text-muted small">{{ __('accounting.money_in') }}</div><h6 class="mb-0">{{ number_format((float) ($commandReceivables['total_open'] ?? 0), 2) }}</h6></div>
                                     <i class="isax isax-receipt-add fs-4 text-success"></i>
                                 </div>
-                                <a href="#accounting-receivables" class="btn btn-sm btn-outline-primary mt-auto">Open AR</a>
+                                <a href="#accounting-receivables" class="btn btn-sm btn-outline-primary mt-auto">{{ __('accounting.open_ar') }}</a>
                             </div>
                         </div>
                     </div>
@@ -192,10 +192,10 @@
                         <div class="card flex-fill">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div><div class="text-muted small">Money Out</div><h6 class="mb-0">{{ number_format((float) ($commandPayables['open_amount'] ?? 0), 2) }}</h6></div>
+                                    <div><div class="text-muted small">{{ __('accounting.money_out') }}</div><h6 class="mb-0">{{ number_format((float) ($commandPayables['open_amount'] ?? 0), 2) }}</h6></div>
                                     <i class="isax isax-receipt-minus fs-4 text-warning"></i>
                                 </div>
-                                <a href="#accounting-payables" class="btn btn-sm btn-outline-primary mt-auto">Open AP</a>
+                                <a href="#accounting-payables" class="btn btn-sm btn-outline-primary mt-auto">{{ __('accounting.open_ap') }}</a>
                             </div>
                         </div>
                     </div>
@@ -203,10 +203,10 @@
                         <div class="card flex-fill">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div><div class="text-muted small">Bank Review</div><h6 class="mb-0">{{ (int) ($commandReconciliation['pending_count'] ?? 0) + (int) ($commandReconciliation['deposited_count'] ?? 0) + (int) ($commandReconciliation['vendor_payment_count'] ?? 0) }}</h6></div>
+                                    <div><div class="text-muted small">{{ __('accounting.bank_review') }}</div><h6 class="mb-0">{{ (int) ($commandReconciliation['pending_count'] ?? 0) + (int) ($commandReconciliation['deposited_count'] ?? 0) + (int) ($commandReconciliation['vendor_payment_count'] ?? 0) }}</h6></div>
                                     <i class="isax isax-bank fs-4 text-secondary"></i>
                                 </div>
-                                <a href="#accounting-cash" class="btn btn-sm btn-outline-primary mt-auto">Open Cash</a>
+                                <a href="#accounting-cash" class="btn btn-sm btn-outline-primary mt-auto">{{ __('accounting.open_cash') }}</a>
                             </div>
                         </div>
                     </div>
@@ -214,10 +214,10 @@
                         <div class="card flex-fill">
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div><div class="text-muted small">Reports</div><h6 class="mb-0">Journal-led</h6></div>
+                                    <div><div class="text-muted small">{{ __('accounting.reports') }}</div><h6 class="mb-0">{{ __('accounting.journal_led') }}</h6></div>
                                     <i class="isax isax-chart-2 fs-4 text-danger"></i>
                                 </div>
-                                <a href="#accounting-reports" class="btn btn-sm btn-outline-primary mt-auto">Run Reports</a>
+                                <a href="#accounting-reports" class="btn btn-sm btn-outline-primary mt-auto">{{ __('accounting.run_reports') }}</a>
                             </div>
                         </div>
                     </div>
@@ -225,22 +225,22 @@
 
                 <div class="border rounded bg-white p-2 mb-3" id="accounting-workspace-navigation">
                     <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
-                        <h5 class="mb-0">Accounting Workspace Navigation</h5>
-                        <span class="text-muted small">Jump to a finance workflow</span>
+                        <h5 class="mb-0">{{ __('accounting.accounting_workspace_navigation') }}</h5>
+                        <span class="text-muted small">{{ __('accounting.jump_to_finance_workflow') }}</span>
                     </div>
                     <ul class="nav nav-pills gap-2 flex-nowrap overflow-auto pb-1">
-                        <li class="nav-item"><a class="nav-link" href="#accounting-first-time-setup">Setup</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-posting-queue">Posting Queue</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-approvals">Approvals</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-period-close">Period Close</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-reports">Reports</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-receivables">Receivables</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-payables">Payables</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-cash">Cash</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-tax">Tax</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-review-pack">Review Pack</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-settings">Settings</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#accounting-audit">Audit</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-first-time-setup">{{ __('accounting.setup') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-posting-queue">{{ __('accounting.posting_queue') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-approvals">{{ __('accounting.approvals') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-period-close">{{ __('accounting.period_close') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-reports">{{ __('accounting.reports') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-receivables">{{ __('accounting.receivables') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-payables">{{ __('accounting.payables') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-cash">{{ __('accounting.cash') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-tax">{{ __('accounting.tax') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-review-pack">{{ __('accounting.review_pack') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-settings">{{ __('accounting.settings') }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#accounting-audit">{{ __('accounting.audit') }}</a></li>
                     </ul>
                 </div>
 
@@ -248,12 +248,12 @@
                     <div class="card-body">
                         <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                             <div>
-                                <div class="text-muted small mb-1">Accounting Access</div>
-                                <h5 class="mb-1">{{ $accountingPermissionSummary['mode_label'] ?? 'Full Access' }}</h5>
-                                <div class="text-muted small">Role: {{ str_replace('_', ' ', strtoupper($accountingPermissionSummary['role'] ?? 'legacy_full_access')) }} · Allowed {{ $accountingPermissionSummary['allowed_count'] ?? 0 }}/{{ $accountingPermissionSummary['total_count'] ?? 0 }} sensitive actions</div>
+                                <div class="text-muted small mb-1">{{ __('accounting.accounting_access') }}</div>
+                                <h5 class="mb-1">{{ $accountingPermissionSummary['mode_label'] ?? __('accounting.full_access') }}</h5>
+                                <div class="text-muted small">{{ __('accounting.role') }}: {{ str_replace('_', ' ', strtoupper($accountingPermissionSummary['role'] ?? 'legacy_full_access')) }} · {{ __('accounting.allowed_sensitive_actions', ['allowed' => $accountingPermissionSummary['allowed_count'] ?? 0, 'total' => $accountingPermissionSummary['total_count'] ?? 0]) }}</div>
                             </div>
                             <span class="badge {{ ($accountingPermissionSummary['mode'] ?? 'full_access') === 'read_only' ? 'bg-secondary' : (($accountingPermissionSummary['mode'] ?? 'full_access') === 'restricted_access' ? 'bg-warning text-dark' : 'bg-success') }}">
-                                {{ $accountingPermissionSummary['mode_label'] ?? 'Full Access' }}
+                                {{ $accountingPermissionSummary['mode_label'] ?? __('accounting.full_access') }}
                             </span>
                         </div>
                         <div class="row mt-3">
@@ -261,14 +261,14 @@
                                 <div class="col-xl-4 col-md-6 mb-2">
                                     <div class="d-flex justify-content-between border rounded px-3 py-2">
                                         <span class="small">{{ $permissionItem['label'] }}</span>
-                                        <span class="badge {{ !empty($permissionItem['allowed']) ? 'bg-success' : 'bg-light text-dark border' }}">{{ !empty($permissionItem['allowed']) ? 'Allowed' : 'Blocked' }}</span>
+                                        <span class="badge {{ !empty($permissionItem['allowed']) ? 'bg-success' : 'bg-light text-dark border' }}">{{ !empty($permissionItem['allowed']) ? __('accounting.allowed') : __('accounting.blocked') }}</span>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                         @if(($accountingPermissionSummary['mode'] ?? '') !== 'full_access')
                             <div class="alert alert-light border mb-0 mt-2">
-                                Sensitive actions are hidden unless your assigned accounting permissions allow them. Reports, setup, journals, tax, and close controls follow this matrix.
+                                {{ __('accounting.sensitive_actions_hint') }}
                             </div>
                         @endif
                     </div>
@@ -276,10 +276,10 @@
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-first-time-setup">
                     <div>
-                        <h5 class="mb-0">First-Time Setup</h5>
-                        <div class="text-muted small">Company defaults for currency, fiscal year, tax, accounts, cash, and posting rules.</div>
+                        <h5 class="mb-0">{{ __('accounting.first_time_setup') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.first_time_setup_hint') }}</div>
                     </div>
-                    <span class="badge {{ ($setupSummary['complete'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($setupSummary['complete'] ?? false) ? 'READY' : 'NEEDS SETUP' }}</span>
+                    <span class="badge {{ ($setupSummary['complete'] ?? false) ? 'bg-success' : 'bg-warning text-dark' }}">{{ ($setupSummary['complete'] ?? false) ? __('accounting.ready') : __('accounting.needs_setup') }}</span>
                 </div>
                 <div class="card">
                     <div class="card-body">
@@ -291,11 +291,11 @@
                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                         <div class="row">
                                             <div class="col-md-3 mb-3">
-                                                <label class="form-label">Base Currency</label>
+                                                <label class="form-label">{{ __('accounting.base_currency') }}</label>
                                                 <input type="text" name="base_currency" maxlength="3" class="form-control" value="{{ old('base_currency', $setupProfile->base_currency ?? 'USD') }}">
                                             </div>
                                             <div class="col-md-3 mb-3">
-                                                <label class="form-label">Fiscal Start Month</label>
+                                                <label class="form-label">{{ __('accounting.fiscal_start_month') }}</label>
                                                 <select name="fiscal_year_start_month" class="form-select">
                                                     @for($month = 1; $month <= 12; $month++)
                                                         <option value="{{ $month }}" @selected((int) old('fiscal_year_start_month', $setupProfile->fiscal_year_start_month ?? 1) === $month)>{{ $month }}</option>
@@ -303,59 +303,59 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-3 mb-3">
-                                                <label class="form-label">Fiscal Start Day</label>
+                                                <label class="form-label">{{ __('accounting.fiscal_start_day') }}</label>
                                                 <input type="number" min="1" max="31" name="fiscal_year_start_day" class="form-control" value="{{ old('fiscal_year_start_day', $setupProfile->fiscal_year_start_day ?? 1) }}">
                                             </div>
                                             <div class="col-md-3 mb-3">
-                                                <label class="form-label">Chart Template</label>
+                                                <label class="form-label">{{ __('accounting.chart_template') }}</label>
                                                 <select name="chart_template" class="form-select">
-                                                    <option value="service_business" @selected(old('chart_template', $setupProfile->chart_template ?? 'service_business') === 'service_business')>Service Business</option>
-                                                    <option value="trading_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'trading_business')>Trading Business</option>
-                                                    <option value="general_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'general_business')>General Business</option>
+                                                    <option value="service_business" @selected(old('chart_template', $setupProfile->chart_template ?? 'service_business') === 'service_business')>{{ __('accounting.service_business') }}</option>
+                                                    <option value="trading_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'trading_business')>{{ __('accounting.trading_business') }}</option>
+                                                    <option value="general_business" @selected(old('chart_template', $setupProfile->chart_template ?? '') === 'general_business')>{{ __('accounting.general_business') }}</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
-                                                <label class="form-label">Tax Mode</label>
+                                                <label class="form-label">{{ __('accounting.tax_mode') }}</label>
                                                 <select name="tax_mode" class="form-select">
-                                                    <option value="vat_standard" @selected(old('tax_mode', $setupProfile->tax_mode ?? 'vat_standard') === 'vat_standard')>VAT Standard</option>
-                                                    <option value="no_tax" @selected(old('tax_mode', $setupProfile->tax_mode ?? '') === 'no_tax')>No Tax</option>
+                                                    <option value="vat_standard" @selected(old('tax_mode', $setupProfile->tax_mode ?? 'vat_standard') === 'vat_standard')>{{ __('accounting.vat_standard') }}</option>
+                                                    <option value="no_tax" @selected(old('tax_mode', $setupProfile->tax_mode ?? '') === 'no_tax')>{{ __('accounting.no_tax') }}</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-4 mb-3"><label class="form-label">Default Tax Rate %</label><input type="number" step="0.0001" min="0" max="100" name="default_tax_rate" class="form-control" value="{{ old('default_tax_rate', data_get($setupProfile?->payload, 'tax_rate', 5)) }}"></div>
-                                            <div class="col-md-4 mb-3"><label class="form-label">Revenue Account</label><input type="text" name="default_revenue_account" list="account-catalog-options" class="form-control" value="{{ old('default_revenue_account', $setupProfile->default_revenue_account ?? '4100 Service Revenue') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">{{ __('accounting.default_tax_rate_percent') }}</label><input type="number" step="0.0001" min="0" max="100" name="default_tax_rate" class="form-control" value="{{ old('default_tax_rate', data_get($setupProfile?->payload, 'tax_rate', 5)) }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">{{ __('accounting.revenue_account') }}</label><input type="text" name="default_revenue_account" list="account-catalog-options" class="form-control" value="{{ old('default_revenue_account', $setupProfile->default_revenue_account ?? '4100 Service Revenue') }}"></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-4 mb-3"><label class="form-label">Receivable Account</label><input type="text" name="default_receivable_account" list="account-catalog-options" class="form-control" value="{{ old('default_receivable_account', $setupProfile->default_receivable_account ?? '1100 Accounts Receivable') }}"></div>
-                                            <div class="col-md-4 mb-3"><label class="form-label">Payable Account</label><input type="text" name="default_payable_account" list="account-catalog-options" class="form-control" value="{{ old('default_payable_account', $setupProfile->default_payable_account ?? '2000 Accounts Payable') }}"></div>
-                                            <div class="col-md-4 mb-3"><label class="form-label">Expense Account</label><input type="text" name="default_expense_account" list="account-catalog-options" class="form-control" value="{{ old('default_expense_account', $setupProfile->default_expense_account ?? '5200 Operating Expense') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">{{ __('accounting.receivable_account') }}</label><input type="text" name="default_receivable_account" list="account-catalog-options" class="form-control" value="{{ old('default_receivable_account', $setupProfile->default_receivable_account ?? '1100 Accounts Receivable') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">{{ __('accounting.payable_account') }}</label><input type="text" name="default_payable_account" list="account-catalog-options" class="form-control" value="{{ old('default_payable_account', $setupProfile->default_payable_account ?? '2000 Accounts Payable') }}"></div>
+                                            <div class="col-md-4 mb-3"><label class="form-label">{{ __('accounting.expense_account') }}</label><input type="text" name="default_expense_account" list="account-catalog-options" class="form-control" value="{{ old('default_expense_account', $setupProfile->default_expense_account ?? '5200 Operating Expense') }}"></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-3 mb-3"><label class="form-label">Cash Account</label><input type="text" name="default_cash_account" list="account-catalog-options" class="form-control" value="{{ old('default_cash_account', $setupProfile->default_cash_account ?? '1000 Cash On Hand') }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Bank Account</label><input type="text" name="default_bank_account" list="account-catalog-options" class="form-control" value="{{ old('default_bank_account', $setupProfile->default_bank_account ?? '1010 Bank Account') }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Input Tax Account</label><input type="text" name="default_input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_input_tax_account', $setupProfile->default_input_tax_account ?? '1410 VAT Input Receivable') }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Output Tax Account</label><input type="text" name="default_output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_output_tax_account', $setupProfile->default_output_tax_account ?? '2100 VAT Output Payable') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.cash_account') }}</label><input type="text" name="default_cash_account" list="account-catalog-options" class="form-control" value="{{ old('default_cash_account', $setupProfile->default_cash_account ?? '1000 Cash On Hand') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.bank_account') }}</label><input type="text" name="default_bank_account" list="account-catalog-options" class="form-control" value="{{ old('default_bank_account', $setupProfile->default_bank_account ?? '1010 Bank Account') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.input_tax_account') }}</label><input type="text" name="default_input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_input_tax_account', $setupProfile->default_input_tax_account ?? '1410 VAT Input Receivable') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.output_tax_account') }}</label><input type="text" name="default_output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('default_output_tax_account', $setupProfile->default_output_tax_account ?? '2100 VAT Output Payable') }}"></div>
                                         </div>
-                                        <button type="submit" class="btn btn-primary">Complete Accounting Setup</button>
+                                        <button type="submit" class="btn btn-primary">{{ __('accounting.complete_accounting_setup') }}</button>
                                     </form>
                                 @else
-                                    <div class="alert alert-light border mb-0">You do not have permission to change accounting setup or chart controls.</div>
+                                    <div class="alert alert-light border mb-0">{{ __('accounting.no_setup_permission') }}</div>
                                 @endif
                             </div>
                             <div class="col-xl-4">
                                 <div class="border rounded p-3 h-100">
-                                    <div class="fw-semibold mb-2">Setup Readiness</div>
+                                    <div class="fw-semibold mb-2">{{ __('accounting.setup_readiness') }}</div>
                                     @foreach(($setupSummary['items'] ?? []) as $item)
                                         <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
                                             <span>{{ $item['label'] }}</span>
-                                            <span class="badge {{ !empty($item['ready']) ? 'bg-success' : 'bg-warning text-dark' }}">{{ !empty($item['ready']) ? 'READY' : 'OPEN' }}</span>
+                                            <span class="badge {{ !empty($item['ready']) ? 'bg-success' : 'bg-warning text-dark' }}">{{ !empty($item['ready']) ? __('accounting.ready') : __('accounting.open') }}</span>
                                         </div>
                                     @endforeach
                                     @if($setupProfile?->setup_completed_at)
-                                        <div class="text-muted small">Completed {{ optional($setupProfile->setup_completed_at)->format('Y-m-d H:i') }}</div>
+                                        <div class="text-muted small">{{ __('accounting.completed_at', ['date' => optional($setupProfile->setup_completed_at)->format('Y-m-d H:i')]) }}</div>
                                     @endif
-                                    <div class="text-muted small mt-2">Journals and journal lines remain the accounting source of truth.</div>
+                                    <div class="text-muted small mt-2">{{ __('accounting.source_of_truth_hint') }}</div>
                                 </div>
                             </div>
                         </div>
@@ -364,55 +364,55 @@
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-reports">
                     <div>
-                        <h5 class="mb-0">Financial Reports</h5>
-                        <div class="text-muted small">Journal-driven report filters, exports, and print views.</div>
+                        <h5 class="mb-0">{{ __('accounting.financial_reports') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.financial_reports_hint') }}</div>
                     </div>
-                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">{{ __('accounting.top') }}</a>
                 </div>
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Journal Filters</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.journal_filters') }}</h5></div>
                     <div class="card-body">
                         <form method="GET" action="{{ route('automotive.admin.modules.general-ledger') }}">
                             <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                             <div class="row align-items-end">
-                                <div class="col-md-3 mb-3"><label class="form-label">Search</label><input type="text" name="search" class="form-control" value="{{ $journalFilters['search'] ?? '' }}" placeholder="Journal, memo, account"></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Any</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>Posted</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>Reversed</option><option value="void" @selected(($journalFilters['status'] ?? '') === 'void')>Void</option></select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Reconciliation</label><select name="reconciliation_status" class="form-select"><option value="">Any</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>Pending</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>Deposited</option><option value="reconciled" @selected(($journalFilters['reconciliation_status'] ?? '') === 'reconciled')>Reconciled</option></select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Vendor Bills</label><select name="vendor_bill_status" class="form-select"><option value="">Any</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>Draft</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>Posted</option><option value="partial" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'partial')>Partial</option><option value="paid" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'paid')>Paid</option></select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Due</label><select name="due_status" class="form-select"><option value="">Any</option><option value="overdue" @selected(($journalFilters['due_status'] ?? '') === 'overdue')>Overdue</option><option value="due_soon" @selected(($journalFilters['due_status'] ?? '') === 'due_soon')>Due Soon</option></select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Supplier</label><select name="supplier_id" class="form-select"><option value="">Any</option>@foreach(($moduleData['accounting_suppliers'] ?? collect()) as $supplier)<option value="{{ $supplier->id }}" @selected((string) ($journalFilters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->name }}</option>@endforeach</select></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">From</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">To</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
-                                <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">Reset</a></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.search') }}</label><input type="text" name="search" class="form-control" value="{{ $journalFilters['search'] ?? '' }}" placeholder="{{ __('accounting.journal_memo_account') }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.status') }}</label><select name="status" class="form-select"><option value="">{{ __('accounting.any') }}</option><option value="posted" @selected(($journalFilters['status'] ?? '') === 'posted')>{{ __('accounting.posted') }}</option><option value="reversed" @selected(($journalFilters['status'] ?? '') === 'reversed')>{{ __('accounting.reversed') }}</option><option value="void" @selected(($journalFilters['status'] ?? '') === 'void')>{{ __('accounting.void') }}</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.reconciliation') }}</label><select name="reconciliation_status" class="form-select"><option value="">{{ __('accounting.any') }}</option><option value="pending" @selected(($journalFilters['reconciliation_status'] ?? '') === 'pending')>{{ __('accounting.pending') }}</option><option value="deposited" @selected(($journalFilters['reconciliation_status'] ?? '') === 'deposited')>{{ __('accounting.deposited') }}</option><option value="reconciled" @selected(($journalFilters['reconciliation_status'] ?? '') === 'reconciled')>{{ __('accounting.reconciled') }}</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.vendor_bills') }}</label><select name="vendor_bill_status" class="form-select"><option value="">{{ __('accounting.any') }}</option><option value="draft" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'draft')>{{ __('accounting.draft') }}</option><option value="posted" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'posted')>{{ __('accounting.posted') }}</option><option value="partial" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'partial')>{{ __('accounting.partial') }}</option><option value="paid" @selected(($journalFilters['vendor_bill_status'] ?? '') === 'paid')>{{ __('accounting.paid') }}</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.due') }}</label><select name="due_status" class="form-select"><option value="">{{ __('accounting.any') }}</option><option value="overdue" @selected(($journalFilters['due_status'] ?? '') === 'overdue')>{{ __('accounting.overdue') }}</option><option value="due_soon" @selected(($journalFilters['due_status'] ?? '') === 'due_soon')>{{ __('accounting.due_soon') }}</option></select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.supplier') }}</label><select name="supplier_id" class="form-select"><option value="">{{ __('accounting.any') }}</option>@foreach(($moduleData['accounting_suppliers'] ?? collect()) as $supplier)<option value="{{ $supplier->id }}" @selected((string) ($journalFilters['supplier_id'] ?? '') === (string) $supplier->id)>{{ $supplier->name }}</option>@endforeach</select></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.from') }}</label><input type="date" name="date_from" class="form-control" value="{{ $journalFilters['date_from'] ?? '' }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.to') }}</label><input type="date" name="date_to" class="form-control" value="{{ $journalFilters['date_to'] ?? '' }}"></div>
+                                <div class="col-md-2 mb-3 d-flex gap-2"><button type="submit" class="btn btn-primary">{{ __('accounting.apply') }}</button><a href="{{ route('automotive.admin.modules.general-ledger', $workspaceQuery) }}" class="btn btn-outline-light">{{ __('accounting.reset') }}</a></div>
                             </div>
                         </form>
                         @if($accountingPermissions['reports_export'] ?? true)
                             <div class="d-flex gap-2 flex-wrap">
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries'] + $workspaceQuery + $journalFilters) }}">Export Journal CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance'] + $workspaceQuery + $journalFilters) }}">Export Trial Balance CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">Export Revenue CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss'] + $workspaceQuery + $journalFilters) }}">Export P&amp;L CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet'] + $workspaceQuery + $journalFilters) }}">Export Balance Sheet CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary'] + $workspaceQuery + $journalFilters) }}">Export Tax Summary CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">Export Payments CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging'] + $workspaceQuery + $journalFilters) }}">Export Receivables Aging CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging'] + $workspaceQuery + $journalFilters) }}">Export Payables Aging CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation'] + $workspaceQuery + $journalFilters) }}">Export Bank Reconciliation CSV</a>
-                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary'] + $workspaceQuery + $journalFilters) }}">Export Reconciliation Summary CSV</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Journal</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Trial Balance</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Revenue</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print P&amp;L</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Balance Sheet</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payments</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Tax Summary</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Receivables Aging</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Payables Aging</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Bank Reconciliation</a>
-                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">Print Reconciliation Summary</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_journal_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_trial_balance_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_revenue_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_profit_loss_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_balance_sheet_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_tax_summary_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_payments_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_receivables_aging_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_payables_aging_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_bank_reconciliation_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary'] + $workspaceQuery + $journalFilters) }}">{{ __('accounting.export_reconciliation_summary_csv') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'journal-entries', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_journal') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'trial-balance', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_trial_balance') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'revenue-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_revenue') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'profit-and-loss', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_profit_loss') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'balance-sheet', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_balance_sheet') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payments', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_payments') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'tax-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_tax_summary') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'receivables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_receivables_aging') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'payables-aging', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_payables_aging') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'bank-reconciliation', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_bank_reconciliation') }}</a>
+                                <a class="btn btn-sm btn-outline-light" href="{{ route('automotive.admin.modules.general-ledger.exports', ['report' => 'reconciliation-summary', 'format' => 'print'] + $workspaceQuery + $journalFilters) }}" target="_blank">{{ __('accounting.print_reconciliation_summary') }}</a>
                             </div>
                         @else
-                            <p class="text-muted mb-0">You do not have permission to export reports or print review outputs.</p>
+                            <p class="text-muted mb-0">{{ __('accounting.no_report_export_permission') }}</p>
                         @endif
                     </div>
                 </div>
@@ -422,10 +422,10 @@
                 @php($accountantReviewPack = $moduleData['accountant_review_pack'] ?? ['summary' => [], 'evidence_rows' => collect(), 'recent_journals' => collect(), 'recent_audits' => collect(), 'audit_event_coverage' => collect()])
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-review-pack">
                     <div>
-                        <h5 class="mb-0">Import / Export And Accountant Review Pack</h5>
-                        <div class="text-muted small">Export evidence for review and download CSV templates without changing ledger truth.</div>
+                        <h5 class="mb-0">{{ __('accounting.import_export_review_pack') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.import_export_review_pack_hint') }}</div>
                     </div>
-                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">{{ __('accounting.top') }}</a>
                 </div>
                 <div class="row">
                     <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">Posted Journals</div><h4 class="mb-1">{{ number_format((int) data_get($accountantReviewPack, 'summary.posted_journal_count', 0)) }}</h4><p class="mb-0 text-muted">Journal population included in the review scope.</p></div></div></div>
@@ -685,22 +685,22 @@
                 @php($aging = $moduleData['receivables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-receivables">
                     <div>
-                        <h5 class="mb-0">Receivables</h5>
-                        <div class="text-muted small">Invoices, statements, aging, and customer collections.</div>
+                        <h5 class="mb-0">{{ __('accounting.receivables') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.receivables_hint') }}</div>
                     </div>
-                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">{{ __('accounting.top') }}</a>
                 </div>
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Receivables Aging</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.receivables_aging') }}</h5></div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Total Open</div><h5 class="mb-0">{{ number_format((float) ($aging['total_open'] ?? 0), 2) }}</h5></div>
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Overdue</div><h5 class="mb-0">{{ number_format((float) ($aging['overdue_total'] ?? 0), 2) }}</h5></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.total_open') }}</div><h5 class="mb-0">{{ number_format((float) ($aging['total_open'] ?? 0), 2) }}</h5></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.overdue') }}</div><h5 class="mb-0">{{ number_format((float) ($aging['overdue_total'] ?? 0), 2) }}</h5></div>
                             @foreach(($aging['buckets'] ?? []) as $bucket)
                                 <div class="col-md-2 mb-3">
                                     <div class="text-muted small">{{ $bucket['label'] }}</div>
                                     <h5 class="mb-0">{{ number_format((float) $bucket['amount'], 2) }}</h5>
-                                    <div class="text-muted small">{{ $bucket['count'] }} open</div>
+                                    <div class="text-muted small">{{ $bucket['count'] }} {{ __('accounting.open') }}</div>
                                 </div>
                             @endforeach
                         </div>
@@ -708,10 +708,10 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Customer Statements</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.customer_statements') }}</h5></div>
                     <div class="card-body">
                         @if(($moduleData['statement_customers'] ?? collect())->isEmpty())
-                            <p class="text-muted mb-0">No customers are ready for statement printing yet.</p>
+                            <p class="text-muted mb-0">{{ __('accounting.no_customers_for_statements') }}</p>
                         @else
                             <div class="row">
                                 @foreach(($moduleData['statement_customers'] ?? collect())->take(6) as $statementCustomer)
@@ -729,42 +729,42 @@
                 <div class="row">
                     <div class="col-xl-5 d-flex">
                         <div class="card flex-fill">
-                            <div class="card-header"><h5 class="card-title mb-0">Create Customer Invoice</h5></div>
+                            <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.create_customer_invoice') }}</h5></div>
                             <div class="card-body">
                                 @if($accountingPermissions['ar_invoices_manage'] ?? true)
                                     <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.invoices.store', $workspaceQuery) }}">
                                         @csrf
                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                         <div class="row">
-                                            <div class="col-md-6 mb-3"><label class="form-label">Customer</label><input type="text" name="customer_name" class="form-control" value="{{ old('customer_name') }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Issue Date</label><input type="date" name="issue_date" class="form-control" value="{{ old('issue_date', now()->toDateString()) }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control" value="{{ old('due_date') }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">{{ __('accounting.customer') }}</label><input type="text" name="customer_name" class="form-control" value="{{ old('customer_name') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.issue_date') }}</label><input type="date" name="issue_date" class="form-control" value="{{ old('issue_date', now()->toDateString()) }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.due_date') }}</label><input type="date" name="due_date" class="form-control" value="{{ old('due_date') }}"></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-7 mb-3"><label class="form-label">Line Description</label><input type="text" name="lines[0][description]" class="form-control" value="{{ old('lines.0.description', 'Service invoice') }}"></div>
-                                            <div class="col-md-5 mb-3"><label class="form-label">Revenue Account</label><input type="text" name="lines[0][account_code]" list="account-catalog-options" class="form-control" value="{{ old('lines.0.account_code', '4100 Service Labor Revenue') }}"></div>
+                                            <div class="col-md-7 mb-3"><label class="form-label">{{ __('accounting.line_description') }}</label><input type="text" name="lines[0][description]" class="form-control" value="{{ old('lines.0.description', 'Service invoice') }}"></div>
+                                            <div class="col-md-5 mb-3"><label class="form-label">{{ __('accounting.revenue_account') }}</label><input type="text" name="lines[0][account_code]" list="account-catalog-options" class="form-control" value="{{ old('lines.0.account_code', '4100 Service Labor Revenue') }}"></div>
                                         </div>
                                         <div class="row">
-                                            <div class="col-md-3 mb-3"><label class="form-label">Qty</label><input type="number" step="0.001" min="0.001" name="lines[0][quantity]" class="form-control" value="{{ old('lines.0.quantity', 1) }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Unit Price</label><input type="number" step="0.01" min="0" name="lines[0][unit_price]" class="form-control" value="{{ old('lines.0.unit_price') }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Tax</label><input type="number" step="0.01" min="0" name="tax_amount" class="form-control" value="{{ old('tax_amount', 0) }}"></div>
-                                            <div class="col-md-3 mb-3"><label class="form-label">Reference</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.qty') }}</label><input type="number" step="0.001" min="0.001" name="lines[0][quantity]" class="form-control" value="{{ old('lines.0.quantity', 1) }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.unit_price') }}</label><input type="number" step="0.01" min="0" name="lines[0][unit_price]" class="form-control" value="{{ old('lines.0.unit_price') }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.tax') }}</label><input type="number" step="0.01" min="0" name="tax_amount" class="form-control" value="{{ old('tax_amount', 0) }}"></div>
+                                            <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.reference') }}</label><input type="text" name="reference" class="form-control" value="{{ old('reference') }}"></div>
                                         </div>
                                         <input type="hidden" name="currency" value="USD">
                                         <input type="hidden" name="receivable_account" value="1100 Accounts Receivable">
                                         <input type="hidden" name="tax_account" value="2100 VAT Output Payable">
-                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
-                                        <button type="submit" class="btn btn-primary">Create Invoice</button>
+                                        <div class="mb-3"><label class="form-label">{{ __('accounting.notes') }}</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">{{ __('accounting.create_invoice') }}</button>
                                     </form>
                                 @else
-                                    <p class="text-muted mb-0">You do not have permission to create invoices.</p>
+                                    <p class="text-muted mb-0">{{ __('accounting.no_invoice_permission') }}</p>
                                 @endif
                             </div>
                         </div>
                     </div>
                     <div class="col-xl-7 d-flex">
                         <div class="card flex-fill">
-                            <div class="card-header"><h5 class="card-title mb-0">Customer Invoices</h5></div>
+                            <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.customer_invoices') }}</h5></div>
                             <div class="card-body">
                                 @forelse(($moduleData['accounting_invoices'] ?? collect()) as $invoice)
                                     <div class="border-bottom pb-2 mb-2">
@@ -772,7 +772,7 @@
                                             <div>
                                                 <h6 class="mb-1">{{ $invoice->invoice_number }}</h6>
                                                 <div class="text-muted small">{{ $invoice->customer_name }} · {{ optional($invoice->issue_date)->format('Y-m-d') }}{{ $invoice->due_date ? ' · Due '.optional($invoice->due_date)->format('Y-m-d') : '' }}</div>
-                                                <div class="text-muted small">{{ $invoice->reference ?: 'No reference' }} · Paid {{ number_format((float) $invoice->getAttribute('paid_amount'), 2) }} · Open {{ number_format((float) $invoice->getAttribute('open_amount'), 2) }}</div>
+                                                <div class="text-muted small">{{ $invoice->reference ?: __('accounting.no_reference') }} · {{ __('accounting.paid_amount_short') }} {{ number_format((float) $invoice->getAttribute('paid_amount'), 2) }} · {{ __('accounting.open_amount_short') }} {{ number_format((float) $invoice->getAttribute('open_amount'), 2) }}</div>
                                             </div>
                                             <div class="text-end">
                                                 <span class="badge {{ $invoice->status === 'draft' ? 'bg-warning text-dark' : ($invoice->status === 'paid' ? 'bg-primary' : 'bg-success') }}">{{ strtoupper($invoice->status) }}</span>
@@ -781,16 +781,16 @@
                                                     <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.invoices.post', ['invoice' => $invoice->id] + $workspaceQuery) }}" class="mt-2">
                                                         @csrf
                                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
-                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Post Invoice</button>
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">{{ __('accounting.post_invoice') }}</button>
                                                     </form>
                                                 @elseif($invoice->accounting_event_id)
-                                                    <a class="btn btn-sm btn-outline-light mt-2" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.accounting-events.invoice', ['accountingEvent' => $invoice->accounting_event_id] + $workspaceQuery) }}">Print Invoice</a>
+                                                    <a class="btn btn-sm btn-outline-light mt-2" target="_blank" href="{{ route('automotive.admin.modules.general-ledger.accounting-events.invoice', ['accountingEvent' => $invoice->accounting_event_id] + $workspaceQuery) }}">{{ __('accounting.print_invoice') }}</a>
                                                 @endif
                                             </div>
                                         </div>
                                     </div>
                                 @empty
-                                    <p class="text-muted mb-0">No customer invoices have been created yet.</p>
+                                    <p class="text-muted mb-0">{{ __('accounting.no_customer_invoices') }}</p>
                                 @endforelse
                             </div>
                         </div>
@@ -800,28 +800,28 @@
                 @php($reconciliationSummary = $moduleData['payment_reconciliation_summary'] ?? ['pending_count' => 0, 'pending_amount' => 0, 'deposited_count' => 0, 'deposited_amount' => 0, 'vendor_payment_count' => 0, 'vendor_payment_amount' => 0, 'reconciled_period_amount' => 0])
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-cash">
                     <div>
-                        <h5 class="mb-0">Cash And Reconciliation</h5>
-                        <div class="text-muted small">Bank accounts, receipts, deposit batches, and reconciliation state.</div>
+                        <h5 class="mb-0">{{ __('accounting.cash_reconciliation') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.cash_reconciliation_hint') }}</div>
                     </div>
-                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">{{ __('accounting.top') }}</a>
                 </div>
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Payment Reconciliation</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.payment_reconciliation') }}</h5></div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Unreconciled Receipts</div><h5 class="mb-0">{{ $reconciliationSummary['pending_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['pending_amount'], 2) }}</div></div>
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Unreconciled Deposits</div><h5 class="mb-0">{{ $reconciliationSummary['deposited_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['deposited_amount'], 2) }}</div></div>
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Unreconciled Vendor Payments</div><h5 class="mb-0">{{ $reconciliationSummary['vendor_payment_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['vendor_payment_amount'], 2) }}</div></div>
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Reconciled This Period</div><h5 class="mb-0">{{ number_format((float) $reconciliationSummary['reconciled_period_amount'], 2) }}</h5><div class="text-muted small">{{ $reconciliationSummary['period_start'] ?? '' }} - {{ $reconciliationSummary['period_end'] ?? '' }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.unreconciled_receipts') }}</div><h5 class="mb-0">{{ $reconciliationSummary['pending_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['pending_amount'], 2) }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.unreconciled_deposits') }}</div><h5 class="mb-0">{{ $reconciliationSummary['deposited_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['deposited_amount'], 2) }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.unreconciled_vendor_payments') }}</div><h5 class="mb-0">{{ $reconciliationSummary['vendor_payment_count'] }}</h5><div class="text-muted small">{{ number_format((float) $reconciliationSummary['vendor_payment_amount'], 2) }}</div></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.reconciled_this_period') }}</div><h5 class="mb-0">{{ number_format((float) $reconciliationSummary['reconciled_period_amount'], 2) }}</h5><div class="text-muted small">{{ $reconciliationSummary['period_start'] ?? '' }} - {{ $reconciliationSummary['period_end'] ?? '' }}</div></div>
                             <div class="col-md-4 mb-3">
-                                <div class="text-muted small">Recent Deposit Batches</div>
+                                <div class="text-muted small">{{ __('accounting.recent_deposit_batches') }}</div>
                                 @forelse(($moduleData['recent_deposit_batches'] ?? collect())->take(3) as $batch)
                                     <div class="d-flex justify-content-between border-bottom pb-1 mb-1">
                                         <a href="{{ route('automotive.admin.modules.general-ledger.deposit-batches.show', ['depositBatch' => $batch->id] + $workspaceQuery) }}">{{ $batch->deposit_number }} · {{ optional($batch->deposit_date)->format('Y-m-d') }}{{ $batch->reference ? ' · '.$batch->reference : '' }} · {{ strtoupper($batch->reconciliation_status ?: 'pending') }}</a>
                                         <span>{{ number_format((float) $batch->total_amount, 2) }} {{ $batch->currency }}</span>
                                     </div>
                                 @empty
-                                    <p class="text-muted mb-0">No deposit batches have been posted yet.</p>
+                                    <p class="text-muted mb-0">{{ __('accounting.no_deposit_batches') }}</p>
                                 @endforelse
                             </div>
                         </div>
@@ -831,35 +831,35 @@
                 @php($payablesSummary = $moduleData['payables_summary'] ?? ['draft_count' => 0, 'draft_amount' => 0, 'open_count' => 0, 'open_amount' => 0, 'paid_count' => 0, 'paid_amount' => 0, 'due_soon_count' => 0, 'due_soon_amount' => 0])
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-payables">
                     <div>
-                        <h5 class="mb-0">Payables</h5>
-                        <div class="text-muted small">Vendor bills, credit notes, payments, and payables aging.</div>
+                        <h5 class="mb-0">{{ __('accounting.payables') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.payables_hint') }}</div>
                     </div>
-                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">{{ __('accounting.top') }}</a>
                 </div>
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Payables Summary</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.payables_summary') }}</h5></div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Draft Bills</div><h5 class="mb-0">{{ $payablesSummary['draft_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['draft_amount'], 2) }}</div></div>
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Open Payables</div><h5 class="mb-0">{{ $payablesSummary['open_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['open_amount'], 2) }}</div></div>
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Due Soon</div><h5 class="mb-0">{{ $payablesSummary['due_soon_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['due_soon_amount'], 2) }}</div></div>
-                            <div class="col-md-3 mb-3"><div class="text-muted small">Paid Bills</div><h5 class="mb-0">{{ $payablesSummary['paid_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['paid_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">{{ __('accounting.draft_bills') }}</div><h5 class="mb-0">{{ $payablesSummary['draft_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['draft_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">{{ __('accounting.open_payables') }}</div><h5 class="mb-0">{{ $payablesSummary['open_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['open_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">{{ __('accounting.due_soon') }}</div><h5 class="mb-0">{{ $payablesSummary['due_soon_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['due_soon_amount'], 2) }}</div></div>
+                            <div class="col-md-3 mb-3"><div class="text-muted small">{{ __('accounting.paid_bills') }}</div><h5 class="mb-0">{{ $payablesSummary['paid_count'] }}</h5><div class="text-muted small">{{ number_format((float) $payablesSummary['paid_amount'], 2) }}</div></div>
                         </div>
                     </div>
                 </div>
 
                 @php($payablesAging = $moduleData['payables_aging'] ?? ['buckets' => [], 'total_open' => 0, 'overdue_total' => 0])
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Payables Aging</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.payables_aging') }}</h5></div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Total Open</div><h5 class="mb-0">{{ number_format((float) ($payablesAging['total_open'] ?? 0), 2) }}</h5></div>
-                            <div class="col-md-2 mb-3"><div class="text-muted small">Overdue</div><h5 class="mb-0">{{ number_format((float) ($payablesAging['overdue_total'] ?? 0), 2) }}</h5></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.total_open') }}</div><h5 class="mb-0">{{ number_format((float) ($payablesAging['total_open'] ?? 0), 2) }}</h5></div>
+                            <div class="col-md-2 mb-3"><div class="text-muted small">{{ __('accounting.overdue') }}</div><h5 class="mb-0">{{ number_format((float) ($payablesAging['overdue_total'] ?? 0), 2) }}</h5></div>
                             @foreach(($payablesAging['buckets'] ?? []) as $bucket)
                                 <div class="col-md-2 mb-3">
                                     <div class="text-muted small">{{ $bucket['label'] }}</div>
                                     <h5 class="mb-0">{{ number_format((float) $bucket['amount'], 2) }}</h5>
-                                    <div class="text-muted small">{{ $bucket['count'] }} open</div>
+                                    <div class="text-muted small">{{ $bucket['count'] }} {{ __('accounting.open') }}</div>
                                 </div>
                             @endforeach
                         </div>
@@ -868,34 +868,34 @@
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2" id="accounting-tax">
                     <div>
-                        <h5 class="mb-0">Tax</h5>
-                        <div class="text-muted small">VAT rates and tax ledger mapping.</div>
+                        <h5 class="mb-0">{{ __('accounting.tax') }}</h5>
+                        <div class="text-muted small">{{ __('accounting.tax_hint') }}</div>
                     </div>
-                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">Top</a>
+                    <a href="#accounting-workspace-navigation" class="btn btn-sm btn-outline-light">{{ __('accounting.top') }}</a>
                 </div>
                 <div class="card">
-                    <div class="card-header"><h5 class="card-title mb-0">Tax And VAT Settings</h5></div>
+                    <div class="card-header"><h5 class="card-title mb-0">{{ __('accounting.tax_vat_settings') }}</h5></div>
                     <div class="card-body">
                         @php($taxComplianceSummary = $moduleData['accounting_tax_compliance_summary'] ?? ['input_total' => 0, 'output_total' => 0, 'net_payable' => 0, 'latest_filing' => null, 'open_status' => 'needs_review'])
                         <div class="row mb-3">
-                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Input Tax</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['input_total'], 2) }}</div></div></div>
-                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Output Tax</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['output_total'], 2) }}</div></div></div>
-                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Net Tax Due</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['net_payable'], 2) }}</div></div></div>
-                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">Filing Status</div><div class="fw-semibold">{{ strtoupper(str_replace('_', ' ', $taxComplianceSummary['open_status'])) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">{{ __('accounting.input_tax') }}</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['input_total'], 2) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">{{ __('accounting.output_tax') }}</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['output_total'], 2) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">{{ __('accounting.net_tax_due') }}</div><div class="fw-semibold">{{ number_format((float) $taxComplianceSummary['net_payable'], 2) }}</div></div></div>
+                            <div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="text-muted small">{{ __('accounting.filing_status') }}</div><div class="fw-semibold">{{ strtoupper(str_replace('_', ' ', $taxComplianceSummary['open_status'])) }}</div></div></div>
                         </div>
                         <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-rates.store', $workspaceQuery) }}">
                             @csrf
                             <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                             <div class="row">
-                                <div class="col-md-2 mb-3"><label class="form-label">Code</label><input type="text" name="code" class="form-control" value="{{ old('code', 'vat_5') }}"></div>
-                                <div class="col-md-3 mb-3"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="{{ old('name', 'VAT 5%') }}"></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Rate %</label><input type="number" step="0.0001" min="0" max="100" name="rate" class="form-control" value="{{ old('rate', '5') }}"></div>
-                                <div class="col-md-2 mb-3"><label class="form-label">Input Account</label><input type="text" name="input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('input_tax_account', '1410 VAT Input Receivable') }}"></div>
-                                <div class="col-md-3 mb-3"><label class="form-label">Output Account</label><input type="text" name="output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('output_tax_account', '2100 VAT Output Payable') }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.code') }}</label><input type="text" name="code" class="form-control" value="{{ old('code', 'vat_5') }}"></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.name') }}</label><input type="text" name="name" class="form-control" value="{{ old('name', 'VAT 5%') }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.rate_percent') }}</label><input type="number" step="0.0001" min="0" max="100" name="rate" class="form-control" value="{{ old('rate', '5') }}"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">{{ __('accounting.input_tax_account') }}</label><input type="text" name="input_tax_account" list="account-catalog-options" class="form-control" value="{{ old('input_tax_account', '1410 VAT Input Receivable') }}"></div>
+                                <div class="col-md-3 mb-3"><label class="form-label">{{ __('accounting.output_tax_account') }}</label><input type="text" name="output_tax_account" list="account-catalog-options" class="form-control" value="{{ old('output_tax_account', '2100 VAT Output Payable') }}"></div>
                             </div>
                             <div class="d-flex align-items-center gap-3 flex-wrap">
-                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="tax_rate_default" name="is_default" value="1" checked><label class="form-check-label" for="tax_rate_default">Default tax rate</label></div>
-                                <button type="submit" class="btn btn-primary">Save Tax Rate</button>
+                                <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="tax_rate_default" name="is_default" value="1" checked><label class="form-check-label" for="tax_rate_default">{{ __('accounting.default_tax_rate') }}</label></div>
+                                <button type="submit" class="btn btn-primary">{{ __('accounting.save_tax_rate') }}</button>
                             </div>
                         </form>
                         <hr>
@@ -909,24 +909,24 @@
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-muted mb-0">No tax rates are configured yet.</p>
+                                <p class="text-muted mb-0">{{ __('accounting.no_tax_rates') }}</p>
                             @endforelse
                         </div>
                         <hr>
                         <div class="row">
                             <div class="col-xl-5">
-                                <h6 class="mb-3">Prepare Tax Filing</h6>
+                                <h6 class="mb-3">{{ __('accounting.prepare_tax_filing') }}</h6>
                                 @if($accountingPermissions['tax_rates_manage'] ?? true)
                                     <form method="POST" action="{{ route('automotive.admin.modules.general-ledger.tax-filings.store', $workspaceQuery) }}">
                                         @csrf
                                         <input type="hidden" name="workspace_product" value="{{ $workspaceQuery['workspace_product'] ?? data_get($focusedWorkspaceProduct, 'product_code', 'accounting') }}">
                                         <div class="row">
-                                            <div class="col-md-6 mb-3"><label class="form-label">Period Start</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
-                                            <div class="col-md-6 mb-3"><label class="form-label">Period End</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">{{ __('accounting.period_start') }}</label><input type="date" name="period_start" class="form-control" value="{{ old('period_start', now()->startOfMonth()->toDateString()) }}"></div>
+                                            <div class="col-md-6 mb-3"><label class="form-label">{{ __('accounting.period_end') }}</label><input type="date" name="period_end" class="form-control" value="{{ old('period_end', now()->endOfMonth()->toDateString()) }}"></div>
                                         </div>
-                                        <div class="mb-3"><label class="form-label">Return Type</label><select name="return_type" class="form-select"><option value="vat_return">VAT Return</option><option value="tax_return">Tax Return</option></select></div>
-                                        <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
-                                        <button type="submit" class="btn btn-primary">Prepare Tax Filing</button>
+                                        <div class="mb-3"><label class="form-label">{{ __('accounting.return_type') }}</label><select name="return_type" class="form-select"><option value="vat_return">{{ __('accounting.vat_return') }}</option><option value="tax_return">{{ __('accounting.tax_return') }}</option></select></div>
+                                        <div class="mb-3"><label class="form-label">{{ __('accounting.notes') }}</label><textarea name="notes" class="form-control" rows="2">{{ old('notes') }}</textarea></div>
+                                        <button type="submit" class="btn btn-primary">{{ __('accounting.prepare_tax_filing') }}</button>
                                     </form>
                                 @else
                                     <p class="text-muted mb-0">You do not have permission to prepare tax filings.</p>
