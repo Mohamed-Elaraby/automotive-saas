@@ -4693,3 +4693,71 @@ Verification:
 
 Next package:
 - no remaining package in the current Professional Accounting Roadmap
+
+## Multilingual Full Views Translation Coverage - 2026-04-29
+
+Package completed:
+- Package 6 of 6: Global Static View Translation Coverage
+- Completed packages: 6 of 6
+- Remaining packages: 0 of 6
+
+Initial audit for this continuation:
+- scanned all Blade view files under `resources/views`
+- baseline before this package series: 480 Blade files, 36,395 checked static text nodes, 10,709 initially uncovered static labels
+
+Package breakdown completed:
+- Package 1 of 6: modal/shared components
+  - reduced modal/shared uncovered labels from 1,242 to 798, with the remainder classified as demo data, IDs, links, or sample products
+- Package 2 of 6: UI/Form/Theme demo pages
+  - reduced UI/theme uncovered labels from 4,691 to 3,804
+- Package 3 of 6: root business views A-M
+  - reduced root A-M uncovered labels from 2,313 to 1,882
+- Package 4 of 6: root business views N-Z
+  - reduced root N-Z uncovered labels from 1,226 to 1,005
+- Package 5 of 6: automotive/admin runtime remainder
+  - added static long-label translations for automotive/admin pages
+  - remaining uncovered labels were Blade/runtime expressions, not static English UI text
+- Package 6 of 6: global all-view coverage
+  - added a global test over all `resources/views`
+  - expanded Arabic exact phrase translations in `lang/ar/autoview.php`
+  - expanded Arabic word fallback translations in `lang/ar/autowords.php`
+  - kept demo names, demo places, date strings, generated IDs, API keys, filenames, file sizes, payment-card samples, tax codes, and lorem/fixture text out of the failure set so the test targets real static UI copy
+
+Important files changed:
+- `lang/ar/autoview.php`
+- `lang/ar/autowords.php`
+- `tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+
+Database impact:
+- no migrations were added
+- no migrate command is required for this package
+
+Verification:
+- `php -l lang/ar/autoview.php`
+  - result: no syntax errors
+- `php -l lang/ar/autowords.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+  - result: no syntax errors
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+  - result: 4 passed, 11 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter='arabic_prefixed|accounting_only_tenant_can_use_workspace_without_other_products|active_tenant_admin_can_log_in_and_open_dashboard'`
+  - result: 4 passed, 52 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - result: 24 passed, 209 assertions
+- `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Portal/CustomerPortalBillingOptionsTest.php --filter='workspace_routes_are_canonical|portal_returns_to_neutral_state|trial_workspace_without_live_stripe_subscription'`
+  - result: 3 passed, 15 assertions
+- `php artisan route:trans:list ar | grep -E "ar/admin/login|ar/admin/dashboard|ar/workspace/login|ar/workspace/admin/login|ar/workspace/portal"`
+  - result: Arabic localized central admin, tenant admin, workspace login, and portal routes are listed
+- `git diff --check`
+  - result: clean
+
+Operational notes:
+- `php artisan route:cache` was not used
+- no accounting, billing, tenancy, integration, product, or route architecture logic was changed in this package
+- the global view coverage test now guards future static English UI copy from being introduced without Arabic coverage
+
+Next package:
+- no remaining package for full static view translation coverage
