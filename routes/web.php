@@ -38,9 +38,26 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 |
 */
 
+$localizedRouteMiddleware = ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'];
+
+Route::prefix('ar')
+    ->middleware($localizedRouteMiddleware)
+    ->group(function (): void {
+        require base_path('routes/products/automotive/front.php');
+
+        Route::prefix('admin')
+            ->name('admin.')
+            ->group(function () {
+                Route::middleware('guest:admin')->group(function () {
+                    Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('login');
+                    Route::post('/login', [AdminLoginController::class, 'login'])->name('login.submit');
+                });
+            });
+    });
+
 Route::group([
     'prefix' => LaravelLocalization::setLocale(),
-    'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'],
+    'middleware' => $localizedRouteMiddleware,
 ], function () {
 Route::get('/', function () {
     return view('index');

@@ -44,10 +44,10 @@ class CanonicalizeWorkspaceHostMiddlewareTest extends TestCase
 
     public function test_it_creates_hyphen_domain_alias_for_existing_underscore_tenants(): void
     {
-        $tenant = Tenant::query()->create([
+        $tenant = Tenant::withoutEvents(fn () => Tenant::query()->create([
             'id' => 'client-1',
             'data' => [],
-        ]);
+        ]));
 
         Domain::query()->create([
             'domain' => 'client_1.seven-scapital.com',

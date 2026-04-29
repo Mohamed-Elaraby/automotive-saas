@@ -941,6 +941,7 @@ Important routing fix completed before continuing this package:
     - `middleware => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath']`
   - `routes/web.php` is wrapped in the official localization group
   - tenant product routes in `routes/tenant.php` are wrapped in the same official localization group inside the stancl tenancy middleware group
+  - explicit static Arabic safety groups were added for `/ar/workspace/login` and `/ar/workspace/admin/login` so these critical routes exist even when the dynamic Mcamara prefix has not been forced in CLI/bootstrap/cache contexts
   - default English URLs remain unprefixed
   - Arabic URLs remain under `/ar/...`
   - old URLs such as `/workspace/login`, `/workspace/admin/login`, `/automotive/admin/login`, and `/admin/login` continue to work
@@ -951,6 +952,12 @@ Important routing fix completed before continuing this package:
     - old underscore hosts receive a 308 redirect to the hyphen host
     - if an old underscore domain exists in the `domains` table, `CanonicalizeWorkspaceHost` creates the matching hyphen alias for the same tenant before redirecting
 - verified:
+  - `php artisan route:list --path=ar/workspace/login --except-vendor` shows:
+    - `GET|HEAD ar/workspace/login`
+    - `POST ar/workspace/login`
+  - `php artisan route:list --path=ar/workspace/admin/login --except-vendor` shows:
+    - `GET|HEAD ar/workspace/admin/login`
+    - `POST ar/workspace/admin/login`
   - `php artisan route:trans:list ar` shows Arabic-prefixed routes including:
     - `ar/admin/login`
     - `ar/admin/dashboard`
