@@ -5070,3 +5070,35 @@ Follow-up correction:
 - isolated automotive admin and portal layouts must not load this demo customizer script
 - product layouts now hide `.sidebar-contact` and `.sidebar-themesettings` defensively
 - local `.two-col-sidebar` RTL overrides were removed because they split the Kanakku two-column sidebar; product layouts should rely on the original Kanakku RTL rules for sidebar/page/header positioning
+
+## Static Translation Head Preservation Fix - 2026-05-04
+
+Package completed:
+- fixed the Arabic static HTML translation middleware so it no longer reparses the full HTML document through `DOMDocument`
+- root cause: parsing a full document for translation can move or wrap `<head>` assets such as `<style>` and `<link>` into body paragraphs in some real responses
+- `TranslateStaticHtmlText` now preserves the original `<head>` exactly and translates only the inner `<body>` HTML
+- body fragments are wrapped in an internal temporary root before DOM parsing, then only the root children are emitted back into the response
+- raw body blocks remain protected for `script`, `style`, `pre`, `code`, `textarea`, `svg`, and `canvas`
+- added regression coverage for:
+  - full HTML responses keeping `<head><style>...<link ...></head>` out of `<p>`
+  - the real Arabic portal login route `/ar/workspace/login` not emitting `<p><style>` or `<p><link>`
+
+Important files changed:
+- `app/Http/Middleware/TranslateStaticHtmlText.php`
+- `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+- `tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+
+Operational notes:
+- no original Kanakku theme CSS/JS files under `public/theme` were changed
+- no database changes were made
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l app/Http/Middleware/TranslateStaticHtmlText.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: no syntax errors
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`

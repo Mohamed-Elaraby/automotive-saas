@@ -24,6 +24,18 @@ class LanguageSwitchDirectionTest extends TestCase
         $response->assertSee('theme/css/bootstrap.rtl.min.css', false);
     }
 
+    public function test_arabic_portal_login_keeps_head_assets_out_of_paragraphs(): void
+    {
+        $response = $this->followingRedirects()->get('/ar/workspace/login');
+
+        $response->assertOk();
+        $response->assertSee('theme/css/bootstrap.rtl.min.css', false);
+        $response->assertSee('theme/css/style.css', false);
+        $response->assertDontSee('<p><style>', false);
+        $response->assertDontSee('<p><link', false);
+        $response->assertDontSee('theme/js/theme-script.js', false);
+    }
+
     public function test_english_switch_clears_arabic_session_and_returns_ltr_theme(): void
     {
         $this->followingRedirects()->get('/ar/admin/login')->assertOk();

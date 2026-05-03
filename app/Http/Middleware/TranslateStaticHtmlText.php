@@ -70,13 +70,38 @@ class TranslateStaticHtmlText
      */
     private function translateHtml(string $html, array $translations, array $wordTranslations): ?string
     {
-        [$html, $rawBlocks] = $this->extractRawBlocks($html);
+        if (preg_match('~<body\b[^>]*>~i', $html)) {
+            $translated = preg_replace_callback(
+                '~(<body\b[^>]*>)(.*?)(</body>)~is',
+                function (array $matches) use ($translations, $wordTranslations): string {
+                    $translatedBody = $this->translateHtmlFragment($matches[2], $translations, $wordTranslations);
 
+                    return $matches[1].($translatedBody ?? $matches[2]).$matches[3];
+                },
+                $html,
+                1
+            );
+
+            return is_string($translated) ? $translated : null;
+        }
+
+        return $this->translateHtmlFragment($html, $translations, $wordTranslations);
+    }
+
+    /**
+     * @param  array<string, string>  $translations
+     * @param  array<string, string>  $wordTranslations
+     */
+    private function translateHtmlFragment(string $html, array $translations, array $wordTranslations): ?string
+    {
+        [$html, $rawBlocks] = $this->extractRawBlocks($html);
+        $rootAttribute = 'data-auto-translate-root';
+        $wrappedHtml = '<div '.$rootAttribute.'="1">'.$html.'</div>';
         $document = new DOMDocument('1.0', 'UTF-8');
 
         $previousErrors = libxml_use_internal_errors(true);
         $loaded = $document->loadHTML(
-            mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'),
+            mb_convert_encoding($wrappedHtml, 'HTML-ENTITIES', 'UTF-8'),
             LIBXML_HTML_NODEFDTD | LIBXML_HTML_NOIMPLIED
         );
         libxml_clear_errors();
@@ -87,6 +112,11 @@ class TranslateStaticHtmlText
         }
 
         $xpath = new DOMXPath($document);
+        $root = $xpath->query('//*[@'.$rootAttribute.'="1"]')->item(0);
+
+        if (! $root instanceof DOMElement) {
+            return null;
+        }
 
         foreach ($xpath->query('//text()[normalize-space(.) != ""]') ?: [] as $textNode) {
             if (! $this->canTranslateTextNode($textNode)) {
@@ -122,9 +152,17 @@ class TranslateStaticHtmlText
             }
         }
 
-        $translated = $document->saveHTML();
+        $translated = '';
 
-        if (! is_string($translated)) {
+        foreach (iterator_to_array($root->childNodes) as $childNode) {
+            $childHtml = $document->saveHTML($childNode);
+
+            if (is_string($childHtml)) {
+                $translated .= $childHtml;
+            }
+        }
+
+        if ($translated === '') {
             return null;
         }
 

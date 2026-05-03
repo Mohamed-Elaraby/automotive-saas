@@ -97,6 +97,28 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertSee('هذه هي نقطة تشغيل المحاسبة لدفاتر الأستاذ والقيود ووحدات التمويل المستقبلية داخل مساحة عمل العميل المشتركة.', false);
     }
 
+    public function test_arabic_html_response_keeps_head_assets_out_of_paragraphs(): void
+    {
+        Route::middleware('web')->get('/static-translation-head-assets-ar', function () {
+            app()->setLocale('ar');
+
+            return response(
+                '<!DOCTYPE html><html lang="ar" dir="rtl"><head><style>.language-switcher{display:flex}</style><link rel="stylesheet" href="/theme/css/style.css"></head><body><p>Save Changes</p></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        });
+
+        $response = $this->followingRedirects()->get('/static-translation-head-assets-ar');
+
+        $response->assertOk();
+        $response->assertSee('<head><style>.language-switcher{display:flex}</style><link rel="stylesheet" href="/theme/css/style.css"></head>', false);
+        $response->assertDontSee('<p><style>', false);
+        $response->assertDontSee('<p><link', false);
+        $response->assertDontSee('</style><link rel="stylesheet" href="/theme/css/style.css"></p>', false);
+        $response->assertSee('<p>حفظ التغييرات</p>', false);
+    }
+
     public function test_arabic_html_response_translates_known_workspace_catalog_phrases_inside_mixed_lines(): void
     {
         Route::middleware('web')->get('/static-translation-workspace-catalog-ar', function () {
