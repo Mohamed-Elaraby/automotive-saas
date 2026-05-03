@@ -7,6 +7,13 @@ use Tests\TestCase;
 
 class StaticHtmlTranslationMiddlewareTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['app.key' => 'base64:'.base64_encode(str_repeat('a', 32))]);
+    }
+
     public function test_arabic_html_response_translates_known_static_text_without_touching_scripts(): void
     {
         Route::middleware('web')->get('/static-translation-ar', function () {
@@ -19,7 +26,7 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
             );
         });
 
-        $response = $this->get('/static-translation-ar');
+        $response = $this->followingRedirects()->get('/static-translation-ar');
 
         $response->assertOk();
         $response->assertSee('حفظ التغييرات', false);
@@ -41,7 +48,7 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
             );
         });
 
-        $response = $this->get('/static-translation-en');
+        $response = $this->followingRedirects()->get('/static-translation-en');
 
         $response->assertOk();
         $response->assertSee('Save Changes', false);

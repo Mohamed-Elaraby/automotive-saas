@@ -4761,3 +4761,60 @@ Operational notes:
 
 Next package:
 - no remaining package for full static view translation coverage
+
+## Multilingual Full Views Translation Continuation - 2026-05-03
+
+Package completed:
+- Central Admin exact-match translation quality pass
+
+Why this was done:
+- the previous global coverage package already made the all-view static-label tests pass
+- this continuation improves Arabic quality for active Central Admin surfaces by moving common admin labels from word-by-word fallback coverage into exact phrase translations
+- this keeps the same automatic static HTML translation approach while reducing awkward fallback output in operational screens
+
+Scope completed:
+- expanded `lang/ar/autoview.php` with Central Admin exact-match phrases for:
+  - activity logs
+  - system errors
+  - billing reports
+  - billing features
+  - coupons
+  - central subscriptions
+  - tenant product subscriptions
+  - product enablement request review
+  - Stripe sync/provisioning diagnostics
+  - reference data create/edit labels
+- adjusted `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php` so it follows localization redirects during middleware checks
+- added an in-test application key so the localization/session redirect path is testable even when the local `.env` has no `APP_KEY`
+
+Database impact:
+- no migrations were added
+- no migrate command is required
+
+Verification:
+- `php -l lang/ar/autoview.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: no syntax errors
+- `php artisan view:cache`
+  - result: Blade templates cached successfully
+- `php artisan config:clear`
+  - result: configuration cache cleared successfully after verification commands
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+  - result: 2 passed, 2 deprecated, 11 assertions
+- `git diff --check`
+  - result: clean
+
+Additional verification note:
+- targeted Admin regression suite was attempted:
+  - `DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Admin/ProductCrudTest.php tests/Feature/Admin/Tenants/AdminTenantsIndexTest.php tests/Feature/Admin/Plans/AdminPlanFeatureStorageTest.php`
+  - it failed on pre-existing localization/canonical-host `308` redirects and route host mismatch assertions, not on translation dictionary syntax or view rendering
+  - rerunning with `APP_URL=https://system.seven-scapital.com` produced the same redirect class of failures
+
+Operational notes:
+- `php artisan route:cache` was not used
+- no routes were changed
+- no billing, tenancy, product activation, accounting, or integration logic was changed
+
+Recommended next package:
+- Tenant Admin and runtime exact-match translation quality pass
