@@ -5068,4 +5068,5 @@ Follow-up correction:
 - `theme/js/theme-script.js` is the Kanakku demo customizer script; it injects the purple gear and `#theme-setting` offcanvas into the page and applies layout settings from browser `localStorage`
 - loading it inside product layouts can visually break the product UI, especially in RTL, by showing the demo customizer panel over the workspace
 - isolated automotive admin and portal layouts must not load this demo customizer script
-- product layouts now hide `.sidebar-contact` and `.sidebar-themesettings` defensively and keep local RTL layout overrides after `theme/css/style.css`
+- product layouts now hide `.sidebar-contact` and `.sidebar-themesettings` defensively
+- local `.two-col-sidebar` RTL overrides were removed because they split the Kanakku two-column sidebar; product layouts should rely on the original Kanakku RTL rules for sidebar/page/header positioning

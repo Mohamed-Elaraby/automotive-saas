@@ -50,7 +50,7 @@ class LanguageSwitchDirectionTest extends TestCase
         $response->assertDontSee('theme/css/bootstrap.rtl.min.css', false);
     }
 
-    public function test_product_layouts_pin_two_column_sidebar_to_the_right_in_rtl(): void
+    public function test_product_layouts_do_not_load_kanakku_demo_customizer(): void
     {
         $layoutHeads = [
             resource_path('views/automotive/admin/layouts/adminLayout/partials/head.blade.php'),
@@ -60,12 +60,8 @@ class LanguageSwitchDirectionTest extends TestCase
         foreach ($layoutHeads as $layoutHead) {
             $contents = file_get_contents($layoutHead);
 
-            $this->assertStringContainsString('body.layout-mode-rtl .two-col-sidebar', $contents);
-            $this->assertStringContainsString('right: 0;', $contents);
-            $this->assertStringContainsString('left: auto;', $contents);
-            $this->assertStringContainsString('body.layout-mode-rtl .page-wrapper', $contents);
-            $this->assertStringContainsString('margin-right: 276px;', $contents);
             $this->assertStringNotContainsString('theme/js/theme-script.js', $contents);
+            $this->assertStringNotContainsString('body.layout-mode-rtl .two-col-sidebar', $contents);
             $this->assertStringContainsString('.sidebar-themesettings', $contents);
         }
     }
