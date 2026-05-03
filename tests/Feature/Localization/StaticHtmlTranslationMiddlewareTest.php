@@ -32,7 +32,7 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertSee('حفظ التغييرات', false);
         $response->assertSee('title="حفظ التغييرات"', false);
         $response->assertSee('value="إلغاء"', false);
-        $response->assertSee('عميل دفعة ملخص', false);
+        $response->assertSee('ملخص مدفوعات العملاء', false);
         $response->assertSee('confirm(\'حذف هذا الإشعار؟\')', false);
         $response->assertSee('window.label = "Save Changes";', false);
     }
@@ -73,6 +73,25 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertOk();
         $response->assertSee('هذا المنتج نشط وجاهز في مساحة العمل الخاصة بك.', false);
         $response->assertSee('placeholder="صف كيف يجب أن يظهر هذا المنتج في بوابة العميل."', false);
-        $response->assertSee('alt="مستخدم صورة"', false);
+        $response->assertSee('alt="صورة المستخدم"', false);
+    }
+
+    public function test_arabic_html_response_keeps_javascript_template_literals_raw(): void
+    {
+        Route::middleware('web')->get('/static-translation-script-template-ar', function () {
+            app()->setLocale('ar');
+
+            return response(
+                '<html><body><script>list.innerHTML = items.map((item) => `<div class="portal-notification-open-link">${escapeHtml(item.title || notificationFallbackLabel)}</div>`).join("");</script><p>This is the accounting runtime entry point for ledgers, journals, and future finance modules inside the shared tenant workspace.</p></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        });
+
+        $response = $this->followingRedirects()->get('/static-translation-script-template-ar');
+
+        $response->assertOk();
+        $response->assertSee('<script>list.innerHTML = items.map((item) => `<div class="portal-notification-open-link">${escapeHtml(item.title || notificationFallbackLabel)}</div>`).join("");</script>', false);
+        $response->assertSee('هذه هي نقطة تشغيل المحاسبة لدفاتر الأستاذ والقيود ووحدات التمويل المستقبلية داخل مساحة عمل العميل المشتركة.', false);
     }
 }

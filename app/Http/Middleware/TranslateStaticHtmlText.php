@@ -70,6 +70,8 @@ class TranslateStaticHtmlText
      */
     private function translateHtml(string $html, array $translations, array $wordTranslations): ?string
     {
+        [$html, $rawBlocks] = $this->extractRawBlocks($html);
+
         $document = new DOMDocument('1.0', 'UTF-8');
 
         $previousErrors = libxml_use_internal_errors(true);
@@ -122,7 +124,13 @@ class TranslateStaticHtmlText
 
         $translated = $document->saveHTML();
 
-        return is_string($translated) ? html_entity_decode($translated, ENT_QUOTES | ENT_HTML5, 'UTF-8') : null;
+        if (! is_string($translated)) {
+            return null;
+        }
+
+        $translated = html_entity_decode($translated, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return $this->restoreRawBlocks($translated, $rawBlocks);
     }
 
     /**
@@ -163,7 +171,7 @@ class TranslateStaticHtmlText
             return $translations[$normalized];
         }
 
-        return $this->translateWords($normalized, $wordTranslations) ?? $text;
+        return $text;
     }
 
     /**
@@ -211,6 +219,43 @@ class TranslateStaticHtmlText
         }
 
         return $translated;
+    }
+
+    /**
+     * DOMDocument's HTML parser can misread JavaScript template literals that
+     * contain HTML. Keep raw blocks out of the parser so scripts never leak as
+     * visible text after translation.
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private function extractRawBlocks(string $html): array
+    {
+        $blocks = [];
+
+        $protected = preg_replace_callback(
+            '~<(script|style|pre|code|textarea|svg|canvas)\b[^>]*>.*?</\1>~is',
+            function (array $matches) use (&$blocks): string {
+                $placeholder = '___auto_translate_raw_block_'.count($blocks).'___';
+                $blocks[$placeholder] = $matches[0];
+
+                return $placeholder;
+            },
+            $html
+        );
+
+        return [is_string($protected) ? $protected : $html, $blocks];
+    }
+
+    /**
+     * @param  array<string, string>  $blocks
+     */
+    private function restoreRawBlocks(string $html, array $blocks): string
+    {
+        if ($blocks === []) {
+            return $html;
+        }
+
+        return strtr($html, $blocks);
     }
 
     private function canTranslateTextNode(DOMNode $node): bool

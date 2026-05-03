@@ -114,11 +114,43 @@ class StaticViewTranslationCoverageTest extends TestCase
             return true;
         }
 
+        if (preg_match('/^[a-z_]+\)+$/', $text)) {
+            return true;
+        }
+
+        if (preg_match('/^[a-z]+(?:-[a-z]+)+$/', $text)) {
+            return true;
+        }
+
+        if (preg_match('/^[a-zA-Z_]+\)\.\'\'$/', $text)) {
+            return true;
+        }
+
+        if (str_contains($text, ").''") || str_starts_with($text, 'name).')) {
+            return true;
+        }
+
         if (preg_match('/^[A-Za-z0-9_]+:\s*".*"$/', $text)) {
             return true;
         }
 
-        if (preg_match('/^(INV|INC|PR|QU|PO|ABC)\s*[A-Z0-9#-]+$/', $text) || preg_match('/^(PAYIN|PAYOUT)\s+-?\d+$/', $text)) {
+        if (preg_match('/^No of Invoices\s*:\s*\d+$/', $text)) {
+            return true;
+        }
+
+        if (preg_match('/^Total Order\s*:\s*\d+$/', $text)) {
+            return true;
+        }
+
+        if (preg_match('/^\d+\s+Users$/', $text)) {
+            return true;
+        }
+
+        if (preg_match('/^Version\s*:\s*[A-Za-z0-9.]+$/', $text) || preg_match('/^\d+K$/', $text) || preg_match('/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/', $text)) {
+            return true;
+        }
+
+        if (preg_match('/^(INV|INC|PR|QU|PO|ABC|REF)\s*[A-Z0-9#-]+$/', $text) || preg_match('/^(PAYIN|PAYOUT)\s+-?\d+$/', $text)) {
             return true;
         }
 
@@ -450,7 +482,7 @@ class StaticViewTranslationCoverageTest extends TestCase
     {
         $brandParts = [
             'Dell', 'XPS', 'Nike', 'Tech', 'Bazaar', 'Quick', 'Cart', 'Harvest',
-            'Basket', 'Elite', 'Mart', 'Prime', 'Trend', 'Crafters', 'Fresh',
+            'Basket', 'Elite', 'Mart', 'Prime', 'Trend', 'Hive', 'Crafters', 'Fresh',
             'Nest', 'Gizmo', 'Dream', 'Space', 'Mega', 'Decor', 'Ease', 'Electro',
             'World', 'Urban', 'Home', 'Doccure', 'Dreams', 'Tour', 'Gigs',
             'Rent', 'Sports', 'Estate', 'LMS', 'Truelysell', 'POS', 'Bus',

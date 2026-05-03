@@ -4910,3 +4910,45 @@ Operational notes:
 - no Kanakku theme Blade, CSS, or JS files were changed
 - `php artisan route:cache` was not used
 - remaining broad scan hits are mostly code fragments, CSV/header strings, console command output, currency codes, dates, and demo fixture data rather than active HTML UI labels
+
+## Static Arabic Translation Runtime Fix - 2026-05-03
+
+Package completed:
+- fixed mixed Arabic/English output caused by word-level fallback translation being applied to dynamic text such as product names, plan names, plan descriptions, and database-backed labels
+- fixed visible JavaScript fragments appearing in Arabic pages when template literals inside `<script>` blocks contained HTML snippets
+
+Implementation:
+- updated `app/Http/Middleware/TranslateStaticHtmlText.php`
+  - Arabic HTML auto-translation now uses exact phrase matches from `lang/ar/autoview.php` only
+  - word-level fallback is no longer applied at runtime, so database-returned text is not partially translated or reordered
+  - raw blocks are extracted before DOM parsing and restored afterwards for:
+    - `script`
+    - `style`
+    - `pre`
+    - `code`
+    - `textarea`
+    - `svg`
+    - `canvas`
+- expanded `lang/ar/autoview.php` with exact translations for workspace product/runtime copy that appears from static project configuration
+- expanded `lang/ar/autoview.php` with additional exact translations found during the follow-up static text audit across active admin, portal, billing, coupon, product-builder, tenant, reference-data, and shared theme/demo surfaces
+- updated `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - exact phrase assertion for `Customer Payment Summary`
+  - exact alt-text assertion for `User Img`
+  - regression coverage for JavaScript template literals that include HTML and `${...}` placeholders
+- updated `tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
+  - added ignores for non-UI code fragments, generated counters, domains, versions, lowercase slugs, and demo data patterns discovered during the full scan
+
+Operational notes:
+- database content is intentionally not auto-translated word-by-word; static UI copy must be added to `lang/ar/autoview.php` as exact phrases
+- no Kanakku theme Blade, CSS, or JS files were changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l app/Http/Middleware/TranslateStaticHtmlText.php`
+  - result: no syntax errors
+- `php -l lang/ar/autoview.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: no syntax errors
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
