@@ -94,12 +94,12 @@ class TranslateStaticHtmlText
             $textNode->nodeValue = $this->translateTextPreservingWhitespace($textNode->nodeValue ?? '', $translations, $wordTranslations);
         }
 
-        foreach ($xpath->query('//*[@placeholder or @title or @aria-label or @data-bs-title or @value or @onclick or @onsubmit]') ?: [] as $element) {
+        foreach ($xpath->query('//*[@placeholder or @title or @aria-label or @data-bs-title or @alt or @value or @onclick or @onsubmit]') ?: [] as $element) {
             if (! $element instanceof DOMElement || $this->hasSkippedAncestor($element)) {
                 continue;
             }
 
-            foreach (['placeholder', 'title', 'aria-label', 'data-bs-title'] as $attribute) {
+            foreach (['placeholder', 'title', 'aria-label', 'data-bs-title', 'alt'] as $attribute) {
                 if ($element->hasAttribute($attribute)) {
                     $element->setAttribute($attribute, $this->translate($element->getAttribute($attribute), $translations, $wordTranslations));
                 }
@@ -184,21 +184,26 @@ class TranslateStaticHtmlText
      */
     private function translateWords(string $text, array $wordTranslations): ?string
     {
-        if ($wordTranslations === [] || mb_strlen($text) > 80 || preg_match('/[{}<>=$]/', $text)) {
+        if ($wordTranslations === [] || mb_strlen($text) > 220 || preg_match('/[{}<>=$]/', $text)) {
             return null;
         }
 
         $translatedAny = false;
-        $translated = preg_replace_callback('/\b[A-Z][A-Za-z]+\b/', function (array $matches) use ($wordTranslations, &$translatedAny) {
+        $translated = preg_replace_callback('/\b[A-Za-z][A-Za-z]+\b/', function (array $matches) use ($wordTranslations, &$translatedAny) {
             $word = $matches[0];
+            $lookup = $word;
 
-            if (! isset($wordTranslations[$word])) {
+            if (! isset($wordTranslations[$lookup])) {
+                $lookup = ucfirst(strtolower($word));
+            }
+
+            if (! isset($wordTranslations[$lookup])) {
                 return $word;
             }
 
             $translatedAny = true;
 
-            return $wordTranslations[$word];
+            return $wordTranslations[$lookup];
         }, $text);
 
         if (! $translatedAny || ! is_string($translated)) {

@@ -55,4 +55,24 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertSee('Save Changes', false);
         $response->assertDontSee('حفظ التغييرات', false);
     }
+
+    public function test_arabic_html_response_translates_long_mixed_case_static_sentences(): void
+    {
+        Route::middleware('web')->get('/static-translation-long-ar', function () {
+            app()->setLocale('ar');
+
+            return response(
+                '<html><body><p>This product is active and ready in your workspace.</p><input placeholder="Describe how this product should appear in the customer portal."><img alt="User Img"></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        });
+
+        $response = $this->followingRedirects()->get('/static-translation-long-ar');
+
+        $response->assertOk();
+        $response->assertSee('هذا المنتج نشط وجاهز في مساحة العمل الخاصة بك.', false);
+        $response->assertSee('placeholder="صف كيف يجب أن يظهر هذا المنتج في بوابة العميل."', false);
+        $response->assertSee('alt="مستخدم صورة"', false);
+    }
 }
