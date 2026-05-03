@@ -94,7 +94,7 @@ class TranslateStaticHtmlText
             $textNode->nodeValue = $this->translateTextPreservingWhitespace($textNode->nodeValue ?? '', $translations, $wordTranslations);
         }
 
-        foreach ($xpath->query('//*[@placeholder or @title or @aria-label or @data-bs-title or @value]') ?: [] as $element) {
+        foreach ($xpath->query('//*[@placeholder or @title or @aria-label or @data-bs-title or @value or @onclick or @onsubmit]') ?: [] as $element) {
             if (! $element instanceof DOMElement || $this->hasSkippedAncestor($element)) {
                 continue;
             }
@@ -108,9 +108,15 @@ class TranslateStaticHtmlText
             if (
                 $element->hasAttribute('value')
                 && in_array(strtolower($element->tagName), ['input', 'button'], true)
-                && in_array(strtolower($element->getAttribute('type')), ['button', 'submit', 'reset'], true)
+                    && in_array(strtolower($element->getAttribute('type')), ['button', 'submit', 'reset'], true)
             ) {
                 $element->setAttribute('value', $this->translate($element->getAttribute('value'), $translations, $wordTranslations));
+            }
+
+            foreach (['onclick', 'onsubmit'] as $attribute) {
+                if ($element->hasAttribute($attribute)) {
+                    $element->setAttribute($attribute, $this->translateConfirmCalls($element->getAttribute($attribute), $translations, $wordTranslations));
+                }
             }
         }
 
@@ -158,6 +164,19 @@ class TranslateStaticHtmlText
         }
 
         return $this->translateWords($normalized, $wordTranslations) ?? $text;
+    }
+
+    /**
+     * @param  array<string, string>  $translations
+     * @param  array<string, string>  $wordTranslations
+     */
+    private function translateConfirmCalls(string $attribute, array $translations, array $wordTranslations): string
+    {
+        $translated = preg_replace_callback('/confirm\((["\'])(.*?)\1\)/u', function (array $matches) use ($translations, $wordTranslations) {
+            return 'confirm('.$matches[1].$this->translate($matches[2], $translations, $wordTranslations).$matches[1].')';
+        }, $attribute);
+
+        return is_string($translated) ? $translated : $attribute;
     }
 
     /**

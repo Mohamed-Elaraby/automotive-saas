@@ -4862,3 +4862,51 @@ Operational notes:
 - `php artisan route:cache` was not used
 - final implementation does not modify Kanakku theme Blade, CSS, or JS files
 - no billing, tenancy, product activation, accounting, or integration logic was changed
+
+## Static English UI Translation Sweep - 2026-05-03
+
+Package completed:
+- expanded Arabic coverage for remaining hardcoded English UI text after switching to Arabic
+
+Scope completed:
+- broadened `app/Http/Middleware/TranslateStaticHtmlText.php`
+  - still translates only Arabic HTML responses
+  - still skips scripts, styles, code, pre, textarea, svg, and canvas content
+  - now also translates `confirm(...)` strings inside `onclick` and `onsubmit` attributes
+- expanded `lang/ar/autoview.php`
+  - controller flash messages
+  - billing and subscription action labels
+  - portal onboarding and checkout messages
+  - admin notification/system-error confirmations
+  - product builder and manifest workflow copy
+  - accounting/runtime labels and messages likely to surface in views
+  - common placeholders from active admin and tenant screens
+- expanded `lang/ar/autowords.php`
+  - additional domain words used by accounting, billing, workspace activation, and product workflows
+- updated `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - added coverage for translating browser confirmation text in HTML attributes
+
+Important files changed:
+- `app/Http/Middleware/TranslateStaticHtmlText.php`
+- `lang/ar/autoview.php`
+- `lang/ar/autowords.php`
+- `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+
+Database impact:
+- no migrations were added
+- no migrate command is required
+
+Verification:
+- `php -l lang/ar/autoview.php`
+  - result: no syntax errors
+- `php -l lang/ar/autowords.php`
+  - result: no syntax errors
+- `php -l app/Http/Middleware/TranslateStaticHtmlText.php`
+  - result: no syntax errors
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: translation tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
+
+Operational notes:
+- no Kanakku theme Blade, CSS, or JS files were changed
+- `php artisan route:cache` was not used
+- remaining broad scan hits are mostly code fragments, CSV/header strings, console command output, currency codes, dates, and demo fixture data rather than active HTML UI labels

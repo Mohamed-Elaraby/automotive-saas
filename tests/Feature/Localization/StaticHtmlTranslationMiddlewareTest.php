@@ -20,7 +20,7 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
             app()->setLocale('ar');
 
             return response(
-                '<html><body><button title="Save Changes">Save Changes</button><input type="submit" value="Cancel"><span>Customer Payment Summary</span><script>window.label = "Save Changes";</script></body></html>',
+                '<html><body><form onsubmit="return confirm(\'Delete this notification?\');"><button title="Save Changes">Save Changes</button><input type="submit" value="Cancel"><span>Customer Payment Summary</span></form><script>window.label = "Save Changes";</script></body></html>',
                 200,
                 ['Content-Type' => 'text/html; charset=UTF-8']
             );
@@ -33,6 +33,7 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertSee('title="حفظ التغييرات"', false);
         $response->assertSee('value="إلغاء"', false);
         $response->assertSee('عميل دفعة ملخص', false);
+        $response->assertSee('confirm(\'حذف هذا الإشعار؟\')', false);
         $response->assertSee('window.label = "Save Changes";', false);
     }
 
