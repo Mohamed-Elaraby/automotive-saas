@@ -56,6 +56,38 @@ The project started as an automotive-oriented SaaS, but current work has been pu
 - Do not blindly refactor shared theme/layout code if an isolated automotive copy already exists.
 - Do not revert user changes outside the scope of the task.
 
+## 4.1) Mandatory Future Implementation Rules
+These rules apply to every future feature, page, module, product, controller, view, and UI change.
+
+### Multilingual First
+- Any future work must be built as multilingual from the start.
+- New fixed UI text must not be left as raw English in Blade, controllers, services, JavaScript, validation messages, notifications, or config-driven UI arrays.
+- Use the existing localization structure and add Arabic coverage at the same time as the English/UI implementation.
+- If text is platform/seed/config copy, treat it as translatable platform copy and add exact Arabic translations.
+- If text is true user-entered or tenant/database business data, do not translate it automatically word-by-word.
+- Any new UI work must be checked in both English LTR and Arabic RTL.
+
+### UI/UX And Theme Source
+- Any future view must be implemented with proper UI/UX quality, not as raw functional markup.
+- The visual source of truth is the purchased Kanakku theme already present directly under `resources/views`.
+- Reuse the theme's page structures, component patterns, spacing, cards, tables, forms, buttons, icons, and layout conventions.
+- Do not edit the original theme files directly unless the user explicitly asks for that. Create isolated product/layout copies or scoped overrides instead.
+- Keep pages consistent with the theme while adapting them to the SaaS product workflow.
+
+### Product Scope Isolation
+- Every new product/system must live inside its own clear scope.
+- Example: a future maintenance system must have maintenance-scoped controllers, routes, views, services, translations, config, tests, and runtime modules rather than being mixed into unrelated automotive/accounting/spare-parts code.
+- Product code should be organized so ownership is obvious from paths, namespaces, route groups, view roots, translation files/keys, and service names.
+- Shared workspace behavior may stay shared, but product-specific behavior must remain inside that product's scope.
+- Cross-product integration should be explicit through services/config/integration contracts, not by leaking one product's UI or controller responsibilities into another product.
+
+### Product Layout Copies
+- Each product area that needs its own runtime/admin/portal experience should get its own isolated layout copy, following the current pattern:
+  - tenant admin has an isolated layout copy under the product/admin area
+  - customer portal has an isolated layout copy under the product/portal area
+- Do not make a new product depend on editing a global/shared Kanakku layout if a product-scoped layout copy is needed.
+- Layout copies should preserve the Kanakku design approach while allowing product-specific navigation, language handling, RTL/LTR behavior, and runtime context.
+
 ## 5) Main Application Areas
 
 ### 5.1 Central Admin
