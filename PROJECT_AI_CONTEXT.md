@@ -5102,3 +5102,11 @@ Verification:
   - result: no syntax errors
 - `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
   - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
+
+Confirmed outcome:
+- user confirmed the portal design is fixed after this middleware change
+- future translation work must preserve document structure:
+  - never translate or DOM-rewrite `<head>` content
+  - keep CSS/JS asset tags outside the translation parser
+  - translate only body content or explicit safe fragments
+  - add route-level regression tests when a layout/rendering issue is reported
