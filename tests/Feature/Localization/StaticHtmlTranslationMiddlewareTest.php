@@ -92,6 +92,8 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('<script>list.innerHTML = items.map((item) => `<div class="portal-notification-open-link">${escapeHtml(item.title || notificationFallbackLabel)}</div>`).join("");</script>', false);
+        $response->assertDontSee('<p><script>', false);
+        $response->assertDontSee('</script></p>', false);
         $response->assertSee('هذه هي نقطة تشغيل المحاسبة لدفاتر الأستاذ والقيود ووحدات التمويل المستقبلية داخل مساحة عمل العميل المشتركة.', false);
     }
 

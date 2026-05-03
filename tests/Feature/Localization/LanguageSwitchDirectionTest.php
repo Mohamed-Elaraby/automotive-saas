@@ -49,4 +49,22 @@ class LanguageSwitchDirectionTest extends TestCase
         $response->assertDontSee('layout-mode-rtl', false);
         $response->assertDontSee('theme/css/bootstrap.rtl.min.css', false);
     }
+
+    public function test_product_layouts_pin_two_column_sidebar_to_the_right_in_rtl(): void
+    {
+        $layoutHeads = [
+            resource_path('views/automotive/admin/layouts/adminLayout/partials/head.blade.php'),
+            resource_path('views/automotive/portal/layouts/portalLayout/partials/head.blade.php'),
+        ];
+
+        foreach ($layoutHeads as $layoutHead) {
+            $contents = file_get_contents($layoutHead);
+
+            $this->assertStringContainsString('body.layout-mode-rtl .two-col-sidebar', $contents);
+            $this->assertStringContainsString('right: 0;', $contents);
+            $this->assertStringContainsString('left: auto;', $contents);
+            $this->assertStringContainsString('body.layout-mode-rtl .page-wrapper', $contents);
+            $this->assertStringContainsString('margin-right: 276px;', $contents);
+        }
+    }
 }

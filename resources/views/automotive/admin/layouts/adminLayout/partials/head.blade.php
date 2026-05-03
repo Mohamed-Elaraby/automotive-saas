@@ -44,6 +44,33 @@ DO NOT use /build for theme assets (reserved for Vite)
         max-width: 34px;
         max-height: 34px;
     }
+
+    @media (min-width: 992px) {
+        body.layout-mode-rtl .two-col-sidebar {
+            right: 0;
+            left: auto;
+        }
+
+        body.layout-mode-rtl .two-col-sidebar .twocol-mini {
+            right: 0;
+            left: auto;
+        }
+
+        body.layout-mode-rtl .two-col-sidebar .sidebar {
+            right: 60px;
+            left: auto;
+        }
+
+        body.layout-mode-rtl .page-wrapper {
+            margin-right: 276px;
+            margin-left: 0;
+        }
+
+        body.layout-mode-rtl .header {
+            right: 276px;
+            left: 0;
+        }
+    }
 </style>
 
 @if (Route::is('form-horizontal', 'form-vertical', 'tables-basic'))

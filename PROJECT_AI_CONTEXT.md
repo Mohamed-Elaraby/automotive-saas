@@ -5024,3 +5024,42 @@ Verification:
 - `php -l resources/views/automotive/admin/layouts/adminLayout/partials/head.blade.php`
 - `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
   - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
+
+## RTL Two-Column Sidebar Gap Fix - 2026-05-03
+
+Package completed:
+- fixed the RTL white gap beside the two-column sidebar in the isolated automotive admin and portal layouts
+- root cause was layout positioning, not JavaScript being placed inside `<p>` tags:
+  - Kanakku RTL CSS moved `.page-wrapper` and `.header` by `276px`
+  - sidebar child elements were partially adjusted for RTL
+  - the fixed `.two-col-sidebar` wrapper itself was not explicitly pinned to `right: 0`
+- added product-layout-scoped CSS overrides in the isolated layout head partials:
+  - `body.layout-mode-rtl .two-col-sidebar { right: 0; left: auto; }`
+  - `body.layout-mode-rtl .two-col-sidebar .twocol-mini { right: 0; left: auto; }`
+  - `body.layout-mode-rtl .two-col-sidebar .sidebar { right: 60px; left: auto; }`
+  - matching RTL offsets for `.page-wrapper` and `.header`
+- added regression assertions that Arabic HTML translation keeps JavaScript template literals raw and does not emit `<p><script>` or `</script></p>`
+- added regression coverage that isolated admin/portal layouts include the RTL two-column sidebar pinning rules
+
+Important files changed:
+- `resources/views/automotive/admin/layouts/adminLayout/partials/head.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/partials/head.blade.php`
+- `tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+- `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+
+Operational notes:
+- original Kanakku theme CSS/JS files under `public/theme` were not changed
+- no database changes were made
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l resources/views/automotive/portal/layouts/portalLayout/partials/head.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/layouts/adminLayout/partials/head.blade.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+  - result: no syntax errors
+- `php -l tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: no syntax errors
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
