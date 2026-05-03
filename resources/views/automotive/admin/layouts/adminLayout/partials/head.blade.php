@@ -25,6 +25,27 @@ DO NOT use /build for theme assets (reserved for Vite)
 	<link rel="stylesheet" href="{{ url('theme/css/bootstrap.rtl.min.css')}}">
 @endif
 
+<style>
+    .sidebar-logo,
+    .header-left {
+        overflow: hidden;
+    }
+
+    .sidebar-logo img,
+    .header-left img {
+        display: block;
+        max-width: 100%;
+        max-height: 42px;
+        object-fit: contain;
+    }
+
+    .sidebar-logo .logo-small img,
+    .sidebar-logo .dark-small img {
+        max-width: 34px;
+        max-height: 34px;
+    }
+</style>
+
 @if (Route::is('form-horizontal', 'form-vertical', 'tables-basic'))
     <!-- Feather CSS -->
     <link rel="stylesheet" href="{{ url('theme/css/feather.css')}}">

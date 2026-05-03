@@ -4956,3 +4956,39 @@ Verification:
   - result: no syntax errors
 - `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
   - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
+
+## General Ledger Arabic UI Cleanup - 2026-05-03
+
+Package completed:
+- expanded Arabic exact translations for the General Ledger/accounting review surfaces, including:
+  - Accountant Review Pack
+  - Import Templates
+  - Financial Statement Builder
+  - Financial Statement Notes
+  - Multi-Currency And FX Revaluation
+  - Exchange Rates
+  - FX Revaluation
+  - accountant review evidence rows and default seeded account labels
+- fixed the oversized US/UAE flag on portal auth pages by making the shared language switcher carry its own fixed flag dimensions instead of relying on `.header .flag-nav` theme CSS
+- added tenant-admin local CSS constraints for sidebar/header logo images to prevent the white logo artifact/line above the sidebar without editing Kanakku theme CSS
+
+Important files changed:
+- `lang/ar/autoview.php`
+- `resources/views/shared/partials/language-switcher.blade.php`
+- `resources/views/automotive/portal/layouts/portalLayout/partials/head.blade.php`
+- `resources/views/automotive/admin/layouts/adminLayout/partials/head.blade.php`
+- `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+
+Operational notes:
+- no original Kanakku theme files under `public/theme` or theme CSS/JS were changed
+- no database changes were made
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l lang/ar/autoview.php`
+- `php -l tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
+- `php -l resources/views/shared/partials/language-switcher.blade.php`
+- `php -l resources/views/automotive/portal/layouts/portalLayout/partials/head.blade.php`
+- `php -l resources/views/automotive/admin/layouts/adminLayout/partials/head.blade.php`
+- `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/StaticViewTranslationCoverageTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`

@@ -25,6 +25,27 @@ DO NOT use /build for theme assets (reserved for Vite)
 	<link rel="stylesheet" href="{{ asset('theme/css/bootstrap.rtl.min.css')}}">
 @endif
 
+<style>
+    .language-switcher > .btn {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .language-switcher-flag {
+        width: 18px;
+        height: 18px;
+        max-width: 18px;
+        max-height: 18px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex: 0 0 18px;
+    }
+</style>
+
 @if (Route::is('form-horizontal', 'form-vertical', 'tables-basic'))
     <!-- Feather CSS -->
     <link rel="stylesheet" href="{{ asset('theme/css/feather.css')}}">

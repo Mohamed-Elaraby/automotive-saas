@@ -118,4 +118,32 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertDontSee('Accounting Focus', false);
         $response->assertDontSee('Finance workspace foundation', false);
     }
+
+    public function test_arabic_html_response_translates_general_ledger_accounting_review_copy(): void
+    {
+        Route::middleware('web')->get('/static-translation-general-ledger-ar', function () {
+            app()->setLocale('ar');
+
+            return response(
+                '<html><body><h5>Accountant Review Pack</h5><table><thead><tr><th>Section</th><th>Metric</th><th>Value</th><th>Evidence Source</th></tr></thead><tbody><tr><td>Ledger Control</td><td>Accounting source of truth</td><td>journal_entries + journal_entry_lines</td><td>ledger_policy</td></tr><tr><td>Approvals</td><td>Pending manual journal approvals</td><td>0</td><td>journal_entries</td></tr></tbody></table><div>Accounting source of truth: journal + entries + and + journal + entry + lines</div><h5>Financial Statement Builder</h5><p>Profit And Loss</p><p>Journal-driven operating view.</p><p>Service Labor Revenue · Service revenue</p><p>Multi-Currency And FX Revaluation</p><p>Base currency: USD. Revaluation journals remain the accounting source of truth for unrealized FX.</p><p>Recent FX Revaluations</p><p>No FX revaluations have been posted yet.</p></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        });
+
+        $response = $this->followingRedirects()->get('/static-translation-general-ledger-ar');
+
+        $response->assertOk();
+        $response->assertSee('حزمة مراجعة المحاسب', false);
+        $response->assertSee('المؤشر', false);
+        $response->assertSee('مصدر الدليل', false);
+        $response->assertSee('رقابة دفتر الأستاذ', false);
+        $response->assertSee('موافقات القيود اليدوية المعلقة', false);
+        $response->assertSee('مصدر الحقيقة المحاسبي: قيود اليومية وبنود القيود', false);
+        $response->assertSee('منشئ القوائم المالية', false);
+        $response->assertSee('إيراد عمالة الخدمة · إيراد خدمة', false);
+        $response->assertSee('تعدد العملات وإعادة تقييم فروق العملة', false);
+        $response->assertDontSee('Accountant Review Pack', false);
+        $response->assertDontSee('Financial Statement Builder', false);
+    }
 }

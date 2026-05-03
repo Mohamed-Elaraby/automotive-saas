@@ -4,7 +4,7 @@
     $currentLocaleFlag = $currentLocale === 'ar' ? 'ae' : 'us';
 @endphp
 
-<div class="nav-item dropdown has-arrow flag-nav me-2">
+<div class="nav-item dropdown has-arrow flag-nav me-2 language-switcher">
     <a
         class="btn btn-menubar"
         data-bs-toggle="dropdown"
@@ -12,7 +12,7 @@
         role="button"
         aria-label="{{ __('shared.language') }}"
     >
-        <img src="{{ url('theme/img/flags/' . $currentLocaleFlag . '.svg') }}" alt="{{ $currentLocaleProperties['native'] ?? __('shared.language') }}" class="img-fluid">
+        <img src="{{ url('theme/img/flags/' . $currentLocaleFlag . '.svg') }}" alt="{{ $currentLocaleProperties['native'] ?? __('shared.language') }}" class="img-fluid language-switcher-flag">
     </a>
     <ul class="dropdown-menu p-2">
         @foreach(LaravelLocalization::getLocalesOrder() as $localeCode => $properties)
@@ -24,7 +24,7 @@
                     href="{{ LaravelLocalization::getLocalizedURL($localeCode) }}"
                     class="dropdown-item d-flex align-items-center {{ $localeCode === $currentLocale ? 'active' : '' }}"
                 >
-                    <img src="{{ url('theme/img/flags/' . $flag . '.svg') }}" alt="{{ $properties['native'] }}" class="me-2">
+                    <img src="{{ url('theme/img/flags/' . $flag . '.svg') }}" alt="{{ $properties['native'] }}" class="me-2 language-switcher-flag">
                     <span>{{ $properties['native'] }}</span>
                 </a>
             </li>
