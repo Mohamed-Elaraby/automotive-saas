@@ -4818,3 +4818,47 @@ Operational notes:
 
 Recommended next package:
 - Tenant Admin and runtime exact-match translation quality pass
+
+## Kanakku RTL/LTR Language Switch Fix - 2026-05-03
+
+Package completed:
+- language switch and theme direction correction for Kanakku layouts
+
+Why this was needed:
+- Kanakku's RTL styling depends on both:
+  - loading `bootstrap.rtl.min.css`
+  - adding `layout-mode-rtl` on `<body>`
+- the localized layouts already switched Bootstrap CSS for Arabic, but Arabic pages did not consistently add Kanakku's `layout-mode-rtl` body class
+- the shared language switcher generated the default English URL without a locale marker because `hideDefaultLocaleInURL=true`
+- when the session still held `ar`, clicking English could return to the unprefixed URL and then be redirected back to Arabic by `localeSessionRedirect`
+
+Scope completed:
+- added `app/Http/Middleware/ApplyRequestedLocale.php`
+  - applies locale from the first URL segment for explicit `/ar/...` safety routes
+  - treats unprefixed URLs as the default English locale because `hideDefaultLocaleInURL=true`
+  - supports `_locale=en` and `_locale=ar` switch URLs when they are present
+  - stores the requested locale in session
+  - redirects back to the clean URL without `_locale`
+  - injects Kanakku's `layout-mode-rtl` body class into RTL HTML responses from middleware, without editing theme Blade/CSS/JS files
+- registered the middleware in the `web` middleware group after session startup and before route bindings
+- no Kanakku theme Blade, CSS, or JS files are changed in the final implementation
+
+Important files changed:
+- `app/Http/Middleware/ApplyRequestedLocale.php`
+- `app/Http/Kernel.php`
+- `tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+
+Database impact:
+- no migrations were added
+- no migrate command is required
+
+Verification:
+- `php artisan test tests/Feature/Localization/LanguageSwitchDirectionTest.php`
+  - result: localization direction tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
+- `php artisan view:clear`
+  - result: compiled views cleared successfully
+
+Operational notes:
+- `php artisan route:cache` was not used
+- final implementation does not modify Kanakku theme Blade, CSS, or JS files
+- no billing, tenancy, product activation, accounting, or integration logic was changed
