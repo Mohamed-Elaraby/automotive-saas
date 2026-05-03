@@ -5063,3 +5063,9 @@ Verification:
   - result: no syntax errors
 - `php artisan test tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php tests/Feature/Localization/LanguageSwitchDirectionTest.php`
   - result: tests pass; PHP 8.5 reports the existing `PDO::MYSQL_ATTR_SSL_CA` deprecation from `config/database.php`
+
+Follow-up correction:
+- `theme/js/theme-script.js` is the Kanakku demo customizer script; it injects the purple gear and `#theme-setting` offcanvas into the page and applies layout settings from browser `localStorage`
+- loading it inside product layouts can visually break the product UI, especially in RTL, by showing the demo customizer panel over the workspace
+- isolated automotive admin and portal layouts must not load this demo customizer script
+- product layouts now hide `.sidebar-contact` and `.sidebar-themesettings` defensively and keep local RTL layout overrides after `theme/css/style.css`

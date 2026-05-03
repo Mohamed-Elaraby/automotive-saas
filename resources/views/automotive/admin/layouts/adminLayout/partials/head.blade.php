@@ -10,10 +10,7 @@ DO NOT use /build for theme assets (reserved for Vite)
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="{{ url('theme/img/favicon.png') }}">
 
-@if(!Route::is(['signin', 'signup','coming-soon', 'error-404', 'error-500','free-trial', 'under-construction', 'bus-booking-invoice', 'car-booking-invoice','change-password','forgot-password','lock-screen','general-invoice-1', 'general-invoice-1a', 'general-invoice-2', 'general-invoice-2a', 'general-invoice-3', 'general-invoice-4', 'general-invoice-5', 'general-invoice-6', 'general-invoice-7', 'general-invoice-8', 'general-invoice-9', 'general-invoice-10', 'domain-hosting-invoice', 'coffee-shop-invoice', 'ecommerce-invoice','invoice-medical','domain-hosting-invoice', 'ecommerce-invoice', 'email-verification', 'error-404', 'error-500', 'layout-default', 'layout-dark', 'layout-mini', 'layout-rtl', 'layout-single', 'layout-transparent', 'layout-without-header', 'lock-screen', 'login', 'money-exchange-invoice', 'movie-ticket-booking-invoice', 'change-password','forgot-password','general-invoice-1', 'student-billing-invoice', 'success', 'train-ticket-invoice', 'two-step-verification', 'under-construction', 'under-maintenance', 'fitness-center-invoice', 'flight-booking-invoice', 'hotel-booking-invoice','restaurants-invoice','reset-password','register','receipt-invoice-1','receipt-invoice-2','receipt-invoice-3','receipt-invoice-4', 'internet-billing-invoice']))
-    <!-- Theme Script js -->
-    <script src="{{ url('theme/js/theme-script.js')}}"></script>
-@endif
+{{-- Product layouts do not load the Kanakku demo customizer script. --}}
 
 @if (app()->getLocale() !== 'ar' && !Route::is(['layout-rtl']))
     <!-- Bootstrap CSS -->
@@ -45,32 +42,6 @@ DO NOT use /build for theme assets (reserved for Vite)
         max-height: 34px;
     }
 
-    @media (min-width: 992px) {
-        body.layout-mode-rtl .two-col-sidebar {
-            right: 0;
-            left: auto;
-        }
-
-        body.layout-mode-rtl .two-col-sidebar .twocol-mini {
-            right: 0;
-            left: auto;
-        }
-
-        body.layout-mode-rtl .two-col-sidebar .sidebar {
-            right: 60px;
-            left: auto;
-        }
-
-        body.layout-mode-rtl .page-wrapper {
-            margin-right: 276px;
-            margin-left: 0;
-        }
-
-        body.layout-mode-rtl .header {
-            right: 276px;
-            left: 0;
-        }
-    }
 </style>
 
 @if (Route::is('form-horizontal', 'form-vertical', 'tables-basic'))
@@ -277,3 +248,37 @@ DO NOT use /build for theme assets (reserved for Vite)
 
     <!-- Main CSS -->
     <link rel="stylesheet" href="{{ url('theme/css/style.css') }}">
+
+<style>
+    .sidebar-contact,
+    .sidebar-themesettings {
+        display: none !important;
+    }
+
+    @media (min-width: 992px) {
+        body.layout-mode-rtl .two-col-sidebar {
+            right: 0;
+            left: auto;
+        }
+
+        body.layout-mode-rtl .two-col-sidebar .twocol-mini {
+            right: 0;
+            left: auto;
+        }
+
+        body.layout-mode-rtl .two-col-sidebar .sidebar {
+            right: 60px;
+            left: auto;
+        }
+
+        body.layout-mode-rtl .page-wrapper {
+            margin-right: 276px;
+            margin-left: 0;
+        }
+
+        body.layout-mode-rtl .header {
+            right: 276px;
+            left: 0;
+        }
+    }
+</style>

@@ -65,6 +65,8 @@ class LanguageSwitchDirectionTest extends TestCase
             $this->assertStringContainsString('left: auto;', $contents);
             $this->assertStringContainsString('body.layout-mode-rtl .page-wrapper', $contents);
             $this->assertStringContainsString('margin-right: 276px;', $contents);
+            $this->assertStringNotContainsString('theme/js/theme-script.js', $contents);
+            $this->assertStringContainsString('.sidebar-themesettings', $contents);
         }
     }
 }
