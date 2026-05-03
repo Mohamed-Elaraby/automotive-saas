@@ -94,4 +94,28 @@ class StaticHtmlTranslationMiddlewareTest extends TestCase
         $response->assertSee('<script>list.innerHTML = items.map((item) => `<div class="portal-notification-open-link">${escapeHtml(item.title || notificationFallbackLabel)}</div>`).join("");</script>', false);
         $response->assertSee('هذه هي نقطة تشغيل المحاسبة لدفاتر الأستاذ والقيود ووحدات التمويل المستقبلية داخل مساحة عمل العميل المشتركة.', false);
     }
+
+    public function test_arabic_html_response_translates_known_workspace_catalog_phrases_inside_mixed_lines(): void
+    {
+        Route::middleware('web')->get('/static-translation-workspace-catalog-ar', function () {
+            app()->setLocale('ar');
+
+            return response(
+                '<html><body><p>Accounting Focus</p><p>Finance workspace foundation</p><p>Shared modules stay global across the tenant. Accounting contributes only its own finance modules, such as the general ledger.</p><p>Accounting System Starter · متصل بمساحة العمل</p><p>active</p></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        });
+
+        $response = $this->followingRedirects()->get('/static-translation-workspace-catalog-ar');
+
+        $response->assertOk();
+        $response->assertSee('تركيز المحاسبة', false);
+        $response->assertSee('أساس مساحة عمل التمويل', false);
+        $response->assertSee('تبقى الوحدات المشتركة عامة على مستوى العميل. تضيف المحاسبة وحداتها المالية فقط، مثل دفتر الأستاذ العام.', false);
+        $response->assertSee('بداية النظام المحاسبي · متصل بمساحة العمل', false);
+        $response->assertSee('نشط', false);
+        $response->assertDontSee('Accounting Focus', false);
+        $response->assertDontSee('Finance workspace foundation', false);
+    }
 }

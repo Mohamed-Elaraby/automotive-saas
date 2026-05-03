@@ -171,7 +171,7 @@ class TranslateStaticHtmlText
             return $translations[$normalized];
         }
 
-        return $text;
+        return $this->translateKnownPhrases($normalized, $translations) ?? $text;
     }
 
     /**
@@ -219,6 +219,35 @@ class TranslateStaticHtmlText
         }
 
         return $translated;
+    }
+
+    /**
+     * Replace known full phrases inside mixed static/dynamic UI text, without
+     * falling back to word-by-word translation.
+     *
+     * @param  array<string, string>  $translations
+     */
+    private function translateKnownPhrases(string $text, array $translations): ?string
+    {
+        if (! preg_match('/[A-Za-z]/', $text)) {
+            return null;
+        }
+
+        $phraseTranslations = array_filter(
+            $translations,
+            fn (string $translation, string $source): bool => str_contains($source, ' ') && mb_strlen($source) >= 6,
+            ARRAY_FILTER_USE_BOTH
+        );
+
+        if ($phraseTranslations === []) {
+            return null;
+        }
+
+        uksort($phraseTranslations, fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+
+        $translated = strtr($text, $phraseTranslations);
+
+        return $translated !== $text ? $translated : null;
     }
 
     /**

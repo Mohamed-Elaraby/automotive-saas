@@ -4921,6 +4921,7 @@ Implementation:
 - updated `app/Http/Middleware/TranslateStaticHtmlText.php`
   - Arabic HTML auto-translation now uses exact phrase matches from `lang/ar/autoview.php` only
   - word-level fallback is no longer applied at runtime, so database-returned text is not partially translated or reordered
+  - known full phrases can now be replaced inside mixed UI lines, such as a translated Arabic suffix after an English seeded product/plan name; this is phrase-level only, not word-level fallback
   - raw blocks are extracted before DOM parsing and restored afterwards for:
     - `script`
     - `style`
@@ -4931,15 +4932,18 @@ Implementation:
     - `canvas`
 - expanded `lang/ar/autoview.php` with exact translations for workspace product/runtime copy that appears from static project configuration
 - expanded `lang/ar/autoview.php` with additional exact translations found during the follow-up static text audit across active admin, portal, billing, coupon, product-builder, tenant, reference-data, and shared theme/demo surfaces
+- expanded `lang/ar/autoview.php` with exact translations for `config/workspace_products.php` workspace families, dashboard actions, runtime module labels/descriptions, seeded product names, seeded plan names, and seeded plan descriptions
 - updated `tests/Feature/Localization/StaticHtmlTranslationMiddlewareTest.php`
   - exact phrase assertion for `Customer Payment Summary`
   - exact alt-text assertion for `User Img`
   - regression coverage for JavaScript template literals that include HTML and `${...}` placeholders
+  - regression coverage for Accounting workspace catalog text and mixed plan lines such as `Accounting System Starter · متصل بمساحة العمل`
 - updated `tests/Feature/Localization/StaticViewTranslationCoverageTest.php`
   - added ignores for non-UI code fragments, generated counters, domains, versions, lowercase slugs, and demo data patterns discovered during the full scan
 
 Operational notes:
 - database content is intentionally not auto-translated word-by-word; static UI copy must be added to `lang/ar/autoview.php` as exact phrases
+- known seeded catalog values are treated as platform copy and covered through exact phrase translations
 - no Kanakku theme Blade, CSS, or JS files were changed
 - `php artisan route:cache` was not used
 
