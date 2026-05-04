@@ -10,13 +10,15 @@ return new class extends Migration
     {
         Schema::table('maintenance_estimates', function (Blueprint $table) {
             if (! Schema::hasColumn('maintenance_estimates', 'approval_token')) {
-                $table->string('approval_token', 120)->nullable()->unique()->after('approval_method');
+                $table->string('approval_token', 120)->nullable()->after('approval_method');
+                $table->unique('approval_token', 'maint_est_approval_token_unique');
             }
         });
 
         Schema::table('work_orders', function (Blueprint $table) {
             if (! Schema::hasColumn('work_orders', 'customer_tracking_token')) {
-                $table->string('customer_tracking_token', 120)->nullable()->unique()->after('payment_status');
+                $table->string('customer_tracking_token', 120)->nullable()->after('payment_status');
+                $table->unique('customer_tracking_token', 'work_orders_tracking_token_unique');
             }
         });
 
@@ -42,8 +44,8 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
 
-            $table->index(['estimate_id', 'status']);
-            $table->index(['work_order_id', 'approval_type']);
+            $table->index(['estimate_id', 'status'], 'maint_appr_est_status_idx');
+            $table->index(['work_order_id', 'approval_type'], 'maint_appr_wo_type_idx');
         });
 
         Schema::create('maintenance_lost_sales', function (Blueprint $table) {
@@ -61,8 +63,8 @@ return new class extends Migration
             $table->foreignId('advisor_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['branch_id', 'reason']);
-            $table->index(['follow_up_date']);
+            $table->index(['branch_id', 'reason'], 'maint_lost_branch_reason_idx');
+            $table->index(['follow_up_date'], 'maint_lost_followup_idx');
         });
 
         Schema::create('maintenance_deliveries', function (Blueprint $table) {
@@ -83,8 +85,8 @@ return new class extends Migration
             $table->text('internal_notes')->nullable();
             $table->timestamps();
 
-            $table->index(['branch_id', 'status']);
-            $table->index(['work_order_id', 'status']);
+            $table->index(['branch_id', 'status'], 'maint_del_branch_status_idx');
+            $table->index(['work_order_id', 'status'], 'maint_del_wo_status_idx');
         });
 
         Schema::create('maintenance_warranties', function (Blueprint $table) {
@@ -92,7 +94,11 @@ return new class extends Migration
             $table->string('warranty_number')->unique();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('work_order_id')->nullable()->constrained('work_orders')->nullOnDelete();
-            $table->foreignId('service_catalog_item_id')->nullable()->constrained('maintenance_service_catalog_items')->nullOnDelete();
+            $table->foreignId('service_catalog_item_id')->nullable();
+            $table->foreign('service_catalog_item_id', 'maint_warranties_service_item_fk')
+                ->references('id')
+                ->on('maintenance_service_catalog_items')
+                ->nullOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
             $table->foreignId('vehicle_id')->nullable()->constrained('vehicles')->nullOnDelete();
             $table->string('warranty_type', 80)->default('labor');
@@ -104,8 +110,8 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['vehicle_id', 'status']);
-            $table->index(['work_order_id', 'warranty_type']);
+            $table->index(['vehicle_id', 'status'], 'maint_war_vehicle_status_idx');
+            $table->index(['work_order_id', 'warranty_type'], 'maint_war_wo_type_idx');
         });
 
         Schema::create('maintenance_warranty_claims', function (Blueprint $table) {
@@ -126,7 +132,7 @@ return new class extends Migration
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
 
-            $table->index(['vehicle_id', 'status']);
+            $table->index(['vehicle_id', 'status'], 'maint_wclaim_vehicle_status_idx');
         });
 
         Schema::create('maintenance_complaints', function (Blueprint $table) {
@@ -147,8 +153,8 @@ return new class extends Migration
             $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['branch_id', 'status']);
-            $table->index(['customer_id', 'status']);
+            $table->index(['branch_id', 'status'], 'maint_cmp_branch_status_idx');
+            $table->index(['customer_id', 'status'], 'maint_cmp_customer_status_idx');
         });
 
         Schema::create('maintenance_notifications', function (Blueprint $table) {
@@ -166,9 +172,9 @@ return new class extends Migration
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
 
-            $table->index(['branch_id', 'created_at']);
-            $table->index(['user_id', 'read_at']);
-            $table->index(['notifiable_type', 'notifiable_id']);
+            $table->index(['branch_id', 'created_at'], 'maint_notif_branch_created_idx');
+            $table->index(['user_id', 'read_at'], 'maint_notif_user_read_idx');
+            $table->index(['notifiable_type', 'notifiable_id'], 'maint_notif_notifiable_idx');
         });
     }
 

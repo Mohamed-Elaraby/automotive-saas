@@ -5224,6 +5224,33 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
+
+Issue fixed:
+- MySQL rejected the auto-generated index name `maintenance_inspection_template_items_template_id_sort_order_index` because it exceeded the 64-character identifier limit.
+
+Files updated:
+- `database/migrations/tenant/2026_05_04_010000_add_maintenance_foundation_tables.php`
+- `database/migrations/tenant/2026_05_04_020000_add_maintenance_workflow_tables.php`
+- `database/migrations/tenant/2026_05_04_030000_add_maintenance_approval_delivery_warranty_tables.php`
+- `database/migrations/tenant/2026_05_04_040000_create_core_generated_documents_tables.php`
+- `database/migrations/tenant/2026_05_04_050000_add_maintenance_reports_and_advanced_ops_tables.php`
+
+What changed:
+- added explicit short names for long composite indexes and unique constraints in the new maintenance/document migrations
+- replaced long auto-generated `service_catalog_item_id` foreign key names with short explicit names
+- verified the original failing index name is no longer present
+- scanned the 2026-05-04 tenant migrations for remaining auto-generated index/unique/foreign names longer than 64 characters; no remaining candidates were reported
+
+Verification:
+- `php -l` passed for the touched tenant migration files
+- no `php artisan route:cache` was run
+
+Operational reminder:
+- if `php artisan tenants:migrate` failed midway before this fix, MySQL may have already created some Phase 2 tables while the migration row was not recorded
+- on a dev/test tenant with no data in those new tables, drop the partially created Phase 2 tables before rerunning `php artisan tenants:migrate`
+- do not drop tenant tables in production without taking a backup and checking whether data exists
+
 ## Automotive Maintenance SaaS - Phase 4 Central mPDF Document Engine - 2026-05-04
 
 Package completed:

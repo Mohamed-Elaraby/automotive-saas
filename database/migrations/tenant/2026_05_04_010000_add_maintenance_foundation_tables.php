@@ -193,7 +193,11 @@ return new class extends Migration
         Schema::create('maintenance_estimate_lines', function (Blueprint $table) {
             $table->id();
             $table->foreignId('estimate_id')->constrained('maintenance_estimates')->cascadeOnDelete();
-            $table->foreignId('service_catalog_item_id')->nullable()->constrained('maintenance_service_catalog_items')->nullOnDelete();
+            $table->foreignId('service_catalog_item_id')->nullable();
+            $table->foreign('service_catalog_item_id', 'maint_est_lines_service_item_fk')
+                ->references('id')
+                ->on('maintenance_service_catalog_items')
+                ->nullOnDelete();
             $table->string('line_type', 40)->default('labor');
             $table->string('description');
             $table->decimal('quantity', 12, 3)->default(1);

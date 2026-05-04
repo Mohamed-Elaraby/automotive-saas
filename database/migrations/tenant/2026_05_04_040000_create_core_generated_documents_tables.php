@@ -37,8 +37,8 @@ return new class extends Migration
             $table->text('cancellation_reason')->nullable();
             $table->timestamps();
 
-            $table->index(['documentable_type', 'documentable_id']);
-            $table->unique(['document_type', 'document_number', 'version']);
+            $table->index(['documentable_type', 'documentable_id'], 'gen_docs_documentable_idx');
+            $table->unique(['document_type', 'document_number', 'version'], 'gen_docs_type_number_version_unique');
         });
 
         Schema::create('document_snapshots', function (Blueprint $table) {
@@ -50,13 +50,15 @@ return new class extends Migration
 
         Schema::create('document_templates', function (Blueprint $table) {
             $table->id();
-            $table->string('document_type', 120)->index();
+            $table->string('document_type', 120);
             $table->string('name');
             $table->string('view_path');
             $table->string('language', 20)->nullable();
             $table->boolean('is_active')->default(true);
             $table->json('metadata')->nullable();
             $table->timestamps();
+
+            $table->index('document_type', 'doc_templates_type_idx');
         });
     }
 
