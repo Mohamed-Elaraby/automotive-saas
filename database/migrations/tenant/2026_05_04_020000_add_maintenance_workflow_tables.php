@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('maintenance_inspection_templates', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_inspection_templates', function (Blueprint $table) {
             $table->id();
             $table->string('template_number')->nullable()->unique();
             $table->string('name');
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->index(['inspection_type', 'is_active'], 'maint_insp_tpl_type_active_idx');
         });
 
-        Schema::create('maintenance_inspection_template_items', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_inspection_template_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('template_id')->constrained('maintenance_inspection_templates')->cascadeOnDelete();
             $table->string('section')->nullable();
@@ -34,7 +34,7 @@ return new class extends Migration
             $table->index(['template_id', 'sort_order'], 'maint_insp_tpl_items_tpl_sort_idx');
         });
 
-        Schema::create('maintenance_inspections', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_inspections', function (Blueprint $table) {
             $table->id();
             $table->string('inspection_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -60,7 +60,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'inspection_type'], 'maint_insp_wo_type_idx');
         });
 
-        Schema::create('maintenance_inspection_items', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_inspection_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('inspection_id')->constrained('maintenance_inspections')->cascadeOnDelete();
             $table->foreignId('template_item_id')->nullable()->constrained('maintenance_inspection_template_items')->nullOnDelete();
@@ -77,7 +77,7 @@ return new class extends Migration
             $table->index(['inspection_id', 'result'], 'maint_insp_items_insp_result_idx');
         });
 
-        Schema::create('maintenance_diagnosis_records', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_diagnosis_records', function (Blueprint $table) {
             $table->id();
             $table->string('diagnosis_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -102,7 +102,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'priority'], 'maint_diag_wo_priority_idx');
         });
 
-        Schema::create('maintenance_work_order_jobs', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_work_order_jobs', function (Blueprint $table) {
             $table->id();
             $table->string('job_number')->unique();
             $table->foreignId('work_order_id')->constrained('work_orders')->cascadeOnDelete();
@@ -133,7 +133,7 @@ return new class extends Migration
             $table->index(['assigned_technician_id', 'status'], 'maint_jobs_tech_status_idx');
         });
 
-        Schema::create('maintenance_job_time_logs', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_job_time_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('job_id')->constrained('maintenance_work_order_jobs')->cascadeOnDelete();
             $table->foreignId('technician_id')->nullable()->constrained('users')->nullOnDelete();
@@ -147,7 +147,7 @@ return new class extends Migration
             $table->index(['job_id', 'created_at'], 'maint_job_logs_job_created_idx');
         });
 
-        Schema::create('maintenance_qc_records', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_qc_records', function (Blueprint $table) {
             $table->id();
             $table->string('qc_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -167,7 +167,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'result'], 'maint_qc_wo_result_idx');
         });
 
-        Schema::create('maintenance_qc_items', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_qc_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('qc_record_id')->constrained('maintenance_qc_records')->cascadeOnDelete();
             $table->string('label');
@@ -188,5 +188,14 @@ return new class extends Migration
         Schema::dropIfExists('maintenance_inspections');
         Schema::dropIfExists('maintenance_inspection_template_items');
         Schema::dropIfExists('maintenance_inspection_templates');
+    }
+
+    protected function createIfMissing(string $table, callable $callback): void
+    {
+        if (Schema::hasTable($table)) {
+            return;
+        }
+
+        Schema::create($table, $callback);
     }
 };

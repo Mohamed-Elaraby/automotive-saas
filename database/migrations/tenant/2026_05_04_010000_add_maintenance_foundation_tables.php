@@ -56,7 +56,7 @@ return new class extends Migration
             $this->addWorkOrderColumn($table, 'internal_notes', fn () => $table->text('internal_notes')->nullable()->after('customer_visible_notes'));
         });
 
-        Schema::create('vehicle_check_ins', function (Blueprint $table) {
+        $this->createIfMissing('vehicle_check_ins', function (Blueprint $table) {
             $table->id();
             $table->string('check_in_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -90,7 +90,7 @@ return new class extends Migration
             $table->index(['vehicle_id', 'checked_in_at']);
         });
 
-        Schema::create('maintenance_attachments', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_attachments', function (Blueprint $table) {
             $table->id();
             $table->string('tenant_id')->nullable();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
@@ -110,7 +110,7 @@ return new class extends Migration
             $table->index(['category', 'captured_at']);
         });
 
-        Schema::create('vehicle_condition_maps', function (Blueprint $table) {
+        $this->createIfMissing('vehicle_condition_maps', function (Blueprint $table) {
             $table->id();
             $table->string('tenant_id')->nullable();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
@@ -126,7 +126,7 @@ return new class extends Migration
             $table->index(['check_in_id', 'type']);
         });
 
-        Schema::create('vehicle_condition_map_items', function (Blueprint $table) {
+        $this->createIfMissing('vehicle_condition_map_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('map_id')->constrained('vehicle_condition_maps')->cascadeOnDelete();
             $table->string('vehicle_area_code', 80);
@@ -142,7 +142,7 @@ return new class extends Migration
             $table->index(['map_id', 'vehicle_area_code']);
         });
 
-        Schema::create('maintenance_service_catalog_items', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_service_catalog_items', function (Blueprint $table) {
             $table->id();
             $table->string('service_number')->nullable()->unique();
             $table->string('name');
@@ -161,7 +161,7 @@ return new class extends Migration
             $table->index(['category', 'is_active']);
         });
 
-        Schema::create('maintenance_estimates', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_estimates', function (Blueprint $table) {
             $table->id();
             $table->string('estimate_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -190,7 +190,7 @@ return new class extends Migration
             $table->index(['customer_id', 'vehicle_id']);
         });
 
-        Schema::create('maintenance_estimate_lines', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_estimate_lines', function (Blueprint $table) {
             $table->id();
             $table->foreignId('estimate_id')->constrained('maintenance_estimates')->cascadeOnDelete();
             $table->foreignId('service_catalog_item_id')->nullable();
@@ -210,7 +210,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('maintenance_invoices', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_invoices', function (Blueprint $table) {
             $table->id();
             $table->string('invoice_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -233,7 +233,7 @@ return new class extends Migration
             $table->index(['status', 'payment_status']);
         });
 
-        Schema::create('maintenance_timeline_entries', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_timeline_entries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('work_order_id')->nullable()->constrained('work_orders')->cascadeOnDelete();
             $table->foreignId('check_in_id')->nullable()->constrained('vehicle_check_ins')->cascadeOnDelete();
@@ -312,5 +312,14 @@ return new class extends Migration
         if (! Schema::hasColumn('work_orders', $column)) {
             $callback();
         }
+    }
+
+    protected function createIfMissing(string $table, callable $callback): void
+    {
+        if (Schema::hasTable($table)) {
+            return;
+        }
+
+        Schema::create($table, $callback);
     }
 };

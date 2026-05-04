@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('maintenance_sla_policies', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_sla_policies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->string('stage_code', 80);
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->index(['stage_code', 'is_active'], 'maint_sla_stage_active_idx');
         });
 
-        Schema::create('maintenance_delay_alerts', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_delay_alerts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('work_order_id')->nullable()->constrained('work_orders')->nullOnDelete();
@@ -39,7 +39,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'stage_code'], 'maint_delay_wo_stage_idx');
         });
 
-        Schema::create('maintenance_preventive_rules', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_preventive_rules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('service_catalog_item_id')->nullable();
@@ -60,7 +60,7 @@ return new class extends Migration
             $table->index(['vehicle_make', 'vehicle_model'], 'maint_prev_vehicle_idx');
         });
 
-        Schema::create('maintenance_preventive_reminders', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_preventive_reminders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('rule_id')->nullable()->constrained('maintenance_preventive_rules')->nullOnDelete();
@@ -82,7 +82,7 @@ return new class extends Migration
             $table->index(['due_date', 'status'], 'maint_prev_rem_due_status_idx');
         });
 
-        Schema::create('maintenance_vehicle_health_scores', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_vehicle_health_scores', function (Blueprint $table) {
             $table->id();
             $table->foreignId('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
@@ -100,7 +100,7 @@ return new class extends Migration
             $table->index(['vehicle_id', 'calculated_at'], 'maint_health_vehicle_calc_idx');
         });
 
-        Schema::create('maintenance_service_recommendations', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_service_recommendations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
@@ -124,7 +124,7 @@ return new class extends Migration
             $table->index(['branch_id', 'priority'], 'maint_rec_branch_priority_idx');
         });
 
-        Schema::create('maintenance_technician_skill_profiles', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_technician_skill_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('technician_id')->constrained('users')->cascadeOnDelete();
             $table->string('skill_code', 80);
@@ -147,5 +147,14 @@ return new class extends Migration
         Schema::dropIfExists('maintenance_preventive_rules');
         Schema::dropIfExists('maintenance_delay_alerts');
         Schema::dropIfExists('maintenance_sla_policies');
+    }
+
+    protected function createIfMissing(string $table, callable $callback): void
+    {
+        if (Schema::hasTable($table)) {
+            return;
+        }
+
+        Schema::create($table, $callback);
     }
 };

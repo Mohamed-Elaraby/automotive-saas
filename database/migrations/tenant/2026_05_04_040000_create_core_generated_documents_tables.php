@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('generated_documents', function (Blueprint $table) {
+        $this->createIfMissing('generated_documents', function (Blueprint $table) {
             $table->id();
             $table->string('tenant_id')->nullable()->index();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
@@ -41,14 +41,14 @@ return new class extends Migration
             $table->unique(['document_type', 'document_number', 'version'], 'gen_docs_type_number_version_unique');
         });
 
-        Schema::create('document_snapshots', function (Blueprint $table) {
+        $this->createIfMissing('document_snapshots', function (Blueprint $table) {
             $table->id();
             $table->foreignId('generated_document_id')->constrained('generated_documents')->cascadeOnDelete();
             $table->json('snapshot');
             $table->timestamps();
         });
 
-        Schema::create('document_templates', function (Blueprint $table) {
+        $this->createIfMissing('document_templates', function (Blueprint $table) {
             $table->id();
             $table->string('document_type', 120);
             $table->string('name');
@@ -67,5 +67,14 @@ return new class extends Migration
         Schema::dropIfExists('document_templates');
         Schema::dropIfExists('document_snapshots');
         Schema::dropIfExists('generated_documents');
+    }
+
+    protected function createIfMissing(string $table, callable $callback): void
+    {
+        if (Schema::hasTable($table)) {
+            return;
+        }
+
+        Schema::create($table, $callback);
     }
 };

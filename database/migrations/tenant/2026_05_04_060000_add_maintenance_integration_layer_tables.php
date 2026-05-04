@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('maintenance_parts_requests', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_parts_requests', function (Blueprint $table) {
             $table->id();
             $table->string('request_number');
             $table->unsignedBigInteger('branch_id')->nullable();
@@ -68,5 +68,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('maintenance_parts_requests');
+    }
+
+    protected function createIfMissing(string $table, callable $callback): void
+    {
+        if (Schema::hasTable($table)) {
+            return;
+        }
+
+        Schema::create($table, $callback);
     }
 };

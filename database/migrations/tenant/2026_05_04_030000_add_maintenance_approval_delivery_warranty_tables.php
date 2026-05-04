@@ -22,7 +22,7 @@ return new class extends Migration
             }
         });
 
-        Schema::create('maintenance_approval_records', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_approval_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('estimate_id')->nullable()->constrained('maintenance_estimates')->nullOnDelete();
@@ -48,7 +48,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'approval_type'], 'maint_appr_wo_type_idx');
         });
 
-        Schema::create('maintenance_lost_sales', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_lost_sales', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('estimate_id')->nullable()->constrained('maintenance_estimates')->nullOnDelete();
@@ -67,7 +67,7 @@ return new class extends Migration
             $table->index(['follow_up_date'], 'maint_lost_followup_idx');
         });
 
-        Schema::create('maintenance_deliveries', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_deliveries', function (Blueprint $table) {
             $table->id();
             $table->string('delivery_number')->unique();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
@@ -89,7 +89,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'status'], 'maint_del_wo_status_idx');
         });
 
-        Schema::create('maintenance_warranties', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_warranties', function (Blueprint $table) {
             $table->id();
             $table->string('warranty_number')->unique();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
@@ -114,7 +114,7 @@ return new class extends Migration
             $table->index(['work_order_id', 'warranty_type'], 'maint_war_wo_type_idx');
         });
 
-        Schema::create('maintenance_warranty_claims', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_warranty_claims', function (Blueprint $table) {
             $table->id();
             $table->string('claim_number')->unique();
             $table->foreignId('warranty_id')->nullable()->constrained('maintenance_warranties')->nullOnDelete();
@@ -135,7 +135,7 @@ return new class extends Migration
             $table->index(['vehicle_id', 'status'], 'maint_wclaim_vehicle_status_idx');
         });
 
-        Schema::create('maintenance_complaints', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_complaints', function (Blueprint $table) {
             $table->id();
             $table->string('complaint_number')->unique();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
@@ -157,7 +157,7 @@ return new class extends Migration
             $table->index(['customer_id', 'status'], 'maint_cmp_customer_status_idx');
         });
 
-        Schema::create('maintenance_notifications', function (Blueprint $table) {
+        $this->createIfMissing('maintenance_notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
@@ -199,5 +199,14 @@ return new class extends Migration
                 $table->dropColumn('approval_token');
             }
         });
+    }
+
+    protected function createIfMissing(string $table, callable $callback): void
+    {
+        if (Schema::hasTable($table)) {
+            return;
+        }
+
+        Schema::create($table, $callback);
     }
 };

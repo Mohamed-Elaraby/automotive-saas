@@ -5333,6 +5333,38 @@ Package progress:
 - remaining packages from the original phased implementation plan: 0
 - recommended follow-up package: harden customer portal/API/mobile readiness as a separate post-Phase-6 package
 
+## Automotive Maintenance SaaS - Provisioning Retry Idempotency Fix - 2026-05-04
+
+Issue fixed:
+- product provisioning could fail after a previous partial migration failure with:
+  - `SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'maintenance_inspection_templates' already exists`
+- root cause:
+  - a previous tenant migration failure created some maintenance tables but did not record the migration as completed
+  - the next provisioning retry attempted to recreate the same table
+
+Files updated:
+- `database/migrations/tenant/2026_05_04_010000_add_maintenance_foundation_tables.php`
+- `database/migrations/tenant/2026_05_04_020000_add_maintenance_workflow_tables.php`
+- `database/migrations/tenant/2026_05_04_030000_add_maintenance_approval_delivery_warranty_tables.php`
+- `database/migrations/tenant/2026_05_04_040000_create_core_generated_documents_tables.php`
+- `database/migrations/tenant/2026_05_04_050000_add_maintenance_reports_and_advanced_ops_tables.php`
+- `database/migrations/tenant/2026_05_04_060000_add_maintenance_integration_layer_tables.php`
+
+What changed:
+- maintenance migrations now use a local `createIfMissing()` helper around all new table creation
+- if a table already exists because of a partial prior run, the migration skips that table and continues creating the missing tables
+- this avoids requiring manual table drops during normal provisioning retry
+- this does not use `php artisan route:cache`
+
+Verification:
+- `for f in database/migrations/tenant/2026_05_04_0*.php; do php -l "$f" || exit 1; done`
+  - result: no syntax errors in all 2026-05-04 maintenance/document tenant migrations
+
+Operational reminder:
+- after deploying this fix, retry provisioning or run `php artisan tenants:migrate`
+- if a partial table exists with an old/incomplete structure from manual edits, inspect it before relying on automatic retry
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Phase 4 Central mPDF Document Engine - 2026-05-04
 
 Package completed:
