@@ -68,6 +68,13 @@ return [
                         'pages' => ['workshop-operations'],
                     ],
                     [
+                        'key' => 'service.maintenance',
+                        'label' => 'Maintenance Intake',
+                        'icon' => 'isax-clipboard-text',
+                        'route' => 'automotive.admin.maintenance.index',
+                        'pages' => ['maintenance'],
+                    ],
+                    [
                         'key' => 'service.work-orders',
                         'label' => 'Work Orders',
                         'icon' => 'isax-note-text',

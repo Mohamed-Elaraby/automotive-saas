@@ -6,6 +6,8 @@ use App\Http\Controllers\Automotive\Admin\BranchController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
 use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\InventoryReportController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
 use App\Http\Controllers\Automotive\Admin\StockTransferController;
@@ -81,6 +83,32 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
             Route::middleware('tenant.workspace.product:workshop-operations')->group(function () {
                 Route::get('/workshop-operations', [WorkspaceModuleController::class, 'workshopOperations'])
                     ->name('modules.workshop-operations');
+                Route::get('/maintenance', [MaintenanceController::class, 'index'])
+                    ->name('maintenance.index');
+                Route::get('/maintenance/check-ins', [MaintenanceController::class, 'checkInsIndex'])
+                    ->name('maintenance.check-ins.index');
+                Route::get('/maintenance/check-ins/create', [MaintenanceController::class, 'checkInsCreate'])
+                    ->name('maintenance.check-ins.create');
+                Route::post('/maintenance/check-ins', [MaintenanceController::class, 'checkInsStore'])
+                    ->name('maintenance.check-ins.store');
+                Route::get('/maintenance/check-ins/{checkIn}', [MaintenanceController::class, 'checkInsShow'])
+                    ->name('maintenance.check-ins.show');
+                Route::post('/maintenance/check-ins/{checkIn}/verify-vin', [MaintenanceController::class, 'verifyVin'])
+                    ->name('maintenance.check-ins.verify-vin');
+                Route::post('/maintenance/attachments', [MaintenanceAttachmentController::class, 'store'])
+                    ->name('maintenance.attachments.store');
+                Route::get('/maintenance/service-catalog', [MaintenanceController::class, 'serviceCatalogIndex'])
+                    ->name('maintenance.service-catalog.index');
+                Route::post('/maintenance/service-catalog', [MaintenanceController::class, 'serviceCatalogStore'])
+                    ->name('maintenance.service-catalog.store');
+                Route::get('/maintenance/estimates', [MaintenanceController::class, 'estimatesIndex'])
+                    ->name('maintenance.estimates.index');
+                Route::get('/maintenance/estimates/create', [MaintenanceController::class, 'estimatesCreate'])
+                    ->name('maintenance.estimates.create');
+                Route::post('/maintenance/estimates', [MaintenanceController::class, 'estimatesStore'])
+                    ->name('maintenance.estimates.store');
+                Route::get('/maintenance/estimates/{estimate}', [MaintenanceController::class, 'estimatesShow'])
+                    ->name('maintenance.estimates.show');
                 Route::middleware('tenant.workspace.product:workshop-customers')->group(function () {
                     Route::get('/workshop-customers', [WorkspaceModuleController::class, 'workshopCustomers'])
                         ->name('modules.workshop-customers');

@@ -518,6 +518,52 @@ What still limits full plug-and-play:
 ### 10.1 Portal / Tenant Boundary
 Billing is already moving into portal.
 
+## 11) 2026-05-04 Maintenance Phase 1 Foundation
+
+Phase 1 started the product-scoped Automotive Maintenance foundation inside the existing tenant workspace instead of creating a separate duplicate product shell.
+
+Added tenant-side maintenance foundation:
+- vehicle check-ins
+- generic maintenance attachments
+- vehicle condition maps and condition map items
+- maintenance service catalog
+- maintenance estimates and estimate lines
+- light maintenance invoices
+- maintenance timeline entries
+
+Extended existing tenant models rather than duplicating them:
+- `customers`
+- `vehicles`
+- `work_orders`
+
+Important new files:
+- `database/migrations/tenant/2026_05_04_010000_add_maintenance_foundation_tables.php`
+- `app/Models/Maintenance/*`
+- `app/Services/Automotive/Maintenance/*`
+- `app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceController.php`
+- `app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceAttachmentController.php`
+- `resources/views/automotive/admin/maintenance/*`
+- `lang/en/maintenance.php`
+- `lang/ar/maintenance.php`
+
+New product-scoped route names:
+- `automotive.admin.maintenance.index`
+- `automotive.admin.maintenance.check-ins.*`
+- `automotive.admin.maintenance.attachments.store`
+- `automotive.admin.maintenance.service-catalog.*`
+- `automotive.admin.maintenance.estimates.*`
+
+Current Phase 1 scope intentionally keeps:
+- OCR as future integration; manual VIN verification is implemented now.
+- direct browser camera capture through file input with `capture="environment"`.
+- photos stored as structured `maintenance_attachments`; no photo payloads are sent through SSE.
+- spare parts and accounting independent; no hard dependency added.
+- documents/PDF generation still pending for Phase 4 central mPDF engine.
+
+Required after pulling this package:
+- run tenant migrations for tenant databases.
+- do not run `php artisan route:cache`.
+
 Still desirable:
 - move tenant-owned profile/settings fully into portal
 - keep tenant admin runtime-only
