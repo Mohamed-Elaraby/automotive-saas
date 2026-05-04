@@ -9,6 +9,7 @@ use App\Http\Controllers\Automotive\Admin\InventoryReportController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceDocumentController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceIntegrationController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceLifecycleController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceReportsController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
@@ -162,6 +163,16 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.advanced.preventive-rules.store');
                 Route::post('/maintenance/advanced-operations/refresh', [MaintenanceReportsController::class, 'refreshAdvanced'])
                     ->name('maintenance.advanced.refresh');
+                Route::get('/maintenance/integrations', [MaintenanceIntegrationController::class, 'index'])
+                    ->name('maintenance.integrations.index');
+                Route::post('/maintenance/integrations/parts-requests', [MaintenanceIntegrationController::class, 'storePartsRequest'])
+                    ->name('maintenance.integrations.parts-requests.store');
+                Route::post('/maintenance/integrations/parts-requests/{partsRequest}/approve', [MaintenanceIntegrationController::class, 'approvePartsRequest'])
+                    ->name('maintenance.integrations.parts-requests.approve');
+                Route::post('/maintenance/integrations/parts-requests/{partsRequest}/issue', [MaintenanceIntegrationController::class, 'issuePartsRequest'])
+                    ->name('maintenance.integrations.parts-requests.issue');
+                Route::post('/maintenance/integrations/invoices/{invoice}/sync', [MaintenanceIntegrationController::class, 'syncInvoice'])
+                    ->name('maintenance.integrations.invoices.sync');
                 Route::get('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesIndex'])
                     ->name('maintenance.inspection-templates.index');
                 Route::post('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesStore'])

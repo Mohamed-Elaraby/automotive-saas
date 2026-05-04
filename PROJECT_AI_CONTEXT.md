@@ -5266,6 +5266,73 @@ Operational reminder:
 - on a dev/test tenant with no data in those new tables, drop the partially created Phase 2 tables before rerunning `php artisan tenants:migrate`
 - do not drop tenant tables in production without taking a backup and checking whether data exists
 
+## Automotive Maintenance SaaS - Phase 6A Optional Integration Layer - 2026-05-04
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_04_060000_add_maintenance_integration_layer_tables.php`
+- created `maintenance_parts_requests` as the maintenance-owned parts request layer
+- added explicit short index and foreign key names in the new migration to avoid MySQL identifier length error 1059
+- added model:
+  - `App\Models\Maintenance\MaintenancePartsRequest`
+- extended relationships:
+  - `WorkOrder::partsRequests()`
+  - `MaintenanceWorkOrderJob::partsRequests()`
+  - `MaintenanceInvoice::accountingEvents()`
+- added service-layer integration logic:
+  - `App\Services\Automotive\Maintenance\MaintenanceIntegrationService`
+- added product-scoped controller:
+  - `App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceIntegrationController`
+- added integration dashboard view:
+  - `resources/views/automotive/admin/maintenance/integrations/index.blade.php`
+- added product-scoped routes under `automotive.admin.maintenance.integrations.*`
+- updated maintenance dashboard quick links with Integrations
+- extended `config/workspace_products.php` integration contracts:
+  - `automotive-parts` now supports `parts.requested` and `parts.issued`
+  - `automotive-accounting` now supports `invoice.created` and `payment.received`
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- maintenance parts requests work as standalone manual requests even if Spare Parts is not active
+- if Spare Parts is active, requests create `workspace_integration_handoffs` using `automotive-parts`
+- if Spare Parts is inactive, the handoff is recorded as skipped instead of failing the maintenance workflow
+- issuing an inventory-linked request can consume stock through the existing `WorkshopPartsIntegrationService`
+- maintenance invoice sync creates an optional `automotive-accounting` handoff and an `AccountingEvent` only when Accounting is active
+- if Accounting is inactive, the handoff is recorded as skipped and maintenance remains operational
+- no product module instantiates or directly owns another product's records beyond optional handoff/adapter calls
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_04_060000_add_maintenance_integration_layer_tables.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/MaintenancePartsRequest.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceIntegrationService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceIntegrationController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php && php -l config/workspace_products.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.integrations --except-vendor`
+  - result: 20 integration routes shown across localized/canonical/legacy route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+- migration identifier scan for the new Phase 6A migration
+  - result: no auto-generated index/unique/foreign names over MySQL's 64-character limit were reported
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
+Package progress:
+- completed package 6 of 6 planned maintenance phases
+- remaining packages from the original phased implementation plan: 0
+- recommended follow-up package: harden customer portal/API/mobile readiness as a separate post-Phase-6 package
+
 ## Automotive Maintenance SaaS - Phase 4 Central mPDF Document Engine - 2026-05-04
 
 Package completed:

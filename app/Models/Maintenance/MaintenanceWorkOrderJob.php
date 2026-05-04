@@ -45,5 +45,6 @@ class MaintenanceWorkOrderJob extends Model
     public function technician(): BelongsTo { return $this->belongsTo(User::class, 'assigned_technician_id'); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
     public function timeLogs(): HasMany { return $this->hasMany(MaintenanceJobTimeLog::class, 'job_id')->latest('id'); }
+    public function partsRequests(): HasMany { return $this->hasMany(MaintenancePartsRequest::class, 'job_id')->latest('id'); }
     public function attachments(): MorphMany { return $this->morphMany(MaintenanceAttachment::class, 'attachable')->latest('id'); }
 }

@@ -7,8 +7,10 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Models\AccountingEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class MaintenanceInvoice extends Model
 {
@@ -69,5 +71,10 @@ class MaintenanceInvoice extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function accountingEvents(): MorphMany
+    {
+        return $this->morphMany(AccountingEvent::class, 'reference');
     }
 }

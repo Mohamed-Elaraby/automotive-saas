@@ -119,4 +119,9 @@ class WorkOrder extends Model
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceComplaint::class);
     }
+
+    public function partsRequests(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenancePartsRequest::class);
+    }
 }

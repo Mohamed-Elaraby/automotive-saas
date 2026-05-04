@@ -124,7 +124,7 @@ return [
                 [
                     'key' => 'automotive-parts',
                     'requires_family' => 'parts_inventory',
-                    'events' => ['work_order.consume_part'],
+                    'events' => ['work_order.consume_part', 'parts.requested', 'parts.issued'],
                     'source_capabilities' => ['workshop.work_order_operations'],
                     'target_capabilities' => ['inventory.stock_movements'],
                     'payload_schema' => [
@@ -140,7 +140,7 @@ return [
                 [
                     'key' => 'automotive-accounting',
                     'requires_family' => 'accounting',
-                    'events' => ['work_order.completed'],
+                    'events' => ['work_order.completed', 'invoice.created', 'payment.received'],
                     'source_capabilities' => ['workshop.work_order_completion'],
                     'target_capabilities' => ['accounting.event_review', 'accounting.journal_posting'],
                     'payload_schema' => [
