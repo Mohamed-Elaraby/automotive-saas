@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
+use App\Services\Core\Documents\DocumentRendererInterface;
+use App\Services\Core\Documents\MpdfDocumentRenderer;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
@@ -15,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(DocumentRendererInterface::class, MpdfDocumentRenderer::class);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Core\DocumentController;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -13,6 +14,9 @@ $registerTenantWorkspaceRoutes = function (): void {
     Route::get('/', function () {
         return 'TENANT HOME: ' . tenant('id');
     });
+
+    Route::get('/documents/verify/{token}', [DocumentController::class, 'verify'])
+        ->name('documents.verify');
 
     /*
     |--------------------------------------------------------------------------

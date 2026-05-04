@@ -5224,6 +5224,105 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Phase 4 Central mPDF Document Engine - 2026-05-04
+
+Package completed:
+- installed `mpdf/mpdf` through Composer
+- added central document config:
+  - `config/documents.php`
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_04_040000_create_core_generated_documents_tables.php`
+- created central document tables:
+  - `generated_documents`
+  - `document_snapshots`
+  - `document_templates`
+- added central document models:
+  - `App\Models\Core\Documents\GeneratedDocument`
+  - `App\Models\Core\Documents\DocumentSnapshot`
+  - `App\Models\Core\Documents\DocumentTemplate`
+- added central document services:
+  - `DocumentGenerationService`
+  - `DocumentRendererInterface`
+  - `MpdfDocumentRenderer`
+  - `DocumentStorageService`
+  - `DocumentSnapshotService`
+  - `DocumentNumberService`
+  - `DocumentVerificationService`
+  - `DocumentLayoutManager`
+  - `DocumentHeaderBuilder`
+  - `DocumentFooterBuilder`
+- added document DTOs and contracts:
+  - `DocumentRenderRequest`
+  - `DocumentRenderResult`
+  - `DocumentTemplateData`
+  - `DocumentableInterface`
+  - `DocumentTemplateBuilderInterface`
+- bound `DocumentRendererInterface` to `MpdfDocumentRenderer` in `AppServiceProvider`
+- added core document routes/controllers:
+  - tenant-scoped `/documents/verify/{token}` route
+  - `DocumentController@verify/download/preview`
+- added reusable document layouts/components:
+  - base layout
+  - repeating mPDF header/footer
+  - bilingual RTL/LTR styles
+  - document metadata
+  - QR verification component using mPDF barcode tag
+  - signature box
+  - totals table
+- added Maintenance document service and controller:
+  - `MaintenanceDocumentService`
+  - `MaintenanceDocumentController`
+- added Maintenance document generation routes under `automotive.admin.maintenance.*`
+- added Maintenance document UI:
+  - `resources/views/automotive/admin/maintenance/documents/index.blade.php`
+- added Maintenance PDF templates:
+  - check-in report
+  - work order PDF
+  - estimate PDF
+  - delivery report
+  - warranty certificate
+- updated Maintenance dashboard quick links and Arabic/English translations
+
+Important architecture notes:
+- product modules do not instantiate mPDF directly
+- all PDF rendering now goes through `DocumentGenerationService` and `MpdfDocumentRenderer`
+- generated PDFs are stored under:
+  - `tenants/{tenant_id}/documents/{product_code}/{module_code}/{document_type}/{year}/{month}/{document_number}-v{version}.pdf`
+- document versioning keeps the same document number for the same documentable entity and increments `version`
+- snapshots are stored as JSON beside each generated document
+- headers/footers are controlled centrally and content templates do not own page headers or footers
+- mPDF config uses UTF-8, Arabic-capable DejaVu Sans, auto language/font handling, and RTL/LTR direction
+- verification pages expose only safe document metadata
+- `routes/tenant.php` was extended but not removed
+- `php artisan route:cache` was not used
+
+Verification:
+- `composer require mpdf/mpdf:^8.2`
+  - result: installed `mpdf/mpdf v8.3.1` and updated Composer files
+- `php -l database/migrations/tenant/2026_05_04_040000_create_core_generated_documents_tables.php && php -l config/documents.php`
+  - result: no syntax errors
+- `find app/Models/Core app/Services/Core app/Http/Controllers/Core app/Services/Automotive/Maintenance app/Http/Controllers/Automotive/Admin/Maintenance -type f -name '*.php' -print0 | xargs -0 -n1 php -l`
+  - result: no syntax errors
+- `php -l app/Providers/AppServiceProvider.php && php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.documents --except-vendor`
+  - result: 16 document routes shown across localized/canonical/legacy route variants
+- `php artisan route:list --name=documents.verify --except-vendor`
+  - result: tenant verification routes shown
+- direct mPDF renderer smoke test through `php artisan tinker --execute=...`
+  - result: rendered PDF binary length 43746 bytes
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+- `composer audit --format=plain`
+  - result: existing medium advisory for `league/commonmark` CVE-2026-33347; unrelated to mPDF install
+
+Deployment reminder:
+- run `composer install` after pulling these changes
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Phase 3 Approvals, Warranty, Delivery, Complaints, Notifications - 2026-05-04
 
 Package completed:
