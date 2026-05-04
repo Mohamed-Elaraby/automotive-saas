@@ -8,6 +8,7 @@ use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\InventoryReportController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceLifecycleController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
@@ -112,6 +113,34 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.estimates.store');
                 Route::get('/maintenance/estimates/{estimate}', [MaintenanceController::class, 'estimatesShow'])
                     ->name('maintenance.estimates.show');
+                Route::get('/maintenance/approvals', [MaintenanceLifecycleController::class, 'approvalsIndex'])
+                    ->name('maintenance.approvals.index');
+                Route::post('/maintenance/approvals/{estimate}/send', [MaintenanceLifecycleController::class, 'approvalsSend'])
+                    ->name('maintenance.approvals.send');
+                Route::post('/maintenance/approvals/{estimate}/approve', [MaintenanceLifecycleController::class, 'approvalsApprove'])
+                    ->name('maintenance.approvals.approve');
+                Route::get('/maintenance/deliveries', [MaintenanceLifecycleController::class, 'deliveriesIndex'])
+                    ->name('maintenance.deliveries.index');
+                Route::post('/maintenance/deliveries', [MaintenanceLifecycleController::class, 'deliveriesStore'])
+                    ->name('maintenance.deliveries.store');
+                Route::post('/maintenance/deliveries/{delivery}/release', [MaintenanceLifecycleController::class, 'deliveriesRelease'])
+                    ->name('maintenance.deliveries.release');
+                Route::get('/maintenance/warranties', [MaintenanceLifecycleController::class, 'warrantiesIndex'])
+                    ->name('maintenance.warranties.index');
+                Route::post('/maintenance/warranties', [MaintenanceLifecycleController::class, 'warrantiesStore'])
+                    ->name('maintenance.warranties.store');
+                Route::post('/maintenance/warranty-claims', [MaintenanceLifecycleController::class, 'warrantyClaimsStore'])
+                    ->name('maintenance.warranty-claims.store');
+                Route::get('/maintenance/complaints', [MaintenanceLifecycleController::class, 'complaintsIndex'])
+                    ->name('maintenance.complaints.index');
+                Route::post('/maintenance/complaints', [MaintenanceLifecycleController::class, 'complaintsStore'])
+                    ->name('maintenance.complaints.store');
+                Route::post('/maintenance/complaints/{complaint}/resolve', [MaintenanceLifecycleController::class, 'complaintsResolve'])
+                    ->name('maintenance.complaints.resolve');
+                Route::get('/maintenance/notifications', [MaintenanceLifecycleController::class, 'notificationsIndex'])
+                    ->name('maintenance.notifications.index');
+                Route::get('/maintenance/notifications/stream', [MaintenanceLifecycleController::class, 'notificationsStream'])
+                    ->name('maintenance.notifications.stream');
                 Route::get('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesIndex'])
                     ->name('maintenance.inspection-templates.index');
                 Route::post('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesStore'])

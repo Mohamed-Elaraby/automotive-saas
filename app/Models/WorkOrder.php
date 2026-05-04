@@ -18,6 +18,7 @@ class WorkOrder extends Model
         'priority',
         'vehicle_status',
         'payment_status',
+        'customer_tracking_token',
         'opened_at',
         'expected_delivery_at',
         'closed_at',
@@ -102,5 +103,20 @@ class WorkOrder extends Model
     public function qcRecords(): HasMany
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceQcRecord::class);
+    }
+
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceDelivery::class);
+    }
+
+    public function warranties(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceWarranty::class);
+    }
+
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceComplaint::class);
     }
 }

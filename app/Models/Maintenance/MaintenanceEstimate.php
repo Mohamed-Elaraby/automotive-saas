@@ -31,6 +31,7 @@ class MaintenanceEstimate extends Model
         'customer_visible_notes',
         'internal_notes',
         'approval_method',
+        'approval_token',
         'approved_amount',
         'approved_at',
         'approved_by',
@@ -86,5 +87,15 @@ class MaintenanceEstimate extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(MaintenanceEstimateLine::class, 'estimate_id');
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(MaintenanceApprovalRecord::class, 'estimate_id')->latest('id');
+    }
+
+    public function lostSales(): HasMany
+    {
+        return $this->hasMany(MaintenanceLostSale::class, 'estimate_id')->latest('id');
     }
 }

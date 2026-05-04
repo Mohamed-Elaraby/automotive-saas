@@ -5223,3 +5223,75 @@ Verification:
 Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
+
+## Automotive Maintenance SaaS - Phase 3 Approvals, Warranty, Delivery, Complaints, Notifications - 2026-05-04
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_04_030000_add_maintenance_approval_delivery_warranty_tables.php`
+- extended existing tables:
+  - `maintenance_estimates.approval_token`
+  - `work_orders.customer_tracking_token`
+- created maintenance lifecycle tables:
+  - `maintenance_approval_records`
+  - `maintenance_lost_sales`
+  - `maintenance_deliveries`
+  - `maintenance_warranties`
+  - `maintenance_warranty_claims`
+  - `maintenance_complaints`
+  - `maintenance_notifications`
+- added Eloquent models:
+  - `MaintenanceApprovalRecord`
+  - `MaintenanceLostSale`
+  - `MaintenanceDelivery`
+  - `MaintenanceWarranty`
+  - `MaintenanceWarrantyClaim`
+  - `MaintenanceComplaint`
+  - `MaintenanceNotification`
+- extended `WorkOrder` with delivery, warranty, and complaint relationships
+- extended `MaintenanceEstimate` with approval and lost-sales relationships
+- added service-layer lifecycle logic:
+  - `ApprovalWorkflowService`
+  - `DeliveryWarrantyService`
+  - `ComplaintService`
+  - `MaintenanceNotificationService`
+- added product-scoped controller:
+  - `MaintenanceLifecycleController`
+- added routes under existing `tenant.workspace.product:workshop-operations` group using `automotive.admin.maintenance.*`
+- added operational Blade views:
+  - customer approvals and lost sales
+  - deliveries and vehicle release
+  - warranties and warranty claims
+  - complaints and complaint resolution
+  - notification center and SSE stream endpoint
+- updated Maintenance dashboard quick links
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- maintenance approvals are stored separately from estimate status for auditability
+- rejected estimate lines create `maintenance_lost_sales` records for advisor follow-up
+- delivery status updates remain separate from payment status and work order status
+- warranty and warranty claim structures are maintenance-owned and do not depend on spare parts/accounting
+- notifications are stored in tenant DB and exposed through SSE as lightweight event payloads only
+- internal notes remain separate from customer-visible notes in complaints and delivery records
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_04_030000_add_maintenance_approval_delivery_warranty_tables.php`
+  - result: no syntax errors
+- `find app/Models/Maintenance app/Services/Automotive/Maintenance app/Http/Controllers/Automotive/Admin/Maintenance -type f -name '*.php' -print0 | xargs -0 -n1 php -l`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance --except-vendor`
+  - result: 192 maintenance routes shown across localized/canonical/legacy route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `php artisan view:clear && php artisan config:clear`
+  - result: completed
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
