@@ -59,4 +59,19 @@ class Vehicle extends Model
     {
         return $this->morphMany(\App\Models\Maintenance\MaintenanceAttachment::class, 'attachable')->latest('id');
     }
+
+    public function healthScores()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceVehicleHealthScore::class)->latest('id');
+    }
+
+    public function serviceRecommendations()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceServiceRecommendation::class)->latest('id');
+    }
+
+    public function preventiveReminders()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenancePreventiveReminder::class)->latest('id');
+    }
 }

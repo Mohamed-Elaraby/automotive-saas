@@ -5323,6 +5323,71 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Phase 5 Reports and Advanced Operations - 2026-05-04
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_04_050000_add_maintenance_reports_and_advanced_ops_tables.php`
+- created advanced maintenance tables:
+  - `maintenance_sla_policies`
+  - `maintenance_delay_alerts`
+  - `maintenance_preventive_rules`
+  - `maintenance_preventive_reminders`
+  - `maintenance_vehicle_health_scores`
+  - `maintenance_service_recommendations`
+  - `maintenance_technician_skill_profiles`
+- added Eloquent models for SLA, delay alerts, preventive maintenance, health scores, recommendations, and technician skills
+- extended `Vehicle` with health score, recommendation, and preventive reminder relationships
+- added service-layer reporting and advanced operations logic:
+  - `MaintenanceReportingService`
+  - `MaintenanceAdvancedOperationsService`
+- added product-scoped controller:
+  - `MaintenanceReportsController`
+- added routes under existing `tenant.workspace.product:workshop-operations` group using `automotive.admin.maintenance.*`
+- added operational Blade views:
+  - reports dashboard
+  - advanced operations dashboard
+- added CSV exports:
+  - financial summary
+  - technician productivity
+  - branch performance
+- added advanced refresh workflow:
+  - evaluate SLA delays
+  - generate preventive reminders
+  - calculate vehicle health scores
+  - generate service recommendations
+- updated Maintenance dashboard quick links
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- reports read from existing operational tables and do not duplicate work-order/customer/vehicle data
+- SLA policies are configurable and default global policies are seeded lazily
+- delay alerts are stored so dashboard/SSE/notification integration can reuse them later
+- preventive maintenance rules are product-owned and do not depend on spare parts/accounting
+- vehicle health scores are basic and future-ready; scoring uses inspection signals, open work orders, and mileage
+- recommendations are generated from health scores and preventive reminders
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_04_050000_add_maintenance_reports_and_advanced_ops_tables.php`
+  - result: no syntax errors
+- `find app/Models/Maintenance app/Services/Automotive/Maintenance app/Http/Controllers/Automotive/Admin/Maintenance -type f -name '*.php' -print0 | xargs -0 -n1 php -l`
+  - result: no syntax errors
+- `php -l app/Models/Vehicle.php && php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.reports --except-vendor`
+  - result: report routes shown across localized/canonical/legacy route variants
+- `php artisan route:list --name=automotive.admin.maintenance.advanced --except-vendor`
+  - result: advanced operation routes shown across localized/canonical/legacy route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Phase 3 Approvals, Warranty, Delivery, Complaints, Notifications - 2026-05-04
 
 Package completed:

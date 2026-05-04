@@ -10,6 +10,7 @@ use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentContr
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceDocumentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceLifecycleController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceReportsController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
 use App\Http\Controllers\Core\DocumentController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
@@ -151,6 +152,16 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.documents.download');
                 Route::get('/maintenance/documents/{document}/preview', [DocumentController::class, 'preview'])
                     ->name('maintenance.documents.preview');
+                Route::get('/maintenance/reports', [MaintenanceReportsController::class, 'index'])
+                    ->name('maintenance.reports.index');
+                Route::get('/maintenance/reports/export/{report}', [MaintenanceReportsController::class, 'export'])
+                    ->name('maintenance.reports.export');
+                Route::get('/maintenance/advanced-operations', [MaintenanceReportsController::class, 'advanced'])
+                    ->name('maintenance.advanced.index');
+                Route::post('/maintenance/advanced-operations/preventive-rules', [MaintenanceReportsController::class, 'createPreventiveRule'])
+                    ->name('maintenance.advanced.preventive-rules.store');
+                Route::post('/maintenance/advanced-operations/refresh', [MaintenanceReportsController::class, 'refreshAdvanced'])
+                    ->name('maintenance.advanced.refresh');
                 Route::get('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesIndex'])
                     ->name('maintenance.inspection-templates.index');
                 Route::post('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesStore'])
