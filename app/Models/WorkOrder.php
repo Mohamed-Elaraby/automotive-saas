@@ -83,4 +83,24 @@ class WorkOrder extends Model
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceTimelineEntry::class)->latest('id');
     }
+
+    public function inspections(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceInspection::class);
+    }
+
+    public function diagnosisRecords(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceDiagnosisRecord::class);
+    }
+
+    public function maintenanceJobs(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceWorkOrderJob::class);
+    }
+
+    public function qcRecords(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceQcRecord::class);
+    }
 }

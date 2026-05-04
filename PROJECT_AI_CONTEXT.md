@@ -5156,3 +5156,70 @@ Confirmed outcome:
   - keep CSS/JS asset tags outside the translation parser
   - translate only body content or explicit safe fragments
   - add route-level regression tests when a layout/rendering issue is reported
+
+## Automotive Maintenance SaaS - Phase 2 Technician and Inspection Workflow - 2026-05-04
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_04_020000_add_maintenance_workflow_tables.php`
+- created maintenance workflow tables:
+  - `maintenance_inspection_templates`
+  - `maintenance_inspection_template_items`
+  - `maintenance_inspections`
+  - `maintenance_inspection_items`
+  - `maintenance_diagnosis_records`
+  - `maintenance_work_order_jobs`
+  - `maintenance_job_time_logs`
+  - `maintenance_qc_records`
+  - `maintenance_qc_items`
+- added Eloquent models and relationships for inspection templates, inspections, diagnosis records, technician jobs, time logs, and QC records
+- extended `WorkOrder` with maintenance workflow relationships:
+  - `inspections`
+  - `diagnosisRecords`
+  - `maintenanceJobs`
+  - `qcRecords`
+- added service-layer workflow logic:
+  - `InspectionWorkflowService`
+  - `TechnicianJobService`
+  - `DiagnosisService`
+  - `QualityControlService`
+- added product-scoped controller:
+  - `MaintenanceWorkflowController`
+- added routes under existing `tenant.workspace.product:workshop-operations` group using `automotive.admin.maintenance.*`
+- added operational Blade views:
+  - workshop board
+  - inspection templates
+  - inspections list/detail/update/complete
+  - technician jobs list/detail/actions
+  - diagnosis records
+  - QC records/start/complete
+- updated Maintenance dashboard quick links
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- no duplicate customer/vehicle/work-order modules were created
+- Phase 2 builds on Phase 1 maintenance foundation tables
+- technician job status, work order status, vehicle status, and QC status remain separated
+- parts/accounting remain optional and are not hard dependencies
+- important workflow transitions write timeline entries through the existing `MaintenanceTimelineService`
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_04_020000_add_maintenance_workflow_tables.php`
+  - result: no syntax errors
+- `find app/Models/Maintenance app/Services/Automotive/Maintenance app/Http/Controllers/Automotive/Admin/Maintenance -type f -name '*.php' -print0 | xargs -0 -n1 php -l`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance --except-vendor`
+  - result: 136 maintenance routes shown across localized/canonical/legacy route variants
+- `php artisan view:clear && php artisan config:clear`
+  - result: completed
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`

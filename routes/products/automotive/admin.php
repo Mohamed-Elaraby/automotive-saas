@@ -8,6 +8,7 @@ use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\InventoryReportController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
 use App\Http\Controllers\Automotive\Admin\StockTransferController;
@@ -85,6 +86,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('modules.workshop-operations');
                 Route::get('/maintenance', [MaintenanceController::class, 'index'])
                     ->name('maintenance.index');
+                Route::get('/maintenance/board', [MaintenanceWorkflowController::class, 'board'])
+                    ->name('maintenance.board');
                 Route::get('/maintenance/check-ins', [MaintenanceController::class, 'checkInsIndex'])
                     ->name('maintenance.check-ins.index');
                 Route::get('/maintenance/check-ins/create', [MaintenanceController::class, 'checkInsCreate'])
@@ -109,6 +112,46 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.estimates.store');
                 Route::get('/maintenance/estimates/{estimate}', [MaintenanceController::class, 'estimatesShow'])
                     ->name('maintenance.estimates.show');
+                Route::get('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesIndex'])
+                    ->name('maintenance.inspection-templates.index');
+                Route::post('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesStore'])
+                    ->name('maintenance.inspection-templates.store');
+                Route::get('/maintenance/inspections', [MaintenanceWorkflowController::class, 'inspectionsIndex'])
+                    ->name('maintenance.inspections.index');
+                Route::post('/maintenance/inspections', [MaintenanceWorkflowController::class, 'inspectionsStore'])
+                    ->name('maintenance.inspections.store');
+                Route::get('/maintenance/inspections/{inspection}', [MaintenanceWorkflowController::class, 'inspectionsShow'])
+                    ->name('maintenance.inspections.show');
+                Route::post('/maintenance/inspections/{inspection}/items', [MaintenanceWorkflowController::class, 'inspectionItemsUpdate'])
+                    ->name('maintenance.inspections.items.update');
+                Route::post('/maintenance/inspections/{inspection}/complete', [MaintenanceWorkflowController::class, 'inspectionsComplete'])
+                    ->name('maintenance.inspections.complete');
+                Route::get('/maintenance/jobs', [MaintenanceWorkflowController::class, 'jobsIndex'])
+                    ->name('maintenance.jobs.index');
+                Route::post('/maintenance/jobs', [MaintenanceWorkflowController::class, 'jobsStore'])
+                    ->name('maintenance.jobs.store');
+                Route::get('/maintenance/jobs/{job}', [MaintenanceWorkflowController::class, 'jobsShow'])
+                    ->name('maintenance.jobs.show');
+                Route::post('/maintenance/jobs/{job}/start', [MaintenanceWorkflowController::class, 'jobsStart'])
+                    ->name('maintenance.jobs.start');
+                Route::post('/maintenance/jobs/{job}/pause', [MaintenanceWorkflowController::class, 'jobsPause'])
+                    ->name('maintenance.jobs.pause');
+                Route::post('/maintenance/jobs/{job}/resume', [MaintenanceWorkflowController::class, 'jobsResume'])
+                    ->name('maintenance.jobs.resume');
+                Route::post('/maintenance/jobs/{job}/complete', [MaintenanceWorkflowController::class, 'jobsComplete'])
+                    ->name('maintenance.jobs.complete');
+                Route::post('/maintenance/jobs/{job}/blocker', [MaintenanceWorkflowController::class, 'jobsBlocker'])
+                    ->name('maintenance.jobs.blocker');
+                Route::get('/maintenance/diagnosis', [MaintenanceWorkflowController::class, 'diagnosisIndex'])
+                    ->name('maintenance.diagnosis.index');
+                Route::post('/maintenance/diagnosis', [MaintenanceWorkflowController::class, 'diagnosisStore'])
+                    ->name('maintenance.diagnosis.store');
+                Route::get('/maintenance/qc', [MaintenanceWorkflowController::class, 'qcIndex'])
+                    ->name('maintenance.qc.index');
+                Route::post('/maintenance/qc', [MaintenanceWorkflowController::class, 'qcStore'])
+                    ->name('maintenance.qc.store');
+                Route::post('/maintenance/qc/{qcRecord}/complete', [MaintenanceWorkflowController::class, 'qcComplete'])
+                    ->name('maintenance.qc.complete');
                 Route::middleware('tenant.workspace.product:workshop-customers')->group(function () {
                     Route::get('/workshop-customers', [WorkspaceModuleController::class, 'workshopCustomers'])
                         ->name('modules.workshop-customers');

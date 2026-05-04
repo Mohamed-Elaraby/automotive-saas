@@ -16,6 +16,9 @@
                     <a href="{{ route('automotive.admin.maintenance.estimates.create') }}" class="btn btn-outline-light">
                         <i class="isax isax-document-text me-1"></i>{{ __('maintenance.new_estimate') }}
                     </a>
+                    <a href="{{ route('automotive.admin.maintenance.board') }}" class="btn btn-outline-light">
+                        <i class="isax isax-grid-5 me-1"></i>{{ __('maintenance.workshop_board') }}
+                    </a>
                 </div>
             </div>
 
@@ -62,6 +65,10 @@
                         <div class="card-body">
                             <div class="d-grid gap-2">
                                 <a href="{{ route('automotive.admin.maintenance.check-ins.create') }}" class="btn btn-outline-light text-start"><i class="isax isax-login me-2"></i>{{ __('maintenance.new_check_in') }}</a>
+                                <a href="{{ route('automotive.admin.maintenance.board') }}" class="btn btn-outline-light text-start"><i class="isax isax-grid-5 me-2"></i>{{ __('maintenance.workshop_board') }}</a>
+                                <a href="{{ route('automotive.admin.maintenance.inspections.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-clipboard-tick me-2"></i>{{ __('maintenance.inspections') }}</a>
+                                <a href="{{ route('automotive.admin.maintenance.jobs.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-user-tick me-2"></i>{{ __('maintenance.technician_jobs') }}</a>
+                                <a href="{{ route('automotive.admin.maintenance.qc.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-shield-tick me-2"></i>{{ __('maintenance.quality_control') }}</a>
                                 <a href="{{ route('automotive.admin.maintenance.service-catalog.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-note-2 me-2"></i>{{ __('maintenance.service_catalog') }}</a>
                                 <a href="{{ route('automotive.admin.maintenance.estimates.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-receipt-text me-2"></i>{{ __('maintenance.estimates') }}</a>
                                 <a href="{{ route('automotive.admin.modules.workshop-work-orders') }}" class="btn btn-outline-light text-start"><i class="isax isax-note-text me-2"></i>{{ __('tenant.work_orders_table') }}</a>
