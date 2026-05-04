@@ -56,6 +56,21 @@ The project started as an automotive-oriented SaaS, but current work has been pu
 - Do not blindly refactor shared theme/layout code if an isolated automotive copy already exists.
 - Do not revert user changes outside the scope of the task.
 
+### MySQL Identifier Length Rule
+- This project has repeatedly hit MySQL error `1059 Identifier name is too long` because Laravel auto-generates long names for indexes and foreign keys from long table/column names.
+- For every new migration, do not rely on Laravel's default generated names when the table name is long or the index/foreign key has multiple columns.
+- Always provide explicit short names for:
+  - `$table->index(...)`
+  - `$table->unique(...)`
+  - `$table->foreign(...)`
+  - foreign keys created from long `foreignId(...)->constrained(...)` chains
+- Keep every index, unique constraint, and foreign key name under MySQL's 64-character identifier limit.
+- Prefer readable short prefixes by module, for example:
+  - `maint_insp_tpl_items_tpl_sort_idx`
+  - `maint_jobs_service_item_fk`
+  - `gen_docs_documentable_idx`
+- Before finalizing migrations, scan or reason through generated names for long maintenance/accounting/spare-parts tables and shorten risky names explicitly.
+
 ## 4.1) Mandatory Future Implementation Rules
 These rules apply to every future feature, page, module, product, controller, view, and UI change.
 
