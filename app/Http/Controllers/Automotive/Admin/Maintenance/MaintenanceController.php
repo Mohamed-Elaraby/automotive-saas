@@ -13,7 +13,10 @@ use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\EstimateService;
 use App\Services\Automotive\Maintenance\ServiceCatalogService;
+use App\Services\Automotive\Maintenance\MaintenanceAttachmentService;
 use App\Services\Automotive\Maintenance\VehicleCheckInService;
+use App\Services\Automotive\Maintenance\VinOcrService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,7 +26,9 @@ class MaintenanceController extends Controller
     public function __construct(
         protected VehicleCheckInService $checkInService,
         protected ServiceCatalogService $serviceCatalogService,
-        protected EstimateService $estimateService
+        protected EstimateService $estimateService,
+        protected MaintenanceAttachmentService $attachmentService,
+        protected VinOcrService $vinOcrService
     ) {
     }
 
@@ -134,6 +139,47 @@ class MaintenanceController extends Controller
         ]);
 
         return back()->with('success', __('maintenance.messages.vin_confirmed'));
+    }
+
+    public function captureVin(Request $request, VehicleCheckIn $checkIn): JsonResponse
+    {
+        $validated = $request->validate([
+            'vin_photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        $attachment = $this->attachmentService->store($checkIn, $request->file('vin_photo'), [
+            'branch_id' => $checkIn->branch_id,
+            'category' => 'vin',
+            'notes' => __('maintenance.vin_source_photo'),
+            'uploaded_by' => auth('automotive_admin')->id(),
+        ]);
+
+        $analysis = $this->vinOcrService->analyze($attachment);
+
+        return response()->json([
+            'ok' => true,
+            'attachment' => [
+                'id' => $attachment->id,
+                'url' => $this->attachmentService->publicUrl($attachment),
+                'category' => $attachment->category,
+            ],
+            'analysis' => $analysis,
+            'message' => $analysis['detected_vin']
+                ? __('maintenance.vin_detected_confirm', ['vin' => $analysis['detected_vin']])
+                : __('maintenance.vin_ocr_unavailable_manual'),
+        ]);
+    }
+
+    public function searchVin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'vin' => ['required', 'string', 'max:255'],
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'vehicles' => $this->vinOcrService->searchVehicles($validated['vin']),
+        ]);
     }
 
     public function serviceCatalogIndex(): View

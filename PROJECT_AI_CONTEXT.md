@@ -5365,6 +5365,75 @@ Operational reminder:
 - if a partial table exists with an old/incomplete structure from manual edits, inspect it before relying on automatic retry
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 8 Live Vehicle Capture and VIN OCR/Search - 2026-05-05
+
+Package completed:
+- implemented live browser camera capture on the vehicle check-in show page
+- added capture/upload flow for check-in vehicle photos with:
+  - camera open from browser
+  - canvas capture
+  - immediate AJAX upload
+  - upload progress bar
+  - success/failure status
+  - retry action on failed upload
+  - manual file fallback
+- kept photo categories:
+  - front, rear, left side, right side, interior, dashboard, engine bay, VIN, existing damage, other
+- added VIN image capture flow:
+  - camera capture for VIN/chassis photo
+  - stores VIN image as a maintenance attachment category `vin`
+  - analyzes image through `VinOcrService`
+  - fills detected VIN into the confirmation form when a candidate is found
+  - requires human confirmation before saving VIN as verified
+  - keeps manual VIN entry always available
+- added optional OCR adapter:
+  - `App\Services\Automotive\Maintenance\VinOcrService`
+  - uses Tesseract OCR if the `tesseract` binary is available on the server
+  - if OCR is unavailable or unreliable, returns a manual confirmation message instead of blocking check-in
+  - applies VIN normalization for common OCR confusions such as O/0, I/1, S/5, B/8, Z/2
+- added VIN search endpoint:
+  - searches existing vehicles by detected/manual VIN
+  - returns matching vehicle/customer data to the check-in page
+- extended attachment uploads to support work-order job attachables for before/after photo readiness
+- added route support:
+  - `automotive.admin.maintenance.check-ins.capture-vin`
+  - `automotive.admin.maintenance.vehicles.search-vin`
+- added `@stack('scripts')` support to the isolated automotive admin footer scripts so product pages can add scoped JavaScript without editing theme JS
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- OCR is optional and adapter-based; it is not trusted blindly
+- VIN verification still goes through the existing human confirmation form
+- large photo binaries are uploaded via normal HTTP and are not sent over SSE
+- images remain stored in the existing structured maintenance attachment system
+- this package does not introduce a hard dependency on any external OCR service
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l app/Services/Automotive/Maintenance/VinOcrService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceAttachmentService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceController.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceAttachmentController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php && php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.check-ins.capture-vin --except-vendor`
+  - result: VIN capture routes shown across localized/canonical/legacy variants
+- `php artisan route:list --name=automotive.admin.maintenance.vehicles.search-vin --except-vendor`
+  - result: VIN search routes shown across localized/canonical/legacy variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed package 8 of 23 total implementation packages required to satisfy the full prompt
+- remaining packages: 15
+- next package: Customer 360 and Vehicle 360 full profiles
+
 ## Automotive Maintenance SaaS - Phase 4 Central mPDF Document Engine - 2026-05-04
 
 Package completed:

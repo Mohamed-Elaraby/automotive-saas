@@ -37,4 +37,15 @@ class MaintenanceAttachmentService
     {
         return Storage::disk($attachment->file_disk ?: 'public')->url($attachment->file_path);
     }
+
+    public function absolutePath(MaintenanceAttachment $attachment): ?string
+    {
+        $disk = Storage::disk($attachment->file_disk ?: 'public');
+
+        if (! method_exists($disk, 'path')) {
+            return null;
+        }
+
+        return $disk->path($attachment->file_path);
+    }
 }

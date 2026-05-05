@@ -103,6 +103,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.check-ins.show');
                 Route::post('/maintenance/check-ins/{checkIn}/verify-vin', [MaintenanceController::class, 'verifyVin'])
                     ->name('maintenance.check-ins.verify-vin');
+                Route::post('/maintenance/check-ins/{checkIn}/capture-vin', [MaintenanceController::class, 'captureVin'])
+                    ->name('maintenance.check-ins.capture-vin');
+                Route::get('/maintenance/vehicles/search-vin', [MaintenanceController::class, 'searchVin'])
+                    ->name('maintenance.vehicles.search-vin');
                 Route::post('/maintenance/attachments', [MaintenanceAttachmentController::class, 'store'])
                     ->name('maintenance.attachments.store');
                 Route::get('/maintenance/service-catalog', [MaintenanceController::class, 'serviceCatalogIndex'])

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Maintenance\VehicleCheckIn;
+use App\Models\Maintenance\MaintenanceWorkOrderJob;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\MaintenanceAttachmentService;
@@ -20,7 +21,7 @@ class MaintenanceAttachmentController extends Controller
     public function store(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
-            'attachable_type' => ['required', 'in:check_in,vehicle,work_order'],
+            'attachable_type' => ['required', 'in:check_in,vehicle,work_order,job'],
             'attachable_id' => ['required', 'integer'],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'category' => ['required', 'string', 'max:80'],
@@ -32,6 +33,7 @@ class MaintenanceAttachmentController extends Controller
             'check_in' => VehicleCheckIn::query()->findOrFail($validated['attachable_id']),
             'vehicle' => Vehicle::query()->findOrFail($validated['attachable_id']),
             'work_order' => WorkOrder::query()->findOrFail($validated['attachable_id']),
+            'job' => MaintenanceWorkOrderJob::query()->findOrFail($validated['attachable_id']),
         };
 
         $attachment = $this->attachmentService->store($attachable, $request->file('photo'), [

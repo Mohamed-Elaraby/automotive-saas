@@ -346,3 +346,4 @@
 	<!-- Custom JS -->
 	<script src="{{ url('theme/js/script.js')}}"></script>
 
+@stack('scripts')
