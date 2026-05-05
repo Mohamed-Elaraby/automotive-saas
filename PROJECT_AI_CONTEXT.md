@@ -5522,6 +5522,75 @@ Deployment reminder:
 - no new migration was added in this package
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 14 Notification Rules and SSE Hardening - 2026-05-05
+
+Package completed:
+- added notification rule config:
+  - `config/maintenance_notifications.php`
+- centralized notification audience/severity/customer-safety rules for key maintenance events
+- hardened `MaintenanceNotificationService`:
+  - applies configured event rules
+  - assigns internal/customer/user/branch channels consistently
+  - strips sensitive payload keys before storage and SSE delivery
+  - drops oversized string payload values from SSE-ready payloads
+  - exposes `streamFor()` for scoped SSE reads
+  - exposes `toSsePayload()` for lightweight and idempotent client payloads
+- updated admin notification SSE endpoint to use scoped stream reads
+- updated notification center view to consume SSE live events in-browser
+- kept SSE payloads small and excluded raw photos/large documents/internal-cost data
+
+Functional coverage:
+- notification rules distinguish internal-only events from customer-safe events
+- SSE supports Last-Event-ID / `last_id` continuation
+- SSE response payload includes only safe summary fields:
+  - id
+  - event type
+  - title
+  - message
+  - severity
+  - channel
+  - branch display name
+  - notifiable summary
+  - customer-safe flag
+  - timestamp
+- notification center updates live without reloading
+- events remain stored in DB so offline users can recover missed notifications
+
+Important architecture notes:
+- database remains source of truth; SSE is live delivery only
+- no large image/document payloads are sent through SSE
+- sensitive keys like cost, profit, margin, internal notes, supplier cost, and purchase/cost price are removed before storage/broadcast
+- no new table was required
+- no route cache was used
+
+Verification:
+- `php -l config/maintenance_notifications.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceNotificationService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceLifecycleController.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/notifications/index.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.notifications --except-vendor`
+  - result: notification center and SSE stream routes registered under canonical and localized route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `php artisan config:clear`
+  - result: completed
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 14 of 23
+- remaining: 9 of 23
+- next package: Workshop Board SSE Live Updates and Status Event Emission
+
+Deployment reminder:
+- no new migration was added in this package
+- if config is cached in production, run `php artisan config:clear` or rebuild config cache during deployment
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

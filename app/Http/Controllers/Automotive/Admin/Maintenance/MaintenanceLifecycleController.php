@@ -220,22 +220,18 @@ class MaintenanceLifecycleController extends Controller
     public function notificationsStream(Request $request): StreamedResponse
     {
         $lastId = (int) ($request->header('Last-Event-ID') ?: $request->query('last_id', 0));
+        $userId = auth('automotive_admin')->id();
 
-        return Response::stream(function () use ($lastId) {
-            $notifications = $this->notifications->streamSince($lastId);
+        return Response::stream(function () use ($lastId, $userId) {
+            $notifications = $this->notifications->streamFor($lastId, [
+                'user_id' => $userId,
+                'channels' => ['branch', 'user', 'customer'],
+            ]);
 
             foreach ($notifications as $notification) {
                 echo 'id: ' . $notification->id . "\n";
                 echo 'event: ' . $notification->event_type . "\n";
-                echo 'data: ' . json_encode([
-                    'id' => $notification->id,
-                    'event_type' => $notification->event_type,
-                    'title' => $notification->title,
-                    'message' => $notification->message,
-                    'severity' => $notification->severity,
-                    'branch' => $notification->branch?->name,
-                    'created_at' => optional($notification->created_at)->format('Y-m-d H:i:s'),
-                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n\n";
+                echo 'data: ' . json_encode($this->notifications->toSsePayload($notification), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n\n";
             }
 
             @ob_flush();
