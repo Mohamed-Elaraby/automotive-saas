@@ -18,9 +18,15 @@
                         </div>
                         <form method="POST" action="{{ route('automotive.admin.maintenance.approvals.send', $estimate) }}" class="d-inline">
                             @csrf
-                            <input type="hidden" name="approval_method" value="manual">
+                            <input type="hidden" name="approval_method" value="portal">
                             <button type="submit" class="btn btn-sm btn-outline-light">{{ __('maintenance.send_for_approval') }}</button>
                         </form>
+                        @if($estimate->approval_token)
+                            <a href="{{ route('automotive.customer.maintenance.estimate', $estimate->approval_token) }}" target="_blank" class="btn btn-sm btn-outline-light">{{ __('maintenance.customer_portal.open_approval_link') }}</a>
+                        @endif
+                        @if($estimate->workOrder?->customer_tracking_token)
+                            <a href="{{ route('automotive.customer.maintenance.tracking', $estimate->workOrder->customer_tracking_token) }}" target="_blank" class="btn btn-sm btn-outline-light">{{ __('maintenance.customer_portal.open_tracking_link') }}</a>
+                        @endif
                         <form method="POST" action="{{ route('automotive.admin.maintenance.approvals.approve', $estimate) }}" class="mt-2">
                             @csrf
                             <input type="hidden" name="method" value="manual">

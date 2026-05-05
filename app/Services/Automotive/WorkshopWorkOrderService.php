@@ -111,6 +111,7 @@ class WorkshopWorkOrderService
             'work_order_number' => $this->generateWorkOrderNumber(),
             'title' => $data['title'],
             'status' => 'open',
+            'customer_tracking_token' => Str::random(48),
             'opened_at' => now(),
             'closed_at' => null,
             'notes' => $data['notes'] ?? null,

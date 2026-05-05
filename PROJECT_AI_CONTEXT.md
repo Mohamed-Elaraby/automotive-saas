@@ -5446,6 +5446,82 @@ Deployment reminder:
 - no new migration was added in this package
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 13 Customer Approval Portal Link and Customer-safe Tracking - 2026-05-05
+
+Package completed:
+- added public tenant-scoped customer controller:
+  - `app/Http/Controllers/Automotive/Customer/MaintenanceCustomerPortalController.php`
+- added secure customer routes in `routes/tenant.php`:
+  - `automotive.customer.maintenance.tracking`
+  - `automotive.customer.maintenance.estimate`
+  - `automotive.customer.maintenance.estimate.decision`
+- extended `ApprovalWorkflowService` with:
+  - `markViewedFromPortal()`
+  - `customerDecision()`
+- generated `customer_tracking_token` when maintenance/workshop work orders are created
+- added customer-safe tracking view:
+  - `resources/views/automotive/customer/maintenance/tracking.blade.php`
+- added customer estimate approval view:
+  - `resources/views/automotive/customer/maintenance/estimate.blade.php`
+- updated admin approval screen to expose customer approval and tracking links when tokens exist
+- extended Arabic and English maintenance translations
+
+Functional coverage:
+- secure token-based vehicle status tracking page
+- customer-safe timeline that excludes internal notes
+- customer-safe work order status, vehicle details, expected delivery, and payment status
+- secure token-based estimate review page
+- estimate is marked `viewed` when opened by customer
+- customer can approve all or selected estimate lines
+- customer can reject all estimate lines with rejection reason and note
+- portal approval records IP address, user agent, accepted terms, approved items, rejected items, and approved amount
+- rejected lines create lost-sales records for follow-up
+- branch notification is created after customer decision
+
+Important architecture notes:
+- customer-facing routes are tenant-domain scoped and token protected
+- customer-facing views do not expose internal notes, profit, cost, technician internal notes, or branch-sensitive data
+- approval flow reuses maintenance approval records and lost-sales structures
+- no new tables were created because approval and tracking token fields already existed
+- no route cache was used
+
+Verification:
+- `php -l app/Http/Controllers/Automotive/Customer/MaintenanceCustomerPortalController.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/ApprovalWorkflowService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/VehicleCheckInService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/WorkshopWorkOrderService.php`
+  - result: no syntax errors
+- `php -l routes/tenant.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/customer/maintenance/tracking.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/customer/maintenance/estimate.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/approvals/index.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.customer.maintenance --except-vendor`
+  - result: 6 customer maintenance routes shown across localized/canonical route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 13 of 23
+- remaining: 10 of 23
+- next package: Notification Rules and SSE Hardening
+
+Deployment reminder:
+- no new migration was added in this package
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

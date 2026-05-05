@@ -9,6 +9,7 @@ use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class VehicleCheckInService
 {
@@ -89,6 +90,7 @@ class VehicleCheckInService
                     'priority' => $data['priority'] ?? 'normal',
                     'vehicle_status' => 'in_workshop',
                     'payment_status' => 'unpaid',
+                    'customer_tracking_token' => Str::random(48),
                     'opened_at' => now(),
                     'expected_delivery_at' => $checkIn->expected_delivery_at,
                     'notes' => $checkIn->customer_complaint,
