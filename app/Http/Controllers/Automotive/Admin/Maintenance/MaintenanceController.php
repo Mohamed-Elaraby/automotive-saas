@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Core\Documents\GeneratedDocument;
 use App\Models\Customer;
 use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceServiceCatalogItem;
@@ -122,7 +123,30 @@ class MaintenanceController extends Controller
 
         return view('automotive.admin.maintenance.check-ins.show', [
             'checkIn' => $checkIn,
+            'generatedDocuments' => GeneratedDocument::query()
+                ->where('documentable_type', $checkIn->getMorphClass())
+                ->where('documentable_id', $checkIn->id)
+                ->where('document_type', 'maintenance_check_in')
+                ->latest('id')
+                ->limit(10)
+                ->get(),
         ]);
+    }
+
+    public function saveCheckInSignatures(Request $request, VehicleCheckIn $checkIn): RedirectResponse
+    {
+        $validated = $request->validate([
+            'customer_signature' => ['nullable', 'string', 'max:300000'],
+            'service_advisor_signature' => ['nullable', 'string', 'max:300000'],
+        ]);
+
+        abort_if(empty($validated['customer_signature']) && empty($validated['service_advisor_signature']), 422);
+
+        $this->checkInService->saveSignatures($checkIn, $validated + [
+            'signed_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return back()->with('success', __('maintenance.messages.signatures_saved'));
     }
 
     public function verifyVin(Request $request, VehicleCheckIn $checkIn): RedirectResponse

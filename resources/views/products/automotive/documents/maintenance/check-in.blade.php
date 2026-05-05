@@ -43,8 +43,8 @@
 
 <table class="keep-together">
     <tr>
-        <td>@include('core.documents.components.signature-box', ['label' => __('maintenance.customer_signature'), 'name' => data_get($snapshot, 'customer.name')])</td>
-        <td>@include('core.documents.components.signature-box', ['label' => __('maintenance.service_advisor_signature')])</td>
+        <td>@include('core.documents.components.signature-box', ['label' => __('maintenance.customer_signature'), 'name' => data_get($snapshot, 'customer.name'), 'signature' => data_get($snapshot, 'check_in.customer_signature')])</td>
+        <td>@include('core.documents.components.signature-box', ['label' => __('maintenance.service_advisor_signature'), 'name' => data_get($snapshot, 'check_in.service_advisor.name'), 'signature' => data_get($snapshot, 'check_in.service_advisor_signature')])</td>
         <td>@include('core.documents.components.qr-code')</td>
     </tr>
 </table>

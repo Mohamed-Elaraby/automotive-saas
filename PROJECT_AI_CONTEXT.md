@@ -5376,6 +5376,76 @@ Deployment reminder:
 - no new migration was added in this package
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 12 Check-in Signatures and Document Actions - 2026-05-05
+
+Package completed:
+- added signature capture workflow to the saved vehicle check-in screen
+- added service method `VehicleCheckInService::saveSignatures()`
+- added controller method `MaintenanceController::saveCheckInSignatures()`
+- added direct check-in PDF generation method `MaintenanceDocumentController::generateCheckIn()`
+- added product-scoped routes:
+  - `automotive.admin.maintenance.check-ins.signatures.store`
+  - `automotive.admin.maintenance.check-ins.documents.generate`
+- loaded recent generated check-in documents on the check-in show screen
+- added preview/download links using the existing central document routes
+- updated core signature document component to render captured signature images when available
+- updated maintenance check-in PDF template to include captured customer and service advisor signatures
+- extended Arabic and English maintenance translations
+
+Functional coverage:
+- draw customer signature directly in browser
+- draw service advisor signature directly in browser
+- clear and re-capture each signature
+- save signatures onto `vehicle_check_ins.customer_signature` and `vehicle_check_ins.service_advisor_signature`
+- record a check-in timeline event when signatures are captured
+- generate official Vehicle Check-in Report PDF directly from the check-in page
+- choose Arabic or English PDF language
+- preview and download generated check-in document versions from the check-in page
+
+Important architecture notes:
+- no new signature table was created because `vehicle_check_ins` already had signature fields
+- PDF generation continues to use the central mPDF document engine through `MaintenanceDocumentService`
+- product modules still do not instantiate mPDF directly
+- generated documents remain versioned through the central `generated_documents` structure
+- no route cache was used
+
+Verification:
+- `php -l app/Services/Automotive/Maintenance/VehicleCheckInService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceController.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceDocumentController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php`
+  - result: no syntax errors
+- `php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/check-ins/show.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/core/documents/components/signature-box.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/products/automotive/documents/maintenance/check-in.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.check-ins --except-vendor`
+  - result: signature and check-in document routes registered under canonical and localized route variants
+- `php artisan route:list --name=automotive.admin.maintenance.documents --except-vendor`
+  - result: central maintenance document preview/download routes available
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 12 of 23
+- remaining: 11 of 23
+- next package: Customer Approval Portal Link and Customer-safe Tracking
+
+Deployment reminder:
+- no new migration was added in this package
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

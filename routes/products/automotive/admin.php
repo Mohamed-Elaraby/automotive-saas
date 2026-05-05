@@ -121,6 +121,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.check-ins.verify-vin');
                 Route::post('/maintenance/check-ins/{checkIn}/capture-vin', [MaintenanceController::class, 'captureVin'])
                     ->name('maintenance.check-ins.capture-vin');
+                Route::post('/maintenance/check-ins/{checkIn}/signatures', [MaintenanceController::class, 'saveCheckInSignatures'])
+                    ->name('maintenance.check-ins.signatures.store');
+                Route::post('/maintenance/check-ins/{checkIn}/documents/check-in', [MaintenanceDocumentController::class, 'generateCheckIn'])
+                    ->name('maintenance.check-ins.documents.generate');
                 Route::get('/maintenance/vehicles/search-vin', [MaintenanceController::class, 'searchVin'])
                     ->name('maintenance.vehicles.search-vin');
                 Route::post('/maintenance/attachments', [MaintenanceAttachmentController::class, 'store'])

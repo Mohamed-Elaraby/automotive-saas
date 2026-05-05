@@ -146,6 +146,24 @@ class VehicleCheckInService
         return $checkIn->refresh();
     }
 
+    public function saveSignatures(VehicleCheckIn $checkIn, array $data): VehicleCheckIn
+    {
+        $checkIn->forceFill([
+            'customer_signature' => $data['customer_signature'] ?? $checkIn->customer_signature,
+            'service_advisor_signature' => $data['service_advisor_signature'] ?? $checkIn->service_advisor_signature,
+        ])->save();
+
+        $this->timelineService->recordForCheckIn($checkIn, 'vehicle.check_in_signed', 'Check-in signatures captured', [
+            'payload' => [
+                'customer_signature' => ! empty($checkIn->customer_signature),
+                'service_advisor_signature' => ! empty($checkIn->service_advisor_signature),
+            ],
+            'created_by' => $data['signed_by'] ?? null,
+        ]);
+
+        return $checkIn->refresh();
+    }
+
     protected function resolveCustomer(array $data): Customer
     {
         if (! empty($data['customer_id'])) {

@@ -57,4 +57,21 @@ class MaintenanceDocumentController extends Controller
             ->route('automotive.admin.maintenance.documents.index')
             ->with('success', __('maintenance.messages.document_generated') . ' ' . $document->document_number);
     }
+
+    public function generateCheckIn(Request $request, VehicleCheckIn $checkIn): RedirectResponse
+    {
+        $validated = $request->validate([
+            'language' => ['required', 'in:en,ar'],
+        ]);
+
+        $document = $this->documents->generateCheckIn($checkIn, [
+            'language' => $validated['language'],
+            'direction' => $validated['language'] === 'ar' ? 'rtl' : 'ltr',
+            'generated_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return redirect()
+            ->route('automotive.admin.maintenance.check-ins.show', $checkIn)
+            ->with('success', __('maintenance.messages.document_generated') . ' ' . $document->document_number);
+    }
 }

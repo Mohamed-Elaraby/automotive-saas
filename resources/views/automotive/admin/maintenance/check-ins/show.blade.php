@@ -76,6 +76,80 @@
             </div>
 
             <div class="row">
+                <div class="col-xl-7 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.check_in_signatures') }}</h5></div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('automotive.admin.maintenance.check-ins.signatures.store', $checkIn) }}" id="signatureForm">
+                                @csrf
+                                <input type="hidden" name="customer_signature" id="customerSignatureInput" value="{{ old('customer_signature', $checkIn->customer_signature) }}">
+                                <input type="hidden" name="service_advisor_signature" id="advisorSignatureInput" value="{{ old('service_advisor_signature', $checkIn->service_advisor_signature) }}">
+                                <div class="row">
+                                    <div class="col-lg-6 mb-3">
+                                        <div class="border rounded p-2">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <label class="form-label mb-0">{{ __('maintenance.customer_signature') }}</label>
+                                                <button type="button" class="btn btn-sm btn-outline-light" data-signature-clear="customer">{{ __('maintenance.clear_signature') }}</button>
+                                            </div>
+                                            <canvas class="signature-pad" data-signature-pad="customer" width="520" height="190"></canvas>
+                                            @if($checkIn->customer_signature)
+                                                <div class="small text-success mt-2">{{ __('maintenance.signature_captured') }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 mb-3">
+                                        <div class="border rounded p-2">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <label class="form-label mb-0">{{ __('maintenance.service_advisor_signature') }}</label>
+                                                <button type="button" class="btn btn-sm btn-outline-light" data-signature-clear="advisor">{{ __('maintenance.clear_signature') }}</button>
+                                            </div>
+                                            <canvas class="signature-pad" data-signature-pad="advisor" width="520" height="190"></canvas>
+                                            @if($checkIn->service_advisor_signature)
+                                                <div class="small text-success mt-2">{{ __('maintenance.signature_captured') }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">{{ __('maintenance.save_signatures') }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-5 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.check_in_documents') }}</h5></div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('automotive.admin.maintenance.check-ins.documents.generate', $checkIn) }}" class="d-flex gap-2 mb-3">
+                                @csrf
+                                <select name="language" class="form-select">
+                                    <option value="en">{{ __('maintenance.language') }}: English</option>
+                                    <option value="ar">{{ __('maintenance.language') }}: العربية</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary flex-shrink-0">{{ __('maintenance.generate_check_in_pdf') }}</button>
+                            </form>
+
+                            @forelse($generatedDocuments as $document)
+                                <div class="border-bottom pb-2 mb-2">
+                                    <div class="d-flex justify-content-between gap-2 align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ $document->document_number }} v{{ $document->version }}</h6>
+                                            <div class="small text-muted">{{ strtoupper($document->language) }} · {{ optional($document->generated_at)->format('Y-m-d H:i') }} · {{ strtoupper($document->status) }}</div>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ route('automotive.admin.maintenance.documents.preview', $document) }}" target="_blank" class="btn btn-sm btn-outline-light">{{ __('maintenance.preview') }}</a>
+                                            <a href="{{ route('automotive.admin.maintenance.documents.download', $document) }}" class="btn btn-sm btn-outline-light">{{ __('maintenance.download') }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-muted mb-0">{{ __('maintenance.no_generated_documents') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
                 <div class="col-xl-5 d-flex">
                     <div class="card flex-fill">
                         <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.photo_capture') }}</h5></div>
@@ -181,6 +255,19 @@
     </div>
 @endsection
 
+@push('styles')
+    <style>
+        .signature-pad {
+            width: 100%;
+            height: 190px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            touch-action: none;
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script>
         (() => {
@@ -200,6 +287,82 @@
             let stream = null;
             let captureMode = 'photo';
             let lastUpload = null;
+
+            const setupSignaturePad = (name, initialValue) => {
+                const canvas = document.querySelector(`[data-signature-pad="${name}"]`);
+                const input = document.getElementById(name === 'customer' ? 'customerSignatureInput' : 'advisorSignatureInput');
+                if (!canvas || !input) return;
+
+                const context = canvas.getContext('2d');
+                let drawing = false;
+                let hasInk = Boolean(initialValue);
+
+                const resize = () => {
+                    const image = input.value;
+                    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = Math.floor(rect.width * ratio);
+                    canvas.height = Math.floor(rect.height * ratio);
+                    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+                    context.lineWidth = 2;
+                    context.lineCap = 'round';
+                    context.strokeStyle = '#0f172a';
+                    context.fillStyle = '#fff';
+                    context.fillRect(0, 0, rect.width, rect.height);
+
+                    if (image) {
+                        const img = new Image();
+                        img.onload = () => context.drawImage(img, 0, 0, rect.width, rect.height);
+                        img.src = image;
+                    }
+                };
+
+                const point = event => {
+                    const rect = canvas.getBoundingClientRect();
+                    const source = event.touches?.[0] || event;
+                    return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+                };
+
+                const persist = () => {
+                    if (hasInk) {
+                        input.value = canvas.toDataURL('image/png');
+                    }
+                };
+
+                canvas.addEventListener('pointerdown', event => {
+                    drawing = true;
+                    hasInk = true;
+                    const p = point(event);
+                    context.beginPath();
+                    context.moveTo(p.x, p.y);
+                });
+
+                canvas.addEventListener('pointermove', event => {
+                    if (!drawing) return;
+                    const p = point(event);
+                    context.lineTo(p.x, p.y);
+                    context.stroke();
+                    persist();
+                });
+
+                window.addEventListener('pointerup', () => {
+                    if (!drawing) return;
+                    drawing = false;
+                    persist();
+                });
+
+                document.querySelector(`[data-signature-clear="${name}"]`)?.addEventListener('click', () => {
+                    input.value = '';
+                    hasInk = false;
+                    resize();
+                });
+
+                resize();
+                window.addEventListener('resize', resize);
+            };
+
+            setupSignaturePad('customer', @json($checkIn->customer_signature));
+            setupSignaturePad('advisor', @json($checkIn->service_advisor_signature));
 
             const stopCamera = () => {
                 if (stream) {
