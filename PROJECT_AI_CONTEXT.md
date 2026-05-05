@@ -5591,6 +5591,79 @@ Deployment reminder:
 - if config is cached in production, run `php artisan config:clear` or rebuild config cache during deployment
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 15 Workshop Board SSE Live Updates and Status Event Emission - 2026-05-05
+
+Package completed:
+- added workshop board JSON snapshot endpoint:
+  - `automotive.admin.maintenance.board.snapshot`
+- extended `TechnicianJobService` with `boardSnapshot()`
+- updated workshop board Blade view to refresh cards from JSON snapshot
+- wired board refresh to SSE events:
+  - `work_order.status.changed`
+  - `job.assigned`
+  - `job.started`
+  - `job.completed`
+  - `qc.ready`
+  - `qc.failed`
+  - `qc.passed`
+  - `vehicle.ready_for_delivery`
+  - `vehicle.delivered`
+- extended notification config for work-order, job, QC, and dashboard update events
+- emitted lightweight board/status notifications from:
+  - inspection start/completion
+  - technician job assignment/start/resume/pause/completion/blocker
+  - QC ready/pass/fail
+  - vehicle ready for delivery
+  - vehicle delivered
+
+Functional coverage:
+- workshop board columns update live after operational status events
+- board refresh uses a small JSON snapshot instead of full page reload
+- SSE events carry only identifiers and status summaries
+- no photos, documents, internal notes, costs, or large payloads are sent through SSE
+- technician assignments can create user-scoped notifications
+- work-order status changes create branch-scoped board update events
+
+Important architecture notes:
+- database remains source of truth; SSE only triggers live board refresh
+- board cards are rebuilt from current database state through `boardSnapshot()`
+- no new tables were required
+- no route cache was used
+
+Verification:
+- `php -l config/maintenance_notifications.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/TechnicianJobService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/QualityControlService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/InspectionWorkflowService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/DeliveryWarrantyService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceWorkflowController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/board.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.board --except-vendor`
+  - result: board and snapshot routes registered under canonical and localized route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 15 of 23
+- remaining: 8 of 23
+- next package: Technician Photo Documentation and Job Attachments
+
+Deployment reminder:
+- no new migration was added in this package
+- if config is cached in production, run `php artisan config:clear` or rebuild config cache during deployment
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

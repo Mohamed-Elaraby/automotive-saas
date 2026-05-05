@@ -2,6 +2,56 @@
 
 return [
     'rules' => [
+        'work_order.status.changed' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => true,
+        ],
+        'dashboard.counters.updated' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
+        'job.assigned' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
+        'job.started' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => true,
+        ],
+        'job.paused' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
+        'job.resumed' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
+        'job.completed' => [
+            'audience' => 'internal',
+            'severity' => 'success',
+            'customer_safe' => true,
+        ],
+        'qc.ready' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => true,
+        ],
+        'qc.failed' => [
+            'audience' => 'internal',
+            'severity' => 'warning',
+            'customer_safe' => true,
+        ],
+        'qc.passed' => [
+            'audience' => 'internal',
+            'severity' => 'success',
+            'customer_safe' => true,
+        ],
         'vehicle.checked_in' => [
             'audience' => 'internal',
             'severity' => 'info',

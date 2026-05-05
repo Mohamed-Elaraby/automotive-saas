@@ -11,7 +11,8 @@ class QualityControlService
 {
     public function __construct(
         protected MaintenanceNumberService $numbers,
-        protected MaintenanceTimelineService $timeline
+        protected MaintenanceTimelineService $timeline,
+        protected MaintenanceNotificationService $notifications
     ) {
     }
 
@@ -53,6 +54,17 @@ class QualityControlService
                 'created_by' => $data['created_by'] ?? null,
             ]);
 
+            $this->notifications->create('qc.ready', 'QC ready: ' . $workOrder->work_order_number, [
+                'branch_id' => $workOrder->branch_id,
+                'notifiable' => $qc,
+                'payload' => [
+                    'work_order_id' => $workOrder->id,
+                    'work_order_number' => $workOrder->work_order_number,
+                    'qc_id' => $qc->id,
+                    'status' => 'ready_for_qc',
+                ],
+            ]);
+
             return $qc->load(['items', 'workOrder.customer', 'workOrder.vehicle']);
         });
     }
@@ -86,6 +98,28 @@ class QualityControlService
             if ($qc->workOrder) {
                 $this->timeline->recordForWorkOrder($qc->workOrder, $event, 'QC ' . str_replace('_', ' ', $result) . ': ' . $qc->qc_number, [
                     'created_by' => $data['completed_by'] ?? null,
+                ]);
+
+                $this->notifications->create($result === 'passed' ? 'qc.passed' : 'qc.failed', 'QC ' . str_replace('_', ' ', $result) . ': ' . $qc->workOrder->work_order_number, [
+                    'branch_id' => $qc->workOrder->branch_id,
+                    'severity' => $result === 'passed' ? 'success' : 'warning',
+                    'notifiable' => $qc,
+                    'payload' => [
+                        'work_order_id' => $qc->workOrder->id,
+                        'work_order_number' => $qc->workOrder->work_order_number,
+                        'qc_id' => $qc->id,
+                        'status' => $workOrderStatus,
+                    ],
+                ]);
+
+                $this->notifications->create('work_order.status.changed', 'Work order status changed: ' . $qc->workOrder->work_order_number, [
+                    'branch_id' => $qc->workOrder->branch_id,
+                    'notifiable' => $qc->workOrder,
+                    'payload' => [
+                        'work_order_id' => $qc->workOrder->id,
+                        'work_order_number' => $qc->workOrder->work_order_number,
+                        'status' => $workOrderStatus,
+                    ],
                 ]);
             }
 

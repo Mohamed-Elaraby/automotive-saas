@@ -95,6 +95,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.index');
                 Route::get('/maintenance/board', [MaintenanceWorkflowController::class, 'board'])
                     ->name('maintenance.board');
+                Route::get('/maintenance/board/snapshot', [MaintenanceWorkflowController::class, 'boardSnapshot'])
+                    ->name('maintenance.board.snapshot');
                 Route::get('/maintenance/appointments', [MaintenanceAppointmentController::class, 'index'])
                     ->name('maintenance.appointments.index');
                 Route::post('/maintenance/appointments', [MaintenanceAppointmentController::class, 'store'])

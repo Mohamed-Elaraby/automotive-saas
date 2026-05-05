@@ -16,6 +16,7 @@ use App\Services\Automotive\Maintenance\DiagnosisService;
 use App\Services\Automotive\Maintenance\InspectionWorkflowService;
 use App\Services\Automotive\Maintenance\QualityControlService;
 use App\Services\Automotive\Maintenance\TechnicianJobService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -34,6 +35,15 @@ class MaintenanceWorkflowController extends Controller
     {
         return view('automotive.admin.maintenance.board', [
             'columns' => $this->jobs->boardData(),
+        ]);
+    }
+
+    public function boardSnapshot(): JsonResponse
+    {
+        return response()->json([
+            'ok' => true,
+            'columns' => $this->jobs->boardSnapshot(),
+            'generated_at' => now()->toIso8601String(),
         ]);
     }
 

@@ -60,6 +60,11 @@ class DeliveryWarrantyService
                 'branch_id' => $workOrder->branch_id,
                 'severity' => 'success',
                 'notifiable' => $delivery,
+                'payload' => [
+                    'work_order_id' => $workOrder->id,
+                    'work_order_number' => $workOrder->work_order_number,
+                    'status' => 'ready_for_delivery',
+                ],
             ]);
 
             return $delivery->load(['workOrder', 'customer', 'vehicle']);
@@ -100,6 +105,11 @@ class DeliveryWarrantyService
                 'branch_id' => $delivery->branch_id,
                 'severity' => 'success',
                 'notifiable' => $delivery,
+                'payload' => [
+                    'work_order_id' => $delivery->work_order_id,
+                    'delivery_id' => $delivery->id,
+                    'status' => 'delivered',
+                ],
             ]);
 
             return $delivery->fresh(['workOrder', 'customer', 'vehicle']);

@@ -12,7 +12,8 @@ class InspectionWorkflowService
 {
     public function __construct(
         protected MaintenanceNumberService $numbers,
-        protected MaintenanceTimelineService $timeline
+        protected MaintenanceTimelineService $timeline,
+        protected MaintenanceNotificationService $notifications
     ) {
     }
 
@@ -112,6 +113,16 @@ class InspectionWorkflowService
                 $this->timeline->recordForWorkOrder($workOrder, 'inspection_started', 'Inspection started: ' . $inspection->inspection_number, [
                     'created_by' => $data['created_by'] ?? null,
                 ]);
+
+                $this->notifications->create('work_order.status.changed', 'Work order status changed: ' . $workOrder->work_order_number, [
+                    'branch_id' => $workOrder->branch_id,
+                    'notifiable' => $workOrder,
+                    'payload' => [
+                        'work_order_id' => $workOrder->id,
+                        'work_order_number' => $workOrder->work_order_number,
+                        'status' => 'under_inspection',
+                    ],
+                ]);
             }
 
             return $inspection->load(['items', 'workOrder', 'vehicle', 'customer']);
@@ -155,6 +166,16 @@ class InspectionWorkflowService
 
                 $this->timeline->recordForWorkOrder($inspection->workOrder, 'inspection_completed', 'Inspection completed: ' . $inspection->inspection_number, [
                     'created_by' => $data['completed_by'] ?? null,
+                ]);
+
+                $this->notifications->create('work_order.status.changed', 'Work order status changed: ' . $inspection->workOrder->work_order_number, [
+                    'branch_id' => $inspection->workOrder->branch_id,
+                    'notifiable' => $inspection->workOrder,
+                    'payload' => [
+                        'work_order_id' => $inspection->workOrder->id,
+                        'work_order_number' => $inspection->workOrder->work_order_number,
+                        'status' => 'waiting_customer_approval',
+                    ],
                 ]);
             }
 

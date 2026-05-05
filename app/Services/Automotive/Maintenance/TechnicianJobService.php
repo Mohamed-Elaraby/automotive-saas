@@ -11,7 +11,8 @@ class TechnicianJobService
 {
     public function __construct(
         protected MaintenanceNumberService $numbers,
-        protected MaintenanceTimelineService $timeline
+        protected MaintenanceTimelineService $timeline,
+        protected MaintenanceNotificationService $notifications
     ) {
     }
 
@@ -53,6 +54,24 @@ class TechnicianJobService
             ->all();
     }
 
+    public function boardSnapshot(): array
+    {
+        return collect($this->boardData())
+            ->map(fn ($orders) => $orders->map(fn (WorkOrder $workOrder): array => [
+                'id' => $workOrder->id,
+                'number' => $workOrder->work_order_number,
+                'status' => $workOrder->status,
+                'priority' => $workOrder->priority ?? 'normal',
+                'payment_status' => $workOrder->payment_status ?? 'unpaid',
+                'plate_number' => $workOrder->vehicle?->plate_number,
+                'vehicle' => trim(($workOrder->vehicle?->make ?? '') . ' ' . ($workOrder->vehicle?->model ?? '')),
+                'customer' => $workOrder->customer?->name,
+                'branch' => $workOrder->branch?->name,
+                'technicians' => $workOrder->maintenanceJobs->pluck('technician.name')->filter()->unique()->values()->all(),
+            ])->values())
+            ->all();
+    }
+
     public function create(array $data): MaintenanceWorkOrderJob
     {
         return DB::transaction(function () use ($data) {
@@ -83,6 +102,21 @@ class TechnicianJobService
                 'created_by' => $data['created_by'] ?? null,
             ]);
 
+            $this->notifications->create('job.assigned', 'Job assigned: ' . $job->job_number, [
+                'branch_id' => $workOrder->branch_id,
+                'user_id' => $job->assigned_technician_id,
+                'channel' => $job->assigned_technician_id ? 'user' : 'branch',
+                'notifiable' => $job,
+                'payload' => [
+                    'work_order_id' => $workOrder->id,
+                    'work_order_number' => $workOrder->work_order_number,
+                    'job_id' => $job->id,
+                    'job_number' => $job->job_number,
+                ],
+            ]);
+
+            $this->notifyBoardUpdated($workOrder, 'approved');
+
             return $job->load(['workOrder.customer', 'workOrder.vehicle', 'technician', 'serviceCatalogItem']);
         });
     }
@@ -112,6 +146,17 @@ class TechnicianJobService
             ]);
 
             $this->recordTimeline($job, 'job_paused', $userId);
+            $this->notifications->create('job.paused', 'Job paused: ' . $job->job_number, [
+                'branch_id' => $job->workOrder?->branch_id,
+                'user_id' => $job->assigned_technician_id,
+                'notifiable' => $job,
+                'payload' => [
+                    'work_order_id' => $job->workOrder?->id,
+                    'work_order_number' => $job->workOrder?->work_order_number,
+                    'job_id' => $job->id,
+                    'job_number' => $job->job_number,
+                ],
+            ]);
 
             return $job->fresh(['workOrder.customer', 'workOrder.vehicle', 'technician', 'timeLogs']);
         });
@@ -146,9 +191,22 @@ class TechnicianJobService
                     'status' => 'ready_for_qc',
                     'vehicle_status' => 'ready_for_qc',
                 ])->save();
+
+                $this->notifyBoardUpdated($workOrder, 'ready_for_qc');
             }
 
             $this->recordTimeline($job, 'job_completed', $userId);
+            $this->notifications->create('job.completed', 'Job completed: ' . $job->job_number, [
+                'branch_id' => $workOrder?->branch_id,
+                'user_id' => $job->assigned_technician_id,
+                'notifiable' => $job,
+                'payload' => [
+                    'work_order_id' => $workOrder?->id,
+                    'work_order_number' => $workOrder?->work_order_number,
+                    'job_id' => $job->id,
+                    'job_number' => $job->job_number,
+                ],
+            ]);
 
             return $job->fresh(['workOrder.customer', 'workOrder.vehicle', 'technician', 'timeLogs']);
         });
@@ -168,6 +226,9 @@ class TechnicianJobService
             ])->save();
 
             $this->recordTimeline($job, 'job_blocked', $userId, $note);
+            if ($job->workOrder) {
+                $this->notifyBoardUpdated($job->workOrder, 'waiting_parts');
+            }
 
             return $job->fresh(['workOrder.customer', 'workOrder.vehicle', 'technician']);
         });
@@ -190,6 +251,26 @@ class TechnicianJobService
             ]);
 
             $this->recordTimeline($job, $event, $userId);
+            $eventType = match ($event) {
+                'job_started' => 'job.started',
+                'job_resumed' => 'job.resumed',
+                default => 'job.paused',
+            };
+
+            $this->notifications->create($eventType, str_replace('_', ' ', ucfirst($event)) . ': ' . $job->job_number, [
+                'branch_id' => $job->workOrder?->branch_id,
+                'user_id' => $job->assigned_technician_id,
+                'notifiable' => $job,
+                'payload' => [
+                    'work_order_id' => $job->workOrder?->id,
+                    'work_order_number' => $job->workOrder?->work_order_number,
+                    'job_id' => $job->id,
+                    'job_number' => $job->job_number,
+                ],
+            ]);
+            if ($job->workOrder) {
+                $this->notifyBoardUpdated($job->workOrder, 'in_progress');
+            }
 
             return $job->fresh(['workOrder.customer', 'workOrder.vehicle', 'technician', 'timeLogs']);
         });
@@ -229,6 +310,19 @@ class TechnicianJobService
 
         $this->timeline->recordForWorkOrder($job->workOrder, $event, trim($job->job_number . ' - ' . $job->title . ($note ? ': ' . $note : '')), [
             'created_by' => $userId,
+        ]);
+    }
+
+    protected function notifyBoardUpdated(WorkOrder $workOrder, string $status): void
+    {
+        $this->notifications->create('work_order.status.changed', 'Work order status changed: ' . $workOrder->work_order_number, [
+            'branch_id' => $workOrder->branch_id,
+            'notifiable' => $workOrder,
+            'payload' => [
+                'work_order_id' => $workOrder->id,
+                'work_order_number' => $workOrder->work_order_number,
+                'status' => $status,
+            ],
         ]);
     }
 }
