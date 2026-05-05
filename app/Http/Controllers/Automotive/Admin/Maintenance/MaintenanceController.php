@@ -268,10 +268,54 @@ class MaintenanceController extends Controller
 
     protected function formContext(): array
     {
+        $customers = Customer::query()->orderBy('name')->limit(200)->get();
+        $vehicles = Vehicle::query()->with('customer')->latest('id')->limit(200)->get();
+
         return [
             'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
-            'customers' => Customer::query()->orderBy('name')->limit(200)->get(),
-            'vehicles' => Vehicle::query()->with('customer')->latest('id')->limit(200)->get(),
+            'customers' => $customers,
+            'vehicles' => $vehicles,
+            'customerOptions' => $customers->map(fn (Customer $customer): array => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
+                'customer_type' => $customer->customer_type,
+                'company_name' => $customer->company_name,
+                'search' => strtolower(implode(' ', array_filter([
+                    $customer->name,
+                    $customer->phone,
+                    $customer->email,
+                    $customer->company_name,
+                    $customer->customer_number,
+                ]))),
+            ])->values(),
+            'vehicleOptions' => $vehicles->map(fn (Vehicle $vehicle): array => [
+                'id' => $vehicle->id,
+                'customer_id' => $vehicle->customer_id,
+                'customer_name' => $vehicle->customer?->name,
+                'make' => $vehicle->make,
+                'model' => $vehicle->model,
+                'year' => $vehicle->year,
+                'trim' => $vehicle->trim,
+                'color' => $vehicle->color,
+                'plate_number' => $vehicle->plate_number,
+                'plate_source' => $vehicle->plate_source,
+                'plate_country' => $vehicle->plate_country,
+                'vin' => $vehicle->vin,
+                'odometer' => $vehicle->odometer,
+                'fuel_type' => $vehicle->fuel_type,
+                'transmission' => $vehicle->transmission,
+                'search' => strtolower(implode(' ', array_filter([
+                    $vehicle->vehicle_number,
+                    $vehicle->plate_number,
+                    $vehicle->vin,
+                    $vehicle->make,
+                    $vehicle->model,
+                    $vehicle->customer?->name,
+                    $vehicle->customer?->phone,
+                ]))),
+            ])->values(),
             'users' => User::query()->orderBy('name')->get(),
             'vehicleAreas' => $this->vehicleAreas(),
         ];
@@ -291,8 +335,17 @@ class MaintenanceController extends Controller
             'right_front_door' => __('maintenance.vehicle_areas.right_front_door'),
             'left_rear_door' => __('maintenance.vehicle_areas.left_rear_door'),
             'right_rear_door' => __('maintenance.vehicle_areas.right_rear_door'),
+            'left_quarter_panel' => __('maintenance.vehicle_areas.left_quarter_panel'),
+            'right_quarter_panel' => __('maintenance.vehicle_areas.right_quarter_panel'),
+            'left_mirror' => __('maintenance.vehicle_areas.left_mirror'),
+            'right_mirror' => __('maintenance.vehicle_areas.right_mirror'),
             'windshield' => __('maintenance.vehicle_areas.windshield'),
             'rear_glass' => __('maintenance.vehicle_areas.rear_glass'),
+            'front_left_tire' => __('maintenance.vehicle_areas.front_left_tire'),
+            'front_right_tire' => __('maintenance.vehicle_areas.front_right_tire'),
+            'rear_left_tire' => __('maintenance.vehicle_areas.rear_left_tire'),
+            'rear_right_tire' => __('maintenance.vehicle_areas.rear_right_tire'),
+            'interior' => __('maintenance.vehicle_areas.interior'),
             'dashboard' => __('maintenance.vehicle_areas.dashboard'),
             'engine_bay' => __('maintenance.vehicle_areas.engine_bay'),
         ];

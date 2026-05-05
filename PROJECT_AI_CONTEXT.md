@@ -5318,6 +5318,64 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 11 Advanced Check-in UX Wizard - 2026-05-05
+
+Package completed:
+- rebuilt `resources/views/automotive/admin/maintenance/check-ins/create.blade.php` as a five-step operational wizard
+- extended `MaintenanceController::formContext()` with structured customer and vehicle search payloads
+- expanded the vehicle condition area catalog to include all required areas:
+  - quarter panels
+  - mirrors
+  - tires
+  - interior
+  - dashboard
+  - engine bay
+- extended Arabic and English maintenance translations for wizard labels, search labels, VIN confirmation guidance, plate fields, and new vehicle areas
+
+Functional coverage:
+- customer search by name, phone, email, company, and customer number
+- vehicle search by plate, VIN/chassis, customer, phone, make, and model
+- selecting a vehicle auto-fills linked customer and vehicle details where fields are empty
+- VIN/manual verification step before saving
+- arrival-state step for odometer, fuel, warning lights, belongings, complaint, damage notes, customer-visible notes, internal notes, and expected delivery
+- 2D clickable vehicle condition map for complaint/damage/inspection notes
+- dynamic condition map items with note type, severity, customer-visible note, and internal note
+- work-order creation step with priority and title
+- photo capture categories surfaced before saving; actual upload still uses the existing post-save attachment/camera flow because attachments require a saved check-in ID
+
+Important architecture notes:
+- no duplicate check-in service or route was created
+- the wizard still posts to the existing `VehicleCheckInService::create()` flow
+- condition map items still use the existing `VehicleConditionMapService`
+- customer-facing notes and internal notes remain separate
+- VIN OCR/camera capture remains on the saved check-in screen through existing endpoints
+- no route cache was used
+
+Verification:
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceController.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php`
+  - result: no syntax errors
+- `php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/check-ins/create.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.check-ins --except-vendor`
+  - result: check-in routes registered under canonical and localized route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 11 of 23
+- remaining: 12 of 23
+- next package: Check-in Signatures and Document Actions
+
+Deployment reminder:
+- no new migration was added in this package
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:
