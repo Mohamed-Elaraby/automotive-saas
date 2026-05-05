@@ -9,7 +9,15 @@
                     <h4 class="mb-1">{{ $checkIn->check_in_number }}</h4>
                     <p class="mb-0 text-muted">{{ $checkIn->customer?->name }} · {{ $checkIn->vehicle?->make }} {{ $checkIn->vehicle?->model }}</p>
                 </div>
-                <a href="{{ route('automotive.admin.maintenance.check-ins.index') }}" class="btn btn-outline-light">{{ __('tenant.back') }}</a>
+                <div class="d-flex gap-2">
+                    @if($checkIn->customer)
+                        <a href="{{ route('automotive.admin.maintenance.customers.profile', $checkIn->customer) }}" class="btn btn-outline-light">{{ __('maintenance.profiles.open_customer_360') }}</a>
+                    @endif
+                    @if($checkIn->vehicle)
+                        <a href="{{ route('automotive.admin.maintenance.vehicles.profile', $checkIn->vehicle) }}" class="btn btn-outline-light">{{ __('maintenance.profiles.open_vehicle_360') }}</a>
+                    @endif
+                    <a href="{{ route('automotive.admin.maintenance.check-ins.index') }}" class="btn btn-outline-light">{{ __('tenant.back') }}</a>
+                </div>
             </div>
 
             <div class="row">

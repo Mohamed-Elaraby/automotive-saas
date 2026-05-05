@@ -55,6 +55,41 @@ class Vehicle extends Model
         return $this->hasMany(\App\Models\Maintenance\VehicleCheckIn::class);
     }
 
+    public function estimates()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceEstimate::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceInvoice::class);
+    }
+
+    public function inspections()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceInspection::class);
+    }
+
+    public function diagnosisRecords()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceDiagnosisRecord::class);
+    }
+
+    public function warranties()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceWarranty::class);
+    }
+
+    public function complaints()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceComplaint::class);
+    }
+
+    public function conditionMaps()
+    {
+        return $this->hasMany(\App\Models\Maintenance\VehicleConditionMap::class);
+    }
+
     public function attachments()
     {
         return $this->morphMany(\App\Models\Maintenance\MaintenanceAttachment::class, 'attachable')->latest('id');

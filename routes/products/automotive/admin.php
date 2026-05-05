@@ -11,6 +11,7 @@ use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceDocumentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceIntegrationController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceLifecycleController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceProfileController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceReportsController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
 use App\Http\Controllers\Core\DocumentController;
@@ -101,6 +102,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.check-ins.store');
                 Route::get('/maintenance/check-ins/{checkIn}', [MaintenanceController::class, 'checkInsShow'])
                     ->name('maintenance.check-ins.show');
+                Route::get('/maintenance/customers/{customer}/profile', [MaintenanceProfileController::class, 'customer'])
+                    ->name('maintenance.customers.profile');
+                Route::get('/maintenance/vehicles/{vehicle}/profile', [MaintenanceProfileController::class, 'vehicle'])
+                    ->name('maintenance.vehicles.profile');
                 Route::post('/maintenance/check-ins/{checkIn}/verify-vin', [MaintenanceController::class, 'verifyVin'])
                     ->name('maintenance.check-ins.verify-vin');
                 Route::post('/maintenance/check-ins/{checkIn}/capture-vin', [MaintenanceController::class, 'captureVin'])

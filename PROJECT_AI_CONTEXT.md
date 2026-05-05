@@ -5434,6 +5434,96 @@ Package progress:
 - remaining packages: 15
 - next package: Customer 360 and Vehicle 360 full profiles
 
+## Automotive Maintenance SaaS - Package 9 Customer 360 and Vehicle 360 Profiles - 2026-05-05
+
+Package completed:
+- added full product-scoped Customer 360 profile page
+- added full product-scoped Vehicle 360 profile page
+- added service-layer profile aggregation:
+  - `App\Services\Automotive\Maintenance\MaintenanceProfileService`
+- added product-scoped controller:
+  - `App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceProfileController`
+- added routes:
+  - `automotive.admin.maintenance.customers.profile`
+  - `automotive.admin.maintenance.vehicles.profile`
+- extended relationships:
+  - `Customer::checkIns()`
+  - `Customer::estimates()`
+  - `Customer::invoices()`
+  - `Customer::warranties()`
+  - `Customer::complaints()`
+  - `Vehicle::estimates()`
+  - `Vehicle::invoices()`
+  - `Vehicle::inspections()`
+  - `Vehicle::diagnosisRecords()`
+  - `Vehicle::warranties()`
+  - `Vehicle::complaints()`
+  - `Vehicle::conditionMaps()`
+- added reusable profile partials:
+  - work order list
+  - visit/timeline list
+  - money list
+  - simple status list
+- linked Customer 360 and Vehicle 360 from check-in details
+- extended Arabic and English maintenance translations
+
+Customer 360 now shows:
+- customer details
+- vehicles
+- visits
+- total spend
+- pending payments/open work order metrics
+- active warranties
+- complaints
+- recent estimates and invoices
+- internal notes
+
+Vehicle 360 now shows:
+- vehicle details
+- customer owner
+- VIN/plate/mileage/trim/color/fuel/transmission
+- visits
+- work order history
+- inspections
+- diagnosis records
+- invoices
+- warranties
+- complaints
+- attachments
+- health score
+- service recommendations
+- preventive reminders
+
+Important architecture notes:
+- no new tables were needed; this package reuses the existing maintenance foundation/workflow/lifecycle/reporting tables
+- profile aggregation is in a service, not a fat controller
+- routes remain tenant/product scoped
+- internal notes are only shown in authenticated admin context, not in any customer-facing surface
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l app/Services/Automotive/Maintenance/MaintenanceProfileService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceProfileController.php`
+  - result: no syntax errors
+- `php -l app/Models/Customer.php && php -l app/Models/Vehicle.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php && php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.customers.profile --except-vendor`
+  - result: Customer 360 routes shown across localized/canonical/legacy variants
+- `php artisan route:list --name=automotive.admin.maintenance.vehicles.profile --except-vendor`
+  - result: Vehicle 360 routes shown across localized/canonical/legacy variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed package 9 of 23 total implementation packages required to satisfy the full prompt
+- remaining packages: 14
+- next package: Appointments and Walk-in Flow
+
 ## Automotive Maintenance SaaS - Phase 4 Central mPDF Document Engine - 2026-05-04
 
 Package completed:
