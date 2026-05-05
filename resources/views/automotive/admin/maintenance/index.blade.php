@@ -65,6 +65,7 @@
                         <div class="card-body">
                             <div class="d-grid gap-2">
                                 <a href="{{ route('automotive.admin.maintenance.check-ins.create') }}" class="btn btn-outline-light text-start"><i class="isax isax-login me-2"></i>{{ __('maintenance.new_check_in') }}</a>
+                                <a href="{{ route('automotive.admin.maintenance.appointments.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-calendar-1 me-2"></i>{{ __('maintenance.appointments.title') }}</a>
                                 <a href="{{ route('automotive.admin.maintenance.board') }}" class="btn btn-outline-light text-start"><i class="isax isax-grid-5 me-2"></i>{{ __('maintenance.workshop_board') }}</a>
                                 <a href="{{ route('automotive.admin.maintenance.inspections.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-clipboard-tick me-2"></i>{{ __('maintenance.inspections') }}</a>
                                 <a href="{{ route('automotive.admin.maintenance.jobs.index') }}" class="btn btn-outline-light text-start"><i class="isax isax-user-tick me-2"></i>{{ __('maintenance.technician_jobs') }}</a>

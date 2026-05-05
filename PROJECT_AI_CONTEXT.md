@@ -5239,6 +5239,85 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 10 Appointments and Walk-in Flow - 2026-05-05
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_04_070000_add_maintenance_appointments_table.php`
+- created tenant table `maintenance_appointments`
+- extended `vehicle_check_ins` with nullable `appointment_id`
+- used explicit short index/foreign-key names to avoid MySQL 64-character identifier failures
+- added model `app/Models/Maintenance/MaintenanceAppointment.php`
+- extended:
+  - `app/Models/Customer.php`
+  - `app/Models/Vehicle.php`
+  - `app/Models/Maintenance/VehicleCheckIn.php`
+- updated `VehicleCheckInService` so converted appointments retain the source appointment link
+- added service `app/Services/Automotive/Maintenance/MaintenanceAppointmentService.php`
+- added controller `app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceAppointmentController.php`
+- added product-scoped routes under `automotive.admin.maintenance.appointments.*`
+- added appointment and walk-in screen:
+  - `resources/views/automotive/admin/maintenance/appointments/index.blade.php`
+- updated maintenance dashboard quick links with appointments entry
+- updated Customer 360 and Vehicle 360 profiles to show upcoming appointments
+- extended Arabic and English maintenance translations
+
+Functional coverage:
+- create appointment or walk-in booking
+- link appointment to customer and vehicle
+- mark appointment as arrived
+- convert appointment/walk-in to existing vehicle check-in lifecycle
+- cancel appointment with reason
+- daily schedule filter
+- appointment dashboard counters
+- recent appointments table
+
+Important architecture notes:
+- appointment conversion reuses `VehicleCheckInService` instead of duplicating check-in logic
+- appointments remain tenant/product scoped under the existing Automotive maintenance module
+- branch/service-advisor fields are optional-aware and ready for branch scoping
+- no route cache was used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_04_070000_add_maintenance_appointments_table.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/MaintenanceAppointment.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/VehicleCheckIn.php`
+  - result: no syntax errors
+- `php -l app/Models/Customer.php`
+  - result: no syntax errors
+- `php -l app/Models/Vehicle.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceAppointmentService.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceProfileService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceAppointmentController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php`
+  - result: no syntax errors
+- `php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.appointments --except-vendor`
+  - result: appointment routes registered under canonical and localized route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- explicit index scan for the package migration
+  - result: indexes and foreign-key names are short and safe for MySQL
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 10 of 23
+- remaining: 13 of 23
+- next package: Advanced Check-in UX Wizard
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

@@ -61,7 +61,11 @@
 
             <div class="row">
                 <div class="col-xl-6 d-flex">@include('automotive.admin.maintenance.profiles.partials.timeline-list', ['title' => __('maintenance.profiles.recent_visits'), 'items' => $recent_visits, 'numberField' => 'check_in_number', 'dateField' => 'checked_in_at'])</div>
-                <div class="col-xl-6 d-flex">@include('automotive.admin.maintenance.profiles.partials.work-orders-list', ['title' => __('maintenance.profiles.open_work_orders'), 'workOrders' => $open_work_orders])</div>
+                <div class="col-xl-6 d-flex">@include('automotive.admin.maintenance.profiles.partials.timeline-list', ['title' => __('maintenance.profiles.upcoming_appointments'), 'items' => $upcoming_appointments, 'numberField' => 'appointment_number', 'dateField' => 'scheduled_at'])</div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-12 d-flex">@include('automotive.admin.maintenance.profiles.partials.work-orders-list', ['title' => __('maintenance.profiles.open_work_orders'), 'workOrders' => $open_work_orders])</div>
             </div>
 
             <div class="row">

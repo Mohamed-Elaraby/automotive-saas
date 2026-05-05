@@ -48,6 +48,7 @@ class VehicleCheckInService
 
             $checkIn = VehicleCheckIn::query()->create([
                 'check_in_number' => $this->numberService->next('vehicle_check_ins', 'check_in_number', 'CHK'),
+                'appointment_id' => $data['appointment_id'] ?? null,
                 'branch_id' => $data['branch_id'],
                 'customer_id' => $customer->id,
                 'vehicle_id' => $vehicle->id,

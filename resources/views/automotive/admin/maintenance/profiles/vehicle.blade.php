@@ -47,13 +47,17 @@
 
             <div class="row">
                 <div class="col-xl-6 d-flex">@include('automotive.admin.maintenance.profiles.partials.timeline-list', ['title' => __('maintenance.profiles.recent_visits'), 'items' => $recent_visits, 'numberField' => 'check_in_number', 'dateField' => 'checked_in_at'])</div>
-                <div class="col-xl-6 d-flex">@include('automotive.admin.maintenance.profiles.partials.simple-list', ['title' => __('maintenance.inspections'), 'items' => $inspections, 'numberField' => 'inspection_number', 'subtitleField' => 'status'])</div>
+                <div class="col-xl-6 d-flex">@include('automotive.admin.maintenance.profiles.partials.timeline-list', ['title' => __('maintenance.profiles.upcoming_appointments'), 'items' => $upcoming_appointments, 'numberField' => 'appointment_number', 'dateField' => 'scheduled_at'])</div>
             </div>
 
             <div class="row">
+                <div class="col-xl-4 d-flex">@include('automotive.admin.maintenance.profiles.partials.simple-list', ['title' => __('maintenance.inspections'), 'items' => $inspections, 'numberField' => 'inspection_number', 'subtitleField' => 'status'])</div>
                 <div class="col-xl-4 d-flex">@include('automotive.admin.maintenance.profiles.partials.simple-list', ['title' => __('maintenance.diagnosis'), 'items' => $diagnosis_records, 'numberField' => 'diagnosis_number', 'subtitleField' => 'priority'])</div>
                 <div class="col-xl-4 d-flex">@include('automotive.admin.maintenance.profiles.partials.money-list', ['title' => __('maintenance.profiles.invoices'), 'items' => $invoices, 'numberField' => 'invoice_number', 'amountField' => 'grand_total'])</div>
-                <div class="col-xl-4 d-flex">@include('automotive.admin.maintenance.profiles.partials.simple-list', ['title' => __('maintenance.warranties'), 'items' => $warranties, 'numberField' => 'warranty_number', 'subtitleField' => 'status'])</div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-12 d-flex">@include('automotive.admin.maintenance.profiles.partials.simple-list', ['title' => __('maintenance.warranties'), 'items' => $warranties, 'numberField' => 'warranty_number', 'subtitleField' => 'status'])</div>
             </div>
 
             <div class="row">

@@ -33,6 +33,11 @@ class Customer extends Model
         return $this->hasMany(\App\Models\Maintenance\VehicleCheckIn::class);
     }
 
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceAppointment::class);
+    }
+
     public function estimates(): HasMany
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceEstimate::class);

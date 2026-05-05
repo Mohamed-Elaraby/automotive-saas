@@ -7,6 +7,7 @@ use App\Http\Controllers\Automotive\Admin\DashboardController;
 use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\InventoryReportController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAppointmentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceDocumentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceIntegrationController;
@@ -94,6 +95,16 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.index');
                 Route::get('/maintenance/board', [MaintenanceWorkflowController::class, 'board'])
                     ->name('maintenance.board');
+                Route::get('/maintenance/appointments', [MaintenanceAppointmentController::class, 'index'])
+                    ->name('maintenance.appointments.index');
+                Route::post('/maintenance/appointments', [MaintenanceAppointmentController::class, 'store'])
+                    ->name('maintenance.appointments.store');
+                Route::post('/maintenance/appointments/{appointment}/arrived', [MaintenanceAppointmentController::class, 'arrived'])
+                    ->name('maintenance.appointments.arrived');
+                Route::post('/maintenance/appointments/{appointment}/convert', [MaintenanceAppointmentController::class, 'convert'])
+                    ->name('maintenance.appointments.convert');
+                Route::post('/maintenance/appointments/{appointment}/cancel', [MaintenanceAppointmentController::class, 'cancel'])
+                    ->name('maintenance.appointments.cancel');
                 Route::get('/maintenance/check-ins', [MaintenanceController::class, 'checkInsIndex'])
                     ->name('maintenance.check-ins.index');
                 Route::get('/maintenance/check-ins/create', [MaintenanceController::class, 'checkInsCreate'])

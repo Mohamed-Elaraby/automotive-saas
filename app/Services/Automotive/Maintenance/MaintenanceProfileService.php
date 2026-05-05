@@ -11,6 +11,7 @@ class MaintenanceProfileService
     {
         $customer->load([
             'vehicles' => fn ($query) => $query->latest('id'),
+            'appointments.branch',
             'checkIns.branch',
             'workOrders.branch',
             'workOrders.vehicle',
@@ -37,6 +38,11 @@ class MaintenanceProfileService
             ],
             'vehicles' => $customer->vehicles,
             'recent_visits' => $customer->checkIns->sortByDesc('checked_in_at')->take(10)->values(),
+            'upcoming_appointments' => $customer->appointments
+                ->whereIn('status', ['scheduled', 'confirmed'])
+                ->sortBy('scheduled_at')
+                ->take(8)
+                ->values(),
             'open_work_orders' => $workOrders->whereNotIn('status', ['delivered', 'closed', 'cancelled'])->sortByDesc('id')->values(),
             'recent_work_orders' => $workOrders->sortByDesc('id')->take(10)->values(),
             'recent_estimates' => $customer->estimates->sortByDesc('id')->take(8)->values(),
@@ -50,6 +56,7 @@ class MaintenanceProfileService
     {
         $vehicle->load([
             'customer',
+            'appointments.branch',
             'checkIns.branch',
             'workOrders.branch',
             'workOrders.customer',
@@ -78,6 +85,11 @@ class MaintenanceProfileService
                 'latest_health_score' => $vehicle->healthScores->first()?->overall_score,
             ],
             'recent_visits' => $vehicle->checkIns->sortByDesc('checked_in_at')->take(10)->values(),
+            'upcoming_appointments' => $vehicle->appointments
+                ->whereIn('status', ['scheduled', 'confirmed'])
+                ->sortBy('scheduled_at')
+                ->take(8)
+                ->values(),
             'open_work_orders' => $vehicle->workOrders->whereNotIn('status', ['delivered', 'closed', 'cancelled'])->sortByDesc('id')->values(),
             'work_orders' => $vehicle->workOrders->sortByDesc('id')->take(12)->values(),
             'inspections' => $vehicle->inspections->sortByDesc('id')->take(10)->values(),

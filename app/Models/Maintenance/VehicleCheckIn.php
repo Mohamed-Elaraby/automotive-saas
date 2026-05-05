@@ -16,6 +16,7 @@ class VehicleCheckIn extends Model
 {
     protected $fillable = [
         'check_in_number',
+        'appointment_id',
         'branch_id',
         'customer_id',
         'vehicle_id',
@@ -55,6 +56,11 @@ class VehicleCheckIn extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceAppointment::class, 'appointment_id');
     }
 
     public function customer(): BelongsTo

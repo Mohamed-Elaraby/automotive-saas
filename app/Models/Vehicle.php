@@ -55,6 +55,11 @@ class Vehicle extends Model
         return $this->hasMany(\App\Models\Maintenance\VehicleCheckIn::class);
     }
 
+    public function appointments()
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceAppointment::class);
+    }
+
     public function estimates()
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceEstimate::class);
