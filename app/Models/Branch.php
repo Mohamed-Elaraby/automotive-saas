@@ -12,6 +12,11 @@ class Branch extends Model
         'phone',
         'email',
         'address',
+        'manager_user_id',
+        'emirate',
+        'city',
+        'country',
+        'timezone',
         'is_active',
     ];
 
@@ -32,5 +37,20 @@ class Branch extends Model
     public function incomingTransfers()
     {
         return $this->hasMany(StockTransfer::class, 'to_branch_id');
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_user_id');
+    }
+
+    public function productActivations()
+    {
+        return $this->hasMany(TenantProductBranch::class);
+    }
+
+    public function userProductAccess()
+    {
+        return $this->hasMany(TenantUserProductBranch::class);
     }
 }

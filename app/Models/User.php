@@ -58,4 +58,9 @@ class User extends Authenticatable
             'tenant_id'
         );
     }
+
+    public function productAccess()
+    {
+        return $this->hasMany(TenantUserProductAccess::class);
+    }
 }
