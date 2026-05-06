@@ -10,6 +10,7 @@ use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAttachmentContr
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceAppointmentController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceDocumentController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceFleetController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceIntegrationController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceLifecycleController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceProfileController;
@@ -188,6 +189,16 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.reports.index');
                 Route::get('/maintenance/reports/export/{report}', [MaintenanceReportsController::class, 'export'])
                     ->name('maintenance.reports.export');
+                Route::get('/maintenance/fleet', [MaintenanceFleetController::class, 'index'])
+                    ->name('maintenance.fleet.index');
+                Route::post('/maintenance/fleet', [MaintenanceFleetController::class, 'store'])
+                    ->name('maintenance.fleet.store');
+                Route::get('/maintenance/fleet/export', [MaintenanceFleetController::class, 'export'])
+                    ->name('maintenance.fleet.export');
+                Route::get('/maintenance/fleet/{fleet}', [MaintenanceFleetController::class, 'show'])
+                    ->name('maintenance.fleet.show');
+                Route::get('/maintenance/fleet/{fleet}/export', [MaintenanceFleetController::class, 'export'])
+                    ->name('maintenance.fleet.export.single');
                 Route::get('/maintenance/advanced-operations', [MaintenanceReportsController::class, 'advanced'])
                     ->name('maintenance.advanced.index');
                 Route::post('/maintenance/advanced-operations/preventive-rules', [MaintenanceReportsController::class, 'createPreventiveRule'])

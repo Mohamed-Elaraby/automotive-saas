@@ -5239,6 +5239,78 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 20 Fleet Customers, Contracts, and Fleet Reporting Readiness - 2026-05-06
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_06_100000_add_maintenance_fleet_tables.php`
+- created `maintenance_fleet_accounts`
+- all new foreign keys and indexes use explicit short names to avoid MySQL identifier length failures
+- added Eloquent model:
+  - `MaintenanceFleetAccount`
+- extended `Customer` with `fleetAccount()`
+- added service-layer fleet logic:
+  - `MaintenanceFleetService`
+- added product-scoped controller:
+  - `MaintenanceFleetController`
+- added product-scoped routes:
+  - `automotive.admin.maintenance.fleet.index`
+  - `automotive.admin.maintenance.fleet.store`
+  - `automotive.admin.maintenance.fleet.show`
+  - `automotive.admin.maintenance.fleet.export`
+  - `automotive.admin.maintenance.fleet.export.single`
+- added Fleet UI:
+  - fleet account creation/update form
+  - contract type/status dates
+  - credit limit
+  - approval limit and approval-required flag
+  - monthly billing readiness
+  - preventive schedule defaults
+  - terms and internal notes
+  - fleet accounts list
+  - fleet profile page
+  - fleet vehicle list
+  - fleet work-order history
+  - fleet invoice/payment summary
+- added CSV fleet reports:
+  - all fleets report
+  - single fleet report
+- updated maintenance dashboard quick links with Fleet Customers
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- fleet support reuses existing `customers`, `vehicles`, `work_orders`, and `maintenance_invoices` instead of duplicating customer/vehicle data
+- fleet accounts are attached to customers whose type is `fleet`, `company`, or `government`
+- the fleet table stores contract, credit, monthly billing, approval, and preventive scheduling metadata only
+- this package prepares fleet reporting and monthly reporting without coupling to accounting
+- internal notes remain admin-only; no customer-facing fleet surface was exposed
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_06_100000_add_maintenance_fleet_tables.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/MaintenanceFleetAccount.php && php -l app/Models/Customer.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceFleetService.php && php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceFleetController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php && php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.fleet --except-vendor`
+  - result: fleet routes shown across localized/canonical/legacy route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 20 of 23
+- remaining: 3 of 23
+- next package: Customer Portal Expansion and API Integration Readiness
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Package 19 Settings, Permissions, Approval Readiness, and Audit Trail - 2026-05-06
 
 Package completed:

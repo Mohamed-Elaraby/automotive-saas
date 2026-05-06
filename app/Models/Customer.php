@@ -57,4 +57,9 @@ class Customer extends Model
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceComplaint::class);
     }
+
+    public function fleetAccount()
+    {
+        return $this->hasOne(\App\Models\Maintenance\MaintenanceFleetAccount::class);
+    }
 }
