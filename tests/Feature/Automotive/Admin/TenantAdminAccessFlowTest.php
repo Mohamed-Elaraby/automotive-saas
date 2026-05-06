@@ -149,6 +149,9 @@ class TenantAdminAccessFlowTest extends TestCase
             ->assertOk()
             ->assertSee('dir="rtl"', false);
 
+        $this->get("http://{$domain}/ar/users")
+            ->assertRedirect("http://{$domain}/ar/workspace/admin/users");
+
         $this->get("http://{$domain}/ar/workspace/admin/branches")
             ->assertOk()
             ->assertSee('dir="rtl"', false);

@@ -21,6 +21,10 @@ $registerTenantWorkspaceRoutes = function (): void {
     Route::get('/documents/verify/{token}', [DocumentController::class, 'verify'])
         ->name('documents.verify');
 
+    Route::get('/users', function () {
+        return redirect()->route('automotive.admin.users.index');
+    });
+
     Route::get('/maintenance/customer/track/{token}', [MaintenanceCustomerPortalController::class, 'tracking'])
         ->name('automotive.customer.maintenance.tracking');
     Route::get('/maintenance/customer/api/track/{token}', [MaintenanceCustomerPortalController::class, 'trackingJson'])
