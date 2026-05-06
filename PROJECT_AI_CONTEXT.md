@@ -318,6 +318,71 @@ Next package:
   - central numbering sequences by product/document/branch/year
   - product document template foundation without making PDFs Automotive-only
 
+Package 7 completed:
+- reused and hardened the existing central document foundation instead of creating a parallel PDF engine:
+  - `app/Services/Core/Documents/DocumentGenerationService.php`
+  - `app/Services/Core/Documents/MpdfDocumentRenderer.php`
+  - `app/Services/Core/Documents/DocumentStorageService.php`
+  - `app/Models/Core/Documents/GeneratedDocument.php`
+  - `app/Models/Core/Documents/DocumentTemplate.php`
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_06_180000_add_document_numbering_sequences_foundation.php`
+- added central numbering table:
+  - `numbering_sequences`
+- expanded generated document metadata:
+  - `generated_documents.product_key`
+  - `generated_documents.metadata`
+- expanded document templates for product-aware template registration:
+  - `document_templates.tenant_id`
+  - `document_templates.product_key`
+  - `document_templates.document_key`
+- added central model and service:
+  - `NumberingSequence`
+  - `NumberingSequenceService`
+- `DocumentNumberService` now delegates product/document/branch/year numbering to `NumberingSequenceService` while retaining the legacy-compatible API used by existing code.
+- `DocumentGenerationService` now stores:
+  - `product_key`
+  - `document_type`
+  - `branch_id`
+  - `generated_by`
+  - `metadata`
+  - storage path/file metadata
+- `DocumentGenerationService` now has a CLI-safe verification URL fallback when `documents.verify` is not loaded in isolated test/console contexts.
+- `MpdfDocumentRenderer` now exposes `mpdfConfig()` for testable central mPDF configuration while keeping actual rendering centralized.
+- added reusable document view structure:
+  - `resources/views/documents/layouts/mpdf.blade.php`
+  - `resources/views/documents/partials/header.blade.php`
+  - `resources/views/documents/partials/footer.blade.php`
+  - `resources/views/documents/products/automotive/*`
+  - `resources/views/documents/products/accounting/*`
+  - `resources/views/documents/products/inventory/*`
+  - `resources/views/documents/products/shared/lines.blade.php`
+- added product document type foundation in `config/documents.php` for:
+  - Automotive: check-in, work order, job card, quotation/estimate, invoice, receipt, approval
+  - Accounting: tax invoice, payment voucher, journal voucher, statement of account
+  - Inventory: delivery note, stock transfer, purchase order
+- added idempotent template seeder:
+  - `TenantDocumentFoundationSeeder`
+- Automotive legacy maintenance document routes/controllers remain unchanged and are bridged through the central engine.
+
+Package 7 verification:
+- `php artisan test tests/Feature/Tenancy/DocumentEngineAndNumberingTest.php`
+  - result: 7 passed, 25 assertions
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php tests/Feature/Tenancy/CentralBusinessEntitiesTest.php`
+  - result: 31 passed, 86 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: automotive admin routes remain listed
+- `git diff --check`
+  - result: no whitespace errors
+
+Next package:
+- Package 8: Attachments, Storage Limits, Notifications, Reports, Approvals, And Audit Foundation
+- Focus:
+  - central attachment metadata and plan-aware storage checks
+  - central notification event/channel foundation
+  - approval and audit foundations
+  - report registry foundations without duplicating Automotive-specific reporting
+
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 
 The original prompt asked for a complete professional Automotive Maintenance / Workshop Management SaaS product inside this existing Laravel multi-tenant SaaS.

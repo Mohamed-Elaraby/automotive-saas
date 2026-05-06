@@ -6,6 +6,7 @@ use App\Models\Core\Documents\GeneratedDocument;
 use App\Services\Core\Documents\DTO\DocumentRenderRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 class DocumentGenerationService
 {
@@ -30,18 +31,25 @@ class DocumentGenerationService
         $direction = $options['direction'] ?? ($language === 'ar' ? 'rtl' : config('documents.default_direction', 'ltr'));
         $disk = $options['disk'] ?? config('documents.disk', 'local');
         $version = $this->numbers->nextVersion($documentType, $documentableType, $documentableId);
+        $productKey = (string) ($options['product_key'] ?? $type['product_key'] ?? $type['product_code']);
+        $branchId = $options['branch_id'] ?? data_get($snapshot, 'branch.id');
         $documentNumber = $options['document_number']
             ?? $this->numbers->existingNumber($documentType, $documentableType, $documentableId)
-            ?? $this->numbers->next($documentType, $type['prefix']);
+            ?? $this->numbers->nextScoped($productKey, (string) ($type['document_key'] ?? $documentType), $branchId ? (int) $branchId : null, null, [
+                'prefix' => $options['prefix'] ?? $type['prefix'],
+                'padding' => (int) ($options['padding'] ?? $type['padding'] ?? 4),
+                'reset_strategy' => $options['reset_strategy'] ?? $type['reset_strategy'] ?? 'yearly',
+            ]);
         $title = $options['title'] ?? $type['title'];
         $tenantId = (string) ($options['tenant_id'] ?? tenant('id') ?? '');
 
-        return DB::transaction(function () use ($documentType, $snapshot, $options, $type, $documentableType, $documentableId, $language, $direction, $disk, $version, $documentNumber, $title, $tenantId) {
+        return DB::transaction(function () use ($documentType, $snapshot, $options, $type, $documentableType, $documentableId, $language, $direction, $disk, $version, $documentNumber, $title, $tenantId, $productKey, $branchId) {
             $token = $this->verification->token();
 
             $document = GeneratedDocument::query()->create([
                 'tenant_id' => $tenantId ?: null,
-                'branch_id' => $options['branch_id'] ?? data_get($snapshot, 'branch.id'),
+                'branch_id' => $branchId,
+                'product_key' => $productKey,
                 'product_code' => $type['product_code'],
                 'module_code' => $type['module_code'],
                 'documentable_type' => $documentableType,
@@ -56,9 +64,13 @@ class DocumentGenerationService
                 'status' => 'processing',
                 'generated_by' => $options['generated_by'] ?? null,
                 'verified_token' => $token,
+                'metadata' => $options['metadata'] ?? [
+                    'document_key' => $type['document_key'] ?? $documentType,
+                    'template' => $options['template'] ?? $type['template'],
+                ],
             ]);
 
-            $verifyUrl = route('documents.verify', $token);
+            $verifyUrl = $this->verificationUrl($token);
             $renderData = [
                 'snapshot' => $snapshot,
                 'document' => $document->toArray() + [
@@ -80,6 +92,7 @@ class DocumentGenerationService
 
             $path = $this->storage->path([
                 'tenant_id' => $tenantId ?: 'central',
+                'product_key' => $productKey,
                 'product_code' => $type['product_code'],
                 'module_code' => $type['module_code'],
                 'document_type' => $documentType,
@@ -105,5 +118,14 @@ class DocumentGenerationService
 
             return $document->fresh(['snapshot', 'branch']);
         });
+    }
+
+    protected function verificationUrl(string $token): string
+    {
+        if (Route::has('documents.verify')) {
+            return route('documents.verify', $token);
+        }
+
+        return url('/documents/verify/' . $token);
     }
 }

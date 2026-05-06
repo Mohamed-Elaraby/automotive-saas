@@ -14,6 +14,7 @@ class GeneratedDocument extends Model
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'product_key',
         'product_code',
         'module_code',
         'documentable_type',
@@ -34,6 +35,7 @@ class GeneratedDocument extends Model
         'generated_by',
         'generated_at',
         'verified_token',
+        'metadata',
         'cancelled_at',
         'cancelled_by',
         'cancellation_reason',
@@ -42,6 +44,7 @@ class GeneratedDocument extends Model
     protected $casts = [
         'generated_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     public function branch(): BelongsTo { return $this->belongsTo(Branch::class); }

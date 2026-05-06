@@ -20,7 +20,7 @@ class DocumentStorageService
         return sprintf(
             'tenants/%s/documents/%s/%s/%s/%s/%s/%s-v%d.pdf',
             $tenantId,
-            $data['product_code'],
+            $data['product_key'] ?? $data['product_code'],
             $data['module_code'],
             $data['document_type'],
             $year,
