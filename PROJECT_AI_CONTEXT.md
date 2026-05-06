@@ -5664,6 +5664,68 @@ Deployment reminder:
 - if config is cached in production, run `php artisan config:clear` or rebuild config cache during deployment
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 16 Technician Photo Documentation and Job Attachments - 2026-05-06
+
+Package completed:
+- extended technician job detail view:
+  - `resources/views/automotive/admin/maintenance/jobs/show.blade.php`
+- reused the existing maintenance attachment system for job-level photos
+- added direct browser camera capture for job photos
+- added manual file upload for job photos
+- added upload progress, success/failure status, and retry for captured photos
+- added before/after/blocker/other photo categories
+- grouped job attachments by category on the job detail page
+- extended `MaintenanceAttachmentController` to emit lightweight `job.photo_uploaded` notifications
+- extended notification config with `job.photo_uploaded`
+- extended Arabic and English maintenance translations
+
+Functional coverage:
+- technician can capture before photo directly from the job screen
+- technician can capture after photo directly from the job screen
+- technician can attach blocker/issue evidence photos
+- technician can upload manual files when camera is unavailable
+- photos are linked polymorphically to `MaintenanceWorkOrderJob`
+- photos keep category, notes, uploader, capture timestamp, file size, and file path
+- notification/SSE payload stores only IDs/category, not the image bytes
+
+Important architecture notes:
+- no duplicate attachment table was created
+- job photos use the existing `maintenance_attachments` structure
+- images are not sent through SSE
+- the attachment service remains generic for vehicle/check-in/work-order/job use cases
+- no new migration was required
+- no route cache was used
+
+Verification:
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceAttachmentController.php`
+  - result: no syntax errors
+- `php -l config/maintenance_notifications.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php`
+  - result: no syntax errors
+- `php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/jobs/show.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.jobs --except-vendor`
+  - result: job routes registered under canonical and localized route variants
+- `php artisan route:list --name=automotive.admin.maintenance.attachments --except-vendor`
+  - result: attachment upload route registered under canonical and localized route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 16 of 23
+- remaining: 7 of 23
+- next package: Estimate PDF and Approval Document Actions
+
+Deployment reminder:
+- no new migration was added in this package
+- ensure `php artisan storage:link` exists in environments serving public uploads
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

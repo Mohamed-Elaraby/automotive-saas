@@ -51,6 +51,8 @@ return [
     'job_title' => 'عنوان المهمة',
     'job_details' => 'تفاصيل المهمة',
     'technician_actions' => 'إجراءات الفني',
+    'job_photo_documentation' => 'توثيق صور المهمة',
+    'before_after_photos' => 'صور قبل / بعد',
     'start_job' => 'بدء المهمة',
     'pause_job' => 'إيقاف مؤقت',
     'resume_job' => 'استئناف المهمة',
@@ -552,6 +554,9 @@ return [
         'engine_bay' => 'حجرة المحرك',
         'vin' => 'رقم الشاسيه',
         'existing_damage' => 'ضرر حالي',
+        'before' => 'قبل',
+        'after' => 'بعد',
+        'blocker' => 'عائق',
         'other' => 'أخرى',
     ],
     'vehicle_areas' => [

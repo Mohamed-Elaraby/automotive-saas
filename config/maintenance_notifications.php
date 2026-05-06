@@ -37,6 +37,11 @@ return [
             'severity' => 'success',
             'customer_safe' => true,
         ],
+        'job.photo_uploaded' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
         'qc.ready' => [
             'audience' => 'internal',
             'severity' => 'info',

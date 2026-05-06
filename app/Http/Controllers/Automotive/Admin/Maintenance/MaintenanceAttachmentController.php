@@ -8,13 +8,17 @@ use App\Models\Maintenance\MaintenanceWorkOrderJob;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\MaintenanceAttachmentService;
+use App\Services\Automotive\Maintenance\MaintenanceNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class MaintenanceAttachmentController extends Controller
 {
-    public function __construct(protected MaintenanceAttachmentService $attachmentService)
+    public function __construct(
+        protected MaintenanceAttachmentService $attachmentService,
+        protected MaintenanceNotificationService $notifications
+    )
     {
     }
 
@@ -42,6 +46,21 @@ class MaintenanceAttachmentController extends Controller
             'notes' => $validated['notes'] ?? null,
             'uploaded_by' => auth('automotive_admin')->id(),
         ]);
+
+        if ($attachable instanceof MaintenanceWorkOrderJob) {
+            $this->notifications->create('job.photo_uploaded', 'Job photo uploaded: ' . $attachable->job_number, [
+                'branch_id' => $attachable->workOrder?->branch_id ?? ($validated['branch_id'] ?? null),
+                'user_id' => $attachable->assigned_technician_id,
+                'notifiable' => $attachable,
+                'payload' => [
+                    'job_id' => $attachable->id,
+                    'job_number' => $attachable->job_number,
+                    'work_order_id' => $attachable->work_order_id,
+                    'category' => $attachment->category,
+                    'attachment_id' => $attachment->id,
+                ],
+            ]);
+        }
 
         if ($request->expectsJson()) {
             return response()->json([

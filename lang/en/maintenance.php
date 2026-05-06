@@ -51,6 +51,8 @@ return [
     'job_title' => 'Job Title',
     'job_details' => 'Job Details',
     'technician_actions' => 'Technician Actions',
+    'job_photo_documentation' => 'Job Photo Documentation',
+    'before_after_photos' => 'Before / After Photos',
     'start_job' => 'Start Job',
     'pause_job' => 'Pause Job',
     'resume_job' => 'Resume Job',
@@ -552,6 +554,9 @@ return [
         'engine_bay' => 'Engine Bay',
         'vin' => 'VIN',
         'existing_damage' => 'Existing Damage',
+        'before' => 'Before',
+        'after' => 'After',
+        'blocker' => 'Blocker',
         'other' => 'Other',
     ],
     'vehicle_areas' => [
