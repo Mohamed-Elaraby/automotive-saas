@@ -573,6 +573,7 @@ return [
         'complaint_created' => 'Complaint created successfully.',
         'complaint_resolved' => 'Complaint resolved successfully.',
         'document_generated' => 'Document generated successfully.',
+        'document_generation_failed' => 'Document generation failed. The error was logged; check storage/logs/laravel.log for the exact cause.',
         'preventive_rule_created' => 'Preventive maintenance rule created successfully.',
         'advanced_refreshed' => 'Advanced operations data refreshed successfully.',
         'parts_request_created' => 'Parts request created successfully.',

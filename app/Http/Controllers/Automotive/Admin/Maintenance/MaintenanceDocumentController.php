@@ -14,7 +14,9 @@ use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\MaintenanceDocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Throwable;
 
 class MaintenanceDocumentController extends Controller
 {
@@ -73,11 +75,25 @@ class MaintenanceDocumentController extends Controller
             'language' => ['required', 'in:en,ar'],
         ]);
 
-        $document = $this->documents->generateCheckIn($checkIn, [
-            'language' => $validated['language'],
-            'direction' => $validated['language'] === 'ar' ? 'rtl' : 'ltr',
-            'generated_by' => auth('automotive_admin')->id(),
-        ]);
+        try {
+            $document = $this->documents->generateCheckIn($checkIn, [
+                'language' => $validated['language'],
+                'direction' => $validated['language'] === 'ar' ? 'rtl' : 'ltr',
+                'generated_by' => auth('automotive_admin')->id(),
+            ]);
+        } catch (Throwable $exception) {
+            Log::error('Maintenance check-in PDF generation failed.', [
+                'check_in_id' => $checkIn->id,
+                'check_in_number' => $checkIn->check_in_number,
+                'language' => $validated['language'],
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
+
+            return back()->withErrors([
+                'document' => __('maintenance.messages.document_generation_failed'),
+            ]);
+        }
 
         return redirect()
             ->route('automotive.admin.maintenance.check-ins.show', $checkIn)

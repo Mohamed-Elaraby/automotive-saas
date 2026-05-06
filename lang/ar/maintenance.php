@@ -573,6 +573,7 @@ return [
         'complaint_created' => 'تم إنشاء الشكوى بنجاح.',
         'complaint_resolved' => 'تم حل الشكوى بنجاح.',
         'document_generated' => 'تم توليد المستند بنجاح.',
+        'document_generation_failed' => 'فشل توليد المستند. تم تسجيل الخطأ؛ راجع storage/logs/laravel.log لمعرفة السبب التفصيلي.',
         'preventive_rule_created' => 'تم إنشاء قاعدة الصيانة الوقائية بنجاح.',
         'advanced_refreshed' => 'تم تحديث بيانات العمليات المتقدمة بنجاح.',
         'parts_request_created' => 'تم إنشاء طلب القطع بنجاح.',
