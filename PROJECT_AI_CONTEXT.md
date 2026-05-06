@@ -14,6 +14,198 @@ It must answer these questions clearly:
 
 This file is intentionally explicit. It is not a changelog dump. It is a working brief.
 
+## 1.1) Current Operating Status - 2026-05-06
+
+Current stage:
+- We are now in the **Automotive Maintenance System Testing Phase**.
+- The implementation packages requested from the original Automotive Maintenance / Workshop Management SaaS prompt have been built to a broad working baseline.
+- The immediate next work is not to start random new modules. The next work is to test the implemented maintenance workflows end-to-end in the browser, record defects/gaps, and harden/fix them package by package.
+
+Current testing focus:
+- tenant subscription/provisioning for the Automotive Service product
+- tenant admin navigation and product-scoped route resolution
+- shared tenant users and maintenance access/roles
+- branch-aware maintenance operations
+- customer and vehicle creation/search
+- check-in workflow
+- live vehicle photo capture
+- VIN/chassis image capture, OCR fallback, manual VIN confirmation, and VIN image search
+- 2D complaint/damage map
+- inspection/diagnosis flow
+- service catalog and estimates
+- customer approval/lost sales
+- work orders, technician jobs, before/after photos, and workshop board
+- QC, delivery, warranty, complaints, follow-up
+- maintenance reports/advanced operations
+- central mPDF document generation and QR verification
+- SSE/notification behavior where implemented
+
+Important current conclusion:
+- The system is not considered finished just because code packages exist.
+- The current phase is explicitly QA/testing/hardening. Bugs found during testing are part of the remaining work.
+- The user is now opening real tenant URLs and validating each workflow manually. Every issue found should be fixed in place using existing architecture.
+
+Latest user-facing fixes already applied during testing:
+- Check-in PDF generation:
+  - improved maintenance document generation error handling/logging
+  - fixed invalid empty canvas signature data (`data:,`) breaking mPDF rendering
+  - touched:
+    - `app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceDocumentController.php`
+    - `resources/views/core/documents/components/signature-box.blade.php`
+    - `lang/en/maintenance.php`
+    - `lang/ar/maintenance.php`
+- Tenant users route/navigation confusion:
+  - tenant `/users` and localized `/ar/users` now redirect to the product-scoped automotive admin users page instead of the central/theme page
+  - automotive admin users page now clearly shows tenant workspace users, not tenants
+  - the initial `client_1 / client_1@gmail.com` row is documented in UI as the workspace owner login created during provisioning, not a company/tenant record
+  - the users table now shows maintenance role, maintenance access summary, workspace owner badge, and current login badge
+  - create/edit user forms now support selecting `maintenance_role`
+  - touched:
+    - `routes/tenant.php`
+    - `tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php`
+    - `app/Http/Controllers/Automotive/Admin/UserController.php`
+    - `resources/views/automotive/admin/users/index.blade.php`
+    - `resources/views/automotive/admin/users/_form.blade.php`
+    - `lang/en/tenant.php`
+    - `lang/ar/tenant.php`
+
+Current verification limitation:
+- In the latest local environment, `php artisan test` is not available and `./vendor/bin/phpunit` is missing.
+- Use `php -l`, route listing, Blade cache compilation, and browser QA until the project test runner is restored.
+- Do not report tests as passed unless they actually run in the current environment.
+
+Current deployment/cache rule:
+- Use:
+  - `php artisan route:clear`
+  - `php artisan config:clear`
+  - `php artisan view:clear`
+  - `php artisan cache:clear`
+- Never use:
+  - `php artisan route:cache`
+
+## 1.2) Original Automotive Maintenance Prompt Coverage
+
+The original prompt asked for a complete professional Automotive Maintenance / Workshop Management SaaS product inside this existing Laravel multi-tenant SaaS.
+
+Implementation approach used:
+- The work was split into numbered implementation packages instead of one uncontrolled large change.
+- The maintenance product was kept tenant/product scoped under `automotive.admin.maintenance.*`.
+- Shared workspace concerns such as users/branches stayed shared.
+- Maintenance-specific operations were placed under maintenance-scoped controllers, models, services, views, routes, translations, and tenant migrations.
+- Spare parts and accounting were treated as optional integrations, not hard dependencies.
+- mPDF was implemented as a central document engine, not directly inside the maintenance module.
+
+Completed broad implementation packages from the original prompt:
+1. Current system review and implementation plan.
+2. Core maintenance foundation: customers, vehicles, appointments/basic walk-in readiness, check-ins, service catalog, estimates, work orders, operational invoice/payment status, and maintenance dashboard.
+3. Check-in lifecycle: customer/vehicle search, manual VIN, branch/advisor fields, odometer/fuel/complaints/belongings/warnings/expected delivery, signatures, photos, and check-in report readiness.
+4. Live vehicle photo capture and structured maintenance attachments.
+5. VIN/chassis image capture with OCR service fallback and mandatory manual/human confirmation.
+6. VIN/chassis search by image/OCR result where OCR/Tesseract is available; manual VIN search remains available.
+7. 2D interactive complaint/damage map with vehicle areas, note type, severity, customer/internal notes, and optional photo linkage.
+8. Customer 360 profile.
+9. Vehicle 360/profile and history.
+10. Inspection templates and inspection records.
+11. Diagnosis workflow.
+12. Technician jobs, assignments, statuses, time tracking, and before/after photos.
+13. Workshop live board baseline.
+14. Estimates/quotations and customer approval baseline.
+15. Lost sales tracking for rejected estimate lines.
+16. Quality control workflow.
+17. Vehicle delivery workflow and checklist.
+18. Warranty, warranty claims, comeback/rework structures.
+19. Fleet customer readiness and fleet reporting structure.
+20. Preventive maintenance rules/reminders.
+21. Service catalog and price-rule readiness.
+22. Parts request integration layer that works without the spare-parts product and can integrate later when active.
+23. Accounting/light invoice integration layer that works without accounting and emits handoff/events when accounting is active.
+24. SSE/notification baseline using current SSE approach for lightweight event delivery.
+25. Notification center/storage baseline.
+26. Dashboards/reports baseline, including owner/branch/technician style reporting data.
+27. SLA/delay tracking.
+28. Technician productivity and skill matrix structure.
+29. Service advisor performance data readiness.
+30. Vehicle health score baseline.
+31. Smart service recommendations baseline.
+32. Customer portal readiness structures, including customer-safe tracking token concepts.
+33. Internal notes vs customer-visible notes separation in relevant modules.
+34. Timeline/audit-log structures for sensitive operations.
+35. Maintenance roles/permissions baseline using the existing user model with `maintenance_role` and `maintenance_permissions`.
+36. Approval workflow structures for discounts/manual approvals/high-value or sensitive actions.
+37. Central mPDF document engine with generated documents, snapshots, versioning, storage paths, QR verification, RTL/LTR support, headers/footers, and product templates.
+38. Maintenance PDFs baseline: check-in, work order, estimate, invoice/receipt readiness, QC/delivery/warranty/report templates where implemented.
+39. Maintenance settings module for operational/document/permission settings.
+40. Numbering system baseline for maintenance entities/documents.
+41. Arabic/English translations for new maintenance UI and document features.
+42. Security baseline: tenant/product routes, route middleware, upload validation, branch fields, permission service, and customer-safe separation concepts.
+43. Data import readiness was kept as future structure, not full import UI.
+
+Important note about "completed":
+- These items mean a broad baseline exists in code. They do not mean every workflow has passed production QA.
+- The current testing phase must validate all of them from the browser and identify missing screens, broken routes, wrong labels, permission leaks, PDF failures, migration conflicts, SSE edge cases, and UX gaps.
+
+## 1.3) Known Remaining Work After The Original Prompt
+
+High priority during the current testing phase:
+- Test the full check-in flow on a real tenant from customer/vehicle search through PDF generation.
+- Verify camera capture on mobile and desktop browsers.
+- Verify VIN OCR behavior on the actual server:
+  - if `tesseract` is installed, OCR should attempt extraction
+  - if `tesseract` is not installed, the system must continue with manual VIN entry
+- Verify VIN/chassis image search and make sure the UI makes OCR confidence/manual confirmation obvious.
+- Confirm all maintenance migrations are idempotent during provisioning/retry.
+- Confirm all long index/foreign key names are explicitly shortened before any new migration is added.
+- Verify all tenant/product links in the sidebar point to `automotive.admin.*` routes and do not fall back to central/theme pages.
+- Test mPDF generation for check-in, estimate, work order, delivery, warranty, and long multi-page reports.
+- Verify Arabic RTL PDFs and mixed Arabic/English text.
+- Verify generated documents do not expose internal notes/cost/profit to customer-safe views.
+- Verify users/roles/permissions from the new user page and maintenance settings page.
+- Verify branch scoping rules from real users with different roles.
+- Verify notifications/SSE payloads do not send large images or sensitive fields.
+- Verify customer tracking pages/approval links are customer-safe.
+
+Still incomplete or future/hardening work:
+- Full production-grade OCR quality depends on server `tesseract` installation and image quality; manual VIN remains required fallback.
+- WhatsApp/SMS/email delivery integrations are readiness/baseline only unless provider credentials and senders are configured.
+- Online payment gateway integration for maintenance invoices is not full production payment flow yet.
+- Technician mobile app is not a separate app; current implementation is web/admin oriented.
+- Customer portal approval/status pages need full browser QA and possible UX hardening.
+- Fine-grained policies may need more enforcement in controllers beyond the baseline permission service.
+- Branch scoping must be tested with multiple branches/users and tightened wherever a query is too broad.
+- Document queue/SSE progress is structurally planned/baseline but needs production queue-worker validation.
+- Full import from CSV/Excel for customers/vehicles/service catalog is future work.
+- Advanced AI/service recommendation logic is basic/future-ready, not a mature predictive engine.
+- Deep spare-parts stock reservation/issue/return and accounting journal posting remain optional integration hardening tasks.
+- Automated test runner is currently unavailable locally and should be restored.
+
+## 1.4) Next Step
+
+Next step is **not** a new feature package by default.
+
+Next step is:
+1. Run browser QA against the real tenant Automotive Maintenance workflows.
+2. Record each defect with:
+   - exact URL
+   - user/role used
+   - action taken
+   - expected result
+   - actual result/error
+   - screenshot/log if available
+3. Fix defects one by one without duplicating existing modules.
+4. Keep updating this file with every meaningful fix.
+
+Current known testing URL style:
+- `https://client-1.seven-scapital.com/ar/workspace/admin/...`
+- Automotive service product context may appear as:
+  - `?workspace_product=automotive_service`
+
+When a page appears wrong, first verify:
+- route name is product scoped (`automotive.admin.*`)
+- sidebar link comes from `config/workspace_products.php` or the automotive admin layout copy
+- tenant domain is active
+- localized route (`/ar/...`) resolves to the tenant route, not central `web.php`
+- cached views/routes/config were cleared
+
 ## 2) Project Identity
 - Project name: `Automotive SaaS`
 - Stack:
