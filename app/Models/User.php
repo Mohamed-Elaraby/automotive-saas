@@ -68,4 +68,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(TenantUserProductRole::class);
     }
+
+    public function employeeProfiles()
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    public function employeeProfile()
+    {
+        return $this->hasOne(Employee::class);
+    }
 }

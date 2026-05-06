@@ -8,14 +8,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Customer extends Model
 {
     protected $fillable = [
+        'tenant_id',
         'customer_number',
         'name',
+        'display_name',
         'phone',
         'email',
+        'tax_number',
+        'address',
         'customer_type',
         'company_name',
-        'tax_number',
+        'status',
         'internal_notes',
+        'metadata',
+    ];
+
+    protected $casts = [
+        'metadata' => 'array',
     ];
 
     public function vehicles(): HasMany
@@ -61,5 +70,10 @@ class Customer extends Model
     public function fleetAccount()
     {
         return $this->hasOne(\App\Models\Maintenance\MaintenanceFleetAccount::class);
+    }
+
+    public function productProfiles(): HasMany
+    {
+        return $this->hasMany(ProductCustomerProfile::class);
     }
 }

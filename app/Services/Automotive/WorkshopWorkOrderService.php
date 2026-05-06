@@ -9,6 +9,7 @@ use App\Models\StockMovement;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderLine;
+use App\Services\Tenancy\CentralCustomerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -16,6 +17,11 @@ use Illuminate\Validation\ValidationException;
 
 class WorkshopWorkOrderService
 {
+    public function __construct(
+        protected CentralCustomerService $centralCustomers
+    ) {
+    }
+
     public function getActiveBranches(): Collection
     {
         return Branch::query()
@@ -121,10 +127,11 @@ class WorkshopWorkOrderService
 
     public function createCustomer(array $data): Customer
     {
-        return Customer::query()->create([
-            'name' => $data['name'],
-            'phone' => $data['phone'] ?? null,
-            'email' => $data['email'] ?? null,
+        return $this->centralCustomers->findOrCreate($data, 'automotive_service', [
+            'profile_type' => 'workshop',
+            'metadata' => [
+                'source' => 'workshop_work_order_service',
+            ],
         ]);
     }
 

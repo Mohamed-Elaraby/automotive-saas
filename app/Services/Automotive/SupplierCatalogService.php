@@ -3,10 +3,16 @@
 namespace App\Services\Automotive;
 
 use App\Models\Supplier;
+use App\Services\Tenancy\CentralSupplierService;
 use Illuminate\Support\Collection;
 
 class SupplierCatalogService
 {
+    public function __construct(
+        protected CentralSupplierService $centralSuppliers
+    ) {
+    }
+
     public function getSuppliers(int $limit = 25): Collection
     {
         return Supplier::query()
@@ -24,14 +30,11 @@ class SupplierCatalogService
 
     public function createSupplier(array $data): Supplier
     {
-        return Supplier::query()->create([
-            'name' => $data['name'],
-            'contact_name' => $data['contact_name'] ?? null,
-            'phone' => $data['phone'] ?? null,
-            'email' => $data['email'] ?? null,
-            'address' => $data['address'] ?? null,
-            'notes' => $data['notes'] ?? null,
-            'is_active' => (bool) ($data['is_active'] ?? true),
+        return $this->centralSuppliers->findOrCreate($data, 'automotive_service', [
+            'profile_type' => 'supplier_catalog',
+            'metadata' => [
+                'source' => 'supplier_catalog_service',
+            ],
         ]);
     }
 }

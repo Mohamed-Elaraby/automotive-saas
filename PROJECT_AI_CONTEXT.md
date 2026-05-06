@@ -265,6 +265,59 @@ Next package:
   - central employees separate from login users
   - migration path from automotive technicians/service advisors to employee-aware references where safe
 
+Package 6 completed:
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_06_170000_add_central_business_entities_foundation.php`
+- expanded existing central tenant tables instead of duplicating them:
+  - `customers`
+  - `suppliers`
+- added product-scoped profile tables:
+  - `product_customer_profiles`
+  - `product_supplier_profiles`
+  - `product_employee_profiles`
+- added central employee table:
+  - `employees`
+- added models:
+  - `ProductCustomerProfile`
+  - `ProductSupplierProfile`
+  - `Employee`
+  - `ProductEmployeeProfile`
+- updated existing models:
+  - `Customer`
+  - `Supplier`
+  - `User`
+- added central services:
+  - `CentralCustomerService`
+  - `CentralSupplierService`
+  - `CentralEmployeeService`
+- updated legacy Automotive creation paths to reuse central services:
+  - `WorkshopWorkOrderService::createCustomer`
+  - `SupplierCatalogService::createSupplier`
+- added idempotent demo/test seeder:
+  - `TenantBusinessEntityDemoSeeder`
+- customers and suppliers remain tenant-central business entities, while product-specific fields live in profile tables keyed by `product_key`
+- employees are now central operational entities and are not required to have login accounts
+- technicians and service advisors can be represented as `employees.employee_type` values while legacy `users` foreign keys remain untouched for compatibility
+- legacy Automotive customer/supplier flows are not deleted; their creation paths now go through central services to reduce duplication safely
+
+Package 6 verification:
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php`
+  - result: 23 passed, 58 assertions
+- `php artisan test tests/Feature/Tenancy/CentralBusinessEntitiesTest.php`
+  - result: 8 passed, 28 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: automotive admin routes remain listed
+- `git diff --check`
+  - result: no whitespace errors
+
+Next package:
+- Package 7: Documents, PDF Engine, And Numbering Sequences
+- Focus:
+  - central document engine hardening
+  - reusable mPDF configuration for RTL/LTR and Arabic/English
+  - central numbering sequences by product/document/branch/year
+  - product document template foundation without making PDFs Automotive-only
+
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 
 The original prompt asked for a complete professional Automotive Maintenance / Workshop Management SaaS product inside this existing Laravel multi-tenant SaaS.
