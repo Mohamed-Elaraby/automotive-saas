@@ -79,6 +79,11 @@ class MaintenanceInvoice extends Model
         return $this->hasMany(MaintenanceReceipt::class, 'invoice_id')->latest('id');
     }
 
+    public function paymentRequests(): HasMany
+    {
+        return $this->hasMany(MaintenancePaymentRequest::class, 'invoice_id')->latest('id');
+    }
+
     public function accountingEvents(): MorphMany
     {
         return $this->morphMany(AccountingEvent::class, 'reference');

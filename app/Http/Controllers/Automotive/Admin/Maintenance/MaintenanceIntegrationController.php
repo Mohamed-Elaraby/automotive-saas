@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Automotive\Admin\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Maintenance\MaintenanceApiToken;
 use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceInvoice;
+use App\Models\Maintenance\MaintenancePaymentRequest;
 use App\Models\Maintenance\MaintenancePartsRequest;
 use App\Models\Maintenance\MaintenanceWorkOrderJob;
 use App\Models\StockItem;
 use App\Models\WorkOrder;
+use App\Services\Automotive\Maintenance\MaintenanceApiIntegrationService;
 use App\Services\Automotive\Maintenance\MaintenanceIntegrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,8 +20,10 @@ use Illuminate\View\View;
 
 class MaintenanceIntegrationController extends Controller
 {
-    public function __construct(protected MaintenanceIntegrationService $integrations)
-    {
+    public function __construct(
+        protected MaintenanceIntegrationService $integrations,
+        protected MaintenanceApiIntegrationService $apiIntegrations
+    ) {
     }
 
     public function index(): View
@@ -34,6 +39,9 @@ class MaintenanceIntegrationController extends Controller
             'stockItems' => StockItem::query()->where('is_active', true)->orderBy('name')->limit(200)->get(),
             'invoices' => $this->integrations->recentInvoices(),
             'receipts' => $this->integrations->recentReceipts(),
+            'apiTokens' => $this->apiIntegrations->recentTokens(),
+            'paymentRequests' => $this->apiIntegrations->recentPaymentRequests(),
+            'apiScopes' => ['work_orders.read', 'invoices.read', 'payments.write'],
         ]);
     }
 
@@ -119,5 +127,59 @@ class MaintenanceIntegrationController extends Controller
         ]);
 
         return back()->with('success', __('maintenance.messages.receipt_created') . ' ' . $receipt->receipt_number);
+    }
+
+    public function storeApiToken(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'token_name' => ['required', 'string', 'max:255'],
+            'scopes' => ['required', 'array', 'min:1'],
+            'scopes.*' => ['string', 'in:*,work_orders.read,invoices.read,payments.write'],
+        ]);
+
+        $created = $this->apiIntegrations->createToken($validated + [
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return back()
+            ->with('success', __('maintenance.messages.api_token_created'))
+            ->with('createdApiToken', $created['token']);
+    }
+
+    public function revokeApiToken(MaintenanceApiToken $apiToken): RedirectResponse
+    {
+        $this->apiIntegrations->revokeToken($apiToken, auth('automotive_admin')->id());
+
+        return back()->with('success', __('maintenance.messages.api_token_revoked'));
+    }
+
+    public function storePaymentRequest(Request $request, MaintenanceInvoice $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['nullable', 'numeric', 'gt:0'],
+            'currency' => ['nullable', 'string', 'max:10'],
+            'provider' => ['nullable', 'string', 'max:80'],
+            'expires_at' => ['nullable', 'date'],
+        ]);
+
+        $paymentRequest = $this->apiIntegrations->createPaymentRequest($invoice, $validated + [
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return back()->with('success', __('maintenance.messages.payment_request_created') . ' ' . $paymentRequest->request_number);
+    }
+
+    public function markPaymentRequestPaid(Request $request, MaintenancePaymentRequest $paymentRequest): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reference_number' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $this->apiIntegrations->markPaymentRequestPaid($paymentRequest, $validated + [
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return back()->with('success', __('maintenance.messages.payment_received'));
     }
 }

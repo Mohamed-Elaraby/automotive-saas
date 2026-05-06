@@ -5239,6 +5239,51 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 22 Integration Contracts, Payment Gateway Readiness, and Public API Hardening - 2026-05-06
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_06_120000_add_maintenance_api_and_payment_readiness_tables.php`
+- created tenant tables:
+  - `maintenance_api_tokens`
+  - `maintenance_api_request_logs`
+  - `maintenance_payment_requests`
+- used explicit short index and foreign-key names to avoid MySQL identifier length errors
+- added models:
+  - `App\Models\Maintenance\MaintenanceApiToken`
+  - `App\Models\Maintenance\MaintenanceApiRequestLog`
+  - `App\Models\Maintenance\MaintenancePaymentRequest`
+- added `MaintenanceApiIntegrationService` for:
+  - one-time plaintext API token creation with hashed storage
+  - API token revocation and audit records
+  - token-scoped JSON access to work orders and invoices
+  - API request logging with idempotency key capture
+  - customer-safe payment request creation
+  - customer-safe payment request status payloads
+  - marking external payment requests paid by recording a normal maintenance receipt
+- extended `MaintenanceIntegrationController` and the existing integrations page instead of creating a duplicate module
+- added customer-safe payment request page:
+  - `resources/views/automotive/customer/maintenance/payment-request.blade.php`
+- added protected tenant JSON endpoints:
+  - `/maintenance/integrations/api/work-orders/{workOrder}`
+  - `/maintenance/integrations/api/invoices/{invoice}`
+- added customer-safe payment routes:
+  - `/maintenance/customer/payment-requests/{token}`
+  - `/maintenance/customer/api/payment-requests/{token}`
+- extended notification rules for `payment.requested` and `api.token.created`
+- extended Arabic and English translations
+
+Architecture notes:
+- this package does not integrate directly with Stripe or any specific payment provider
+- payment gateways remain optional external integrations; maintenance stores operational payment requests and receipts
+- accounting remains optional; paid payment requests use the existing maintenance receipt flow, which already performs optional accounting handoff
+- API tokens are tenant-scoped by tenant database, hashed at rest, revocable, scope-limited, and request-logged
+- customer payment request pages expose invoice status and vehicle basics only, not internal notes, costs, or staff-only data
+
+Progress:
+- Completed packages: 22 of 23
+- Remaining packages: 1 of 23
+- Next package: production acceptance, final gap closure, deployment checklist, and end-to-end verification
+
 ## Automotive Maintenance SaaS - Package 21 Customer Portal Expansion and API Integration Readiness - 2026-05-06
 
 Package completed:

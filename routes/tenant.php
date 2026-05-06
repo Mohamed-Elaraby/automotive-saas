@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Automotive\Api\MaintenanceIntegrationApiController;
 use App\Http\Controllers\Automotive\Customer\MaintenanceCustomerPortalController;
+use App\Http\Controllers\Automotive\Customer\MaintenancePaymentRequestController;
 use App\Http\Controllers\Core\DocumentController;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
@@ -33,6 +35,15 @@ $registerTenantWorkspaceRoutes = function (): void {
         ->name('automotive.customer.maintenance.complaints.store');
     Route::post('/maintenance/customer/track/{token}/feedback', [MaintenanceCustomerPortalController::class, 'submitFeedback'])
         ->name('automotive.customer.maintenance.feedback.store');
+    Route::get('/maintenance/customer/payment-requests/{token}', [MaintenancePaymentRequestController::class, 'show'])
+        ->name('automotive.customer.maintenance.payment-request');
+    Route::get('/maintenance/customer/api/payment-requests/{token}', [MaintenancePaymentRequestController::class, 'json'])
+        ->name('automotive.customer.maintenance.payment-request.api');
+
+    Route::get('/maintenance/integrations/api/work-orders/{workOrder}', [MaintenanceIntegrationApiController::class, 'workOrder'])
+        ->name('automotive.maintenance.integrations.api.work-orders.show');
+    Route::get('/maintenance/integrations/api/invoices/{invoice}', [MaintenanceIntegrationApiController::class, 'invoice'])
+        ->name('automotive.maintenance.integrations.api.invoices.show');
 
     /*
     |--------------------------------------------------------------------------

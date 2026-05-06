@@ -225,6 +225,14 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.integrations.invoices.receipts.store');
                 Route::post('/maintenance/integrations/invoices/{invoice}/sync', [MaintenanceIntegrationController::class, 'syncInvoice'])
                     ->name('maintenance.integrations.invoices.sync');
+                Route::post('/maintenance/integrations/api-tokens', [MaintenanceIntegrationController::class, 'storeApiToken'])
+                    ->name('maintenance.integrations.api-tokens.store');
+                Route::post('/maintenance/integrations/api-tokens/{apiToken}/revoke', [MaintenanceIntegrationController::class, 'revokeApiToken'])
+                    ->name('maintenance.integrations.api-tokens.revoke');
+                Route::post('/maintenance/integrations/invoices/{invoice}/payment-requests', [MaintenanceIntegrationController::class, 'storePaymentRequest'])
+                    ->name('maintenance.integrations.invoices.payment-requests.store');
+                Route::post('/maintenance/integrations/payment-requests/{paymentRequest}/paid', [MaintenanceIntegrationController::class, 'markPaymentRequestPaid'])
+                    ->name('maintenance.integrations.payment-requests.paid');
                 Route::post('/maintenance/integrations/invoices/{invoice}/documents/invoice', [MaintenanceDocumentController::class, 'generateInvoice'])
                     ->name('maintenance.integrations.invoices.documents.generate');
                 Route::post('/maintenance/integrations/receipts/{receipt}/documents/receipt', [MaintenanceDocumentController::class, 'generateReceipt'])

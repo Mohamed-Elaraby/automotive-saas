@@ -97,6 +97,11 @@ return [
             'severity' => 'success',
             'customer_safe' => true,
         ],
+        'payment.requested' => [
+            'audience' => 'customer',
+            'severity' => 'info',
+            'customer_safe' => true,
+        ],
         'invoice.paid' => [
             'audience' => 'customer',
             'severity' => 'success',
@@ -118,6 +123,11 @@ return [
             'customer_safe' => false,
         ],
         'feedback.submitted' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
+        'api.token.created' => [
             'audience' => 'internal',
             'severity' => 'info',
             'customer_safe' => false,

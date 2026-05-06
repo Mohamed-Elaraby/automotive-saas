@@ -14,11 +14,78 @@
                 </a>
             </div>
 
+            @if(session('createdApiToken'))
+                <div class="alert alert-warning">
+                    <strong>{{ __('maintenance.integrations.api_token_plain') }}</strong>
+                    <div class="mt-2"><code>{{ session('createdApiToken') }}</code></div>
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('maintenance.integrations.parts_workspace') }}</div><h5 class="mb-0">{{ ($dashboard['parts_active'] ?? false) ? __('maintenance.connected') : __('maintenance.not_connected') }}</h5></div></div></div>
                 <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('maintenance.integrations.accounting_workspace') }}</div><h5 class="mb-0">{{ ($dashboard['accounting_active'] ?? false) ? __('maintenance.connected') : __('maintenance.not_connected') }}</h5></div></div></div>
                 <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('maintenance.integrations.open_parts_requests') }}</div><h4 class="mb-0">{{ $dashboard['open_parts_requests'] ?? 0 }}</h4></div></div></div>
-                <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('maintenance.integrations.pending_handoffs') }}</div><h4 class="mb-0">{{ $dashboard['pending_handoffs'] ?? 0 }}</h4></div></div></div>
+                <div class="col-xl-3 col-md-6 d-flex"><div class="card flex-fill"><div class="card-body"><div class="text-muted small mb-1">{{ __('maintenance.integrations.pending_handoffs') }}</div><h4 class="mb-0">{{ $dashboard['pending_handoffs'] ?? 0 }}</h4><div class="text-muted small">{{ __('maintenance.integrations.active_api_tokens') }}: {{ $apiTokens->where('status', 'active')->count() }}</div></div></div></div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-4 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.integrations.create_api_token') }}</h5></div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.api-tokens.store') }}">
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('maintenance.integrations.token_name') }}</label>
+                                    <input name="token_name" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('maintenance.integrations.scopes') }}</label>
+                                    @foreach($apiScopes as $scope)
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="scopes[]" value="{{ $scope }}" id="scope-{{ $loop->index }}">
+                                            <label class="form-check-label" for="scope-{{ $loop->index }}">{{ $scope }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">{{ __('maintenance.integrations.create_api_token') }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-8 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.integrations.api_tokens') }}</h5></div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-nowrap">
+                                    <thead><tr><th>{{ __('maintenance.name') }}</th><th>{{ __('maintenance.integrations.scopes') }}</th><th>{{ __('maintenance.status') }}</th><th>{{ __('maintenance.integrations.last_used') }}</th><th></th></tr></thead>
+                                    <tbody>
+                                    @forelse($apiTokens as $apiToken)
+                                        <tr>
+                                            <td><strong>{{ $apiToken->token_name }}</strong><div class="text-muted small">{{ $apiToken->creator?->name }}</div></td>
+                                            <td><span class="text-muted small">{{ implode(', ', $apiToken->scopes ?: []) }}</span></td>
+                                            <td><span class="badge bg-light text-dark">{{ strtoupper($apiToken->status) }}</span></td>
+                                            <td>{{ optional($apiToken->last_used_at)->format('Y-m-d H:i') ?: '-' }}</td>
+                                            <td class="text-end">
+                                                @if($apiToken->status === 'active')
+                                                    <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.api-tokens.revoke', $apiToken) }}" class="d-inline">
+                                                        @csrf
+                                                        <button class="btn btn-sm btn-outline-danger">{{ __('maintenance.integrations.revoke') }}</button>
+                                                    </form>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="5" class="text-muted">{{ __('maintenance.integrations.no_api_tokens') }}</td></tr>
+                                    @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-muted small mt-2">{{ __('maintenance.integrations.api_endpoint_hint') }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
@@ -181,6 +248,13 @@
                                     </div>
 
                                     @if($invoice->payment_status !== 'paid' && $invoice->payment_status !== 'cancelled')
+                                        <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.payment-requests.store', $invoice) }}" class="row g-2 mt-2">
+                                            @csrf
+                                            <div class="col-md-3"><input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-sm" placeholder="{{ __('maintenance.integrations.payment_request_amount') }}"></div>
+                                            <div class="col-md-3"><input name="provider" class="form-control form-control-sm" placeholder="{{ __('maintenance.integrations.provider') }}" value="external"></div>
+                                            <div class="col-md-3"><input type="datetime-local" name="expires_at" class="form-control form-control-sm"></div>
+                                            <div class="col-md-3"><button class="btn btn-sm btn-outline-light w-100">{{ __('maintenance.integrations.create_payment_request') }}</button></div>
+                                        </form>
                                         <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.receipts.store', $invoice) }}" class="row g-2 mt-2">
                                         @csrf
                                             <div class="col-md-3"><input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-sm" placeholder="{{ __('maintenance.amount') }}" required></div>
@@ -202,6 +276,44 @@
                             @empty
                                 <p class="text-muted mb-0">{{ __('maintenance.integrations.no_invoices') }}</p>
                             @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.integrations.payment_requests') }}</h5></div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-nowrap">
+                                    <thead><tr><th>{{ __('maintenance.document_number') }}</th><th>{{ __('maintenance.invoice') }}</th><th>{{ __('maintenance.customer') }}</th><th>{{ __('maintenance.amount') }}</th><th>{{ __('maintenance.status') }}</th><th>{{ __('maintenance.integrations.payment_url') }}</th><th></th></tr></thead>
+                                    <tbody>
+                                    @forelse($paymentRequests as $paymentRequest)
+                                        <tr>
+                                            <td><strong>{{ $paymentRequest->request_number }}</strong><div class="text-muted small">{{ $paymentRequest->provider }}</div></td>
+                                            <td>{{ $paymentRequest->invoice?->invoice_number }}</td>
+                                            <td>{{ $paymentRequest->customer?->name }}</td>
+                                            <td>{{ number_format((float) $paymentRequest->amount, 2) }} {{ $paymentRequest->currency }}</td>
+                                            <td><span class="badge bg-light text-dark">{{ strtoupper($paymentRequest->status) }}</span></td>
+                                            <td><a href="{{ $paymentRequest->payment_url }}" target="_blank" rel="noopener">{{ __('maintenance.integrations.open_payment_link') }}</a></td>
+                                            <td class="text-end">
+                                                @if($paymentRequest->status === 'pending')
+                                                    <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.payment-requests.paid', $paymentRequest) }}" class="d-inline">
+                                                        @csrf
+                                                        <input type="hidden" name="reference_number" value="{{ $paymentRequest->request_number }}">
+                                                        <button class="btn btn-sm btn-primary">{{ __('maintenance.integrations.mark_paid') }}</button>
+                                                    </form>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="7" class="text-muted">{{ __('maintenance.integrations.no_payment_requests') }}</td></tr>
+                                    @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
