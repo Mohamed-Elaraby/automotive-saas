@@ -218,6 +218,53 @@ Package 4 verification:
 - `git diff --check`
   - result: no whitespace errors
 
+Package 5 completed:
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_06_160000_create_product_roles_permissions_tables.php`
+- added product-scoped tenant tables:
+  - `product_roles`
+  - `product_permissions`
+  - `product_role_permission`
+  - `tenant_user_product_roles`
+- added models:
+  - `ProductRole`
+  - `ProductPermission`
+  - `ProductRolePermission`
+  - `TenantUserProductRole`
+- added central service:
+  - `ProductPermissionService`
+- added middleware alias:
+  - `tenant.product.permission`
+- product roles are now scoped by:
+  - `tenant_id`
+  - `product_key`
+- permissions are explicitly product-scoped by:
+  - `product_key`
+  - product-prefixed permission keys such as `automotive.work_orders.view` and `accounting.payments.approve`
+- permission checks now integrate with:
+  - `ProductEntitlementService`
+  - `TenantUserProductAccessService`
+  - `ProductBranchAccessService` when `branch_id` is provided
+- old product-specific user columns such as `maintenance_permissions` and `accounting_permissions` remain in place as legacy/fallback behavior for existing screens and are not removed in this package.
+
+Package 5 verification:
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php`
+  - result: 17 passed, 44 assertions
+- `php artisan test tests/Feature/Tenancy/ProductPermissionServiceTest.php`
+  - result: 6 passed, 14 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: automotive admin routes remain listed
+- `git diff --check`
+  - result: no whitespace errors
+
+Next package:
+- Package 6: Central Business Entities
+- Focus:
+  - central customers and product profiles
+  - central suppliers/vendors and product profiles
+  - central employees separate from login users
+  - migration path from automotive technicians/service advisors to employee-aware references where safe
+
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 
 The original prompt asked for a complete professional Automotive Maintenance / Workshop Management SaaS product inside this existing Laravel multi-tenant SaaS.

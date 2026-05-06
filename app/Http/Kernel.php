@@ -78,5 +78,6 @@ class Kernel extends HttpKernel
         'tenant.user.limit' => \App\Http\Middleware\EnsureTenantUserLimitNotReached::class,
         'tenant.workspace.product' => \App\Http\Middleware\EnsureTenantHasWorkspaceProduct::class,
         'tenant.user.product' => \App\Http\Middleware\EnsureTenantUserHasProductAccess::class,
+        'tenant.product.permission' => \App\Http\Middleware\EnsureTenantUserHasProductPermission::class,
     ];
 }
