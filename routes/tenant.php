@@ -21,10 +21,18 @@ $registerTenantWorkspaceRoutes = function (): void {
 
     Route::get('/maintenance/customer/track/{token}', [MaintenanceCustomerPortalController::class, 'tracking'])
         ->name('automotive.customer.maintenance.tracking');
+    Route::get('/maintenance/customer/api/track/{token}', [MaintenanceCustomerPortalController::class, 'trackingJson'])
+        ->name('automotive.customer.maintenance.tracking.api');
     Route::get('/maintenance/customer/estimates/{token}', [MaintenanceCustomerPortalController::class, 'estimate'])
         ->name('automotive.customer.maintenance.estimate');
+    Route::get('/maintenance/customer/api/estimates/{token}', [MaintenanceCustomerPortalController::class, 'estimateJson'])
+        ->name('automotive.customer.maintenance.estimate.api');
     Route::post('/maintenance/customer/estimates/{token}/decision', [MaintenanceCustomerPortalController::class, 'estimateDecision'])
         ->name('automotive.customer.maintenance.estimate.decision');
+    Route::post('/maintenance/customer/track/{token}/complaints', [MaintenanceCustomerPortalController::class, 'submitComplaint'])
+        ->name('automotive.customer.maintenance.complaints.store');
+    Route::post('/maintenance/customer/track/{token}/feedback', [MaintenanceCustomerPortalController::class, 'submitFeedback'])
+        ->name('automotive.customer.maintenance.feedback.store');
 
     /*
     |--------------------------------------------------------------------------

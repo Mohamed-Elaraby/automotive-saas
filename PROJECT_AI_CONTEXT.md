@@ -5239,6 +5239,82 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 21 Customer Portal Expansion and API Integration Readiness - 2026-05-06
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_06_110000_add_maintenance_customer_feedback_table.php`
+- created `maintenance_customer_feedback`
+- all new foreign keys and indexes use explicit short names to avoid MySQL identifier length failures
+- added Eloquent model:
+  - `MaintenanceCustomerFeedback`
+- extended `WorkOrder` with `customerFeedback()`
+- added customer-safe portal service:
+  - `MaintenanceCustomerPortalService`
+- extended `MaintenanceCustomerPortalController` with:
+  - JSON tracking payload endpoint
+  - JSON estimate payload endpoint
+  - customer complaint submission
+  - customer feedback/rating submission
+- added customer token routes:
+  - `automotive.customer.maintenance.tracking.api`
+  - `automotive.customer.maintenance.estimate.api`
+  - `automotive.customer.maintenance.complaints.store`
+  - `automotive.customer.maintenance.feedback.store`
+- expanded customer tracking page with:
+  - invoices/payment status
+  - warranty list
+  - service history
+  - complaint form
+  - feedback/rating form
+- customer-safe JSON payload includes:
+  - work-order status
+  - vehicle summary
+  - public timeline only
+  - estimates and review URLs
+  - invoices with paid/total amounts
+  - warranties
+  - delivery status
+  - service history
+- added notification rule for `feedback.submitted`
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- API readiness uses secure customer tracking/approval tokens and does not expose internal notes, supplier costs, profit, margins, or staff-only data
+- token JSON endpoints are tenant-domain routes, so they remain within the existing stancl tenancy boundary
+- customer complaint submission uses the existing maintenance complaint workflow with `source = portal`
+- feedback is separate from complaints so ratings can be reported later without overloading complaint semantics
+- timeline payload filters to customer-visible notes and approved customer-safe event types only
+- large files/photos are not returned through JSON payloads
+- routes remain tenant/product scoped; `routes/tenant.php` was extended but not removed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_06_110000_add_maintenance_customer_feedback_table.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/MaintenanceCustomerFeedback.php && php -l app/Models/WorkOrder.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceCustomerPortalService.php && php -l app/Http/Controllers/Automotive/Customer/MaintenanceCustomerPortalController.php`
+  - result: no syntax errors
+- `php -l routes/tenant.php && php -l config/maintenance_notifications.php && php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.customer.maintenance --except-vendor`
+  - result: customer tracking, estimate, JSON API, complaint, and feedback routes shown across localized/canonical route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `php artisan config:clear`
+  - result: completed after notification config update
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 21 of 23
+- remaining: 2 of 23
+- next package: Integration Contracts, Payment Gateway Readiness, and Public API Hardening
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Package 20 Fleet Customers, Contracts, and Fleet Reporting Readiness - 2026-05-06
 
 Package completed:

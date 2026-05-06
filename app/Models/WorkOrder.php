@@ -134,4 +134,9 @@ class WorkOrder extends Model
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenanceReceipt::class);
     }
+
+    public function customerFeedback(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceCustomerFeedback::class);
+    }
 }

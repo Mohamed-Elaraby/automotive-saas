@@ -3,64 +3,45 @@
 namespace App\Http\Controllers\Automotive\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Maintenance\MaintenanceEstimate;
-use App\Models\Maintenance\MaintenanceTimelineEntry;
-use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\ApprovalWorkflowService;
+use App\Services\Automotive\Maintenance\ComplaintService;
+use App\Services\Automotive\Maintenance\MaintenanceCustomerPortalService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class MaintenanceCustomerPortalController extends Controller
 {
-    public function __construct(protected ApprovalWorkflowService $approvals)
-    {
+    public function __construct(
+        protected ApprovalWorkflowService $approvals,
+        protected ComplaintService $complaints,
+        protected MaintenanceCustomerPortalService $portal
+    ) {
     }
 
     public function tracking(string $token): View
     {
-        $workOrder = WorkOrder::query()
-            ->with(['branch', 'customer', 'vehicle', 'checkIns', 'deliveries', 'warranties'])
-            ->where('customer_tracking_token', $token)
-            ->firstOrFail();
-
-        $timeline = MaintenanceTimelineEntry::query()
-            ->where('work_order_id', $workOrder->id)
-            ->where(function ($query) {
-                $query->whereNotNull('customer_visible_note')
-                    ->orWhereIn('event_type', [
-                        'vehicle.checked_in',
-                        'estimate_sent',
-                        'estimate_viewed',
-                        'estimate_approved',
-                        'estimate_partially_approved',
-                        'estimate_rejected',
-                        'job.completed',
-                        'qc.passed',
-                        'vehicle.delivered',
-                    ]);
-            })
-            ->oldest('id')
-            ->get();
-
-        $estimates = MaintenanceEstimate::query()
-            ->with(['lines'])
-            ->where('work_order_id', $workOrder->id)
-            ->whereIn('status', ['sent', 'viewed', 'approved', 'partially_approved', 'rejected', 'expired'])
-            ->latest('id')
-            ->get();
+        $workOrder = $this->portal->workOrderForToken($token);
 
         return view('automotive.customer.maintenance.tracking', [
             'workOrder' => $workOrder,
-            'timeline' => $timeline,
-            'estimates' => $estimates,
+            'timeline' => $this->portal->publicTimeline($workOrder),
+            'estimates' => $this->portal->publicEstimates($workOrder),
+            'invoices' => $this->portal->publicInvoices($workOrder),
+            'serviceHistory' => $this->portal->serviceHistory($workOrder),
             'trackingToken' => $token,
         ]);
     }
 
+    public function trackingJson(string $token): JsonResponse
+    {
+        return response()->json($this->portal->trackingPayload($token));
+    }
+
     public function estimate(string $token): View
     {
-        $estimate = MaintenanceEstimate::query()
+        $estimate = \App\Models\Maintenance\MaintenanceEstimate::query()
             ->with(['branch', 'customer', 'vehicle', 'workOrder', 'lines.serviceCatalogItem'])
             ->where('approval_token', $token)
             ->firstOrFail();
@@ -74,9 +55,14 @@ class MaintenanceCustomerPortalController extends Controller
         ]);
     }
 
+    public function estimateJson(string $token): JsonResponse
+    {
+        return response()->json($this->portal->estimatePayload($token));
+    }
+
     public function estimateDecision(Request $request, string $token): RedirectResponse
     {
-        $estimate = MaintenanceEstimate::query()
+        $estimate = \App\Models\Maintenance\MaintenanceEstimate::query()
             ->with(['lines', 'workOrder'])
             ->where('approval_token', $token)
             ->firstOrFail();
@@ -104,5 +90,43 @@ class MaintenanceCustomerPortalController extends Controller
         return redirect()
             ->route('automotive.customer.maintenance.estimate', $token)
             ->with('success', __('maintenance.customer_portal.decision_recorded'));
+    }
+
+    public function submitComplaint(Request $request, string $token): RedirectResponse
+    {
+        $workOrder = $this->portal->workOrderForToken($token);
+
+        $validated = $request->validate([
+            'severity' => ['required', 'in:low,medium,high,urgent'],
+            'customer_visible_note' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $this->complaints->create($validated + [
+            'branch_id' => $workOrder->branch_id,
+            'work_order_id' => $workOrder->id,
+            'customer_id' => $workOrder->customer_id,
+            'vehicle_id' => $workOrder->vehicle_id,
+            'source' => 'portal',
+        ]);
+
+        return back()->with('success', __('maintenance.customer_portal.complaint_submitted'));
+    }
+
+    public function submitFeedback(Request $request, string $token): RedirectResponse
+    {
+        $workOrder = $this->portal->workOrderForToken($token);
+
+        $validated = $request->validate([
+            'feedback_type' => ['required', 'in:delivery,service,follow_up,general'],
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'customer_visible_note' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $this->portal->submitFeedback($workOrder, $validated + [
+            'ip_address' => $request->ip(),
+            'user_agent' => (string) $request->userAgent(),
+        ]);
+
+        return back()->with('success', __('maintenance.customer_portal.feedback_submitted'));
     }
 }

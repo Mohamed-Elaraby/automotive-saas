@@ -117,6 +117,11 @@ return [
             'severity' => 'warning',
             'customer_safe' => false,
         ],
+        'feedback.submitted' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => false,
+        ],
         'document.generation.started' => [
             'audience' => 'internal',
             'severity' => 'info',
