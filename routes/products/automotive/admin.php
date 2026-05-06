@@ -14,6 +14,7 @@ use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceIntegrationCont
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceLifecycleController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceProfileController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceReportsController;
+use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceSettingsController;
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
 use App\Http\Controllers\Core\DocumentController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
@@ -195,6 +196,12 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.advanced.refresh');
                 Route::get('/maintenance/integrations', [MaintenanceIntegrationController::class, 'index'])
                     ->name('maintenance.integrations.index');
+                Route::get('/maintenance/settings', [MaintenanceSettingsController::class, 'index'])
+                    ->name('maintenance.settings.index');
+                Route::post('/maintenance/settings', [MaintenanceSettingsController::class, 'update'])
+                    ->name('maintenance.settings.update');
+                Route::post('/maintenance/settings/users/{user}/permissions', [MaintenanceSettingsController::class, 'updateUserPermissions'])
+                    ->name('maintenance.settings.users.permissions');
                 Route::post('/maintenance/integrations/parts-requests', [MaintenanceIntegrationController::class, 'storePartsRequest'])
                     ->name('maintenance.integrations.parts-requests.store');
                 Route::post('/maintenance/integrations/parts-requests/{partsRequest}/approve', [MaintenanceIntegrationController::class, 'approvePartsRequest'])

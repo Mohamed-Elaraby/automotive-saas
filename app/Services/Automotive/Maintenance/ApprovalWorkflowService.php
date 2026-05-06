@@ -13,7 +13,8 @@ class ApprovalWorkflowService
 {
     public function __construct(
         protected MaintenanceTimelineService $timeline,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected MaintenanceAuditService $audit
     ) {
     }
 
@@ -135,6 +136,18 @@ class ApprovalWorkflowService
                 'payload' => ['estimate_id' => $estimate->id, 'approval_id' => $record->id],
             ]);
 
+            $this->audit->record('estimate.manually_approved', 'approvals', [
+                'branch_id' => $estimate->branch_id,
+                'user_id' => $data['approved_by'] ?? null,
+                'auditable' => $record,
+                'new_values' => [
+                    'estimate_id' => $estimate->id,
+                    'status' => $status,
+                    'approved_amount' => $approvedAmount,
+                    'method' => $record->method,
+                ],
+            ]);
+
             return $record->load(['estimate.lines', 'workOrder', 'customer', 'vehicle']);
         });
     }
@@ -240,6 +253,17 @@ class ApprovalWorkflowService
                 'severity' => $status === 'rejected' ? 'warning' : 'success',
                 'notifiable' => $estimate,
                 'payload' => ['estimate_id' => $estimate->id, 'approval_id' => $record->id, 'source' => 'portal'],
+            ]);
+
+            $this->audit->record('estimate.customer_decision', 'approvals', [
+                'branch_id' => $estimate->branch_id,
+                'auditable' => $record,
+                'new_values' => [
+                    'estimate_id' => $estimate->id,
+                    'status' => $status,
+                    'approved_amount' => $approvedAmount,
+                    'method' => 'portal',
+                ],
             ]);
 
             return $record->load(['estimate.lines', 'workOrder', 'customer', 'vehicle']);

@@ -14,7 +14,8 @@ class DeliveryWarrantyService
     public function __construct(
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected MaintenanceAuditService $audit
     ) {
     }
 
@@ -75,6 +76,8 @@ class DeliveryWarrantyService
     {
         return DB::transaction(function () use ($delivery, $data) {
             $checklist = array_merge($delivery->checklist ?? [], $data['checklist'] ?? []);
+            $oldStatus = $delivery->status;
+            $oldPaymentStatus = $delivery->payment_status;
 
             $delivery->forceFill([
                 'status' => 'delivered',
@@ -109,6 +112,21 @@ class DeliveryWarrantyService
                     'work_order_id' => $delivery->work_order_id,
                     'delivery_id' => $delivery->id,
                     'status' => 'delivered',
+                ],
+            ]);
+
+            $this->audit->record('vehicle.delivered', 'delivery', [
+                'branch_id' => $delivery->branch_id,
+                'user_id' => $data['delivered_by'] ?? null,
+                'auditable' => $delivery,
+                'old_values' => [
+                    'status' => $oldStatus,
+                    'payment_status' => $oldPaymentStatus,
+                ],
+                'new_values' => [
+                    'status' => $delivery->status,
+                    'payment_status' => $delivery->payment_status,
+                    'delivered_at' => optional($delivery->delivered_at)->toISOString(),
                 ],
             ]);
 

@@ -25,6 +25,7 @@ class MaintenanceIntegrationService
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
         protected MaintenanceNotificationService $notifications,
+        protected MaintenanceAuditService $audit,
         protected WorkspaceIntegrationHandoffService $handoffs,
         protected TenantWorkspaceProductService $tenantWorkspaceProducts,
         protected WorkspaceManifestService $workspaceManifest,
@@ -264,6 +265,17 @@ class MaintenanceIntegrationService
                 ],
             ]);
 
+            $this->audit->record('invoice.created', 'billing', [
+                'branch_id' => $invoice->branch_id,
+                'user_id' => $data['created_by'] ?? null,
+                'auditable' => $invoice,
+                'new_values' => [
+                    'invoice_number' => $invoice->invoice_number,
+                    'grand_total' => $invoice->grand_total,
+                    'payment_status' => $invoice->payment_status,
+                ],
+            ]);
+
             try {
                 $this->postInvoiceToAccounting($invoice, $data['created_by'] ?? null);
             } catch (\Throwable) {
@@ -308,6 +320,8 @@ class MaintenanceIntegrationService
                 'created_by' => $data['created_by'] ?? null,
             ]);
 
+            $oldPaymentStatus = $invoice->payment_status;
+            $oldPaidAmount = $invoice->paid_amount;
             $paidAmount = round(((float) $invoice->paid_amount) + $amount, 2);
             $grandTotal = (float) $invoice->grand_total;
             $paymentStatus = $paidAmount <= 0
@@ -344,6 +358,22 @@ class MaintenanceIntegrationService
                     'receipt_number' => $receipt->receipt_number,
                     'invoice_number' => $invoice->invoice_number,
                     'payment_status' => $paymentStatus,
+                ],
+            ]);
+
+            $this->audit->record('payment.received', 'billing', [
+                'branch_id' => $receipt->branch_id,
+                'user_id' => $data['created_by'] ?? null,
+                'auditable' => $receipt,
+                'old_values' => [
+                    'invoice_payment_status' => $oldPaymentStatus,
+                    'invoice_paid_amount' => $oldPaidAmount,
+                ],
+                'new_values' => [
+                    'receipt_number' => $receipt->receipt_number,
+                    'amount' => $receipt->amount,
+                    'invoice_payment_status' => $invoice->payment_status,
+                    'invoice_paid_amount' => $invoice->paid_amount,
                 ],
             ]);
 

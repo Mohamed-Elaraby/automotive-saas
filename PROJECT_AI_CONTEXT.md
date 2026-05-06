@@ -5239,6 +5239,92 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 19 Settings, Permissions, Approval Readiness, and Audit Trail - 2026-05-06
+
+Package completed:
+- added tenant migration `database/migrations/tenant/2026_05_06_090000_add_maintenance_settings_permissions_audit.php`
+- extended tenant users with:
+  - `maintenance_role`
+  - `maintenance_permissions`
+- created maintenance control tables:
+  - `maintenance_settings`
+  - `maintenance_audit_entries`
+  - `maintenance_approval_requests`
+- all new foreign keys and indexes use explicit short names to avoid MySQL identifier length failures
+- added Eloquent models:
+  - `MaintenanceSetting`
+  - `MaintenanceAuditEntry`
+  - `MaintenanceApprovalRequest`
+- added services:
+  - `MaintenancePermissionService`
+  - `MaintenanceSettingsService`
+  - `MaintenanceAuditService`
+- added product-scoped controller:
+  - `MaintenanceSettingsController`
+- added product-scoped routes:
+  - `automotive.admin.maintenance.settings.index`
+  - `automotive.admin.maintenance.settings.update`
+  - `automotive.admin.maintenance.settings.users.permissions`
+- added settings UI:
+  - general settings
+  - work-order rules
+  - inspection requirements
+  - warranty defaults
+  - approval thresholds
+  - document defaults
+  - user role/permission assignment
+  - audit log
+  - approval workflow readiness list
+- updated maintenance dashboard quick links with Settings
+- added audit capture for:
+  - maintenance settings changes
+  - maintenance permission changes
+  - maintenance invoice creation
+  - maintenance receipt/payment capture
+  - manual estimate approval
+  - customer portal estimate decision
+  - vehicle delivery release
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- no Spatie dependency was introduced because the current system already uses a custom permission approach for accounting
+- maintenance permissions follow the same conservative style: if `maintenance_permissions` is null, current legacy full-access behavior remains intact
+- permission definitions include the main prompt permissions for customers, vehicles, check-ins, inspections, estimates, work orders, jobs, QC, delivery, invoices, documents, reports, settings, users, and roles
+- maintenance settings are tenant-owned and product-scoped
+- approval requests table is prepared for high-value estimates, discounts, warranty decisions, cancellation approvals, and future approval queues
+- audit entries preserve old/new values for sensitive changes without exposing customer-facing internals
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_06_090000_add_maintenance_settings_permissions_audit.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/MaintenanceSetting.php && php -l app/Models/Maintenance/MaintenanceAuditEntry.php && php -l app/Models/Maintenance/MaintenanceApprovalRequest.php && php -l app/Models/User.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenancePermissionService.php && php -l app/Services/Automotive/Maintenance/MaintenanceSettingsService.php && php -l app/Services/Automotive/Maintenance/MaintenanceAuditService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceSettingsController.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceIntegrationService.php && php -l app/Services/Automotive/Maintenance/ApprovalWorkflowService.php && php -l app/Services/Automotive/Maintenance/DeliveryWarrantyService.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php && php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.settings --except-vendor`
+  - result: settings routes shown across localized/canonical/legacy route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 19 of 23
+- remaining: 4 of 23
+- next package: Fleet Customers, Contracts, and Fleet Reporting Readiness
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Package 18 Light Invoicing and Receipt Document Actions - 2026-05-06
 
 Package completed:

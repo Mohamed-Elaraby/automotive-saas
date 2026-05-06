@@ -23,6 +23,8 @@ class User extends Authenticatable
         'password',
         'accounting_role',
         'accounting_permissions',
+        'maintenance_role',
+        'maintenance_permissions',
     ];
 
     /**
@@ -44,6 +46,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'accounting_permissions' => 'array',
+        'maintenance_permissions' => 'array',
     ];
 
     public function tenants()
