@@ -3,18 +3,34 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceAttachment;
+use App\Services\Tenancy\AttachmentService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class MaintenanceAttachmentService
 {
+    public function __construct(
+        protected AttachmentService $attachments
+    ) {
+    }
+
     public function store(Model $attachable, UploadedFile $file, array $data): MaintenanceAttachment
     {
         $tenantId = (string) (tenant('id') ?: 'central');
         $category = $data['category'] ?? 'other';
-        $directory = 'tenants/' . $tenantId . '/maintenance/attachments/' . $attachable->getTable() . '/' . $attachable->getKey();
-        $path = $file->store($directory, 'public');
+        $attachment = $this->attachments->storeAttachment($attachable, $file, 'automotive', [
+            'branch_id' => $data['branch_id'] ?? null,
+            'uploaded_by' => $data['uploaded_by'] ?? null,
+            'disk' => 'public',
+            'visibility' => 'private',
+            'metadata' => [
+                'legacy_table' => 'maintenance_attachments',
+                'category' => $category,
+                'captured_at' => $data['captured_at'] ?? now(),
+                'notes' => $data['notes'] ?? null,
+            ],
+        ]);
 
         return MaintenanceAttachment::query()->create([
             'tenant_id' => $tenantId,
@@ -22,11 +38,11 @@ class MaintenanceAttachmentService
             'attachable_type' => $attachable::class,
             'attachable_id' => $attachable->getKey(),
             'category' => $category,
-            'file_disk' => 'public',
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getClientMimeType(),
-            'size' => $file->getSize() ?: 0,
+            'file_disk' => $attachment->disk,
+            'file_path' => $attachment->storage_path,
+            'original_name' => $attachment->original_name,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->file_size,
             'uploaded_by' => $data['uploaded_by'] ?? null,
             'captured_at' => $data['captured_at'] ?? now(),
             'notes' => $data['notes'] ?? null,

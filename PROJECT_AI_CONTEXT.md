@@ -375,13 +375,68 @@ Package 7 verification:
 - `git diff --check`
   - result: no whitespace errors
 
+Package 8 completed:
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_06_190000_add_attachments_and_notifications_foundation.php`
+- added central attachment table:
+  - `tenant_attachments`
+- added central notification tables:
+  - `notification_templates`
+  - `tenant_notifications`
+- added models:
+  - `TenantAttachment`
+  - `NotificationTemplate`
+  - `TenantNotification`
+- added central services:
+  - `AttachmentService`
+  - `NotificationService`
+- attachment storage is now product-aware through:
+  - `product_key`
+  - optional `branch_id`
+  - polymorphic `attachable_type` / `attachable_id`
+  - centralized disk/path/metadata handling
+- storage limits are enforced through `ProductEntitlementService` using plan limits and add-ons:
+  - `storage_limit_mb`
+  - `max_file_size_mb`
+  - `allowed_file_types`
+  - `extra_storage`
+  - `extra_file_size_limit`
+- notification events are now product-aware through:
+  - `product_key`
+  - optional `branch_id`
+  - `event_key`
+  - channel keys such as `in_app`, `email`, `whatsapp`, `sms`, and `webhook`
+- notification channels are entitlement-aware through plan features such as:
+  - `notifications.in_app`
+  - `notifications.email`
+  - `notifications.whatsapp`
+  - `notifications.sms`
+  - `notifications.webhooks`
+- external WhatsApp/SMS/email/webhook integrations were not faked; this package creates the extensible foundation and stores dispatch records.
+- added idempotent template seeder:
+  - `TenantNotificationFoundationSeeder`
+- legacy Automotive maintenance attachment and notification services now bridge into the central services while preserving existing `maintenance_attachments` and `maintenance_notifications` records and routes.
+- old PDF/document logic and old notification tables were not deleted.
+
+Package 8 verification:
+- `php artisan test tests/Feature/Tenancy/AttachmentAndNotificationFoundationTest.php`
+  - result: 12 passed, 24 assertions
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php tests/Feature/Tenancy/CentralBusinessEntitiesTest.php tests/Feature/Tenancy/DocumentEngineAndNumberingTest.php`
+  - result: 38 passed, 111 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: 786 automotive admin routes shown
+- `php artisan test tests/Feature/Admin/Notifications`
+  - result: 22 failed, 38 assertions
+  - status: known legacy Central Admin host/canonical redirect failures (`308`) between `system.seven-scapital.com` and `seven-scapital.com`; not introduced by Package 8
+- `git diff --check`
+  - result: no whitespace errors
+
 Next package:
-- Package 8: Attachments, Storage Limits, Notifications, Reports, Approvals, And Audit Foundation
+- Package 9: Final Platform Foundations, Cleanup, And Production Acceptance
 - Focus:
-  - central attachment metadata and plan-aware storage checks
-  - central notification event/channel foundation
-  - approval and audit foundations
-  - report registry foundations without duplicating Automotive-specific reporting
+  - approval, audit, report, settings, search/timeline/import-export readiness where still missing
+  - safe cleanup/deprecation notes for duplicated legacy code
+  - final route/test/documentation hardening without removing `routes/tenant.php`
 
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 

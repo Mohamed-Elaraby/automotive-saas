@@ -3,16 +3,46 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceNotification;
+use App\Services\Tenancy\NotificationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Throwable;
 
 class MaintenanceNotificationService
 {
+    public function __construct(
+        protected NotificationService $notifications
+    ) {
+    }
+
     public function create(string $eventType, string $title, array $data = []): MaintenanceNotification
     {
         $rule = $this->ruleFor($eventType);
         $payload = $this->sanitizePayload($data['payload'] ?? []);
+        $eventKey = str_contains($eventType, '.') && str_starts_with($eventType, 'automotive.')
+            ? $eventType
+            : 'automotive.' . $eventType;
+
+        try {
+            $this->notifications->createInAppNotification('automotive', $eventKey, $payload + [
+                'title' => $title,
+                'message' => $data['message'] ?? null,
+            ], [
+                'skip_entitlement' => true,
+                'branch_id' => $data['branch_id'] ?? null,
+                'recipient_type' => ! empty($data['user_id']) ? 'user' : null,
+                'recipient_id' => $data['user_id'] ?? null,
+                'title' => $title,
+                'body' => $data['message'] ?? null,
+                'metadata' => [
+                    'legacy_table' => 'maintenance_notifications',
+                    'legacy_event_type' => $eventType,
+                ] + $payload,
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return MaintenanceNotification::query()->create([
             'branch_id' => $data['branch_id'] ?? null,
