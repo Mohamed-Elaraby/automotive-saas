@@ -51,6 +51,10 @@ class TenantWorkspaceProductService
         ];
 
         foreach ([
+            'product_key',
+            'included_seats',
+            'extra_seats',
+            'branch_limit',
             'activation_status',
             'provisioning_status',
             'provisioning_started_at',
@@ -103,6 +107,7 @@ class TenantWorkspaceProductService
                     'subscription_id' => (int) $row->id,
                     'tenant_id' => (string) $row->tenant_id,
                     'product_id' => (int) $row->product_id,
+                    'product_key' => (string) ($row->product_key ?? $workspaceProduct['product_code']),
                     'product_code' => $workspaceProduct['product_code'],
                     'product_name' => $workspaceProduct['product_name'],
                     'product_slug' => $workspaceProduct['product_slug'],
@@ -111,6 +116,9 @@ class TenantWorkspaceProductService
                     'capabilities' => $capabilitiesByProductId->get($row->product_id, []),
                     'status' => $status,
                     'status_label' => strtoupper(str_replace('_', ' ', $status ?: 'unknown')),
+                    'included_seats' => isset($row->included_seats) ? (int) $row->included_seats : null,
+                    'extra_seats' => isset($row->extra_seats) ? (int) $row->extra_seats : 0,
+                    'branch_limit' => isset($row->branch_limit) ? (int) $row->branch_limit : null,
                     'activation_status' => (string) ($row->activation_status ?? ''),
                     'provisioning_status' => (string) ($row->provisioning_status ?? ''),
                     'provisioning_error' => (string) ($row->activation_error ?? ''),

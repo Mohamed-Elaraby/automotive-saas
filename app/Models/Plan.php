@@ -63,4 +63,9 @@ class Plan extends Model
             ->orderByPivot('sort_order')
             ->orderBy('billing_features.id');
     }
+
+    public function limits()
+    {
+        return $this->hasMany(PlanLimit::class);
+    }
 }

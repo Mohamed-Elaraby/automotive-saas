@@ -6,6 +6,8 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Services\Billing\StripePlanCatalogSyncService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class PlanSeeder extends Seeder
@@ -113,6 +115,43 @@ class PlanSeeder extends Seeder
             if ($definition['billing_period'] !== 'trial') {
                 app(StripePlanCatalogSyncService::class)->syncPlan($plan);
             }
+
+            $this->syncNormalizedPlanLimits($plan, $code);
+        }
+    }
+
+    protected function syncNormalizedPlanLimits(Plan $plan, string $productKey): void
+    {
+        $connection = $plan->getConnectionName();
+
+        if (! Schema::connection($connection)->hasTable('plan_limits')) {
+            return;
+        }
+
+        foreach ([
+            'included_seats' => $plan->max_users,
+            'branch_limit' => $plan->max_branches,
+            'catalog_items' => $plan->max_products,
+            'storage_mb' => $plan->max_storage_mb,
+        ] as $limitKey => $limitValue) {
+            if ($limitValue === null) {
+                continue;
+            }
+
+            DB::connection($connection)
+                ->table('plan_limits')
+                ->updateOrInsert(
+                    [
+                        'product_key' => $productKey,
+                        'plan_id' => $plan->id,
+                        'limit_key' => $limitKey,
+                    ],
+                    [
+                        'limit_value' => (string) $limitValue,
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
         }
     }
 

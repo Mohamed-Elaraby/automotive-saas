@@ -10,9 +10,14 @@ class TenantProductSubscription extends Model
     protected $fillable = [
         'tenant_id',
         'product_id',
+        'product_key',
         'plan_id',
         'legacy_subscription_id',
         'status',
+        'included_seats',
+        'extra_seats',
+        'branch_limit',
+        'usage_limits',
         'activation_status',
         'provisioning_status',
         'provisioning_started_at',
@@ -22,6 +27,8 @@ class TenantProductSubscription extends Model
         'activation_error',
         'activation_source',
         'trial_ends_at',
+        'current_period_start',
+        'current_period_end',
         'grace_ends_at',
         'last_payment_failed_at',
         'past_due_started_at',
@@ -54,6 +61,12 @@ class TenantProductSubscription extends Model
         'ends_at' => 'datetime',
         'last_synced_from_stripe_at' => 'datetime',
         'payment_failures_count' => 'integer',
+        'included_seats' => 'integer',
+        'extra_seats' => 'integer',
+        'branch_limit' => 'integer',
+        'usage_limits' => 'array',
+        'current_period_start' => 'datetime',
+        'current_period_end' => 'datetime',
     ];
 
     public function __construct(array $attributes = [])
@@ -68,6 +81,29 @@ class TenantProductSubscription extends Model
     protected static function booted(): void
     {
         static::creating(function (TenantProductSubscription $subscription): void {
+            if (
+                blank($subscription->product_key)
+                && filled($subscription->product_id)
+                && Schema::connection($subscription->getConnectionName())->hasColumn($subscription->getTable(), 'product_key')
+            ) {
+                $subscription->product_key = Product::query()
+                    ->whereKey($subscription->product_id)
+                    ->value('code');
+            }
+
+            if (
+                blank($subscription->included_seats)
+                && filled($subscription->plan_id)
+                && Schema::connection($subscription->getConnectionName())->hasColumn($subscription->getTable(), 'included_seats')
+            ) {
+                $plan = Plan::query()->whereKey($subscription->plan_id)->first(['max_users', 'max_branches']);
+
+                if ($plan) {
+                    $subscription->included_seats = $plan->max_users;
+                    $subscription->branch_limit = $subscription->branch_limit ?? $plan->max_branches;
+                }
+            }
+
             if (
                 in_array((string) $subscription->status, ['active', 'trialing'], true)
                 && blank($subscription->activation_status)

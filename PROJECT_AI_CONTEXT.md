@@ -83,6 +83,141 @@ Current deployment/cache rule:
 - Never use:
   - `php artisan route:cache`
 
+## 1.1.1) Product-Scoped Architecture Refactor Roadmap - 2026-05-06
+
+Current new architecture directive:
+- The platform is being refactored into a clean **Product-Scoped Multi-Product SaaS Architecture**.
+- This is not a greenfield rewrite. Existing working architecture must be reused and migrated behind central product-aware services.
+- The roadmap is documented in:
+  - `docs/product-scoped-architecture-roadmap.md`
+
+Package 1 completed:
+- inspected the current architecture across:
+  - models
+  - services
+  - controllers
+  - middleware
+  - providers
+  - migrations
+  - routes
+  - config
+  - views
+  - translations
+  - tests
+- identified reusable existing foundations:
+  - central product catalog, product-aware plans, product capabilities
+  - `tenant_product_subscriptions` with activation/provisioning state
+  - workspace manifest/runtime product services
+  - tenant users and branches
+  - accounting runtime
+  - automotive maintenance runtime
+  - central mPDF document engine
+  - English/Arabic localization
+- identified main gaps:
+  - inconsistent `product_id`/`product_code`/product family identity
+  - missing per-user product access and product seat enforcement
+  - missing product branch activation and user product branch access
+  - product-specific role columns that need migration to product-scoped roles/permissions
+  - missing normalized plan limits/add-ons
+  - missing central attachments, approvals, audit logs, reports, numbering sequences, search, timeline, and import/export foundations
+- extracted:
+  - Total Required Changes: 72
+  - Total Packages: 9
+
+Next package:
+- Package 2: Product Identity, Subscriptions, Plans, Limits, And Add-Ons
+- It should add product-key compatibility and normalized entitlement foundations without breaking existing `product_id` subscription flows.
+
+Package 2 completed:
+- added central entitlement foundation migration:
+  - `database/migrations/2026_05_06_130000_add_product_entitlement_foundation.php`
+- extended central `tenant_product_subscriptions` with compatibility-safe product and commercial entitlement fields:
+  - `product_key`
+  - `included_seats`
+  - `extra_seats`
+  - `branch_limit`
+  - `usage_limits`
+  - `current_period_start`
+  - `current_period_end`
+- added normalized central entitlement tables:
+  - `plan_limits`
+  - `subscription_addons`
+- added central models:
+  - `PlanLimit`
+  - `SubscriptionAddon`
+- added central service:
+  - `ProductEntitlementService`
+- updated existing models/services to expose product-key entitlement data without replacing current `product_id` flows:
+  - `TenantProductSubscription`
+  - `Plan`
+  - `TenantWorkspaceProductService`
+  - `PlanSeeder`
+- added targeted service coverage:
+  - `tests/Feature/Tenancy/ProductEntitlementServiceTest.php`
+
+Package 2 verification limitation:
+- `php artisan test` is not available in this environment.
+- `./vendor/bin/phpunit` is also not installed in this environment.
+- Syntax checks, migration SQL preview, route listing, and `git diff --check` were used instead.
+
+Testing environment fixed after Package 2:
+- `composer install` installed the missing dev dependencies from `composer.lock`.
+- `composer dump-autoload` completed successfully.
+- `vendor/bin/phpunit` now exists.
+- `phpunit.xml` now forces the test environment to SQLite in-memory so shell-level `DB_CONNECTION=mysql` does not leak into tests.
+- `config/database.php` was updated to avoid PHP 8.5 deprecation for `PDO::MYSQL_ATTR_SSL_CA` while preserving MySQL SSL behavior.
+- `php artisan test` now runs, but the full suite still has pre-existing Central Admin URL/guard assertion failures unrelated to Package 3/4.
+
+Package 3 completed:
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_06_140000_create_tenant_user_product_access_table.php`
+- added tenant access model:
+  - `TenantUserProductAccess`
+- added central service:
+  - `TenantUserProductAccessService`
+- added middleware alias:
+  - `tenant.user.product`
+- product user access is now tenant-user central and product-scoped by `product_key`
+- user product seats are enforced through `ProductEntitlementService`
+- inactive/revoked access does not consume seats
+- one user consumes seats independently per product
+- fixed `ProductEntitlementService::seatLimit()` so subscription-level `extra_seats` contributes to the seat limit in addition to `extra_user_seat` add-ons
+
+Package 3 verification:
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php`
+  - result: 10 passed, 29 assertions
+
+Package 4 completed:
+- added tenant migration:
+  - `database/migrations/tenant/2026_05_06_150000_add_product_branch_access_foundation.php`
+- expanded central tenant `branches` with:
+  - `manager_user_id`
+  - `emirate`
+  - `city`
+  - `country`
+  - `timezone`
+- added tenant product branch activation:
+  - `tenant_product_branches`
+- added tenant user product branch access:
+  - `tenant_user_product_branches`
+- added models:
+  - `TenantProductBranch`
+  - `TenantUserProductBranch`
+- added central service:
+  - `ProductBranchAccessService`
+- added idempotent demo/test seeder:
+  - `TenantBranchDemoSeeder`
+- branch activation is now product-scoped and constrained by product subscription `branch_limit` plus `extra_branch` add-ons
+- user branch access is product-scoped and only returns enabled branches for that product
+
+Package 4 verification:
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php`
+  - result: 17 passed, 44 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: automotive admin routes remain listed under the expected route names
+- `git diff --check`
+  - result: no whitespace errors
+
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 
 The original prompt asked for a complete professional Automotive Maintenance / Workshop Management SaaS product inside this existing Laravel multi-tenant SaaS.
