@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\Automotive\VerifyMaintenanceReadinessCommand;
 use App\Console\Commands\Billing\RunBillingLifecycleCommand;
 use App\Console\Commands\Billing\ReviewStripeSubscriptionConsistencyCommand;
 use App\Console\Commands\Billing\RepairTenantProductSubscriptionMirrorsCommand;
@@ -28,6 +29,7 @@ class Kernel extends ConsoleKernel
         DiagnoseWorkspaceRoutingCommand::class,
         NormalizeWorkspaceDomainsCommand::class,
         VerifyIntegrationReadinessCommand::class,
+        VerifyMaintenanceReadinessCommand::class,
     ];
 
     protected function schedule(Schedule $schedule): void
