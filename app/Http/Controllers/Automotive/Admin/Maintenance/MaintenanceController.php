@@ -285,8 +285,24 @@ class MaintenanceController extends Controller
 
     public function estimatesShow(MaintenanceEstimate $estimate): View
     {
+        $estimate->load(['branch', 'customer', 'vehicle', 'checkIn', 'workOrder', 'lines.serviceCatalogItem', 'approvals']);
+
         return view('automotive.admin.maintenance.estimates.show', [
-            'estimate' => $estimate->load(['branch', 'customer', 'vehicle', 'checkIn', 'workOrder', 'lines.serviceCatalogItem']),
+            'estimate' => $estimate,
+            'generatedDocuments' => GeneratedDocument::query()
+                ->where(function ($query) use ($estimate) {
+                    $query->where(function ($documentQuery) use ($estimate) {
+                        $documentQuery->where('documentable_type', $estimate->getMorphClass())
+                            ->where('documentable_id', $estimate->id);
+                    })->orWhere(function ($documentQuery) use ($estimate) {
+                        $documentQuery->where('documentable_type', \App\Models\Maintenance\MaintenanceApprovalRecord::class)
+                            ->whereIn('documentable_id', $estimate->approvals->pluck('id'));
+                    });
+                })
+                ->whereIn('document_type', ['maintenance_estimate', 'maintenance_approval_certificate'])
+                ->latest('id')
+                ->limit(10)
+                ->get(),
         ]);
     }
 

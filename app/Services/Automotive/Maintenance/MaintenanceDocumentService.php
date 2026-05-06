@@ -3,6 +3,7 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Core\Documents\GeneratedDocument;
+use App\Models\Maintenance\MaintenanceApprovalRecord;
 use App\Models\Maintenance\MaintenanceDelivery;
 use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceWarranty;
@@ -79,6 +80,24 @@ class MaintenanceDocumentService
         ], $options + [
             'documentable' => $estimate,
             'branch_id' => $estimate->branch_id,
+        ]);
+    }
+
+    public function generateApprovalCertificate(MaintenanceApprovalRecord $approval, array $options): GeneratedDocument
+    {
+        $approval->load(['branch', 'estimate.lines.serviceCatalogItem', 'workOrder', 'customer', 'vehicle']);
+
+        return $this->documents->generate('maintenance_approval_certificate', [
+            'approval' => $approval->toArray(),
+            'estimate' => $approval->estimate?->toArray() ?? [],
+            'branch' => $approval->branch?->toArray() ?? [],
+            'customer' => $approval->customer?->toArray() ?? [],
+            'vehicle' => $approval->vehicle?->toArray() ?? [],
+            'work_order' => $approval->workOrder?->toArray() ?? [],
+            'lines' => $approval->estimate?->lines?->toArray() ?? [],
+        ], $options + [
+            'documentable' => $approval,
+            'branch_id' => $approval->branch_id,
         ]);
     }
 

@@ -5726,6 +5726,88 @@ Deployment reminder:
 - ensure `php artisan storage:link` exists in environments serving public uploads
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 17 Estimate PDF and Approval Document Actions - 2026-05-06
+
+Package completed:
+- added central document type:
+  - `maintenance_approval_certificate`
+- added approval certificate PDF template:
+  - `resources/views/products/automotive/documents/maintenance/approval-certificate.blade.php`
+- extended estimate PDF template with customer-visible notes and estimate status
+- extended `MaintenanceDocumentService` with `generateApprovalCertificate()`
+- extended `MaintenanceDocumentController` with:
+  - direct estimate PDF generation
+  - direct approval certificate generation
+  - generic support for `maintenance_approval_certificate`
+- added estimate document routes:
+  - `automotive.admin.maintenance.estimates.documents.generate`
+  - `automotive.admin.maintenance.estimates.documents.approval.generate`
+- rebuilt estimate detail page with:
+  - estimate lines and approval status
+  - totals summary
+  - estimate PDF generation action
+  - approval certificate generation action
+  - generated document preview/download list
+- updated central document index to include approval certificate references
+- added print action to the customer estimate review page
+- extended Arabic and English maintenance translations
+
+Functional coverage:
+- generate official Estimate PDF from the estimate page
+- generate Customer Approval Certificate after approval exists
+- list generated estimate/approval documents with preview/download actions
+- preserve central document versioning/snapshots/QR behavior
+- customer estimate review page can be printed from browser
+
+Important architecture notes:
+- product code does not instantiate mPDF directly
+- approval certificate is a central document type using the existing document engine
+- generated documents remain versioned and historically snapshotted
+- no new migration was required
+- no route cache was used
+
+Verification:
+- `php -l config/documents.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceDocumentService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceDocumentController.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceController.php`
+  - result: no syntax errors
+- `php -l routes/products/automotive/admin.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/estimates/show.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/admin/maintenance/documents/index.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/automotive/customer/maintenance/estimate.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/products/automotive/documents/maintenance/approval-certificate.blade.php`
+  - result: no syntax errors
+- `php -l resources/views/products/automotive/documents/maintenance/estimate.blade.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.estimates.documents --except-vendor`
+  - result: estimate document routes registered under canonical and localized route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `php artisan config:clear`
+  - result: completed after adding a document config type
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Package progress:
+- completed: 17 of 23
+- remaining: 6 of 23
+- next package: Light Invoicing and Receipt Document Actions
+
+Deployment reminder:
+- no new migration was added in this package
+- if config is cached in production, run `php artisan config:clear` or rebuild config cache during deployment
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Tenant Migration Identifier Length Fix - 2026-05-04
 
 Issue fixed:

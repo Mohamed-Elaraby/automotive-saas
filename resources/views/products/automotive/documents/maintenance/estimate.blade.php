@@ -27,4 +27,10 @@
 ])
 
 <p class="long-text"><strong>{{ __('maintenance.terms') }}:</strong><br>{{ data_get($snapshot, 'estimate.terms') }}</p>
+@if(data_get($snapshot, 'estimate.customer_visible_notes'))
+    <p class="long-text"><strong>{{ __('maintenance.customer_visible_notes') }}:</strong><br>{{ data_get($snapshot, 'estimate.customer_visible_notes') }}</p>
+@endif
+@if(data_get($snapshot, 'estimate.status'))
+    <p><strong>{{ __('maintenance.status') }}:</strong> {{ data_get($snapshot, 'estimate.status') }}</p>
+@endif
 <div class="keep-together">@include('core.documents.components.qr-code')</div>

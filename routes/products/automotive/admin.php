@@ -143,6 +143,10 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.estimates.store');
                 Route::get('/maintenance/estimates/{estimate}', [MaintenanceController::class, 'estimatesShow'])
                     ->name('maintenance.estimates.show');
+                Route::post('/maintenance/estimates/{estimate}/documents/estimate', [MaintenanceDocumentController::class, 'generateEstimate'])
+                    ->name('maintenance.estimates.documents.generate');
+                Route::post('/maintenance/estimates/{estimate}/documents/approval', [MaintenanceDocumentController::class, 'generateEstimateApproval'])
+                    ->name('maintenance.estimates.documents.approval.generate');
                 Route::get('/maintenance/approvals', [MaintenanceLifecycleController::class, 'approvalsIndex'])
                     ->name('maintenance.approvals.index');
                 Route::post('/maintenance/approvals/{estimate}/send', [MaintenanceLifecycleController::class, 'approvalsSend'])

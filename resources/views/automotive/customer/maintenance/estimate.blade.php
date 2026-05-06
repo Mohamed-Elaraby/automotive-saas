@@ -26,7 +26,10 @@
 </head>
 <body>
 <main class="wrap">
-    <h1>{{ __('maintenance.customer_portal.estimate_title') }}</h1>
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <h1>{{ __('maintenance.customer_portal.estimate_title') }}</h1>
+        <button type="button" class="button" onclick="window.print()">{{ __('maintenance.print') }}</button>
+    </div>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>

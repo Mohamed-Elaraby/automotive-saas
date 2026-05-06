@@ -54,6 +54,15 @@ return [
             'snapshot_required' => true,
             'qr_enabled' => true,
         ],
+        'maintenance_approval_certificate' => [
+            'product_code' => 'maintenance',
+            'module_code' => 'approvals',
+            'template' => 'products.automotive.documents.maintenance.approval-certificate',
+            'prefix' => 'APPRPDF',
+            'title' => 'Customer Approval Certificate',
+            'snapshot_required' => true,
+            'qr_enabled' => true,
+        ],
         'maintenance_delivery_report' => [
             'product_code' => 'maintenance',
             'module_code' => 'deliveries',
