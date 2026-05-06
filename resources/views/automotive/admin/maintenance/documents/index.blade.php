@@ -19,6 +19,8 @@
                             <option value="maintenance_work_order">{{ __('maintenance.documents.work_order') }}</option>
                             <option value="maintenance_estimate">{{ __('maintenance.documents.estimate') }}</option>
                             <option value="maintenance_approval_certificate">{{ __('maintenance.documents.approval_certificate') }}</option>
+                            <option value="maintenance_invoice">{{ __('maintenance.documents.invoice') }}</option>
+                            <option value="maintenance_receipt">{{ __('maintenance.documents.receipt') }}</option>
                             <option value="maintenance_delivery_report">{{ __('maintenance.documents.delivery') }}</option>
                             <option value="maintenance_warranty_certificate">{{ __('maintenance.documents.warranty') }}</option>
                         </select>
@@ -41,6 +43,8 @@
                     <div class="col-md-6"><h6>{{ __('maintenance.work_order') }}</h6>@foreach($workOrders as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->work_order_number }} · {{ $item->customer?->name }}</div>@endforeach</div>
                     <div class="col-md-6"><h6>{{ __('maintenance.estimates') }}</h6>@foreach($estimates as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->estimate_number }} · {{ $item->customer?->name }}</div>@endforeach</div>
                     <div class="col-md-6"><h6>{{ __('maintenance.approval_history') }}</h6>@foreach($approvalRecords as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->estimate?->estimate_number }} · {{ $item->customer?->name }} · {{ strtoupper(str_replace('_', ' ', $item->status)) }}</div>@endforeach</div>
+                    <div class="col-md-6"><h6>{{ __('maintenance.documents.invoice') }}</h6>@foreach($invoices as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->invoice_number }} · {{ $item->customer?->name }}</div>@endforeach</div>
+                    <div class="col-md-6"><h6>{{ __('maintenance.documents.receipt') }}</h6>@foreach($receipts as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->receipt_number }} · {{ $item->customer?->name }}</div>@endforeach</div>
                     <div class="col-md-6"><h6>{{ __('maintenance.deliveries') }}</h6>@foreach($deliveries as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->delivery_number }} · {{ $item->customer?->name }}</div>@endforeach</div>
                     <div class="col-md-6"><h6>{{ __('maintenance.warranties') }}</h6>@foreach($warranties as $item)<div class="small text-muted">{{ $item->id }} · {{ $item->warranty_number }} · {{ $item->customer?->name }}</div>@endforeach</div>
                 </div>

@@ -3,8 +3,10 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\AccountingEvent;
+use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceInvoice;
 use App\Models\Maintenance\MaintenancePartsRequest;
+use App\Models\Maintenance\MaintenanceReceipt;
 use App\Models\Maintenance\MaintenanceWorkOrderJob;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
@@ -15,6 +17,7 @@ use App\Services\Tenancy\WorkspaceIntegrationHandoffService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class MaintenanceIntegrationService
 {
@@ -42,6 +45,24 @@ class MaintenanceIntegrationService
                 ->whereIn('status', ['pending', 'failed'])
                 ->count(),
         ];
+    }
+
+    public function recentInvoices(int $limit = 100): Collection
+    {
+        return MaintenanceInvoice::query()
+            ->with(['customer', 'vehicle', 'workOrder', 'estimate', 'receipts'])
+            ->latest('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function recentReceipts(int $limit = 100): Collection
+    {
+        return MaintenanceReceipt::query()
+            ->with(['invoice', 'customer', 'vehicle', 'workOrder'])
+            ->latest('id')
+            ->limit($limit)
+            ->get();
     }
 
     public function recentPartsRequests(int $limit = 50): Collection
@@ -170,6 +191,172 @@ class MaintenanceIntegrationService
         });
     }
 
+    public function createInvoice(array $data): MaintenanceInvoice
+    {
+        return DB::transaction(function () use ($data): MaintenanceInvoice {
+            $estimate = null;
+            if (! empty($data['estimate_id'])) {
+                $estimate = MaintenanceEstimate::query()->with(['lines', 'workOrder'])->findOrFail($data['estimate_id']);
+            }
+
+            $workOrder = null;
+            if (! empty($data['work_order_id'])) {
+                $workOrder = WorkOrder::query()->with(['lines', 'customer', 'vehicle'])->findOrFail($data['work_order_id']);
+            } elseif ($estimate?->workOrder) {
+                $workOrder = $estimate->workOrder;
+            }
+
+            if (! $estimate && ! $workOrder) {
+                throw ValidationException::withMessages([
+                    'work_order_id' => __('maintenance.messages.invoice_source_required'),
+                ]);
+            }
+
+            $existing = $this->findExistingInvoice($estimate, $workOrder);
+            if ($existing) {
+                return $existing->fresh(['customer', 'vehicle', 'workOrder', 'estimate', 'receipts']);
+            }
+
+            $totals = $this->invoiceTotals($estimate, $workOrder);
+            $branchId = $data['branch_id'] ?? $estimate?->branch_id ?? $workOrder?->branch_id;
+            $customerId = $estimate?->customer_id ?? $workOrder?->customer_id;
+            $vehicleId = $estimate?->vehicle_id ?? $workOrder?->vehicle_id;
+
+            $invoice = MaintenanceInvoice::query()->create([
+                'invoice_number' => $this->numbers->next('maintenance_invoices', 'invoice_number', 'INV'),
+                'branch_id' => $branchId,
+                'customer_id' => $customerId,
+                'vehicle_id' => $vehicleId,
+                'work_order_id' => $workOrder?->id,
+                'estimate_id' => $estimate?->id,
+                'status' => 'issued',
+                'payment_status' => 'unpaid',
+                'subtotal' => $totals['subtotal'],
+                'discount_total' => $totals['discount_total'],
+                'tax_total' => $totals['tax_total'],
+                'grand_total' => $totals['grand_total'],
+                'paid_amount' => 0,
+                'issued_at' => $data['issued_at'] ?? now(),
+                'created_by' => $data['created_by'] ?? null,
+            ]);
+
+            if ($workOrder) {
+                $workOrder->forceFill(['payment_status' => 'unpaid'])->save();
+
+                $this->timeline->recordForWorkOrder($workOrder, 'invoice.created', $invoice->invoice_number, [
+                    'created_by' => $data['created_by'] ?? null,
+                    'customer_visible_note' => __('maintenance.messages.invoice_created'),
+                    'payload' => [
+                        'invoice_id' => $invoice->id,
+                        'grand_total' => $invoice->grand_total,
+                    ],
+                ]);
+            }
+
+            $this->notifications->create('invoice.created', 'Invoice created', [
+                'branch_id' => $invoice->branch_id,
+                'message' => $invoice->invoice_number . ' - ' . number_format((float) $invoice->grand_total, 2),
+                'notifiable_type' => MaintenanceInvoice::class,
+                'notifiable_id' => $invoice->id,
+                'payload' => [
+                    'invoice_number' => $invoice->invoice_number,
+                    'payment_status' => $invoice->payment_status,
+                ],
+            ]);
+
+            try {
+                $this->postInvoiceToAccounting($invoice, $data['created_by'] ?? null);
+            } catch (\Throwable) {
+                // Optional accounting handoff failures must not block maintenance invoicing.
+            }
+
+            return $invoice->fresh(['customer', 'vehicle', 'workOrder', 'estimate', 'receipts']);
+        });
+    }
+
+    public function recordReceipt(MaintenanceInvoice $invoice, array $data): MaintenanceReceipt
+    {
+        return DB::transaction(function () use ($invoice, $data): MaintenanceReceipt {
+            $invoice->loadMissing(['workOrder']);
+            $amount = round((float) $data['amount'], 2);
+
+            if ($amount <= 0) {
+                throw ValidationException::withMessages([
+                    'amount' => __('maintenance.messages.receipt_amount_required'),
+                ]);
+            }
+
+            if ($invoice->payment_status === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'amount' => __('maintenance.messages.cancelled_invoice_payment_blocked'),
+                ]);
+            }
+
+            $receipt = MaintenanceReceipt::query()->create([
+                'receipt_number' => $this->numbers->next('maintenance_receipts', 'receipt_number', 'REC'),
+                'branch_id' => $invoice->branch_id,
+                'invoice_id' => $invoice->id,
+                'customer_id' => $invoice->customer_id,
+                'vehicle_id' => $invoice->vehicle_id,
+                'work_order_id' => $invoice->work_order_id,
+                'payment_method' => $data['payment_method'] ?? 'cash',
+                'amount' => $amount,
+                'currency' => $data['currency'] ?? 'USD',
+                'reference_number' => $data['reference_number'] ?? null,
+                'received_at' => $data['received_at'] ?? now(),
+                'notes' => $data['notes'] ?? null,
+                'created_by' => $data['created_by'] ?? null,
+            ]);
+
+            $paidAmount = round(((float) $invoice->paid_amount) + $amount, 2);
+            $grandTotal = (float) $invoice->grand_total;
+            $paymentStatus = $paidAmount <= 0
+                ? 'unpaid'
+                : ($paidAmount + 0.00001 >= $grandTotal ? 'paid' : 'partially_paid');
+
+            $invoice->forceFill([
+                'paid_amount' => min($paidAmount, $grandTotal),
+                'payment_status' => $paymentStatus,
+                'paid_at' => $paymentStatus === 'paid' ? ($data['received_at'] ?? now()) : $invoice->paid_at,
+            ])->save();
+
+            if ($invoice->workOrder) {
+                $invoice->workOrder->forceFill(['payment_status' => $paymentStatus])->save();
+
+                $this->timeline->recordForWorkOrder($invoice->workOrder, 'payment.received', $receipt->receipt_number, [
+                    'created_by' => $data['created_by'] ?? null,
+                    'customer_visible_note' => __('maintenance.messages.payment_received'),
+                    'payload' => [
+                        'invoice_id' => $invoice->id,
+                        'receipt_id' => $receipt->id,
+                        'amount' => $receipt->amount,
+                        'payment_status' => $paymentStatus,
+                    ],
+                ]);
+            }
+
+            $this->notifications->create($paymentStatus === 'paid' ? 'invoice.paid' : 'payment.received', 'Payment received', [
+                'branch_id' => $receipt->branch_id,
+                'message' => $receipt->receipt_number . ' - ' . number_format((float) $receipt->amount, 2),
+                'notifiable_type' => MaintenanceReceipt::class,
+                'notifiable_id' => $receipt->id,
+                'payload' => [
+                    'receipt_number' => $receipt->receipt_number,
+                    'invoice_number' => $invoice->invoice_number,
+                    'payment_status' => $paymentStatus,
+                ],
+            ]);
+
+            try {
+                $this->postPaymentToAccounting($receipt, $data['created_by'] ?? null);
+            } catch (\Throwable) {
+                // Optional accounting handoff failures must not block operational receipt capture.
+            }
+
+            return $receipt->fresh(['invoice', 'customer', 'vehicle', 'workOrder']);
+        });
+    }
+
     public function postInvoiceToAccounting(MaintenanceInvoice $invoice, ?int $userId): ?AccountingEvent
     {
         $handoff = $this->handoffs->start([
@@ -204,6 +391,59 @@ class MaintenanceIntegrationService
                         'parts_amount' => 0,
                         'total_amount' => $invoice->grand_total,
                         'payload' => $this->invoicePayload($invoice),
+                        'created_by' => $userId,
+                    ]
+                );
+
+                $this->handoffs->markPosted($handoff, $event, [
+                    'accounting_event_id' => $event->id,
+                ]);
+
+                return $event;
+            });
+        } catch (\Throwable $exception) {
+            $this->handoffs->markFailed($handoff, $exception->getMessage());
+
+            throw $exception;
+        }
+    }
+
+    public function postPaymentToAccounting(MaintenanceReceipt $receipt, ?int $userId): ?AccountingEvent
+    {
+        $receipt->loadMissing(['invoice', 'branch', 'customer', 'vehicle', 'workOrder']);
+
+        $handoff = $this->handoffs->start([
+            'integration_key' => 'automotive-accounting',
+            'event_name' => 'payment.received',
+            'source_product' => 'automotive_service',
+            'target_product' => 'accounting',
+            'source_type' => MaintenanceReceipt::class,
+            'source_id' => $receipt->id,
+            'payload' => $this->receiptPayload($receipt),
+        ], $userId);
+
+        if (! $this->hasWorkspaceFamily('accounting')) {
+            $this->handoffs->markSkipped($handoff, 'Accounting product is not active for this tenant workspace.');
+
+            return null;
+        }
+
+        try {
+            return DB::transaction(function () use ($receipt, $userId, $handoff): AccountingEvent {
+                $event = AccountingEvent::query()->updateOrCreate(
+                    [
+                        'reference_type' => MaintenanceReceipt::class,
+                        'reference_id' => $receipt->id,
+                        'event_type' => 'maintenance_payment_received',
+                    ],
+                    [
+                        'status' => 'posted',
+                        'event_date' => $receipt->received_at ?: now(),
+                        'currency' => $receipt->currency,
+                        'labor_amount' => 0,
+                        'parts_amount' => 0,
+                        'total_amount' => $receipt->amount,
+                        'payload' => $this->receiptPayload($receipt),
                         'created_by' => $userId,
                     ]
                 );
@@ -265,6 +505,69 @@ class MaintenanceIntegrationService
             'grand_total' => $invoice->grand_total,
             'paid_amount' => $invoice->paid_amount,
             'payment_status' => $invoice->payment_status,
+        ];
+    }
+
+    protected function receiptPayload(MaintenanceReceipt $receipt): array
+    {
+        return [
+            'receipt_number' => $receipt->receipt_number,
+            'invoice_number' => $receipt->invoice?->invoice_number,
+            'branch_id' => $receipt->branch_id,
+            'branch_name' => $receipt->branch?->name,
+            'customer_name' => $receipt->customer?->name,
+            'vehicle' => $receipt->vehicle ? trim(($receipt->vehicle->make ?? '') . ' ' . ($receipt->vehicle->model ?? '')) : null,
+            'work_order_number' => $receipt->workOrder?->work_order_number,
+            'payment_method' => $receipt->payment_method,
+            'amount' => $receipt->amount,
+            'currency' => $receipt->currency,
+            'reference_number' => $receipt->reference_number,
+            'received_at' => optional($receipt->received_at)->toISOString(),
+        ];
+    }
+
+    protected function findExistingInvoice(?MaintenanceEstimate $estimate, ?WorkOrder $workOrder): ?MaintenanceInvoice
+    {
+        if ($estimate) {
+            $invoice = MaintenanceInvoice::query()
+                ->where('estimate_id', $estimate->id)
+                ->where('status', '!=', 'cancelled')
+                ->first();
+
+            if ($invoice) {
+                return $invoice;
+            }
+        }
+
+        if (! $estimate && $workOrder) {
+            return MaintenanceInvoice::query()
+                ->where('work_order_id', $workOrder->id)
+                ->whereNull('estimate_id')
+                ->where('status', '!=', 'cancelled')
+                ->first();
+        }
+
+        return null;
+    }
+
+    protected function invoiceTotals(?MaintenanceEstimate $estimate, ?WorkOrder $workOrder): array
+    {
+        if ($estimate) {
+            return [
+                'subtotal' => (float) $estimate->subtotal,
+                'discount_total' => (float) $estimate->discount_total,
+                'tax_total' => (float) $estimate->tax_total,
+                'grand_total' => (float) $estimate->grand_total,
+            ];
+        }
+
+        $subtotal = (float) ($workOrder?->lines?->sum('total_price') ?? 0);
+
+        return [
+            'subtotal' => round($subtotal, 2),
+            'discount_total' => 0,
+            'tax_total' => 0,
+            'grand_total' => round($subtotal, 2),
         ];
     }
 

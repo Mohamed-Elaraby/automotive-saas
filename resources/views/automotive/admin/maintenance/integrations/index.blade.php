@@ -118,21 +118,114 @@
             <div class="row">
                 <div class="col-xl-5 d-flex">
                     <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.integrations.create_invoice') }}</h5></div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.store') }}">
+                                @csrf
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('maintenance.branch') }}</label>
+                                    <select name="branch_id" class="form-select">
+                                        <option value="">{{ __('maintenance.none') }}</option>
+                                        @foreach($branches as $branch)
+                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('maintenance.work_order') }}</label>
+                                    <select name="work_order_id" class="form-select">
+                                        <option value="">{{ __('maintenance.select_work_order') }}</option>
+                                        @foreach($workOrders as $workOrder)
+                                            <option value="{{ $workOrder->id }}">{{ $workOrder->work_order_number }} · {{ $workOrder->customer?->name }} · {{ $workOrder->vehicle?->plate_number ?: __('maintenance.no_plate') }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">{{ __('maintenance.estimates') }}</label>
+                                    <select name="estimate_id" class="form-select">
+                                        <option value="">{{ __('maintenance.integrations.select_estimate') }}</option>
+                                        @foreach($estimates as $estimate)
+                                            <option value="{{ $estimate->id }}">{{ $estimate->estimate_number }} · {{ $estimate->customer?->name }} · {{ number_format((float) $estimate->grand_total, 2) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3"><label class="form-label">{{ __('maintenance.issued_at') }}</label><input type="datetime-local" name="issued_at" class="form-control"></div>
+                                <button type="submit" class="btn btn-primary w-100">{{ __('maintenance.integrations.create_invoice') }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-7 d-flex">
+                    <div class="card flex-fill">
                         <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.integrations.accounting_sync') }}</h5></div>
                         <div class="card-body">
                             @forelse($invoices as $invoice)
-                                <div class="border-bottom pb-2 mb-2 d-flex justify-content-between align-items-start">
-                                    <div>
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                        <div>
                                         <strong>{{ $invoice->invoice_number }}</strong>
-                                        <div class="text-muted small">{{ $invoice->customer?->name }} · {{ number_format((float) $invoice->grand_total, 2) }} · {{ strtoupper(str_replace('_', ' ', $invoice->payment_status)) }}</div>
+                                            <div class="text-muted small">{{ $invoice->customer?->name }} · {{ number_format((float) $invoice->paid_amount, 2) }}/{{ number_format((float) $invoice->grand_total, 2) }} · {{ strtoupper(str_replace('_', ' ', $invoice->payment_status)) }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.sync', $invoice) }}" class="d-inline">
+                                                @csrf
+                                                <button class="btn btn-sm btn-outline-light">{{ __('maintenance.integrations.sync') }}</button>
+                                            </form>
+                                            <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.documents.generate', $invoice) }}" class="d-inline">
+                                                @csrf
+                                                <input type="hidden" name="language" value="{{ app()->getLocale() === 'ar' ? 'ar' : 'en' }}">
+                                                <button class="btn btn-sm btn-outline-light">{{ __('maintenance.integrations.generate_invoice_pdf') }}</button>
+                                            </form>
+                                        </div>
                                     </div>
-                                    <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.sync', $invoice) }}">
+
+                                    @if($invoice->payment_status !== 'paid' && $invoice->payment_status !== 'cancelled')
+                                        <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.invoices.receipts.store', $invoice) }}" class="row g-2 mt-2">
                                         @csrf
-                                        <button class="btn btn-sm btn-outline-light">{{ __('maintenance.integrations.sync') }}</button>
-                                    </form>
+                                            <div class="col-md-3"><input type="number" step="0.01" min="0.01" name="amount" class="form-control form-control-sm" placeholder="{{ __('maintenance.amount') }}" required></div>
+                                            <div class="col-md-3">
+                                                <select name="payment_method" class="form-select form-select-sm" required>
+                                                    <option value="cash">Cash</option>
+                                                    <option value="card">Card</option>
+                                                    <option value="bank_transfer">Bank transfer</option>
+                                                    <option value="online">Online</option>
+                                                    <option value="cheque">Cheque</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3"><input name="reference_number" class="form-control form-control-sm" placeholder="{{ __('maintenance.reference_number') }}"></div>
+                                            <div class="col-md-3"><button class="btn btn-sm btn-primary w-100">{{ __('maintenance.integrations.record_receipt') }}</button></div>
+                                        </form>
+                                    @endif
                                 </div>
                             @empty
                                 <p class="text-muted mb-0">{{ __('maintenance.integrations.no_invoices') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-5 d-flex">
+                    <div class="card flex-fill">
+                        <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.integrations.receipts') }}</h5></div>
+                        <div class="card-body">
+                            @forelse($receipts as $receipt)
+                                <div class="border-bottom pb-2 mb-2 d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <strong>{{ $receipt->receipt_number }}</strong>
+                                        <div class="text-muted small">{{ $receipt->invoice?->invoice_number }} · {{ $receipt->customer?->name }} · {{ number_format((float) $receipt->amount, 2) }} {{ $receipt->currency }}</div>
+                                    </div>
+                                    <form method="POST" action="{{ route('automotive.admin.maintenance.integrations.receipts.documents.generate', $receipt) }}">
+                                        @csrf
+                                        <input type="hidden" name="language" value="{{ app()->getLocale() === 'ar' ? 'ar' : 'en' }}">
+                                        <button class="btn btn-sm btn-outline-light">{{ __('maintenance.integrations.generate_receipt_pdf') }}</button>
+                                    </form>
+                                </div>
+                            @empty
+                                <p class="text-muted mb-0">{{ __('maintenance.no_receipts') }}</p>
                             @endforelse
                         </div>
                     </div>

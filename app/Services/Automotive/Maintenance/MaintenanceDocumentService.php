@@ -6,6 +6,8 @@ use App\Models\Core\Documents\GeneratedDocument;
 use App\Models\Maintenance\MaintenanceApprovalRecord;
 use App\Models\Maintenance\MaintenanceDelivery;
 use App\Models\Maintenance\MaintenanceEstimate;
+use App\Models\Maintenance\MaintenanceInvoice;
+use App\Models\Maintenance\MaintenanceReceipt;
 use App\Models\Maintenance\MaintenanceWarranty;
 use App\Models\Maintenance\VehicleCheckIn;
 use App\Models\WorkOrder;
@@ -98,6 +100,42 @@ class MaintenanceDocumentService
         ], $options + [
             'documentable' => $approval,
             'branch_id' => $approval->branch_id,
+        ]);
+    }
+
+    public function generateInvoice(MaintenanceInvoice $invoice, array $options): GeneratedDocument
+    {
+        $invoice->load(['branch', 'customer', 'vehicle', 'workOrder.lines', 'estimate.lines', 'receipts']);
+
+        return $this->documents->generate('maintenance_invoice', [
+            'invoice' => $invoice->toArray(),
+            'branch' => $invoice->branch?->toArray() ?? [],
+            'customer' => $invoice->customer?->toArray() ?? [],
+            'vehicle' => $invoice->vehicle?->toArray() ?? [],
+            'work_order' => $invoice->workOrder?->toArray() ?? [],
+            'estimate' => $invoice->estimate?->toArray() ?? [],
+            'lines' => $invoice->estimate?->lines?->toArray() ?? $invoice->workOrder?->lines?->toArray() ?? [],
+            'receipts' => $invoice->receipts->toArray(),
+        ], $options + [
+            'documentable' => $invoice,
+            'branch_id' => $invoice->branch_id,
+        ]);
+    }
+
+    public function generateReceipt(MaintenanceReceipt $receipt, array $options): GeneratedDocument
+    {
+        $receipt->load(['branch', 'invoice', 'customer', 'vehicle', 'workOrder']);
+
+        return $this->documents->generate('maintenance_receipt', [
+            'receipt' => $receipt->toArray(),
+            'invoice' => $receipt->invoice?->toArray() ?? [],
+            'branch' => $receipt->branch?->toArray() ?? [],
+            'customer' => $receipt->customer?->toArray() ?? [],
+            'vehicle' => $receipt->vehicle?->toArray() ?? [],
+            'work_order' => $receipt->workOrder?->toArray() ?? [],
+        ], $options + [
+            'documentable' => $receipt,
+            'branch_id' => $receipt->branch_id,
         ]);
     }
 

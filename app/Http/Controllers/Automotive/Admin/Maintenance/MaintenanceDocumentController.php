@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Maintenance\MaintenanceApprovalRecord;
 use App\Models\Maintenance\MaintenanceDelivery;
 use App\Models\Maintenance\MaintenanceEstimate;
+use App\Models\Maintenance\MaintenanceInvoice;
+use App\Models\Maintenance\MaintenanceReceipt;
 use App\Models\Maintenance\MaintenanceWarranty;
 use App\Models\Maintenance\VehicleCheckIn;
 use App\Models\WorkOrder;
@@ -28,6 +30,8 @@ class MaintenanceDocumentController extends Controller
             'workOrders' => WorkOrder::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
             'estimates' => MaintenanceEstimate::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
             'approvalRecords' => MaintenanceApprovalRecord::query()->with(['estimate', 'customer', 'vehicle'])->latest('id')->limit(50)->get(),
+            'invoices' => MaintenanceInvoice::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
+            'receipts' => MaintenanceReceipt::query()->with(['invoice', 'customer', 'vehicle'])->latest('id')->limit(50)->get(),
             'deliveries' => MaintenanceDelivery::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
             'warranties' => MaintenanceWarranty::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
         ]);
@@ -36,7 +40,7 @@ class MaintenanceDocumentController extends Controller
     public function generate(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'document_type' => ['required', 'in:maintenance_check_in,maintenance_work_order,maintenance_estimate,maintenance_approval_certificate,maintenance_delivery_report,maintenance_warranty_certificate'],
+            'document_type' => ['required', 'in:maintenance_check_in,maintenance_work_order,maintenance_estimate,maintenance_approval_certificate,maintenance_invoice,maintenance_receipt,maintenance_delivery_report,maintenance_warranty_certificate'],
             'entity_id' => ['required', 'integer'],
             'language' => ['required', 'in:en,ar'],
         ]);
@@ -52,6 +56,8 @@ class MaintenanceDocumentController extends Controller
             'maintenance_work_order' => $this->documents->generateWorkOrder(WorkOrder::query()->findOrFail($validated['entity_id']), $options),
             'maintenance_estimate' => $this->documents->generateEstimate(MaintenanceEstimate::query()->findOrFail($validated['entity_id']), $options),
             'maintenance_approval_certificate' => $this->documents->generateApprovalCertificate(MaintenanceApprovalRecord::query()->findOrFail($validated['entity_id']), $options),
+            'maintenance_invoice' => $this->documents->generateInvoice(MaintenanceInvoice::query()->findOrFail($validated['entity_id']), $options),
+            'maintenance_receipt' => $this->documents->generateReceipt(MaintenanceReceipt::query()->findOrFail($validated['entity_id']), $options),
             'maintenance_delivery_report' => $this->documents->generateDelivery(MaintenanceDelivery::query()->findOrFail($validated['entity_id']), $options),
             'maintenance_warranty_certificate' => $this->documents->generateWarranty(MaintenanceWarranty::query()->findOrFail($validated['entity_id']), $options),
         };
@@ -111,6 +117,40 @@ class MaintenanceDocumentController extends Controller
 
         return redirect()
             ->route('automotive.admin.maintenance.estimates.show', $estimate)
+            ->with('success', __('maintenance.messages.document_generated') . ' ' . $document->document_number);
+    }
+
+    public function generateInvoice(Request $request, MaintenanceInvoice $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'language' => ['required', 'in:en,ar'],
+        ]);
+
+        $document = $this->documents->generateInvoice($invoice, [
+            'language' => $validated['language'],
+            'direction' => $validated['language'] === 'ar' ? 'rtl' : 'ltr',
+            'generated_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return redirect()
+            ->route('automotive.admin.maintenance.integrations.index')
+            ->with('success', __('maintenance.messages.document_generated') . ' ' . $document->document_number);
+    }
+
+    public function generateReceipt(Request $request, MaintenanceReceipt $receipt): RedirectResponse
+    {
+        $validated = $request->validate([
+            'language' => ['required', 'in:en,ar'],
+        ]);
+
+        $document = $this->documents->generateReceipt($receipt, [
+            'language' => $validated['language'],
+            'direction' => $validated['language'] === 'ar' ? 'rtl' : 'ltr',
+            'generated_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return redirect()
+            ->route('automotive.admin.maintenance.integrations.index')
             ->with('success', __('maintenance.messages.document_generated') . ' ' . $document->document_number);
     }
 }

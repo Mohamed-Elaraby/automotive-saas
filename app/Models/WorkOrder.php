@@ -124,4 +124,14 @@ class WorkOrder extends Model
     {
         return $this->hasMany(\App\Models\Maintenance\MaintenancePartsRequest::class);
     }
+
+    public function maintenanceInvoices(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceInvoice::class);
+    }
+
+    public function maintenanceReceipts(): HasMany
+    {
+        return $this->hasMany(\App\Models\Maintenance\MaintenanceReceipt::class);
+    }
 }

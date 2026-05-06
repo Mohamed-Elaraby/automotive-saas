@@ -5239,6 +5239,83 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Automotive Maintenance SaaS - Package 18 Light Invoicing and Receipt Document Actions - 2026-05-06
+
+Package completed:
+- extended the existing maintenance invoicing layer instead of duplicating it
+- added tenant migration `database/migrations/tenant/2026_05_06_080000_add_maintenance_receipts_table.php`
+- created `maintenance_receipts` with short explicit foreign key/index names to avoid MySQL 64-character identifier failures
+- added `App\Models\Maintenance\MaintenanceReceipt`
+- extended `MaintenanceInvoice` with receipt relationships
+- extended `WorkOrder` with maintenance invoice and receipt relationships
+- extended `MaintenanceIntegrationService` with:
+  - recent invoice/receipt lists
+  - operational invoice creation from work orders or estimates
+  - duplicate prevention for active work-order/estimate invoices
+  - receipt/payment capture
+  - work-order payment status updates
+  - payment timeline entries
+  - invoice/payment notifications
+  - optional accounting handoffs for `invoice.created` and `payment.received`
+- extended `MaintenanceIntegrationController` with invoice and receipt actions
+- added product-scoped routes:
+  - `automotive.admin.maintenance.integrations.invoices.store`
+  - `automotive.admin.maintenance.integrations.invoices.receipts.store`
+  - `automotive.admin.maintenance.integrations.invoices.documents.generate`
+  - `automotive.admin.maintenance.integrations.receipts.documents.generate`
+- added central document types:
+  - `maintenance_invoice`
+  - `maintenance_receipt`
+- added mPDF templates:
+  - `resources/views/products/automotive/documents/maintenance/invoice.blade.php`
+  - `resources/views/products/automotive/documents/maintenance/receipt.blade.php`
+- extended `MaintenanceDocumentService` and `MaintenanceDocumentController` to generate invoice and receipt PDFs through the central document engine
+- updated documents index references for invoice/receipt generation
+- updated integrations UI with:
+  - operational invoice creation form
+  - invoice payment capture form
+  - invoice PDF action
+  - receipt PDF action
+  - receipt list
+- extended maintenance notification rules for `invoice.created`, `payment.received`, and `invoice.paid`
+- extended Arabic and English maintenance translations
+
+Important architecture notes:
+- maintenance invoices remain operational and independent from accounting
+- accounting receives optional handoffs only; accounting failures do not block maintenance invoice/receipt capture
+- receipts are stored in the maintenance tenant database and update `maintenance_invoices.payment_status` and `work_orders.payment_status`
+- invoice and receipt PDFs use central mPDF document engine with snapshots, versions, QR, and multilingual layout support
+- customer-safe payment events can be delivered through the existing notification/SSE path without exposing internal notes or costs
+- all new migration identifiers use short names; do not rely on Laravel's auto-generated long names for long maintenance tables
+- routes remain tenant/product scoped; `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Verification:
+- `php -l database/migrations/tenant/2026_05_06_080000_add_maintenance_receipts_table.php`
+  - result: no syntax errors
+- `php -l app/Models/Maintenance/MaintenanceReceipt.php && php -l app/Models/Maintenance/MaintenanceInvoice.php && php -l app/Models/WorkOrder.php`
+  - result: no syntax errors
+- `php -l app/Services/Automotive/Maintenance/MaintenanceIntegrationService.php && php -l app/Services/Automotive/Maintenance/MaintenanceDocumentService.php`
+  - result: no syntax errors
+- `php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceIntegrationController.php && php -l app/Http/Controllers/Automotive/Admin/Maintenance/MaintenanceDocumentController.php`
+  - result: no syntax errors
+- `php -l lang/en/maintenance.php && php -l lang/ar/maintenance.php && php -l config/documents.php && php -l config/maintenance_notifications.php`
+  - result: no syntax errors
+- `php artisan route:list --name=automotive.admin.maintenance.integrations --except-vendor`
+  - result: invoice and receipt integration routes shown across localized/canonical/legacy route variants
+- `php artisan route:list --name=automotive.admin.maintenance.documents --except-vendor`
+  - result: document routes still shown across localized/canonical/legacy route variants
+- `php artisan view:cache && php artisan view:clear`
+  - result: Blade templates compiled and cache cleared
+- `php artisan config:clear`
+  - result: completed
+- `APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test tests/Feature/Automotive/Admin/TenantAdminAccessFlowTest.php --filter=workspace_root_is_the_canonical_tenant_entry_and_legacy_login_route_still_works`
+  - result: passed with existing PHP deprecation notice reported by the test runner
+
+Deployment reminder:
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
 ## Automotive Maintenance SaaS - Package 10 Appointments and Walk-in Flow - 2026-05-05
 
 Package completed:

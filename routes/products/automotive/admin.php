@@ -201,8 +201,16 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     ->name('maintenance.integrations.parts-requests.approve');
                 Route::post('/maintenance/integrations/parts-requests/{partsRequest}/issue', [MaintenanceIntegrationController::class, 'issuePartsRequest'])
                     ->name('maintenance.integrations.parts-requests.issue');
+                Route::post('/maintenance/integrations/invoices', [MaintenanceIntegrationController::class, 'storeInvoice'])
+                    ->name('maintenance.integrations.invoices.store');
+                Route::post('/maintenance/integrations/invoices/{invoice}/receipts', [MaintenanceIntegrationController::class, 'storeReceipt'])
+                    ->name('maintenance.integrations.invoices.receipts.store');
                 Route::post('/maintenance/integrations/invoices/{invoice}/sync', [MaintenanceIntegrationController::class, 'syncInvoice'])
                     ->name('maintenance.integrations.invoices.sync');
+                Route::post('/maintenance/integrations/invoices/{invoice}/documents/invoice', [MaintenanceDocumentController::class, 'generateInvoice'])
+                    ->name('maintenance.integrations.invoices.documents.generate');
+                Route::post('/maintenance/integrations/receipts/{receipt}/documents/receipt', [MaintenanceDocumentController::class, 'generateReceipt'])
+                    ->name('maintenance.integrations.receipts.documents.generate');
                 Route::get('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesIndex'])
                     ->name('maintenance.inspection-templates.index');
                 Route::post('/maintenance/inspection-templates', [MaintenanceWorkflowController::class, 'inspectionTemplatesStore'])

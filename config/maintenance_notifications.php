@@ -87,6 +87,21 @@ return [
             'severity' => 'info',
             'customer_safe' => false,
         ],
+        'invoice.created' => [
+            'audience' => 'internal',
+            'severity' => 'info',
+            'customer_safe' => true,
+        ],
+        'payment.received' => [
+            'audience' => 'internal',
+            'severity' => 'success',
+            'customer_safe' => true,
+        ],
+        'invoice.paid' => [
+            'audience' => 'customer',
+            'severity' => 'success',
+            'customer_safe' => true,
+        ],
         'vehicle.ready_for_delivery' => [
             'audience' => 'customer',
             'severity' => 'success',

@@ -10,43 +10,39 @@ use App\Models\WorkOrder;
 use App\Models\AccountingEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class MaintenanceInvoice extends Model
+class MaintenanceReceipt extends Model
 {
     protected $fillable = [
-        'invoice_number',
+        'receipt_number',
         'branch_id',
+        'invoice_id',
         'customer_id',
         'vehicle_id',
         'work_order_id',
-        'estimate_id',
-        'status',
-        'payment_status',
-        'subtotal',
-        'discount_total',
-        'tax_total',
-        'grand_total',
-        'paid_amount',
-        'issued_at',
-        'paid_at',
+        'payment_method',
+        'amount',
+        'currency',
+        'reference_number',
+        'received_at',
+        'notes',
         'created_by',
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'discount_total' => 'decimal:2',
-        'tax_total' => 'decimal:2',
-        'grand_total' => 'decimal:2',
-        'paid_amount' => 'decimal:2',
-        'issued_at' => 'datetime',
-        'paid_at' => 'datetime',
+        'amount' => 'decimal:2',
+        'received_at' => 'datetime',
     ];
 
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceInvoice::class, 'invoice_id');
     }
 
     public function customer(): BelongsTo
@@ -64,19 +60,9 @@ class MaintenanceInvoice extends Model
         return $this->belongsTo(WorkOrder::class);
     }
 
-    public function estimate(): BelongsTo
-    {
-        return $this->belongsTo(MaintenanceEstimate::class, 'estimate_id');
-    }
-
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function receipts(): HasMany
-    {
-        return $this->hasMany(MaintenanceReceipt::class, 'invoice_id')->latest('id');
     }
 
     public function accountingEvents(): MorphMany

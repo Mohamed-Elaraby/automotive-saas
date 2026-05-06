@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Automotive\Admin\Maintenance;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceInvoice;
 use App\Models\Maintenance\MaintenancePartsRequest;
 use App\Models\Maintenance\MaintenanceWorkOrderJob;
@@ -28,9 +29,11 @@ class MaintenanceIntegrationController extends Controller
             'handoffs' => $this->integrations->recentHandoffs(),
             'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
             'workOrders' => WorkOrder::query()->with(['customer', 'vehicle', 'branch'])->latest('id')->limit(150)->get(),
+            'estimates' => MaintenanceEstimate::query()->with(['customer', 'vehicle', 'workOrder'])->latest('id')->limit(150)->get(),
             'jobs' => MaintenanceWorkOrderJob::query()->with('workOrder')->latest('id')->limit(150)->get(),
             'stockItems' => StockItem::query()->where('is_active', true)->orderBy('name')->limit(200)->get(),
-            'invoices' => MaintenanceInvoice::query()->with(['customer', 'vehicle', 'workOrder'])->latest('id')->limit(100)->get(),
+            'invoices' => $this->integrations->recentInvoices(),
+            'receipts' => $this->integrations->recentReceipts(),
         ]);
     }
 
@@ -82,5 +85,39 @@ class MaintenanceIntegrationController extends Controller
                 ? __('maintenance.messages.invoice_synced_to_accounting')
                 : __('maintenance.messages.invoice_handoff_skipped')
         );
+    }
+
+    public function storeInvoice(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
+            'work_order_id' => ['nullable', 'integer', 'exists:work_orders,id'],
+            'estimate_id' => ['nullable', 'integer', 'exists:maintenance_estimates,id'],
+            'issued_at' => ['nullable', 'date'],
+        ]);
+
+        $invoice = $this->integrations->createInvoice($validated + [
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return back()->with('success', __('maintenance.messages.invoice_created') . ' ' . $invoice->invoice_number);
+    }
+
+    public function storeReceipt(Request $request, MaintenanceInvoice $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'payment_method' => ['required', 'in:cash,card,bank_transfer,online,cheque,other'],
+            'currency' => ['nullable', 'string', 'max:10'],
+            'reference_number' => ['nullable', 'string', 'max:255'],
+            'received_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $receipt = $this->integrations->recordReceipt($invoice, $validated + [
+            'created_by' => auth('automotive_admin')->id(),
+        ]);
+
+        return back()->with('success', __('maintenance.messages.receipt_created') . ' ' . $receipt->receipt_number);
     }
 }
