@@ -50,6 +50,7 @@ class AccessControlController extends Controller
             'subscriptions' => $subscriptions,
             'seatUsageRows' => $this->seatUsageRows($subscriptions, $tenantId),
             'userAccessSummary' => $this->userAccessSummary($tenantId),
+            'userBranchAccessSummary' => $this->userBranchAccessSummary($tenantId),
             'quickLinks' => $this->quickLinks(),
             'currentUserId' => auth('automotive_admin')->id(),
         ]);
@@ -143,6 +144,155 @@ class AccessControlController extends Controller
             ->with('success', __('access.product_access_updated'));
     }
 
+    public function productBranches(string $productKey): View
+    {
+        $tenant = tenant();
+        $tenantId = (string) $tenant->id;
+        $subscription = $this->subscriptions($tenantId)
+            ->first(fn (TenantProductSubscription $subscription): bool => (string) ($subscription->product_key ?: $subscription->product?->code) === $productKey);
+
+        abort_if(! $subscription, 404);
+
+        return view('automotive.admin.access.products.branches', [
+            'page' => 'access-control',
+            'tenant' => $tenant,
+            'productKey' => $productKey,
+            'subscription' => $subscription,
+            'branchRows' => $this->productBranchRows($productKey, $tenantId),
+            'usage' => collect($this->branchUsageRows(collect([$subscription]), $tenantId))->first(),
+        ]);
+    }
+
+    public function updateProductBranches(Request $request, string $productKey): RedirectResponse
+    {
+        $tenantId = (string) tenant()->id;
+        $branchIds = Branch::query()->pluck('id')->map(fn ($id): int => (int) $id);
+        $requestedBranchIds = collect($request->input('branches', []))
+            ->map(fn ($id): int => (int) $id)
+            ->intersect($branchIds)
+            ->values();
+
+        $currentEnabledIds = TenantProductBranch::query()
+            ->where('tenant_id', $tenantId)
+            ->where('product_key', $productKey)
+            ->enabled()
+            ->pluck('branch_id')
+            ->map(fn ($id): int => (int) $id);
+
+        $activeUserBranchAssignments = TenantUserProductBranch::query()
+            ->where('tenant_id', $tenantId)
+            ->where('product_key', $productKey)
+            ->enabled()
+            ->exists();
+
+        if ($activeUserBranchAssignments && $requestedBranchIds->isEmpty()) {
+            return back()
+                ->withErrors(['branches' => __('access.cannot_disable_last_product_branch')])
+                ->withInput();
+        }
+
+        try {
+            DB::transaction(function () use ($productKey, $requestedBranchIds, $currentEnabledIds): void {
+                foreach ($requestedBranchIds as $branchId) {
+                    $this->branchAccess->enableBranch((int) $branchId, $productKey, [
+                        'source' => 'access_control_ui',
+                    ]);
+                }
+
+                foreach ($currentEnabledIds->diff($requestedBranchIds) as $branchId) {
+                    $this->branchAccess->disableBranch((int) $branchId, $productKey);
+                }
+            });
+        } catch (RuntimeException $exception) {
+            $message = str_contains($exception->getMessage(), 'No available branches')
+                ? __('access.branch_limit_reached')
+                : $exception->getMessage();
+
+            return back()
+                ->withErrors(['branches' => $message])
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.access.products.branches.index', $productKey)
+            ->with('success', __('access.product_branches_updated'));
+    }
+
+    public function editUserBranches(User $user): View
+    {
+        $tenantId = (string) tenant()->id;
+
+        return view('automotive.admin.access.users.branches', [
+            'page' => 'access-control',
+            'user' => $user,
+            'productRows' => $this->userBranchRows($user, $tenantId),
+        ]);
+    }
+
+    public function updateUserBranches(Request $request, User $user): RedirectResponse
+    {
+        $tenantId = (string) tenant()->id;
+        $activeProductKeys = TenantUserProductAccess::query()
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $user->id)
+            ->active()
+            ->pluck('product_key')
+            ->values();
+
+        $requested = collect($request->input('branches', []));
+
+        if ($requested->keys()->diff($activeProductKeys)->isNotEmpty()) {
+            return back()
+                ->withErrors(['branches' => __('access.invalid_branch_assignment')])
+                ->withInput();
+        }
+
+        try {
+            DB::transaction(function () use ($user, $tenantId, $activeProductKeys, $requested): void {
+                foreach ($activeProductKeys as $productKey) {
+                    $enabledBranchIds = $this->branchAccess
+                        ->enabledBranchesForProduct($productKey, $tenantId)
+                        ->pluck('id')
+                        ->map(fn ($id): int => (int) $id);
+
+                    $requestedBranchIds = collect($requested->get($productKey, []))
+                        ->map(fn ($id): int => (int) $id)
+                        ->values();
+
+                    if ($requestedBranchIds->diff($enabledBranchIds)->isNotEmpty()) {
+                        throw new RuntimeException('Branch is not enabled for product.');
+                    }
+
+                    foreach ($requestedBranchIds as $branchId) {
+                        $this->branchAccess->grantUserBranchAccess($user, (int) $branchId, $productKey, 'member', [
+                            'source' => 'access_control_ui',
+                        ]);
+                    }
+
+                    $currentAssignedIds = TenantUserProductBranch::query()
+                        ->where('tenant_id', $tenantId)
+                        ->where('user_id', $user->id)
+                        ->where('product_key', $productKey)
+                        ->enabled()
+                        ->pluck('branch_id')
+                        ->map(fn ($id): int => (int) $id);
+
+                    foreach ($currentAssignedIds->diff($requestedBranchIds) as $branchId) {
+                        $this->branchAccess->revokeUserBranchAccess($user, (int) $branchId, $productKey);
+                    }
+                }
+            });
+        } catch (RuntimeException) {
+            return back()
+                ->withErrors(['branches' => __('access.invalid_branch_assignment')])
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.access.users.branches.edit', $user)
+            ->with('success', __('access.user_branches_updated'));
+    }
+
     private function dashboard(string $activePanel): View
     {
         $tenant = tenant();
@@ -164,6 +314,11 @@ class AccessControlController extends Controller
             'productBranchCount' => $this->tenantTableCount(TenantProductBranch::class, 'tenant_product_branches', $tenantId),
             'seatUsageRows' => $this->seatUsageRows($subscriptions, $tenantId),
             'branchUsageRows' => $this->branchUsageRows($subscriptions, $tenantId),
+            'usersWithoutBranchAccessCount' => $this->usersWithoutBranchAccessCount($tenantId),
+            'branchLimitReachedRows' => collect($this->branchUsageRows($subscriptions, $tenantId))
+                ->filter(fn (array $row): bool => $row['available'] !== null && (int) $row['available'] <= 0)
+                ->values()
+                ->all(),
             'quickLinks' => $this->quickLinks(),
             'primaryProductKey' => $primaryProductKey,
         ]);
@@ -244,6 +399,45 @@ class AccessControlController extends Controller
             ->all();
     }
 
+    private function userBranchAccessSummary(string $tenantId): array
+    {
+        if (! Schema::hasTable('tenant_user_product_branches')) {
+            return [];
+        }
+
+        return TenantUserProductBranch::query()
+            ->where('tenant_id', $tenantId)
+            ->enabled()
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn (Collection $rows): array => [
+                'count' => $rows->count(),
+                'product_keys' => $rows->pluck('product_key')->unique()->values()->all(),
+            ])
+            ->all();
+    }
+
+    private function usersWithoutBranchAccessCount(string $tenantId): int
+    {
+        $productAccessUserIds = TenantUserProductAccess::query()
+            ->where('tenant_id', $tenantId)
+            ->active()
+            ->pluck('user_id')
+            ->unique();
+
+        if ($productAccessUserIds->isEmpty()) {
+            return 0;
+        }
+
+        $branchAccessUserIds = TenantUserProductBranch::query()
+            ->where('tenant_id', $tenantId)
+            ->enabled()
+            ->pluck('user_id')
+            ->unique();
+
+        return $productAccessUserIds->diff($branchAccessUserIds)->count();
+    }
+
     private function userProductRows(User $user, Collection $subscriptions, string $tenantId): array
     {
         $activeAccess = Schema::hasTable('tenant_user_product_access')
@@ -262,6 +456,55 @@ class AccessControlController extends Controller
                     && (int) $row['available'] <= 0;
 
                 return $row;
+            })
+            ->values()
+            ->all();
+    }
+
+    private function productBranchRows(string $productKey, string $tenantId): array
+    {
+        $enabledBranchIds = TenantProductBranch::query()
+            ->where('tenant_id', $tenantId)
+            ->where('product_key', $productKey)
+            ->enabled()
+            ->pluck('branch_id')
+            ->map(fn ($id): int => (int) $id);
+
+        return Branch::query()
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Branch $branch): array => [
+                'branch' => $branch,
+                'is_enabled' => $enabledBranchIds->contains((int) $branch->id),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function userBranchRows(User $user, string $tenantId): array
+    {
+        return TenantUserProductAccess::query()
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $user->id)
+            ->active()
+            ->orderBy('product_key')
+            ->get()
+            ->map(function (TenantUserProductAccess $access) use ($user, $tenantId): array {
+                $productKey = (string) $access->product_key;
+                $assignedBranchIds = TenantUserProductBranch::query()
+                    ->where('tenant_id', $tenantId)
+                    ->where('user_id', $user->id)
+                    ->where('product_key', $productKey)
+                    ->enabled()
+                    ->pluck('branch_id')
+                    ->map(fn ($id): int => (int) $id);
+
+                return [
+                    'product_key' => $productKey,
+                    'enabled_branches' => $this->branchAccess->enabledBranchesForProduct($productKey, $tenantId),
+                    'assigned_branch_ids' => $assignedBranchIds,
+                ];
             })
             ->values()
             ->all();

@@ -74,6 +74,7 @@
                             <th>{{ __('tenant.name') }}</th>
                             <th>{{ __('tenant.email') }}</th>
                             <th>{{ __('access.enabled_products') }}</th>
+                            <th>{{ __('access.branch_access') }}</th>
                             <th>{{ __('tenant.status') }}</th>
                             <th class="no-sort"></th>
                         </tr>
@@ -81,6 +82,7 @@
                     <tbody>
                         @forelse($users as $user)
                             @php($products = $userAccessSummary[$user->id] ?? [])
+                            @php($branchSummary = $userBranchAccessSummary[$user->id] ?? ['count' => 0, 'product_keys' => []])
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -107,11 +109,24 @@
                                     @endforelse
                                 </td>
                                 <td>
+                                    <div class="fw-semibold">{{ $branchSummary['count'] }} {{ __('access.branches') }}</div>
+                                    @if(!empty($products) && (int) $branchSummary['count'] === 0)
+                                        <span class="badge bg-warning-transparent text-warning border">{{ __('access.product_access_without_branch_access') }}</span>
+                                    @else
+                                        @foreach($branchSummary['product_keys'] as $productKey)
+                                            <span class="badge bg-light text-muted border me-1">{{ $productKey }}</span>
+                                        @endforeach
+                                    @endif
+                                </td>
+                                <td>
                                     <span class="badge badge-soft-success d-inline-flex align-items-center">
                                         {{ __('tenant.active') }} <i class="isax isax-tick-circle ms-1"></i>
                                     </span>
                                 </td>
                                 <td class="text-end">
+                                    <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
+                                        <i class="isax isax-buildings me-1"></i>{{ __('access.manage_branch_access') }}
+                                    </a>
                                     <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
                                         <i class="isax isax-layer me-1"></i>{{ __('access.manage_product_access') }}
                                     </a>
@@ -119,7 +134,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">{{ __('tenant.no_users_found') }}</td>
+                                <td colspan="6" class="text-center text-muted py-4">{{ __('tenant.no_users_found') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

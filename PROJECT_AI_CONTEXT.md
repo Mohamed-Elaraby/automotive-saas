@@ -5912,6 +5912,68 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Phase 2 Package 12 - Branch Access UI and Branch Context - 2026-05-07
+
+Package completed:
+- added Product Branch Activation UI under `automotive.admin.access.products.branches.*`
+- added User Branch Assignment UI under `automotive.admin.access.users.branches.*`
+- added Branch Context selector/switch/clear routes under `automotive.admin.access.branch-context.*`
+- added central `BranchContextService`
+- added `EnsureValidBranchContext` middleware alias as `tenant.branch.context`
+- extended `ProductBranchAccessService` with reusable product enabled branches and user branch revoke methods
+- added branch switcher support to the Automotive admin header
+- updated Access Dashboard with branch usage cards, branch limit status, and users-without-branch-access visibility
+- updated Access Users list with branch assignment counts and Manage Branch Access actions
+- added Arabic and English access translations for branch access UI
+- added `BranchAccessManagementTest`
+
+Theme/UI review:
+- reviewed `resources/views/automotive/admin/branches/index.blade.php`
+  - reused its table, branch avatar, status badge, card, and action layout patterns
+- reviewed current Access UI views:
+  - `resources/views/automotive/admin/access/index.blade.php`
+  - `resources/views/automotive/admin/access/users/index.blade.php`
+  - `resources/views/automotive/admin/access/users/products.blade.php`
+- did not use `layout.mainlayout`
+- all new Package 12 views extend `automotive.admin.layouts.adminLayout.mainlayout`
+
+Routes added:
+- `automotive.admin.access.products.branches.index`
+- `automotive.admin.access.products.branches.update`
+- `automotive.admin.access.users.branches.edit`
+- `automotive.admin.access.users.branches.update`
+- `automotive.admin.access.branch-context.select`
+- `automotive.admin.access.branch-context.store`
+- `automotive.admin.access.branch-context.switch`
+- `automotive.admin.access.branch-context.clear`
+
+Verification:
+- `php artisan test tests/Feature/Automotive/Admin/BranchAccessManagementTest.php`
+  - result: 12 passed, 40 assertions
+- `php artisan test tests/Feature/Automotive/Admin/AccessControlDashboardTest.php`
+  - result: 4 passed, 15 assertions
+- `php artisan test tests/Feature/Automotive/Admin/ProductAccessManagementTest.php`
+  - result: 6 passed, 19 assertions
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php tests/Feature/Tenancy/CentralBusinessEntitiesTest.php tests/Feature/Tenancy/DocumentEngineAndNumberingTest.php tests/Feature/Tenancy/AttachmentAndNotificationFoundationTest.php tests/Feature/Tenancy/PlatformProductionAcceptanceTest.php`
+  - result: 55 passed, 185 assertions
+- `php artisan route:list --name=automotive.admin.access --except-vendor`
+  - result: 64 access route variants shown, including localized/canonical/legacy variants
+- `git diff --check`
+  - result: no whitespace errors
+
+Important architecture notes:
+- branch enable/disable operations go through `ProductBranchAccessService`
+- user branch assignment requires active product access and product-enabled branches
+- branch context uses session keys `current_product_key` and `current_branch_id`
+- branch selector and switch routes are available to authenticated tenant users, not only access managers
+- access management screens remain protected by `tenant.access.manage`
+- dashboard branch context middleware is active through `tenant.branch.context`
+- `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
+Next package:
+- Package 13: Roles & Permission Matrix UI
+
 ## Automotive Maintenance SaaS - Package 22 Integration Contracts, Payment Gateway Readiness, and Public API Hardening - 2026-05-06
 
 Package completed:

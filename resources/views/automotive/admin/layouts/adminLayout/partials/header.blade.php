@@ -6,6 +6,10 @@
     $focusedWorkspaceProductFamily = $focusedWorkspaceProductFamily ?? 'automotive_service';
     $workspaceQuery = $focusedWorkspaceProductCode !== '' ? ['workspace_product' => $focusedWorkspaceProductCode] : [];
     $customerPortalUrl = route('automotive.portal');
+    $branchContext = is_array($branchContext ?? null) ? $branchContext : [];
+    $allowedHeaderBranches = $branchContext['allowed_branches'] ?? collect();
+    $currentHeaderBranch = $branchContext['current_branch'] ?? null;
+    $currentHeaderProductKey = $branchContext['product_key'] ?? $focusedWorkspaceProductCode;
 
     $tenantAdminRouteLabels = [
         'automotive.admin.dashboard' => __('shared.dashboard'),
@@ -106,6 +110,36 @@
                 @endif
 
                 <div class="d-flex align-items-center">
+                    @if($allowedHeaderBranches instanceof \Illuminate\Support\Collection && $allowedHeaderBranches->count() > 1)
+                        <div class="dropdown me-2">
+                            <a href="javascript:void(0);" class="btn btn-outline-white dropdown-toggle d-inline-flex align-items-center" data-bs-toggle="dropdown">
+                                <i class="isax isax-buildings me-1"></i>
+                                {{ $currentHeaderBranch?->name ?? __('access.select_branch') }}
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end p-2">
+                                @foreach($allowedHeaderBranches as $branch)
+                                    <form method="POST" action="{{ route('automotive.admin.access.branch-context.switch') }}" class="mb-1">
+                                        @csrf
+                                        <input type="hidden" name="product_key" value="{{ $currentHeaderProductKey }}">
+                                        <input type="hidden" name="branch_id" value="{{ $branch->id }}">
+                                        <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between rounded-1">
+                                            <span>
+                                                <i class="isax isax-location me-2"></i>{{ $branch->name }}
+                                            </span>
+                                            @if((int) ($currentHeaderBranch?->id ?? 0) === (int) $branch->id)
+                                                <i class="isax isax-tick-circle text-success"></i>
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
+                        </div>
+                    @elseif(($branchContext['has_no_branch_access'] ?? false) && ($branchContext['has_product_access'] ?? false))
+                        <a href="{{ route('automotive.admin.access.branch-context.select') }}" class="btn btn-outline-warning me-2 d-inline-flex align-items-center">
+                            <i class="isax isax-location-cross me-1"></i>{{ __('access.no_branch_access_assigned') }}
+                        </a>
+                    @endif
+
                     @include('shared.partials.language-switcher')
 
                     <a href="{{ $customerPortalUrl }}" class="btn btn-primary me-2 d-none d-lg-inline-flex align-items-center">

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Tenancy\TenantWorkspaceProductService;
+use App\Services\Tenancy\BranchContextService;
 use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use App\Services\Core\Documents\DocumentRendererInterface;
@@ -43,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('workspaceSidebarSections', []);
                 $view->with('workspaceQuickCreateActions', []);
                 $view->with('canManageAccessControl', false);
+                $view->with('branchContext', []);
 
                 return;
             }
@@ -63,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('workspaceSidebarSections', $workspaceModuleCatalogService->getSidebarSections($focusedWorkspaceProduct));
             $view->with('workspaceQuickCreateActions', $workspaceModuleCatalogService->getQuickCreateActions($focusedWorkspaceProduct));
             $view->with('canManageAccessControl', $this->canManageAccessControl((string) $tenant->id));
+            $view->with('branchContext', $this->branchContextPayload(is_array($focusedWorkspaceProduct) ? ($focusedWorkspaceProduct['product_key'] ?? null) : null));
         });
 
         $this->app->booted(function () {
@@ -90,6 +93,21 @@ class AppServiceProvider extends ServiceProvider
                 ->can($user, 'automotive_service', 'automotive.access.manage', null, $tenantId);
         } catch (\Throwable) {
             return false;
+        }
+    }
+
+    private function branchContextPayload(?string $focusedProductKey): array
+    {
+        $user = auth('automotive_admin')->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        try {
+            return app(BranchContextService::class)->contextForUser($user, $focusedProductKey ?: 'automotive_service');
+        } catch (\Throwable) {
+            return [];
         }
     }
 }

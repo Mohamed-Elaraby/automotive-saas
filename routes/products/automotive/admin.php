@@ -4,6 +4,7 @@ use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
 use App\Http\Controllers\Automotive\Admin\AccessControlController;
 use App\Http\Controllers\Automotive\Admin\BillingController;
 use App\Http\Controllers\Automotive\Admin\BranchController;
+use App\Http\Controllers\Automotive\Admin\BranchContextController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
 use App\Http\Controllers\Automotive\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Automotive\Admin\InventoryReportController;
@@ -62,7 +63,18 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
             ->name('stop-impersonation');
 
             Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
-            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/dashboard', [DashboardController::class, 'index'])
+                ->middleware('tenant.branch.context')
+                ->name('dashboard');
+
+            Route::prefix('access/branch-context')
+                ->name('access.branch-context.')
+                ->group(function () {
+                    Route::get('/select', [BranchContextController::class, 'select'])->name('select');
+                    Route::post('/', [BranchContextController::class, 'store'])->name('store');
+                    Route::post('/switch', [BranchContextController::class, 'switch'])->name('switch');
+                    Route::post('/clear', [BranchContextController::class, 'clear'])->name('clear');
+                });
 
             Route::prefix('access')
                 ->middleware('tenant.access.manage')
@@ -72,9 +84,13 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     Route::get('/users', [AccessControlController::class, 'users'])->name('users.index');
                     Route::get('/users/{user}/products', [AccessControlController::class, 'editUserProducts'])->name('users.products.edit');
                     Route::put('/users/{user}/products', [AccessControlController::class, 'updateUserProducts'])->name('users.products.update');
+                    Route::get('/users/{user}/branches', [AccessControlController::class, 'editUserBranches'])->name('users.branches.edit');
+                    Route::put('/users/{user}/branches', [AccessControlController::class, 'updateUserBranches'])->name('users.branches.update');
                     Route::get('/roles', [AccessControlController::class, 'roles'])->name('roles.index');
                     Route::get('/branches', [AccessControlController::class, 'branches'])->name('branches.index');
                     Route::get('/products', [AccessControlController::class, 'products'])->name('products.index');
+                    Route::get('/products/{productKey}/branches', [AccessControlController::class, 'productBranches'])->name('products.branches.index');
+                    Route::put('/products/{productKey}/branches', [AccessControlController::class, 'updateProductBranches'])->name('products.branches.update');
                     Route::get('/diagnostics', [AccessControlController::class, 'diagnostics'])->name('diagnostics.index');
                 });
 

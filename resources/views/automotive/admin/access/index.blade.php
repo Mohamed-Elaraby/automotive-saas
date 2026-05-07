@@ -132,6 +132,53 @@
                 </div>
             @endif
 
+            @if(!empty($branchUsageRows))
+                <div class="row">
+                    @foreach($branchUsageRows as $row)
+                        <div class="col-xxl-3 col-xl-4 col-md-6 d-flex">
+                            <div class="card flex-fill">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-gray-6">{{ $row['product_name'] }}</span>
+                                        <span class="avatar avatar-sm bg-secondary-transparent rounded-circle">
+                                            <i class="isax isax-buildings text-secondary"></i>
+                                        </span>
+                                    </div>
+                                    <h3 class="mb-1">
+                                        {{ $row['enabled'] }} / {{ $row['limit'] === null ? __('access.unlimited') : $row['limit'] }}
+                                    </h3>
+                                    <p class="mb-2 text-muted">
+                                        {{ __('access.available_branches') }}:
+                                        {{ $row['available'] === null ? __('access.unlimited') : $row['available'] }}
+                                    </p>
+                                    <a href="{{ route('automotive.admin.access.products.branches.index', $row['product_key']) }}" class="btn btn-outline-white btn-sm d-inline-flex align-items-center">
+                                        <i class="isax isax-setting-2 me-1"></i>{{ __('access.manage_product_branches') }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    <div class="col-xxl-3 col-xl-4 col-md-6 d-flex">
+                        <div class="card flex-fill">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="text-gray-6">{{ __('access.users_without_branch_access') }}</span>
+                                    <span class="avatar avatar-sm bg-warning-transparent rounded-circle">
+                                        <i class="isax isax-location-cross text-warning"></i>
+                                    </span>
+                                </div>
+                                <h3 class="mb-1">{{ $usersWithoutBranchAccessCount }}</h3>
+                                <p class="mb-2 text-muted">{{ __('access.users_without_branch_access_hint') }}</p>
+                                <a href="{{ route('automotive.admin.access.users.index') }}" class="btn btn-outline-white btn-sm d-inline-flex align-items-center">
+                                    <i class="isax isax-user-edit me-1"></i>{{ __('access.assign_user_branches') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-xl-7 d-flex">
                     <div class="card flex-fill">
@@ -211,6 +258,9 @@
                                             {{ __('access.available') }}:
                                             {{ $row['available'] === null ? __('access.unlimited') : $row['available'] }}
                                         </div>
+                                        <a href="{{ route('automotive.admin.access.products.branches.index', $row['product_key']) }}" class="small">
+                                            {{ __('access.manage_product_branches') }}
+                                        </a>
                                     </div>
                                 </div>
                             @empty

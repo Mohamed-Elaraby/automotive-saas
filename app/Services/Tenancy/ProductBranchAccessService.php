@@ -60,6 +60,21 @@ class ProductBranchAccessService
         return true;
     }
 
+    public function enabledBranchesForProduct(string $productKey, ?string $tenantId = null): Collection
+    {
+        $tenantId = $tenantId ?: $this->tenantId();
+        $productKey = $this->normalizeProductKey($productKey);
+
+        return Branch::query()
+            ->whereIn('id', TenantProductBranch::query()
+                ->where('tenant_id', $tenantId)
+                ->where('product_key', $productKey)
+                ->enabled()
+                ->select('branch_id'))
+            ->orderBy('name')
+            ->get();
+    }
+
     public function grantUserBranchAccess(User|int $user, Branch|int $branch, string $productKey, string $accessLevel = 'member', array $metadata = []): TenantUserProductBranch
     {
         $branchId = $this->resolveBranchId($branch);
@@ -86,6 +101,27 @@ class ProductBranchAccessService
                 'metadata' => $metadata,
             ]
         );
+    }
+
+    public function revokeUserBranchAccess(User|int $user, Branch|int $branch, string $productKey): bool
+    {
+        $access = TenantUserProductBranch::query()
+            ->where('tenant_id', $this->tenantId())
+            ->where('user_id', $this->resolveUserId($user))
+            ->where('product_key', $this->normalizeProductKey($productKey))
+            ->where('branch_id', $this->resolveBranchId($branch))
+            ->first();
+
+        if (! $access) {
+            return false;
+        }
+
+        $access->update([
+            'is_enabled' => false,
+            'revoked_at' => now(),
+        ]);
+
+        return true;
     }
 
     public function userAllowedBranches(User|int $user, string $productKey, ?string $tenantId = null): Collection
