@@ -86,6 +86,7 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     Route::put('/users/{user}/products', [AccessControlController::class, 'updateUserProducts'])->name('users.products.update');
                     Route::get('/users/{user}/branches', [AccessControlController::class, 'editUserBranches'])->name('users.branches.edit');
                     Route::put('/users/{user}/branches', [AccessControlController::class, 'updateUserBranches'])->name('users.branches.update');
+                    Route::post('/users/{user}/owner-sync', [AccessControlController::class, 'syncOwnerAccess'])->name('users.owner.sync');
                     Route::get('/roles', [AccessControlController::class, 'roles'])->name('roles.index');
                     Route::get('/branches', [AccessControlController::class, 'branches'])->name('branches.index');
                     Route::get('/products', [AccessControlController::class, 'products'])->name('products.index');

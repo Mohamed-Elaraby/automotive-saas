@@ -15,7 +15,8 @@ class BranchContextService
 
     public function __construct(
         protected ProductBranchAccessService $branchAccess,
-        protected TenantUserProductAccessService $productAccess
+        protected TenantUserProductAccessService $productAccess,
+        protected WorkspaceOwnerAccessService $ownerAccess
     ) {
     }
 
@@ -58,18 +59,38 @@ class BranchContextService
 
     public function allowedBranchesForUser(User|int $user, string $productKey): Collection
     {
+        if ($this->ownerAccess->hasImplicitProductAccess($user, $productKey, $this->tenantId())) {
+            return $this->branchAccess
+                ->enabledBranchesForProduct($this->normalizeProductKey($productKey), $this->tenantId())
+                ->where('is_active', true)
+                ->values();
+        }
+
         return $this->branchAccess->userAllowedBranches($user, $this->normalizeProductKey($productKey), $this->tenantId());
     }
 
     public function productKeysForUser(User|int $user): Collection
     {
-        return TenantUserProductAccess::query()
+        $query = TenantUserProductAccess::query()
             ->where('tenant_id', $this->tenantId())
             ->where('user_id', $this->resolveUserId($user))
             ->active()
             ->orderBy('product_key')
-            ->pluck('product_key')
-            ->values();
+            ->pluck('product_key');
+
+        if ($this->ownerAccess->isWorkspaceOwner($user)) {
+            $ownerProducts = \App\Models\TenantProductSubscription::query()
+                ->with(['product'])
+                ->where('tenant_id', $this->tenantId())
+                ->whereIn('status', ['active', 'trialing'])
+                ->get()
+                ->map(fn ($subscription): string => (string) ($subscription->product_key ?: $subscription->product?->code))
+                ->filter();
+
+            $query = $query->merge($ownerProducts);
+        }
+
+        return $query->unique()->values();
     }
 
     public function autoSelectBranchIfOnlyOne(User|int $user, string $productKey): ?Branch

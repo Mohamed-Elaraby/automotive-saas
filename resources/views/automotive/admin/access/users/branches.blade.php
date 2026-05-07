@@ -18,6 +18,16 @@
 
             @include('automotive.admin.partials.alerts')
 
+            @if($isPrimaryOwner)
+                <div class="alert alert-primary d-flex align-items-start gap-2">
+                    <i class="isax isax-buildings mt-1"></i>
+                    <div>
+                        <div class="fw-semibold">{{ __('access.workspace_owner') }} · {{ __('access.owner_implicit_branch_access') }}</div>
+                        <div>{{ __('access.owner_branch_access_hint') }}</div>
+                    </div>
+                </div>
+            @endif
+
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -68,13 +78,17 @@
                                             </span>
                                             <span class="d-flex align-items-center gap-2">
                                                 <span class="badge bg-light text-muted border">{{ __('access.access_level_member') }}</span>
-                                                <input
-                                                    class="form-check-input m-0"
-                                                    type="checkbox"
-                                                    name="branches[{{ $row['product_key'] }}][]"
-                                                    value="{{ $branch->id }}"
-                                                    @checked($row['assigned_branch_ids']->contains((int) $branch->id))
-                                                >
+                                                @if($row['owner_implicit'] ?? false)
+                                                    <span class="badge bg-primary-transparent text-primary border">{{ __('access.implicit_full_access') }}</span>
+                                                @else
+                                                    <input
+                                                        class="form-check-input m-0"
+                                                        type="checkbox"
+                                                        name="branches[{{ $row['product_key'] }}][]"
+                                                        value="{{ $branch->id }}"
+                                                        @checked($row['assigned_branch_ids']->contains((int) $branch->id))
+                                                    >
+                                                @endif
                                             </span>
                                         </label>
                                     @empty

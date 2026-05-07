@@ -250,6 +250,15 @@ class ProductPermissionServiceTest extends TestCase
 
     protected function tenantUser(string $email): User
     {
+        if (! User::query()->whereKey(1)->exists()) {
+            User::query()->create([
+                'id' => 1,
+                'name' => 'Workspace Owner',
+                'email' => 'owner@example.test',
+                'password' => bcrypt('secret-pass'),
+            ]);
+        }
+
         return User::query()->create([
             'name' => Str::headline(Str::before($email, '@')),
             'email' => $email,

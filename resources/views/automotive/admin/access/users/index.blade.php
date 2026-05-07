@@ -83,6 +83,7 @@
                         @forelse($users as $user)
                             @php($products = $userAccessSummary[$user->id] ?? [])
                             @php($branchSummary = $userBranchAccessSummary[$user->id] ?? ['count' => 0, 'product_keys' => []])
+                            @php($isOwner = in_array((int) $user->id, $ownerUserIds ?? [], true))
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -105,12 +106,22 @@
                                     @forelse($products as $productKey)
                                         <span class="badge bg-success-transparent text-success border me-1">{{ $productKey }}</span>
                                     @empty
-                                        <span class="text-muted">{{ __('access.no_product_access') }}</span>
+                                        @if($isOwner)
+                                            <span class="badge bg-primary-transparent text-primary border me-1">{{ __('access.owner_access') }}</span>
+                                            <span class="badge bg-info-transparent text-info border">{{ __('access.does_not_consume_product_seat') }}</span>
+                                        @else
+                                            <span class="text-muted">{{ __('access.no_product_access') }}</span>
+                                        @endif
                                     @endforelse
                                 </td>
                                 <td>
-                                    <div class="fw-semibold">{{ $branchSummary['count'] }} {{ __('access.branches') }}</div>
-                                    @if(!empty($products) && (int) $branchSummary['count'] === 0)
+                                    @if($isOwner && (int) $branchSummary['count'] === 0)
+                                        <div class="fw-semibold">{{ __('access.implicit_full_access') }}</div>
+                                        <span class="badge bg-primary-transparent text-primary border">{{ __('access.owner_implicit_branch_access') }}</span>
+                                    @else
+                                        <div class="fw-semibold">{{ $branchSummary['count'] }} {{ __('access.branches') }}</div>
+                                    @endif
+                                    @if(! $isOwner && !empty($products) && (int) $branchSummary['count'] === 0)
                                         <span class="badge bg-warning-transparent text-warning border">{{ __('access.product_access_without_branch_access') }}</span>
                                     @else
                                         @foreach($branchSummary['product_keys'] as $productKey)
@@ -124,6 +135,14 @@
                                     </span>
                                 </td>
                                 <td class="text-end">
+                                    @if($isOwner)
+                                        <form method="POST" action="{{ route('automotive.admin.access.users.owner.sync', $user) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-white d-inline-flex align-items-center me-2">
+                                                <i class="isax isax-refresh me-1"></i>{{ __('access.sync_owner_access') }}
+                                            </button>
+                                        </form>
+                                    @endif
                                     <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
                                         <i class="isax isax-buildings me-1"></i>{{ __('access.manage_branch_access') }}
                                     </a>

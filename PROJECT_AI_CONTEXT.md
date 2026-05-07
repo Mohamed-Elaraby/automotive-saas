@@ -5974,6 +5974,54 @@ Important architecture notes:
 Next package:
 - Package 13: Roles & Permission Matrix UI
 
+## Phase 2 Package 12.1 - Session Isolation, Plan Limit Sync, Owner Access - 2026-05-08
+
+Hotfix scope:
+- fixed central SaaS Admin and Tenant Workspace Admin session collision
+- fixed stale branch limit display after SaaS Admin plan changes
+- added Workspace Owner implicit access behavior to Access Control UI and services
+- added Sync Owner Access action
+- added emergency recovery command `tenant:grant-owner`
+
+Session isolation:
+- central admin guard: `admin`
+- tenant workspace guard: `automotive_admin`
+- logout is now guard-scoped and no longer calls full `$request->session()->invalidate()`
+- login still regenerates the session id without clearing other guard state
+
+Plan limit sync:
+- final branch limit source:
+  1. current plan `plan_limits.branch_limit`
+  2. current plan `plans.max_branches`
+  3. subscription snapshot fallback
+  4. active `extra_branch` add-ons
+- SaaS Admin local plan changes now sync `tenant_product_subscriptions`
+- `TenantProductSubscriptionLimitSyncService` refreshes `included_seats` and `branch_limit`
+- `ProductEntitlementService` reads current plan limits before stale snapshots
+
+Workspace Owner:
+- tenant is not a user
+- primary Workspace Owner is the tenant DB user id `1`
+- owner has implicit management access
+- owner does not consume product seats by default
+- owner can select any active branch enabled for a subscribed product
+- Access Users UI shows Owner Access instead of "No product access"
+
+Sync Owner Access:
+- route: `automotive.admin.access.users.owner.sync`
+- creates/updates explicit owner product access records for active/trialing subscribed products
+- creates/updates owner branch access records for enabled active product branches
+- idempotent
+- does not enable new branches
+- stores owner product records with `metadata.consumes_seat = false`
+
+Emergency recovery:
+- command: `php artisan tenant:grant-owner {tenant} {email} --sync-access`
+
+Important:
+- `routes/tenant.php` was not removed or changed
+- `php artisan route:cache` was not used
+
 ## Automotive Maintenance SaaS - Package 22 Integration Contracts, Payment Gateway Readiness, and Public API Hardening - 2026-05-06
 
 Package completed:

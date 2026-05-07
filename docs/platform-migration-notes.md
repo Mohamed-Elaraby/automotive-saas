@@ -84,6 +84,35 @@ Never run:
 php artisan route:cache
 ```
 
+## Package 12.1 Access Hotfix Notes
+
+### Session isolation
+Central SaaS Admin and Tenant Workspace Admin share the browser session cookie, but they must not invalidate the whole session when only one guard logs out.
+
+Migration rule:
+- use guard-scoped logout for `admin`, `automotive_admin`, and portal `web`
+- do not call `$request->session()->invalidate()` from scoped logout flows
+- regenerating the CSRF token is allowed
+
+### Plan limit sync
+The final branch limit source is:
+
+1. current plan `plan_limits.branch_limit`
+2. current plan `plans.max_branches`
+3. subscription snapshot fallback
+4. active `extra_branch` add-ons
+
+When SaaS Admin changes a legacy plan, `TenantProductSubscriptionSyncService` refreshes the product subscription mirror and `TenantProductSubscriptionLimitSyncService` updates `included_seats` and `branch_limit` snapshots.
+
+### Workspace Owner
+The Workspace Owner has implicit management access and does not consume product seats by default. Use `Sync Owner Access` when explicit compatibility records are needed.
+
+Emergency recovery:
+
+```bash
+php artisan tenant:grant-owner {tenant} {email} --sync-access
+```
+
 ## Post-Package Backlog
 - Migrate remaining Automotive user management screens to product access and product roles as the primary write path.
 - Move branch UI to show central branch records plus product activation state.

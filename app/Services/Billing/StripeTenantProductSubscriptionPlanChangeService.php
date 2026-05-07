@@ -13,7 +13,8 @@ use Throwable;
 class StripeTenantProductSubscriptionPlanChangeService
 {
     public function __construct(
-        protected StripeWebhookSyncService $stripeWebhookSyncService
+        protected StripeWebhookSyncService $stripeWebhookSyncService,
+        protected TenantProductSubscriptionLimitSyncService $limitSync
     ) {
     }
 
@@ -129,6 +130,7 @@ class StripeTenantProductSubscriptionPlanChangeService
                 'plan_id' => $targetPlan->id,
                 'gateway_price_id' => $targetPlan->stripe_price_id,
             ])->save();
+            $this->limitSync->sync($subscription);
 
             $event = (object) [
                 'type' => 'customer.subscription.updated',

@@ -18,6 +18,19 @@
 
             @include('automotive.admin.partials.alerts')
 
+            @if($isPrimaryOwner)
+                <div class="alert alert-primary d-flex align-items-start gap-2">
+                    <i class="isax isax-shield-tick mt-1"></i>
+                    <div>
+                        <div class="fw-semibold">{{ __('access.workspace_owner') }} · {{ __('access.implicit_full_access') }}</div>
+                        <div>{{ __('access.owner_product_access_hint') }}</div>
+                        @if(! $ownerConsumesSeat)
+                            <span class="badge bg-info-transparent text-info border mt-2">{{ __('access.does_not_consume_product_seat') }}</span>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">

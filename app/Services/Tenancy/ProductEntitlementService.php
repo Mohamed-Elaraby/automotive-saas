@@ -71,8 +71,8 @@ class ProductEntitlementService
             return null;
         }
 
-        $includedSeats = $this->nullableInteger($subscription->included_seats ?? null)
-            ?? $this->integerLimitFromPlan((int) ($subscription->plan_id ?? 0), $productKey, 'included_seats');
+        $includedSeats = $this->integerLimitFromPlan((int) ($subscription->plan_id ?? 0), $productKey, 'included_seats')
+            ?? $this->nullableInteger($subscription->included_seats ?? null);
 
         if ($includedSeats === null) {
             return null;
@@ -93,13 +93,14 @@ class ProductEntitlementService
             return null;
         }
 
-        $subscriptionLimit = $this->nullableInteger($subscription->branch_limit ?? null);
+        $branchLimit = $this->integerLimitFromPlan((int) ($subscription->plan_id ?? 0), $productKey, 'branch_limit')
+            ?? $this->nullableInteger($subscription->branch_limit ?? null);
 
-        if ($subscriptionLimit !== null) {
-            return $subscriptionLimit + $this->activeAddonQuantity($tenantId, $productKey, 'extra_branch');
+        if ($branchLimit !== null) {
+            return $branchLimit + $this->activeAddonQuantity($tenantId, $productKey, 'extra_branch');
         }
 
-        return $this->integerLimitFromPlan((int) ($subscription->plan_id ?? 0), $productKey, 'branch_limit');
+        return null;
     }
 
     public function integerLimit(string $tenantId, string $productKey, string $limitKey): ?int
@@ -111,7 +112,8 @@ class ProductEntitlementService
         }
 
         if ($limitKey === 'included_seats') {
-            $subscriptionLimit = $this->nullableInteger($subscription->included_seats ?? null);
+            $subscriptionLimit = $this->integerLimitFromPlan((int) ($subscription->plan_id ?? 0), $productKey, 'included_seats')
+                ?? $this->nullableInteger($subscription->included_seats ?? null);
 
             if ($subscriptionLimit !== null) {
                 return $subscriptionLimit;
@@ -119,7 +121,8 @@ class ProductEntitlementService
         }
 
         if ($limitKey === 'branch_limit') {
-            $subscriptionLimit = $this->nullableInteger($subscription->branch_limit ?? null);
+            $subscriptionLimit = $this->integerLimitFromPlan((int) ($subscription->plan_id ?? 0), $productKey, 'branch_limit')
+                ?? $this->nullableInteger($subscription->branch_limit ?? null);
 
             if ($subscriptionLimit !== null) {
                 return $subscriptionLimit;
@@ -181,7 +184,31 @@ class ProductEntitlementService
             ->where('limit_key', $limitKey)
             ->value('limit_value');
 
-        return $this->nullableInteger($value);
+        $limit = $this->nullableInteger($value);
+
+        if ($limit !== null) {
+            return $limit;
+        }
+
+        if (! Schema::connection($connection)->hasTable('plans')) {
+            return null;
+        }
+
+        $fallbackColumn = match ($limitKey) {
+            'included_seats' => 'max_users',
+            'branch_limit' => 'max_branches',
+            'storage_limit_mb' => 'max_storage_mb',
+            default => null,
+        };
+
+        if (! $fallbackColumn || ! Schema::connection($connection)->hasColumn('plans', $fallbackColumn)) {
+            return null;
+        }
+
+        return $this->nullableInteger(DB::connection($connection)
+            ->table('plans')
+            ->where('id', $planId)
+            ->value($fallbackColumn));
     }
 
     protected function planHasBillingFeature(string $tenantId, string $productKey, string $featureKey): bool

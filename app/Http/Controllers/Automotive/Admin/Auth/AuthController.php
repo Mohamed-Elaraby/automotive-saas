@@ -54,7 +54,6 @@ class AuthController extends Controller
     {
         Auth::guard('automotive_admin')->logout();
 
-        $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('automotive.admin.home');
@@ -76,7 +75,6 @@ class AuthController extends Controller
 
             Auth::guard('automotive_admin')->logout();
 
-            $request->session()->invalidate();
             $request->session()->regenerateToken();
             $request->session()->regenerate();
 
@@ -113,7 +111,6 @@ class AuthController extends Controller
         Auth::guard('automotive_admin')->logout();
 
         $request->session()->forget('tenant_admin_impersonation');
-        $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->away($returnUrl);

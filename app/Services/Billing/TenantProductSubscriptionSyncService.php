@@ -8,6 +8,11 @@ use App\Models\TenantProductSubscription;
 
 class TenantProductSubscriptionSyncService
 {
+    public function __construct(
+        protected TenantProductSubscriptionLimitSyncService $limitSync
+    ) {
+    }
+
     public function syncFromLegacySubscription(int|Subscription $subscription): ?TenantProductSubscription
     {
         $legacySubscription = $subscription instanceof Subscription
@@ -28,13 +33,13 @@ class TenantProductSubscriptionSyncService
             return null;
         }
 
-        return TenantProductSubscription::query()->updateOrCreate(
+        $productSubscription = TenantProductSubscription::query()->updateOrCreate(
             [
                 'tenant_id' => $legacySubscription->tenant_id,
                 'product_id' => $productId,
-                'legacy_subscription_id' => $legacySubscription->id,
             ],
             [
+                'legacy_subscription_id' => $legacySubscription->id,
                 'plan_id' => $legacySubscription->plan_id,
                 'status' => $legacySubscription->status,
                 'trial_ends_at' => $legacySubscription->trial_ends_at,
@@ -53,5 +58,7 @@ class TenantProductSubscriptionSyncService
                 'gateway_price_id' => $legacySubscription->gateway_price_id,
             ]
         );
+
+        return $this->limitSync->sync($productSubscription);
     }
 }

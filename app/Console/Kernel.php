@@ -10,6 +10,7 @@ use App\Console\Commands\Billing\SyncStripePlanPricesCommand;
 use App\Console\Commands\Billing\VerifyBillingPlanPricesCommand;
 use App\Console\Commands\Notifications\CleanupNotificationsCommand;
 use App\Console\Commands\Tenancy\DiagnoseWorkspaceRoutingCommand;
+use App\Console\Commands\Tenancy\GrantTenantOwnerCommand;
 use App\Console\Commands\Tenancy\NormalizeWorkspaceDomainsCommand;
 use App\Console\Commands\Tenancy\VerifyIntegrationReadinessCommand;
 use App\Console\Commands\TenantsCleanup;
@@ -27,6 +28,7 @@ class Kernel extends ConsoleKernel
         SyncStripePlanPricesCommand::class,
         CleanupNotificationsCommand::class,
         DiagnoseWorkspaceRoutingCommand::class,
+        GrantTenantOwnerCommand::class,
         NormalizeWorkspaceDomainsCommand::class,
         VerifyIntegrationReadinessCommand::class,
         VerifyMaintenanceReadinessCommand::class,

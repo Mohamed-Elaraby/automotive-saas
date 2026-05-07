@@ -17,7 +17,8 @@ class ProductPermissionService
     public function __construct(
         protected ProductEntitlementService $entitlements,
         protected TenantUserProductAccessService $productAccess,
-        protected ProductBranchAccessService $branchAccess
+        protected ProductBranchAccessService $branchAccess,
+        protected WorkspaceOwnerAccessService $ownerAccess
     ) {
     }
 
@@ -147,6 +148,16 @@ class ProductPermissionService
 
         if (! $this->entitlements->isSubscribed($tenantId, $productKey)) {
             return false;
+        }
+
+        if ($this->ownerAccess->isWorkspaceOwner($userId)) {
+            if ($branchId === null) {
+                return true;
+            }
+
+            return $this->branchAccess
+                ->enabledBranchesForProduct($productKey, $tenantId)
+                ->contains(fn ($branch): bool => (int) $branch->id === (int) $branchId && (bool) $branch->is_active);
         }
 
         if (! $this->productAccess->hasAccess($userId, $productKey, $tenantId)) {

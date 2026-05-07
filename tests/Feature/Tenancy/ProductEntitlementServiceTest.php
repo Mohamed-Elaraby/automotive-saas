@@ -72,8 +72,8 @@ class ProductEntitlementServiceTest extends TestCase
         $service = app(ProductEntitlementService::class);
 
         $this->assertTrue($service->isSubscribed('tenant-alpha', 'automotive_service'));
-        $this->assertSame(5, $service->seatLimit('tenant-alpha', 'automotive_service'));
-        $this->assertSame(2, $service->branchLimit('tenant-alpha', 'automotive_service'));
+        $this->assertSame(7, $service->seatLimit('tenant-alpha', 'automotive_service'));
+        $this->assertSame(3, $service->branchLimit('tenant-alpha', 'automotive_service'));
     }
 
     public function test_inactive_product_subscription_is_not_subscribed(): void

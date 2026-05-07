@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\Tenancy\ProductBranchAccessService;
 use App\Services\Tenancy\ProductEntitlementService;
 use App\Services\Tenancy\TenantUserProductAccessService;
+use App\Services\Tenancy\WorkspaceOwnerAccessService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,8 @@ class AccessControlController extends Controller
     public function __construct(
         protected ProductEntitlementService $entitlements,
         protected TenantUserProductAccessService $productAccess,
-        protected ProductBranchAccessService $branchAccess
+        protected ProductBranchAccessService $branchAccess,
+        protected WorkspaceOwnerAccessService $ownerAccess
     ) {
     }
 
@@ -51,6 +53,7 @@ class AccessControlController extends Controller
             'seatUsageRows' => $this->seatUsageRows($subscriptions, $tenantId),
             'userAccessSummary' => $this->userAccessSummary($tenantId),
             'userBranchAccessSummary' => $this->userBranchAccessSummary($tenantId),
+            'ownerUserIds' => [1],
             'quickLinks' => $this->quickLinks(),
             'currentUserId' => auth('automotive_admin')->id(),
         ]);
@@ -88,6 +91,7 @@ class AccessControlController extends Controller
             'user' => $user,
             'productRows' => $this->userProductRows($user, $subscriptions, $tenantId),
             'isPrimaryOwner' => $this->isPrimaryWorkspaceOwner($user),
+            'ownerConsumesSeat' => $this->ownerAccess->ownerConsumesSeat(),
         ]);
     }
 
@@ -142,6 +146,16 @@ class AccessControlController extends Controller
         return redirect()
             ->route('automotive.admin.access.users.products.edit', $user)
             ->with('success', __('access.product_access_updated'));
+    }
+
+    public function syncOwnerAccess(User $user): RedirectResponse
+    {
+        abort_unless($this->isPrimaryWorkspaceOwner($user), 404);
+        abort_unless($this->isPrimaryWorkspaceOwner(auth('automotive_admin')->user()), 403);
+
+        $summary = $this->ownerAccess->syncOwnerAccess($user);
+
+        return back()->with('success', __('access.owner_access_synced', $summary));
     }
 
     public function productBranches(string $productKey): View
@@ -226,6 +240,7 @@ class AccessControlController extends Controller
             'page' => 'access-control',
             'user' => $user,
             'productRows' => $this->userBranchRows($user, $tenantId),
+            'isPrimaryOwner' => $this->isPrimaryWorkspaceOwner($user),
         ]);
     }
 
@@ -484,6 +499,23 @@ class AccessControlController extends Controller
 
     private function userBranchRows(User $user, string $tenantId): array
     {
+        if ($this->isPrimaryWorkspaceOwner($user)) {
+            return $this->subscriptions($tenantId)
+                ->filter(fn (TenantProductSubscription $subscription): bool => in_array((string) $subscription->status, ['active', 'trialing'], true))
+                ->map(function (TenantProductSubscription $subscription) use ($tenantId): array {
+                    $productKey = (string) ($subscription->product_key ?: $subscription->product?->code);
+
+                    return [
+                        'product_key' => $productKey,
+                        'enabled_branches' => $this->branchAccess->enabledBranchesForProduct($productKey, $tenantId),
+                        'assigned_branch_ids' => collect(),
+                        'owner_implicit' => true,
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
         return TenantUserProductAccess::query()
             ->where('tenant_id', $tenantId)
             ->where('user_id', $user->id)
@@ -510,9 +542,9 @@ class AccessControlController extends Controller
             ->all();
     }
 
-    private function isPrimaryWorkspaceOwner(User $user): bool
+    private function isPrimaryWorkspaceOwner(?User $user): bool
     {
-        return (int) $user->id === 1;
+        return $this->ownerAccess->isWorkspaceOwner($user);
     }
 
     private function tableCount(string $modelClass, string $table, string $tenantId): int

@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Services\Billing\TenantProductSubscriptionSyncService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -12,6 +13,11 @@ use RuntimeException;
 
 class AdminTenantLifecycleService
 {
+    public function __construct(
+        protected TenantProductSubscriptionSyncService $tenantProductSubscriptionSyncService
+    ) {
+    }
+
     public function centralConnectionName(): string
     {
         return (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
@@ -171,14 +177,21 @@ class AdminTenantLifecycleService
             );
         }
 
+        $updates = [
+            'plan_id' => $plan->id,
+            'updated_at' => now(),
+        ];
+
+        if (Schema::connection($this->centralConnectionName())->hasColumn('subscriptions', 'billing_period')) {
+            $updates['billing_period'] = $plan->billing_period ?? $subscription->billing_period;
+        }
+
         DB::connection($this->centralConnectionName())
             ->table('subscriptions')
             ->where('id', $subscription->id)
-            ->update([
-                'plan_id' => $plan->id,
-                'billing_period' => $plan->billing_period ?? $subscription->billing_period,
-                'updated_at' => now(),
-            ]);
+            ->update($updates);
+
+        $this->tenantProductSubscriptionSyncService->syncFromLegacySubscription((int) $subscription->id);
     }
 
     /**

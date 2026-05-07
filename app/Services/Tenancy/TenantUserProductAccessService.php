@@ -10,7 +10,8 @@ use RuntimeException;
 class TenantUserProductAccessService
 {
     public function __construct(
-        protected ProductEntitlementService $entitlements
+        protected ProductEntitlementService $entitlements,
+        protected WorkspaceOwnerAccessService $ownerAccess
     ) {
     }
 
@@ -22,6 +23,12 @@ class TenantUserProductAccessService
         $tenantId = $this->tenantId();
 
         $this->assertCanGrantAccess($userId, $productKey, $tenantId);
+
+        if ($this->ownerAccess->isWorkspaceOwner($userId)) {
+            $metadata = array_merge($metadata, [
+                'consumes_seat' => false,
+            ]);
+        }
 
         return TenantUserProductAccess::query()->updateOrCreate(
             [
@@ -66,11 +73,16 @@ class TenantUserProductAccessService
         }
 
         $tenantId = $tenantId ?: $this->tenantId();
+        $productKey = $this->normalizeProductKey($productKey);
+
+        if ($this->ownerAccess->hasImplicitProductAccess($user, $productKey, $tenantId)) {
+            return true;
+        }
 
         return TenantUserProductAccess::query()
             ->where('tenant_id', $tenantId)
             ->where('user_id', $this->resolveUserId($user))
-            ->where('product_key', $this->normalizeProductKey($productKey))
+            ->where('product_key', $productKey)
             ->active()
             ->exists();
     }
@@ -83,12 +95,15 @@ class TenantUserProductAccessService
             return 0;
         }
 
-        return (int) TenantUserProductAccess::query()
+        return TenantUserProductAccess::query()
             ->where('tenant_id', $tenantId)
             ->where('product_key', $this->normalizeProductKey($productKey))
             ->active()
-            ->distinct('user_id')
-            ->count('user_id');
+            ->get(['user_id', 'metadata'])
+            ->filter(fn (TenantUserProductAccess $access): bool => $this->ownerAccess->productAccessConsumesSeat($access))
+            ->pluck('user_id')
+            ->unique()
+            ->count();
     }
 
     public function availableSeats(string $productKey, ?string $tenantId = null): ?int
@@ -115,6 +130,10 @@ class TenantUserProductAccessService
 
         if (! $this->entitlements->isSubscribed($tenantId, $productKey)) {
             throw new RuntimeException("Tenant is not actively subscribed to product [{$productKey}].");
+        }
+
+        if ($this->ownerAccess->isWorkspaceOwner($userId)) {
+            return;
         }
 
         if ($this->hasAccess($userId, $productKey, $tenantId)) {
