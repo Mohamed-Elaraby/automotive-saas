@@ -512,13 +512,57 @@ Phase 2 Package 10 verification:
 - `git diff --check`
   - result: no whitespace errors
 
+Phase 2 Package 11 completed:
+- added Product Access & Seat Management UI under Access Control.
+- added routes:
+  - `automotive.admin.access.users.products.edit`
+  - `automotive.admin.access.users.products.update`
+- `/workspace/admin/access/users` now shows an Access Users table with:
+  - user name/email/status
+  - current enabled products
+  - `Manage Product Access` action
+  - product seat usage cards
+- added user product access edit screen:
+  - `resources/views/automotive/admin/access/users/products.blade.php`
+- added access users index screen:
+  - `resources/views/automotive/admin/access/users/index.blade.php`
+- Access dashboard now includes product seat usage cards per subscribed product.
+- Product access updates use:
+  - `ProductEntitlementService`
+  - `TenantUserProductAccessService`
+- seat-limit enforcement is handled by `TenantUserProductAccessService::assertCanGrantAccess`.
+- UI blocks new product access when seats are full and shows:
+  - `Seat limit reached. Upgrade plan or add extra seats.`
+- revoke access updates the access record to `revoked`, so revoked users no longer consume seats.
+- primary workspace owner cannot lose core `automotive_service` access through this UI.
+- reused theme design references:
+  - `resources/views/users.blade.php`
+  - `resources/views/roles-permissions.blade.php`
+  - `resources/views/permission.blade.php`
+- did not reuse `layout.mainlayout`; new views use:
+  - `automotive.admin.layouts.adminLayout.mainlayout`
+- added tests:
+  - `tests/Feature/Automotive/Admin/ProductAccessManagementTest.php`
+
+Phase 2 Package 11 verification:
+- `php artisan test tests/Feature/Automotive/Admin/AccessControlDashboardTest.php`
+  - result: 4 passed, 15 assertions
+- `php artisan test tests/Feature/Automotive/Admin/ProductAccessManagementTest.php`
+  - result: 6 passed, 19 assertions
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php tests/Feature/Tenancy/CentralBusinessEntitiesTest.php tests/Feature/Tenancy/DocumentEngineAndNumberingTest.php tests/Feature/Tenancy/AttachmentAndNotificationFoundationTest.php tests/Feature/Tenancy/PlatformProductionAcceptanceTest.php`
+  - result: 55 passed, 185 assertions
+- `php artisan route:list --name=automotive.admin.access --except-vendor`
+  - result: 32 access route variants shown
+- `git diff --check`
+  - result: no whitespace errors
+
 Next Phase 2 package:
-- Package 11: Product Access & Seat Management UI
+- Package 12: Branch Access UI + Branch Context
 - Focus:
-  - user/product access screen
-  - grant/revoke product access from UI
-  - seat limit visualization and enforcement
-  - integration with `ProductEntitlementService` and `TenantUserProductAccessService`
+  - product branch activation UI
+  - user branch assignment UI
+  - branch switcher/current branch session context
+  - branch limit enforcement and branch access tests
 
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 

@@ -106,6 +106,32 @@
                 ])
             </div>
 
+            @if(!empty($seatUsageRows))
+                <div class="row">
+                    @foreach($seatUsageRows as $row)
+                        <div class="col-xxl-3 col-xl-4 col-md-6 d-flex">
+                            <div class="card flex-fill">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-gray-6">{{ $row['product_name'] }}</span>
+                                        <span class="avatar avatar-sm bg-primary-transparent rounded-circle">
+                                            <i class="isax isax-layer text-primary"></i>
+                                        </span>
+                                    </div>
+                                    <h3 class="mb-1">
+                                        {{ $row['used'] }} / {{ $row['limit'] === null ? __('access.unlimited') : $row['limit'] }}
+                                    </h3>
+                                    <p class="mb-0 text-muted">
+                                        {{ __('access.extra_seats') }}: {{ $row['extra'] }} ·
+                                        {{ __('access.available') }}: {{ $row['available'] === null ? __('access.unlimited') : $row['available'] }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
             <div class="row">
                 <div class="col-xl-7 d-flex">
                     <div class="card flex-fill">

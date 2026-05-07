@@ -70,6 +70,8 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                 ->group(function () {
                     Route::get('/', [AccessControlController::class, 'index'])->name('index');
                     Route::get('/users', [AccessControlController::class, 'users'])->name('users.index');
+                    Route::get('/users/{user}/products', [AccessControlController::class, 'editUserProducts'])->name('users.products.edit');
+                    Route::put('/users/{user}/products', [AccessControlController::class, 'updateUserProducts'])->name('users.products.update');
                     Route::get('/roles', [AccessControlController::class, 'roles'])->name('roles.index');
                     Route::get('/branches', [AccessControlController::class, 'branches'])->name('branches.index');
                     Route::get('/products', [AccessControlController::class, 'products'])->name('products.index');

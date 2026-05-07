@@ -15,8 +15,12 @@ use App\Services\Tenancy\ProductBranchAccessService;
 use App\Services\Tenancy\ProductEntitlementService;
 use App\Services\Tenancy\TenantUserProductAccessService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 class AccessControlController extends Controller
 {
@@ -34,7 +38,21 @@ class AccessControlController extends Controller
 
     public function users(): View
     {
-        return $this->dashboard('users');
+        $tenant = tenant();
+        $tenantId = (string) $tenant->id;
+        $subscriptions = $this->subscriptions($tenantId);
+
+        return view('automotive.admin.access.users.index', [
+            'page' => 'access-control',
+            'activePanel' => 'users',
+            'tenant' => $tenant,
+            'users' => User::query()->orderBy('id')->get(),
+            'subscriptions' => $subscriptions,
+            'seatUsageRows' => $this->seatUsageRows($subscriptions, $tenantId),
+            'userAccessSummary' => $this->userAccessSummary($tenantId),
+            'quickLinks' => $this->quickLinks(),
+            'currentUserId' => auth('automotive_admin')->id(),
+        ]);
     }
 
     public function roles(): View
@@ -55,6 +73,74 @@ class AccessControlController extends Controller
     public function diagnostics(): View
     {
         return $this->dashboard('diagnostics');
+    }
+
+    public function editUserProducts(User $user): View
+    {
+        $tenant = tenant();
+        $tenantId = (string) $tenant->id;
+        $subscriptions = $this->subscriptions($tenantId);
+
+        return view('automotive.admin.access.users.products', [
+            'page' => 'access-control',
+            'tenant' => $tenant,
+            'user' => $user,
+            'productRows' => $this->userProductRows($user, $subscriptions, $tenantId),
+            'isPrimaryOwner' => $this->isPrimaryWorkspaceOwner($user),
+        ]);
+    }
+
+    public function updateUserProducts(Request $request, User $user): RedirectResponse
+    {
+        $tenantId = (string) tenant()->id;
+        $subscriptions = $this->subscriptions($tenantId);
+        $allowedProductKeys = $subscriptions
+            ->map(fn (TenantProductSubscription $subscription): string => (string) ($subscription->product_key ?: $subscription->product?->code))
+            ->filter()
+            ->values();
+        $requestedProducts = collect($request->input('products', []))
+            ->map(fn (string $productKey): string => trim($productKey))
+            ->filter()
+            ->intersect($allowedProductKeys)
+            ->values();
+
+        if ($this->isPrimaryWorkspaceOwner($user) && ! $requestedProducts->contains('automotive_service')) {
+            return back()
+                ->withErrors(['products' => __('access.cannot_remove_owner_product_access')])
+                ->withInput();
+        }
+
+        try {
+            DB::transaction(function () use ($user, $tenantId, $allowedProductKeys, $requestedProducts): void {
+                foreach ($requestedProducts as $productKey) {
+                    $this->productAccess->assertCanGrantAccess($user, $productKey, $tenantId);
+                }
+
+                foreach ($allowedProductKeys as $productKey) {
+                    if ($requestedProducts->contains($productKey)) {
+                        $this->productAccess->grantAccess($user, $productKey, auth('automotive_admin')->user(), [
+                            'source' => 'access_control_ui',
+                        ]);
+
+                        continue;
+                    }
+
+                    $this->productAccess->revokeAccess($user, $productKey);
+                }
+            });
+        } catch (RuntimeException $exception) {
+            $message = str_contains($exception->getMessage(), 'No available seats')
+                ? __('access.seat_limit_reached')
+                : $exception->getMessage();
+
+            return back()
+                ->withErrors(['products' => $message])
+                ->withInput();
+        }
+
+        return redirect()
+            ->route('automotive.admin.access.users.products.edit', $user)
+            ->with('success', __('access.product_access_updated'));
     }
 
     private function dashboard(string $activePanel): View
@@ -141,6 +227,49 @@ class AccessControlController extends Controller
             })
             ->values()
             ->all();
+    }
+
+    private function userAccessSummary(string $tenantId): array
+    {
+        if (! Schema::hasTable('tenant_user_product_access')) {
+            return [];
+        }
+
+        return TenantUserProductAccess::query()
+            ->where('tenant_id', $tenantId)
+            ->active()
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn (Collection $accessRows): array => $accessRows->pluck('product_key')->values()->all())
+            ->all();
+    }
+
+    private function userProductRows(User $user, Collection $subscriptions, string $tenantId): array
+    {
+        $activeAccess = Schema::hasTable('tenant_user_product_access')
+            ? TenantUserProductAccess::query()
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $user->id)
+                ->active()
+                ->pluck('product_key')
+            : collect();
+
+        return collect($this->seatUsageRows($subscriptions, $tenantId))
+            ->map(function (array $row) use ($activeAccess): array {
+                $row['has_access'] = $activeAccess->contains($row['product_key']);
+                $row['seat_blocked'] = ! $row['has_access']
+                    && $row['available'] !== null
+                    && (int) $row['available'] <= 0;
+
+                return $row;
+            })
+            ->values()
+            ->all();
+    }
+
+    private function isPrimaryWorkspaceOwner(User $user): bool
+    {
+        return (int) $user->id === 1;
     }
 
     private function tableCount(string $modelClass, string $table, string $tenantId): int
