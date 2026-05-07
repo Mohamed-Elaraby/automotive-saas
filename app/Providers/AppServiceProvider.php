@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Tenancy\TenantWorkspaceProductService;
+use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
 use App\Services\Core\Documents\DocumentRendererInterface;
 use App\Services\Core\Documents\MpdfDocumentRenderer;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('focusedWorkspaceProductFamily', 'automotive_service');
                 $view->with('workspaceSidebarSections', []);
                 $view->with('workspaceQuickCreateActions', []);
+                $view->with('canManageAccessControl', false);
 
                 return;
             }
@@ -60,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('focusedWorkspaceProductFamily', $workspaceModuleCatalogService->getFocusedProductFamily($focusedWorkspaceProduct));
             $view->with('workspaceSidebarSections', $workspaceModuleCatalogService->getSidebarSections($focusedWorkspaceProduct));
             $view->with('workspaceQuickCreateActions', $workspaceModuleCatalogService->getQuickCreateActions($focusedWorkspaceProduct));
+            $view->with('canManageAccessControl', $this->canManageAccessControl((string) $tenant->id));
         });
 
         $this->app->booted(function () {
@@ -68,5 +71,25 @@ class AppServiceProvider extends ServiceProvider
             $routes->refreshNameLookups();
             $routes->refreshActionLookups();
         });
+    }
+
+    private function canManageAccessControl(string $tenantId): bool
+    {
+        $user = auth('automotive_admin')->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ((int) $user->id === 1) {
+            return true;
+        }
+
+        try {
+            return app(ProductPermissionService::class)
+                ->can($user, 'automotive_service', 'automotive.access.manage', null, $tenantId);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

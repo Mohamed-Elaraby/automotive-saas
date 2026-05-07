@@ -114,6 +114,9 @@
                         <li>
                             <ul>
                                 @foreach($section['items'] as $item)
+                                    @if(($item['key'] ?? '') === 'shared.access-control' && empty($canManageAccessControl))
+                                        @continue
+                                    @endif
                                     <li class="{{ in_array($page ?? '', $item['pages'] ?? [], true) ? 'active' : '' }}">
                                         <a href="{{ route($item['route'], $item['params'] ?? []) }}">
                                             <i class="isax {{ $item['icon'] }}"></i><span>{{ $item['label'] }}</span>

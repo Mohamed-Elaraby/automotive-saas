@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
+use App\Http\Controllers\Automotive\Admin\AccessControlController;
 use App\Http\Controllers\Automotive\Admin\BillingController;
 use App\Http\Controllers\Automotive\Admin\BranchController;
 use App\Http\Controllers\Automotive\Admin\DashboardController;
@@ -60,8 +61,20 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
             ->middleware('auth:automotive_admin')
             ->name('stop-impersonation');
 
-        Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
+            Route::middleware(['auth:automotive_admin', 'tenant.subscription.active'])->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+            Route::prefix('access')
+                ->middleware('tenant.access.manage')
+                ->name('access.')
+                ->group(function () {
+                    Route::get('/', [AccessControlController::class, 'index'])->name('index');
+                    Route::get('/users', [AccessControlController::class, 'users'])->name('users.index');
+                    Route::get('/roles', [AccessControlController::class, 'roles'])->name('roles.index');
+                    Route::get('/branches', [AccessControlController::class, 'branches'])->name('branches.index');
+                    Route::get('/products', [AccessControlController::class, 'products'])->name('products.index');
+                    Route::get('/diagnostics', [AccessControlController::class, 'diagnostics'])->name('diagnostics.index');
+                });
 
             Route::get('/users', [UserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [UserController::class, 'create'])->name('users.create');

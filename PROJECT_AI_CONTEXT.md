@@ -466,12 +466,59 @@ Package 9 verification:
 
 Current architecture phase status:
 - The 9-package Product-Scoped Multi-Product SaaS Platform foundation is complete.
-- The next phase should return to browser QA/hardening and targeted backlog items:
-  - central audit service
-  - central approval service
-  - report/search/timeline/import-export registries
-  - gradual UI migration from legacy role/permission columns to product roles
-  - gradual cleanup only after replacement paths are tested
+- Phase 2 has started: Platform Access Control UI & Enforcement.
+
+Phase 2 Package 10 completed:
+- added Access Control UI foundation under workspace admin:
+  - `/workspace/admin/access`
+  - `/workspace/admin/access/users`
+  - `/workspace/admin/access/roles`
+  - `/workspace/admin/access/branches`
+  - `/workspace/admin/access/products`
+  - `/workspace/admin/access/diagnostics`
+- route names are under:
+  - `automotive.admin.access.*`
+- added controller:
+  - `AccessControlController`
+- added middleware:
+  - `EnsureTenantUserCanManageAccess`
+  - alias: `tenant.access.manage`
+- current access dashboard authorization:
+  - primary workspace owner user id `1`
+  - or users with `automotive.access.manage` through `ProductPermissionService`
+- added Access Control sidebar link in the shared workspace section, hidden unless the authenticated user can manage access.
+- reused theme design references:
+  - `resources/views/roles-permissions.blade.php`
+  - `resources/views/permission.blade.php`
+  - `resources/views/users.blade.php`
+- did not reuse `layout.mainlayout`; new views use:
+  - `automotive.admin.layouts.adminLayout.mainlayout`
+- added views:
+  - `resources/views/automotive/admin/access/index.blade.php`
+  - `resources/views/automotive/admin/access/partials/_metric-card.blade.php`
+- added translations:
+  - `lang/en/access.php`
+  - `lang/ar/access.php`
+- added tests:
+  - `tests/Feature/Automotive/Admin/AccessControlDashboardTest.php`
+
+Phase 2 Package 10 verification:
+- `php artisan test tests/Feature/Automotive/Admin/AccessControlDashboardTest.php`
+  - result: 4 passed, 15 assertions
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php tests/Feature/Tenancy/CentralBusinessEntitiesTest.php tests/Feature/Tenancy/DocumentEngineAndNumberingTest.php tests/Feature/Tenancy/AttachmentAndNotificationFoundationTest.php tests/Feature/Tenancy/PlatformProductionAcceptanceTest.php`
+  - result: 55 passed, 185 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: 810 automotive admin routes shown after adding Access Control route variants
+- `git diff --check`
+  - result: no whitespace errors
+
+Next Phase 2 package:
+- Package 11: Product Access & Seat Management UI
+- Focus:
+  - user/product access screen
+  - grant/revoke product access from UI
+  - seat limit visualization and enforcement
+  - integration with `ProductEntitlementService` and `TenantUserProductAccessService`
 
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 

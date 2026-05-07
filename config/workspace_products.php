@@ -29,6 +29,13 @@ return [
                     'route' => 'automotive.admin.branches.index',
                     'pages' => ['branches'],
                 ],
+                [
+                    'key' => 'shared.access-control',
+                    'label' => 'Access Control',
+                    'icon' => 'isax-shield-tick',
+                    'route' => 'automotive.admin.access.index',
+                    'pages' => ['access-control'],
+                ],
             ],
         ],
         'quick_create_actions' => [
