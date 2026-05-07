@@ -77,7 +77,7 @@ class AdminNotificationShowTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->get(route('admin.notifications.show', $notification));
 
         $response->assertOk();

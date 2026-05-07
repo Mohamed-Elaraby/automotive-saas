@@ -74,7 +74,7 @@ class AdminNotificationMarkReadTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->from(route('admin.notifications.index'))
             ->post(route('admin.notifications.mark-read', $notification));
 
@@ -139,7 +139,7 @@ class AdminNotificationMarkReadTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->postJson(route('admin.notifications.mark-read', $target));
 
         $response->assertOk();

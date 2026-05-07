@@ -137,7 +137,7 @@ class AdminNotificationDestroyAllTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->from(route('admin.notifications.index', [
                 'tab' => 'billing',
                 'severity' => 'warning',
@@ -221,7 +221,7 @@ class AdminNotificationDestroyAllTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->from(route('admin.notifications.index'))
             ->post(route('admin.notifications.destroy-all'));
 

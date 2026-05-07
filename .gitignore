@@ -9,6 +9,7 @@
 /public/storage
 
 /storage/*.key
+/storage/tenant*/
 /storage/logs/*
 /storage/framework/cache/*
 /storage/framework/sessions/*

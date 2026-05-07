@@ -85,8 +85,11 @@ jobs:
           echo "==> Maintenance ON (short window)"
           php artisan down --render="errors::503" || true
 
-          echo "==> Central migrations only"
+          echo "==> Central migrations"
           php artisan migrate --force
+
+          echo "==> Tenant migrations"
+          php artisan tenants:migrate --force
 
           echo "==> Optimize caches (NO route cache for tenant dynamic routes)"
           php artisan optimize:clear

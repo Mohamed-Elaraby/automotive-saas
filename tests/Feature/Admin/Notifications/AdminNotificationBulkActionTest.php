@@ -98,7 +98,7 @@ class AdminNotificationBulkActionTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->from(route('admin.notifications.index'))
             ->post(route('admin.notifications.bulk-action'), [
                 'action' => 'mark_read',
@@ -163,7 +163,7 @@ class AdminNotificationBulkActionTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->from(route('admin.notifications.index'))
             ->post(route('admin.notifications.bulk-action'), [
                 'action' => 'archive',
@@ -230,7 +230,7 @@ class AdminNotificationBulkActionTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->from(route('admin.notifications.index'))
             ->post(route('admin.notifications.bulk-action'), [
                 'action' => 'delete',

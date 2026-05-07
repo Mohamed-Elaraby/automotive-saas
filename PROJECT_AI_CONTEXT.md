@@ -431,12 +431,47 @@ Package 8 verification:
 - `git diff --check`
   - result: no whitespace errors
 
-Next package:
-- Package 9: Final Platform Foundations, Cleanup, And Production Acceptance
-- Focus:
-  - approval, audit, report, settings, search/timeline/import-export readiness where still missing
-  - safe cleanup/deprecation notes for duplicated legacy code
-  - final route/test/documentation hardening without removing `routes/tenant.php`
+Package 9 completed:
+- hardened GitHub Actions deployment:
+  - `.github/workflows/deploy.yml` now runs `php artisan tenants:migrate --force` immediately after `php artisan migrate --force`
+  - deploy step label changed from `Central migrations only` to `Central migrations`
+  - full `php artisan test` is not added as a mandatory deploy step
+  - `php artisan route:cache` remains absent
+- updated `.gitignore` to exclude tenant runtime storage:
+  - `/storage/tenant*/`
+- added production acceptance documentation:
+  - `docs/platform-acceptance-checklist.md`
+  - `docs/platform-migration-notes.md`
+- updated architecture roadmap:
+  - `docs/product-scoped-architecture-roadmap.md`
+- added package acceptance test:
+  - `tests/Feature/Tenancy/PlatformProductionAcceptanceTest.php`
+- stabilized Admin Notifications tests without changing production canonical redirects:
+  - Admin Notification tests now use canonical root URL `https://seven-scapital.com`
+  - protected Admin Notification tests now authenticate with the `admin` guard instead of the `web` guard
+  - this fixes the previous legacy 308 host mismatch and guard mismatch in test environment
+- no legacy tables, routes, or services were deleted.
+
+Package 9 verification:
+- `php artisan test tests/Feature/Tenancy/ProductEntitlementServiceTest.php tests/Feature/Tenancy/TenantUserProductAccessServiceTest.php tests/Feature/Tenancy/ProductBranchAccessServiceTest.php tests/Feature/Tenancy/ProductPermissionServiceTest.php tests/Feature/Tenancy/CentralBusinessEntitiesTest.php tests/Feature/Tenancy/DocumentEngineAndNumberingTest.php tests/Feature/Tenancy/AttachmentAndNotificationFoundationTest.php`
+  - result: 50 passed, 135 assertions
+- `php artisan test tests/Feature/Tenancy/PlatformProductionAcceptanceTest.php`
+  - result: 5 passed, 50 assertions
+- `php artisan test tests/Feature/Admin/Notifications`
+  - result: 22 passed, 110 assertions
+- `php artisan route:list --name=automotive.admin --except-vendor`
+  - result: 786 automotive admin routes shown
+- `git diff --check`
+  - result: no whitespace errors
+
+Current architecture phase status:
+- The 9-package Product-Scoped Multi-Product SaaS Platform foundation is complete.
+- The next phase should return to browser QA/hardening and targeted backlog items:
+  - central audit service
+  - central approval service
+  - report/search/timeline/import-export registries
+  - gradual UI migration from legacy role/permission columns to product roles
+  - gradual cleanup only after replacement paths are tested
 
 ## 1.2) Original Automotive Maintenance Prompt Coverage
 

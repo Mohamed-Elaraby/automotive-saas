@@ -53,7 +53,7 @@ class AdminNotificationsIndexTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->get(route('admin.notifications.index'));
 
         $response->assertOk();
@@ -127,7 +127,7 @@ class AdminNotificationsIndexTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->get(route('admin.notifications.index', [
                 'is_read' => '0',
                 'is_archived' => '0',

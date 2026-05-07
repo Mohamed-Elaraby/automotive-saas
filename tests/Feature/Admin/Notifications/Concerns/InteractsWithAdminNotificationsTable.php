@@ -5,11 +5,14 @@ namespace Tests\Feature\Admin\Notifications\Concerns;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 
 trait InteractsWithAdminNotificationsTable
 {
     protected function ensureCentralAdminNotificationsTable(): void
     {
+        $this->useCanonicalCentralAdminHost();
+
         $connection = $this->centralConnectionName();
 
         if (! Schema::connection($connection)->hasTable('admin_notifications')) {
@@ -50,5 +53,13 @@ trait InteractsWithAdminNotificationsTable
     protected function centralConnectionName(): string
     {
         return (string) (Config::get('tenancy.database.central_connection') ?: Config::get('database.default'));
+    }
+
+    protected function useCanonicalCentralAdminHost(): void
+    {
+        $canonicalHost = 'https://seven-scapital.com';
+
+        Config::set('app.url', $canonicalHost);
+        URL::forceRootUrl($canonicalHost);
     }
 }

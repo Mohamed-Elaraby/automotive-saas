@@ -116,7 +116,7 @@ class AdminNotificationUnreadSummaryTest extends TestCase
         ]);
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->getJson(route('admin.notifications.unread-summary'));
 
         $response->assertOk();
@@ -166,7 +166,7 @@ class AdminNotificationUnreadSummaryTest extends TestCase
         }
 
         $response = $this
-            ->actingAs($admin, 'web')
+            ->actingAs($admin, 'admin')
             ->getJson(route('admin.notifications.unread-summary'));
 
         $response->assertOk();

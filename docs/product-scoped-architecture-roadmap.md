@@ -37,6 +37,33 @@ It is intentionally based on the current codebase, not a greenfield design. The 
 ## Total Required Changes
 Total Required Changes: 72
 
+## Actual Completion Status - 2026-05-07
+
+The 9-package architecture refactor has reached the production acceptance package.
+
+Completed package outcomes:
+- Package 1: architecture inventory, roadmap, and execution guardrails.
+- Package 2: product-key entitlement foundation, normalized plan limits, and subscription add-ons.
+- Package 3: central tenant user product access and product seat enforcement.
+- Package 4: central branches, product branch activation, user branch access, and demo branch seeder.
+- Package 5: product-scoped roles, permissions, assignments, middleware, and permission service.
+- Package 6: central customers, suppliers, employees, and product profile boundaries.
+- Package 7: central document engine hardening, mPDF foundation, product templates, and numbering sequences.
+- Package 8: central attachments, storage limits, central tenant notifications, notification templates, and Automotive maintenance compatibility bridge.
+- Package 9: deploy workflow hardening, tenant migration enforcement, `.gitignore` runtime storage protection, Admin Notifications test stabilization, acceptance tests, and migration documentation.
+
+Package 9 does not delete legacy Automotive paths. Legacy routes, tables, and services remain where they are still part of active production behavior or where replacement needs browser QA before removal.
+
+Deployment requirement:
+- run `php artisan migrate --force`
+- run `php artisan tenants:migrate --force`
+- never run `php artisan route:cache`
+- do not add mandatory full `php artisan test` to deploy workflow until the wider legacy suite is deterministic
+
+Detailed acceptance and migration notes:
+- `docs/platform-acceptance-checklist.md`
+- `docs/platform-migration-notes.md`
+
 ## Package Breakdown
 
 ### Package 1: Architecture Inventory And Execution Guardrails
