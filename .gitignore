@@ -73,3 +73,4 @@ Homestead.yaml
 node_modules/
 vendor/
 database/tenant_*
+/storage/tenant*/

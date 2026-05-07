@@ -25,7 +25,7 @@ jobs:
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.VULTR_PORT }} -H ${{ secrets.VULTR_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.VULTR_PORT }}" -H "${{ secrets.VULTR_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Deploy
         env:
@@ -55,11 +55,22 @@ jobs:
           # Always bring app back up even if something fails
           trap 'php artisan up || true' EXIT
 
-          echo "==> Fix runtime dirs permissions (storage & cache)"
+          echo "==> Deployment diagnostics"
+          whoami
+          pwd
+          php -v
+          composer --version
+          node -v || true
+          npm -v || true
+          git status --short || true
+          git log --oneline -n 3 || true
+
+          echo "==> Fix runtime dirs permissions before deploy"
+          sudo -n /bin/mkdir -p storage bootstrap/cache || true
           sudo -n /bin/chown -R www-data:www-data storage bootstrap/cache || true
           sudo -n /bin/chmod -R 2775 storage bootstrap/cache || true
 
-          echo "==> Protect runtime .gitignore from git reset"
+          echo "==> Protect runtime .gitignore files from git reset"
           git update-index --skip-worktree bootstrap/cache/.gitignore || true
           git update-index --skip-worktree storage/app/.gitignore || true
           git update-index --skip-worktree storage/app/public/.gitignore || true
@@ -74,16 +85,34 @@ jobs:
           echo "==> Pull latest code"
           git fetch origin main
           git reset --hard origin/main
+          git log --oneline -n 5
 
-          echo "==> Install PHP deps"
+          echo "==> Ensure runtime dirs still exist after reset"
+          sudo -n /bin/mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache || true
+          sudo -n /bin/chown -R www-data:www-data storage bootstrap/cache || true
+          sudo -n /bin/chmod -R 2775 storage bootstrap/cache || true
+
+          echo "==> Install PHP dependencies"
           timeout 10m composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
           echo "==> Frontend build"
-          timeout 10m npm ci
+          if [ -f package-lock.json ]; then
+            timeout 10m npm ci --no-audit --no-fund
+          else
+            timeout 10m npm install --no-audit --no-fund
+          fi
+
           timeout 10m npm run build
 
           echo "==> Maintenance ON (short window)"
           php artisan down --render="errors::503" || true
+
+          echo "==> Clear caches before migrations"
+          php artisan optimize:clear
+          php artisan route:clear
+          php artisan config:clear
+          php artisan view:clear
+          php artisan cache:clear
 
           echo "==> Central migrations"
           php artisan migrate --force
@@ -96,9 +125,14 @@ jobs:
           php artisan route:clear
           php artisan config:clear
           php artisan view:clear
+          php artisan cache:clear
           php artisan config:cache
           php artisan view:cache || true
           php artisan event:cache || true
+
+          echo "==> Fix runtime permissions after deploy"
+          sudo -n /bin/chown -R www-data:www-data storage bootstrap/cache || true
+          sudo -n /bin/chmod -R 2775 storage bootstrap/cache || true
 
           echo "==> Restart PHP-FPM"
           sudo -n /usr/bin/systemctl restart php8.2-fpm || true
@@ -135,5 +169,9 @@ jobs:
           echo "==> Maintenance OFF"
           php artisan up || true
 
-          echo "✅ Deploy done"
+          echo "==> Final deployment status"
+          git status --short || true
+          git log --oneline -n 3 || true
+
+          echo "Deploy done"
           EOF
