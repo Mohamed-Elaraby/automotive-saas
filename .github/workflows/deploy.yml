@@ -70,6 +70,10 @@ jobs:
           sudo -n /bin/chown -R www-data:www-data storage bootstrap/cache || true
           sudo -n /bin/chmod -R 2775 storage bootstrap/cache || true
 
+          echo "==> Fix dependency dirs permissions before deploy"
+          sudo -n /bin/chown -R "$(id -u)":"$(id -g)" vendor node_modules 2>/dev/null || true
+          sudo -n /bin/chown "$(id -u)":"$(id -g)" composer.json composer.lock package.json package-lock.json 2>/dev/null || true
+
           echo "==> Protect runtime .gitignore files from git reset"
           git update-index --skip-worktree bootstrap/cache/.gitignore || true
           git update-index --skip-worktree storage/app/.gitignore || true
@@ -92,8 +96,12 @@ jobs:
           sudo -n /bin/chown -R www-data:www-data storage bootstrap/cache || true
           sudo -n /bin/chmod -R 2775 storage bootstrap/cache || true
 
-          echo "==> Install PHP dependencies"
-          timeout 10m composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+          echo "==> Fix dependency dirs permissions after reset"
+          sudo -n /bin/chown -R "$(id -u)":"$(id -g)" vendor node_modules 2>/dev/null || true
+          sudo -n /bin/chown "$(id -u)":"$(id -g)" composer.json composer.lock package.json package-lock.json 2>/dev/null || true
+
+          echo "==> Install PHP dependencies with dev packages for server-side verification tests"
+          timeout 10m composer install --prefer-dist --no-interaction --optimize-autoloader
 
           echo "==> Frontend build"
           if [ -f package-lock.json ]; then
