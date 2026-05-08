@@ -13,14 +13,24 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 $localizedRouteMiddleware = ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'];
+
 $registerTenantWorkspaceRoutes = function (): void {
-    Route::get('/', function () {
-        $host = request()->getHost();
-
-        if (in_array($host, config('tenancy.central_domains'), true)) {
-            return app(\App\Http\Controllers\Central\LandingPageController::class)();
-        }
-
+    /*
+    |--------------------------------------------------------------------------
+    | Tenant Home
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    | Do not register Route::get('/') here.
+    |
+    | routes/tenant.php is loaded after routes/web.php by TenancyServiceProvider.
+    | If we register "/" here, it overrides the central landing page route:
+    | routes/web.php -> central.landing
+    |
+    | Keep tenant root on a non-conflicting path.
+    |
+    */
+    Route::get('/tenant-home', function () {
         return 'TENANT HOME: ' . tenant('id');
     })->name('tenant.home');
 
@@ -33,25 +43,34 @@ $registerTenantWorkspaceRoutes = function (): void {
 
     Route::get('/maintenance/customer/track/{token}', [MaintenanceCustomerPortalController::class, 'tracking'])
         ->name('automotive.customer.maintenance.tracking');
+
     Route::get('/maintenance/customer/api/track/{token}', [MaintenanceCustomerPortalController::class, 'trackingJson'])
         ->name('automotive.customer.maintenance.tracking.api');
+
     Route::get('/maintenance/customer/estimates/{token}', [MaintenanceCustomerPortalController::class, 'estimate'])
         ->name('automotive.customer.maintenance.estimate');
+
     Route::get('/maintenance/customer/api/estimates/{token}', [MaintenanceCustomerPortalController::class, 'estimateJson'])
         ->name('automotive.customer.maintenance.estimate.api');
+
     Route::post('/maintenance/customer/estimates/{token}/decision', [MaintenanceCustomerPortalController::class, 'estimateDecision'])
         ->name('automotive.customer.maintenance.estimate.decision');
+
     Route::post('/maintenance/customer/track/{token}/complaints', [MaintenanceCustomerPortalController::class, 'submitComplaint'])
         ->name('automotive.customer.maintenance.complaints.store');
+
     Route::post('/maintenance/customer/track/{token}/feedback', [MaintenanceCustomerPortalController::class, 'submitFeedback'])
         ->name('automotive.customer.maintenance.feedback.store');
+
     Route::get('/maintenance/customer/payment-requests/{token}', [MaintenancePaymentRequestController::class, 'show'])
         ->name('automotive.customer.maintenance.payment-request');
+
     Route::get('/maintenance/customer/api/payment-requests/{token}', [MaintenancePaymentRequestController::class, 'json'])
         ->name('automotive.customer.maintenance.payment-request.api');
 
     Route::get('/maintenance/integrations/api/work-orders/{workOrder}', [MaintenanceIntegrationApiController::class, 'workOrder'])
         ->name('automotive.maintenance.integrations.api.work-orders.show');
+
     Route::get('/maintenance/integrations/api/invoices/{invoice}', [MaintenanceIntegrationApiController::class, 'invoice'])
         ->name('automotive.maintenance.integrations.api.invoices.show');
 
@@ -59,27 +78,66 @@ $registerTenantWorkspaceRoutes = function (): void {
     |--------------------------------------------------------------------------
     | Product Routes (Tenant scoped)
     |--------------------------------------------------------------------------
-    | كل product له ملفات routes منفصلة: admin + front
     */
     require base_path('routes/products/automotive/admin.php');
 };
 
-Route::domain('{tenant}.seven-scapital.com')
-    ->middleware([
-        'web',
-        InitializeTenancyByDomain::class,
-        PreventAccessFromCentralDomains::class,
-        'refresh.route.lookups',
-    ])
-    ->group(function () use ($localizedRouteMiddleware, $registerTenantWorkspaceRoutes) {
+Route::middleware([
+    'web',
+    InitializeTenancyByDomain::class,
+    PreventAccessFromCentralDomains::class,
+    'refresh.route.lookups',
+])->group(function () use ($localizedRouteMiddleware, $registerTenantWorkspaceRoutes) {
+    /*
+    |--------------------------------------------------------------------------
+    | Tenant Non-localized Workspace Redirects
+    |--------------------------------------------------------------------------
+    |
+    | Keep /workspace and /workspace/admin/login working without forcing Arabic.
+    | The redirect uses the current/default app locale.
+    */
+    Route::get('/workspace/{path?}', function (?string $path = null) {
+        $locale = app()->getLocale();
 
-        Route::prefix('ar')
-            ->middleware($localizedRouteMiddleware)
-            ->group($registerTenantWorkspaceRoutes);
+        if (! in_array($locale, array_keys(LaravelLocalization::getSupportedLocales()), true)) {
+            $locale = LaravelLocalization::getDefaultLocale();
+        }
 
-        Route::group([
-            'prefix' => LaravelLocalization::setLocale(),
-            'middleware' => $localizedRouteMiddleware,
-        ], $registerTenantWorkspaceRoutes);
+        $target = '/' . $locale . '/workspace';
 
-    });
+        if (! empty($path)) {
+            $target .= '/' . ltrim($path, '/');
+        }
+
+        return redirect($target);
+    })->where('path', '.*')->name('tenant.workspace.redirect');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Explicit Arabic Tenant Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('ar')
+        ->middleware($localizedRouteMiddleware)
+        ->group($registerTenantWorkspaceRoutes);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Explicit English Tenant Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('en')
+        ->middleware($localizedRouteMiddleware)
+        ->group($registerTenantWorkspaceRoutes);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dynamic Localized Tenant Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::group([
+        'prefix' => LaravelLocalization::setLocale(),
+        'middleware' => $localizedRouteMiddleware,
+    ], $registerTenantWorkspaceRoutes);
+});
+
