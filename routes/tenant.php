@@ -88,56 +88,16 @@ Route::middleware([
     PreventAccessFromCentralDomains::class,
     'refresh.route.lookups',
 ])->group(function () use ($localizedRouteMiddleware, $registerTenantWorkspaceRoutes) {
-    /*
-    |--------------------------------------------------------------------------
-    | Tenant Non-localized Workspace Redirects
-    |--------------------------------------------------------------------------
-    |
-    | Keep /workspace and /workspace/admin/login working without forcing Arabic.
-    | The redirect uses the current/default app locale.
-    */
-    Route::get('/workspace/{path?}', function (?string $path = null) {
-        $locale = app()->getLocale();
-
-        if (! in_array($locale, array_keys(LaravelLocalization::getSupportedLocales()), true)) {
-            $locale = LaravelLocalization::getDefaultLocale();
-        }
-
-        $target = '/' . $locale . '/workspace';
-
-        if (! empty($path)) {
-            $target .= '/' . ltrim($path, '/');
-        }
-
-        return redirect($target);
-    })->where('path', '.*')->name('tenant.workspace.redirect');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Explicit Arabic Tenant Routes
-    |--------------------------------------------------------------------------
-    */
     Route::prefix('ar')
         ->middleware($localizedRouteMiddleware)
         ->group($registerTenantWorkspaceRoutes);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Explicit English Tenant Routes
-    |--------------------------------------------------------------------------
-    */
     Route::prefix('en')
         ->middleware($localizedRouteMiddleware)
         ->group($registerTenantWorkspaceRoutes);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Dynamic Localized Tenant Routes
-    |--------------------------------------------------------------------------
-    */
     Route::group([
         'prefix' => LaravelLocalization::setLocale(),
         'middleware' => $localizedRouteMiddleware,
     ], $registerTenantWorkspaceRoutes);
 });
-
