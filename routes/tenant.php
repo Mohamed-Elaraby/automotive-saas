@@ -15,8 +15,14 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 $localizedRouteMiddleware = ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'];
 $registerTenantWorkspaceRoutes = function (): void {
     Route::get('/', function () {
+        $host = request()->getHost();
+
+        if (in_array($host, config('tenancy.central_domains'), true)) {
+            return app(\App\Http\Controllers\Central\LandingPageController::class)();
+        }
+
         return 'TENANT HOME: ' . tenant('id');
-    });
+    })->name('tenant.home');
 
     Route::get('/documents/verify/{token}', [DocumentController::class, 'verify'])
         ->name('documents.verify');
@@ -58,20 +64,22 @@ $registerTenantWorkspaceRoutes = function (): void {
     require base_path('routes/products/automotive/admin.php');
 };
 
-Route::middleware([
-    'web',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
-    'refresh.route.lookups',
-])->group(function () use ($localizedRouteMiddleware, $registerTenantWorkspaceRoutes) {
+Route::domain('{tenant}.seven-scapital.com')
+    ->middleware([
+        'web',
+        InitializeTenancyByDomain::class,
+        PreventAccessFromCentralDomains::class,
+        'refresh.route.lookups',
+    ])
+    ->group(function () use ($localizedRouteMiddleware, $registerTenantWorkspaceRoutes) {
 
-    Route::prefix('ar')
-        ->middleware($localizedRouteMiddleware)
-        ->group($registerTenantWorkspaceRoutes);
+        Route::prefix('ar')
+            ->middleware($localizedRouteMiddleware)
+            ->group($registerTenantWorkspaceRoutes);
 
-    Route::group([
-        'prefix' => LaravelLocalization::setLocale(),
-        'middleware' => $localizedRouteMiddleware,
-    ], $registerTenantWorkspaceRoutes);
+        Route::group([
+            'prefix' => LaravelLocalization::setLocale(),
+            'middleware' => $localizedRouteMiddleware,
+        ], $registerTenantWorkspaceRoutes);
 
-});
+    });

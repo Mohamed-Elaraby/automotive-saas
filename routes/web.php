@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\SaasSettingsController;
 use App\Http\Controllers\Admin\StateController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\SystemErrorLogController;
+use App\Http\Controllers\Central\LandingPageController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
@@ -59,9 +60,7 @@ Route::group([
     'prefix' => LaravelLocalization::setLocale(),
     'middleware' => $localizedRouteMiddleware,
 ], function () {
-Route::get('/', function () {
-    return view('index');
-})->name('home');
+    Route::get('/', LandingPageController::class)->name('central.landing');
 
 Auth::routes();
 

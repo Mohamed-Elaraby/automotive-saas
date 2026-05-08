@@ -26,9 +26,6 @@ return [
         'seven-scapital.com',
         'www.seven-scapital.com',
         'system.seven-scapital.com',
-        // Legacy central aliases kept temporarily for backward compatibility.
-        'automotive.seven-scapital.com',
-        'spareparts.seven-scapital.com',
     ],
 
     /*
