@@ -13,9 +13,11 @@
                     <a href="{{ route('automotive.admin.access.index') }}" class="btn btn-outline-white d-inline-flex align-items-center">
                         <i class="isax isax-arrow-left me-1"></i>{{ __('access.back_to_access_center') }}
                     </a>
-                    <a href="{{ route('automotive.admin.users.create') }}" class="btn btn-primary d-flex align-items-center">
-                        <i class="isax isax-add-circle5 me-1"></i>{{ __('tenant.add_user') }}
-                    </a>
+                    @productCan('automotive_service.access.users.create', 'automotive_service')
+                        <a href="{{ route('automotive.admin.users.create') }}" class="btn btn-primary d-flex align-items-center">
+                            <i class="isax isax-add-circle5 me-1"></i>{{ __('tenant.add_user') }}
+                        </a>
+                    @endproductCan
                 </div>
             </div>
 
@@ -157,19 +159,25 @@
                                         <i class="isax isax-eye me-1"></i>{{ __('access.view_access_profile') }}
                                     </a>
                                     @if($isOwner)
+                                        @ownerAccess
                                         <form method="POST" action="{{ route('automotive.admin.access.users.owner.sync', $user) }}" class="d-inline">
                                             @csrf
                                             <button type="submit" class="btn btn-outline-white d-inline-flex align-items-center me-2">
                                                 <i class="isax isax-refresh me-1"></i>{{ __('access.sync_owner_access') }}
                                             </button>
                                         </form>
+                                        @endownerAccess
                                     @endif
-                                    <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
-                                        <i class="isax isax-buildings me-1"></i>{{ __('access.manage_branch_access') }}
-                                    </a>
-                                    <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
-                                        <i class="isax isax-layer me-1"></i>{{ __('access.manage_product_access') }}
-                                    </a>
+                                    @productCan('automotive_service.access.branches.manage', 'automotive_service')
+                                        <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
+                                            <i class="isax isax-buildings me-1"></i>{{ __('access.manage_branch_access') }}
+                                        </a>
+                                    @endproductCan
+                                    @productCan('automotive_service.access.users.manage', 'automotive_service')
+                                        <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
+                                            <i class="isax isax-layer me-1"></i>{{ __('access.manage_product_access') }}
+                                        </a>
+                                    @endproductCan
                                 </td>
                             </tr>
                         @empty

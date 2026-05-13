@@ -235,6 +235,43 @@ Never run:
 php artisan route:cache
 ```
 
+## Package 15 Menu/Button Visibility
+
+Package 15 adds UI visibility enforcement only. It improves navigation and button UX, but backend route/controller authorization remains Package 16.
+
+Core implementation:
+
+- `AccessVisibilityService` centralizes menu, module, and action visibility decisions.
+- Blade conditionals are available as `@productCan`, `@productCannot`, `@branchCan`, `@ownerAccess`, and `@notOwnerAccess`.
+- Sidebar sections and quick-create actions are filtered per request from the existing workspace product manifest.
+- Dashboard actions are filtered through the same visibility service.
+- Access Control UI actions now hide or show disabled/read-only states for role, user product, user branch, role assignment, permission matrix, and product branch management actions.
+- Header branch switching continues to use `BranchContextService`, so only allowed branches are listed.
+
+Visibility rules are product-scoped and use explicit permission keys such as:
+
+```text
+automotive_service.access.roles.manage
+automotive_service.access.branches.manage
+automotive_service.work_orders.view
+```
+
+Owner behavior:
+
+- Workspace Owner retains implicit full visibility.
+- Owner Sync remains visible only to the owner.
+- Owner access still does not consume product seats by default.
+
+Request cache:
+
+- Visibility checks use request-local in-memory caches inside `AccessVisibilityService`.
+- No persistent cache is used because role and permission invalidation is not finalized yet.
+
+Package boundary:
+
+- Package 15 hides UI elements for UX.
+- Package 16 must enforce backend routes/controllers for security.
+
 ## Package 12.1 Hotfix Notes
 
 ### Admin Session Isolation

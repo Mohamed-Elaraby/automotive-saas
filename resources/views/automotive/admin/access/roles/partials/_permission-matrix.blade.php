@@ -8,11 +8,15 @@
                 <input type="text" class="form-control border-start-0 ps-0 bg-white" placeholder="{{ __('access.search_permissions') }}" data-permission-search>
             </div>
             <div class="d-flex align-items-center flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-white btn-sm" data-preset="read">{{ __('access.preset_read_only') }}</button>
-                <button type="button" class="btn btn-outline-white btn-sm" data-preset="manager">{{ __('access.preset_manager') }}</button>
-                <button type="button" class="btn btn-outline-white btn-sm" data-preset="full">{{ __('access.preset_full_access') }}</button>
-                <button type="button" class="btn btn-outline-white btn-sm" data-select-all>{{ __('access.select_all_permissions') }}</button>
-                <button type="button" class="btn btn-outline-white btn-sm" data-clear-all>{{ __('access.clear_all_permissions') }}</button>
+                @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                    <button type="button" class="btn btn-outline-white btn-sm" data-preset="read">{{ __('access.preset_read_only') }}</button>
+                    <button type="button" class="btn btn-outline-white btn-sm" data-preset="manager">{{ __('access.preset_manager') }}</button>
+                    <button type="button" class="btn btn-outline-white btn-sm" data-preset="full">{{ __('access.preset_full_access') }}</button>
+                    <button type="button" class="btn btn-outline-white btn-sm" data-select-all>{{ __('access.select_all_permissions') }}</button>
+                    <button type="button" class="btn btn-outline-white btn-sm" data-clear-all>{{ __('access.clear_all_permissions') }}</button>
+                @else
+                    <span class="badge bg-light text-muted border">{{ __('access.read_only') }}</span>
+                @endproductCan
             </div>
         </div>
 

@@ -87,6 +87,7 @@
                                                         name="branches[{{ $row['product_key'] }}][]"
                                                         value="{{ $branch->id }}"
                                                         @checked($row['assigned_branch_ids']->contains((int) $branch->id))
+                                                        @productCannot('automotive_service.access.branches.manage', 'automotive_service') disabled @endproductCannot
                                                     >
                                                 @endif
                                             </span>
@@ -116,9 +117,17 @@
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('automotive.admin.access.users.index') }}" class="btn btn-outline-white">{{ __('tenant.cancel') }}</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="isax isax-tick-circle me-1"></i>{{ __('tenant.save_changes') }}
-                    </button>
+                    @productCan('automotive_service.access.branches.manage', 'automotive_service')
+                        <button type="submit" class="btn btn-primary">
+                            <i class="isax isax-tick-circle me-1"></i>{{ __('tenant.save_changes') }}
+                        </button>
+                    @else
+                        @include('automotive.admin.access.partials._access-denied-hint', [
+                            'label' => __('tenant.save_changes'),
+                            'icon' => 'isax-lock',
+                            'permission' => 'automotive_service.access.branches.manage',
+                        ])
+                    @endproductCan
                 </div>
             </form>
         </div>

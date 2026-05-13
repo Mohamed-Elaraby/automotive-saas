@@ -11,6 +11,7 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\WorkspaceProductFamilyResolver;
+use App\Services\Tenancy\AccessVisibilityService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -24,7 +25,8 @@ class DashboardController extends Controller
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
-        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver
+        protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
+        protected AccessVisibilityService $accessVisibility
     ) {
     }
 
@@ -50,6 +52,11 @@ public function index(Request $request): View
     $workspaceQuery = $this->workspaceModuleCatalogService->workspaceQuery($focusedWorkspaceProduct);
     $focusedWorkspaceProductFamily = $this->workspaceModuleCatalogService->getFocusedProductFamily($focusedWorkspaceProduct);
     $dashboardActions = $this->workspaceModuleCatalogService->getDashboardActions($focusedWorkspaceProduct);
+    $adminUser = $request->user('automotive_admin');
+
+    if ($adminUser) {
+        $dashboardActions = $this->accessVisibility->filterQuickCreateActions($dashboardActions, $adminUser, $focusedWorkspaceProduct);
+    }
     $focusedExperience = $this->workspaceModuleCatalogService->getFocusedProductExperience($focusedWorkspaceProduct);
     $workspaceIntegrations = $this->workspaceIntegrationCatalogService->getIntegrations($workspaceProducts, $focusedWorkspaceProduct);
 

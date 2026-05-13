@@ -10,8 +10,10 @@
     <div id="{{ $moduleId }}" class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}" aria-labelledby="{{ $moduleId }}-heading" data-bs-parent="#permissionMatrixAccordion">
         <div class="accordion-body">
             <div class="d-flex justify-content-end gap-2 mb-2">
-                <button type="button" class="btn btn-outline-white btn-sm" data-select-module="{{ $group['module_key'] }}">{{ __('access.select_module') }}</button>
-                <button type="button" class="btn btn-outline-white btn-sm" data-clear-module="{{ $group['module_key'] }}">{{ __('access.clear_module') }}</button>
+                @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                    <button type="button" class="btn btn-outline-white btn-sm" data-select-module="{{ $group['module_key'] }}">{{ __('access.select_module') }}</button>
+                    <button type="button" class="btn btn-outline-white btn-sm" data-clear-module="{{ $group['module_key'] }}">{{ __('access.clear_module') }}</button>
+                @endproductCan
             </div>
             <div class="table-responsive table-nowrap">
                 <table class="table border mb-0">
@@ -47,6 +49,7 @@
                                             data-module="{{ $group['module_key'] }}"
                                             data-action="{{ $permission['action'] }}"
                                             @checked(in_array($permission['key'], old('permissions', $selectedPermissionKeys), true))
+                                            @productCannot('automotive_service.access.roles.manage', 'automotive_service') disabled @endproductCannot
                                         >
                                     </div>
                                 </td>

@@ -118,6 +118,7 @@
                                             value="{{ $row['product_key'] }}"
                                             @checked($row['has_access'])
                                             @disabled($row['seat_blocked'])
+                                            @productCannot('automotive_service.access.users.manage', 'automotive_service') disabled @endproductCannot
                                         >
                                         <span>{{ $row['has_access'] ? __('access.product_access_enabled') : __('access.enable_product_access') }}</span>
                                     </label>
@@ -135,9 +136,17 @@
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('automotive.admin.access.users.index') }}" class="btn btn-outline-white">{{ __('tenant.cancel') }}</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="isax isax-tick-circle me-1"></i>{{ __('tenant.save_changes') }}
-                    </button>
+                    @productCan('automotive_service.access.users.manage', 'automotive_service')
+                        <button type="submit" class="btn btn-primary">
+                            <i class="isax isax-tick-circle me-1"></i>{{ __('tenant.save_changes') }}
+                        </button>
+                    @else
+                        @include('automotive.admin.access.partials._access-denied-hint', [
+                            'label' => __('tenant.save_changes'),
+                            'icon' => 'isax-lock',
+                            'permission' => 'automotive_service.access.users.manage',
+                        ])
+                    @endproductCan
                 </div>
             </form>
         </div>

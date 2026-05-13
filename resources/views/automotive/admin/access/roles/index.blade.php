@@ -22,9 +22,11 @@
                     <a href="{{ route('automotive.admin.access.index') }}" class="btn btn-outline-white d-inline-flex align-items-center">
                         <i class="isax isax-arrow-left me-1"></i>{{ __('access.back_to_access_center') }}
                     </a>
-                    <a href="{{ route('automotive.admin.access.roles.create') }}" class="btn btn-primary d-flex align-items-center">
-                        <i class="isax isax-add-circle5 me-1"></i>{{ __('access.new_role') }}
-                    </a>
+                    @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                        <a href="{{ route('automotive.admin.access.roles.create') }}" class="btn btn-primary d-flex align-items-center">
+                            <i class="isax isax-add-circle5 me-1"></i>{{ __('access.new_role') }}
+                        </a>
+                    @endproductCan
                 </div>
             </div>
 
@@ -112,36 +114,40 @@
                                 </td>
                                 <td>{{ optional($role->created_at)->format('d M Y') }}</td>
                                 <td class="text-end action-item">
-                                    <a href="{{ route('automotive.admin.access.roles.permissions.edit', $role) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
-                                        <i class="isax isax-shield-tick me-1"></i>{{ __('access.permissions') }}
-                                    </a>
-                                    <a href="javascript:void(0);" data-bs-toggle="dropdown">
-                                        <i class="fa-solid fa-ellipsis-vertical"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a href="{{ route('automotive.admin.access.roles.edit', $role) }}" class="dropdown-item d-flex align-items-center">
-                                                <i class="isax isax-edit me-2"></i>{{ __('tenant.edit') }}
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <form method="POST" action="{{ route('automotive.admin.access.roles.duplicate', $role) }}">
-                                                @csrf
-                                                <button type="submit" class="dropdown-item d-flex align-items-center">
-                                                    <i class="isax isax-copy me-2"></i>{{ __('access.duplicate') }}
-                                                </button>
-                                            </form>
-                                        </li>
-                                        <li>
-                                            <form method="POST" action="{{ route('automotive.admin.access.roles.destroy', $role) }}" onsubmit="return confirm('{{ __('access.delete_role_confirmation') }}');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item d-flex align-items-center text-danger" @disabled($role->is_system || $role->users_count > 0)>
-                                                    <i class="isax isax-trash me-2"></i>{{ __('tenant.delete') }}
-                                                </button>
-                                            </form>
-                                        </li>
-                                    </ul>
+                                    @productCan('automotive_service.access.roles.view', 'automotive_service')
+                                        <a href="{{ route('automotive.admin.access.roles.permissions.edit', $role) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
+                                            <i class="isax isax-shield-tick me-1"></i>{{ __('access.permissions') }}
+                                        </a>
+                                    @endproductCan
+                                    @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                                        <a href="javascript:void(0);" data-bs-toggle="dropdown">
+                                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a href="{{ route('automotive.admin.access.roles.edit', $role) }}" class="dropdown-item d-flex align-items-center">
+                                                    <i class="isax isax-edit me-2"></i>{{ __('tenant.edit') }}
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form method="POST" action="{{ route('automotive.admin.access.roles.duplicate', $role) }}">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center">
+                                                        <i class="isax isax-copy me-2"></i>{{ __('access.duplicate') }}
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form method="POST" action="{{ route('automotive.admin.access.roles.destroy', $role) }}" onsubmit="return confirm('{{ __('access.delete_role_confirmation') }}');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center text-danger" @disabled($role->is_system || $role->users_count > 0)>
+                                                        <i class="isax isax-trash me-2"></i>{{ __('tenant.delete') }}
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    @endproductCan
                                 </td>
                             </tr>
                         @empty
@@ -152,9 +158,11 @@
                                     </span>
                                     <h6 class="mb-1">{{ __('access.no_roles_found') }}</h6>
                                     <p class="text-muted mb-3">{{ __('access.no_roles_found_hint') }}</p>
-                                    <a href="{{ route('automotive.admin.access.roles.create') }}" class="btn btn-primary d-inline-flex align-items-center">
-                                        <i class="isax isax-add-circle5 me-1"></i>{{ __('access.new_role') }}
-                                    </a>
+                                    @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                                        <a href="{{ route('automotive.admin.access.roles.create') }}" class="btn btn-primary d-inline-flex align-items-center">
+                                            <i class="isax isax-add-circle5 me-1"></i>{{ __('access.new_role') }}
+                                        </a>
+                                    @endproductCan
                                 </td>
                             </tr>
                         @endforelse

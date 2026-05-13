@@ -14,9 +14,11 @@
                     <p class="mb-0 text-muted">{{ __('access.permission_matrix') }}</p>
                 </div>
                 <div class="d-flex my-xl-auto right-content align-items-center flex-wrap gap-2">
-                    <a href="{{ route('automotive.admin.access.roles.edit', $role) }}" class="btn btn-outline-white d-inline-flex align-items-center">
-                        <i class="isax isax-edit me-1"></i>{{ __('tenant.edit') }}
-                    </a>
+                    @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                        <a href="{{ route('automotive.admin.access.roles.edit', $role) }}" class="btn btn-outline-white d-inline-flex align-items-center">
+                            <i class="isax isax-edit me-1"></i>{{ __('tenant.edit') }}
+                        </a>
+                    @endproductCan
                     <a href="{{ route('automotive.admin.access.roles.index') }}" class="btn btn-outline-white d-inline-flex align-items-center">
                         <i class="isax isax-arrow-left me-1"></i>{{ __('access.back_to_roles') }}
                     </a>
@@ -81,12 +83,20 @@
                         <i class="isax isax-arrow-left me-1"></i>{{ __('access.back_to_roles') }}
                     </a>
                     <div class="d-flex gap-2">
-                        <button type="reset" class="btn btn-outline-white d-inline-flex align-items-center">
-                            <i class="isax isax-refresh me-1"></i>{{ __('access.reset_changes') }}
-                        </button>
-                        <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
-                            <i class="isax isax-save-2 me-1"></i>{{ __('access.save_permissions') }}
-                        </button>
+                        @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                            <button type="reset" class="btn btn-outline-white d-inline-flex align-items-center">
+                                <i class="isax isax-refresh me-1"></i>{{ __('access.reset_changes') }}
+                            </button>
+                            <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
+                                <i class="isax isax-save-2 me-1"></i>{{ __('access.save_permissions') }}
+                            </button>
+                        @else
+                            @include('automotive.admin.access.partials._access-denied-hint', [
+                                'label' => __('access.save_permissions'),
+                                'icon' => 'isax-lock',
+                                'permission' => 'automotive_service.access.roles.manage',
+                            ])
+                        @endproductCan
                     </div>
                 </div>
             </form>
@@ -125,15 +135,21 @@
                 button.addEventListener('click', () => setModule(button.dataset.clearModule, false));
             });
 
-            form.querySelector('[data-select-all]').addEventListener('click', () => {
-                boxes.forEach((box) => box.checked = true);
-                updateCount();
-            });
+            const selectAll = form.querySelector('[data-select-all]');
+            if (selectAll) {
+                selectAll.addEventListener('click', () => {
+                    boxes.forEach((box) => box.checked = true);
+                    updateCount();
+                });
+            }
 
-            form.querySelector('[data-clear-all]').addEventListener('click', () => {
-                boxes.forEach((box) => box.checked = false);
-                updateCount();
-            });
+            const clearAll = form.querySelector('[data-clear-all]');
+            if (clearAll) {
+                clearAll.addEventListener('click', () => {
+                    boxes.forEach((box) => box.checked = false);
+                    updateCount();
+                });
+            }
 
             form.querySelectorAll('[data-preset]').forEach((button) => {
                 button.addEventListener('click', () => {

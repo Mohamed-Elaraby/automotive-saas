@@ -6012,6 +6012,43 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Package 15 - Menu/Button Visibility Enforcement - 2026-05-13
+
+Completed scope:
+- added `AccessVisibilityService` for product-scoped menu, module, action, and explanation checks
+- added request-local visibility caches for owner/menu/action decisions
+- registered Blade conditionals:
+  - `@productCan`
+  - `@productCannot`
+  - `@branchCan`
+  - `@ownerAccess`
+  - `@notOwnerAccess`
+- filtered workspace sidebar sections, mini quick-create actions, and dashboard actions through the visibility service
+- added a reusable access denied/disabled hint partial
+- applied visibility to Access Control user, product, branch, role, role assignment, and permission matrix action buttons
+- preserved Workspace Owner implicit visibility and owner-only Sync Owner Access
+
+Important boundary:
+- Package 15 is UI visibility and read-only UX only.
+- Package 16 must enforce backend routes/controllers for security.
+
+Theme pages reviewed:
+- `resources/views/roles-permissions.blade.php`
+- `resources/views/permission.blade.php`
+- `resources/views/users.blade.php`
+- `resources/views/ui-alerts.blade.php`
+- `resources/views/ui-buttons.blade.php`
+- `resources/views/ui-tooltips.blade.php`
+- `resources/views/ui-badges.blade.php`
+- `resources/views/ui-dropdowns.blade.php`
+- scoped access views under `resources/views/automotive/admin/access`
+
+Verification target:
+- `php artisan test tests/Feature/Automotive/Admin/MenuButtonVisibilityTest.php`
+
+Never run:
+- `php artisan route:cache`
+
 ## Phase 2 Package 12 - Branch Access UI and Branch Context - 2026-05-07
 
 Package completed:

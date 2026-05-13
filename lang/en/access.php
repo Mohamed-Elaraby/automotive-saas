@@ -234,4 +234,9 @@ return [
     'assigned' => 'Assigned',
     'current_branch_eligible' => 'Current Branch Eligible',
     'granted' => 'Granted',
+    'read_only' => 'Read only',
+    'not_available' => 'Not available',
+    'access_action_not_available' => 'This action is not available for your current access.',
+    'missing_permission' => 'Missing permission',
+    'you_do_not_have_permission_to_manage_roles' => 'You do not have permission to manage roles.',
 ];

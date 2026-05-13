@@ -18,6 +18,17 @@
 
             @include('automotive.admin.access.users.partials._alerts')
 
+            @productCannot('automotive_service.access.roles.manage', 'automotive_service')
+                <div class="mb-3">
+                    @include('automotive.admin.access.partials._access-denied-hint', [
+                        'label' => __('access.read_only'),
+                        'icon' => 'isax-lock',
+                        'permission' => 'automotive_service.access.roles.manage',
+                        'message' => __('access.you_do_not_have_permission_to_manage_roles'),
+                    ])
+                </div>
+            @endproductCannot
+
             <form method="POST" action="{{ route('automotive.admin.access.users.roles.update', $user) }}">
                 @csrf
                 @method('PUT')
@@ -56,7 +67,7 @@
                                                 @endforelse
                                             </td>
                                             <td style="min-width: 280px;">
-                                                <select name="roles[{{ $product['product_key'] }}]" class="form-select" @disabled(! $product['has_access'])>
+                                                <select name="roles[{{ $product['product_key'] }}]" class="form-select" @disabled(! $product['has_access']) @productCannot('automotive_service.access.roles.manage', 'automotive_service') disabled @endproductCannot>
                                                     <option value="">{{ __('access.no_role') }}</option>
                                                     @foreach($row['available_roles'] as $role)
                                                         <option value="{{ $role->id }}" @selected(in_array((int) $role->id, old('roles.' . $product['product_key'], $row['assigned_role_ids']), true))>
@@ -84,9 +95,11 @@
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="{{ route('automotive.admin.access.users.show', $user) }}" class="btn btn-outline-white">{{ __('tenant.cancel') }}</a>
-                    <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
-                        <i class="isax isax-save-2 me-1"></i>{{ __('tenant.save') }}
-                    </button>
+                    @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                        <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
+                            <i class="isax isax-save-2 me-1"></i>{{ __('tenant.save') }}
+                        </button>
+                    @endproductCan
                 </div>
             </form>
         </div>

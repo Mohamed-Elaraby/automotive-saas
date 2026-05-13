@@ -71,9 +71,17 @@
                             <h5 class="card-title mb-0">{{ __('access.central_branches') }}</h5>
                             <p class="mb-0 text-muted small">{{ __('access.product_branches_table_hint') }}</p>
                         </div>
-                        <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
-                            <i class="isax isax-tick-circle me-1"></i>{{ __('tenant.save_changes') }}
-                        </button>
+                        @productCan('automotive_service.access.branches.manage', 'automotive_service')
+                            <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
+                                <i class="isax isax-tick-circle me-1"></i>{{ __('tenant.save_changes') }}
+                            </button>
+                        @else
+                            @include('automotive.admin.access.partials._access-denied-hint', [
+                                'label' => __('tenant.save_changes'),
+                                'icon' => 'isax-lock',
+                                'permission' => 'automotive_service.access.branches.manage',
+                            ])
+                        @endproductCan
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive table-nowrap">
@@ -117,16 +125,20 @@
                                                 </span>
                                             </td>
                                             <td class="text-end">
-                                                <div class="form-check form-switch d-inline-flex justify-content-end">
-                                                    <input
-                                                        class="form-check-input"
-                                                        type="checkbox"
-                                                        name="branches[]"
-                                                        value="{{ $branch->id }}"
-                                                        @checked($row['is_enabled'])
-                                                        @disabled(! $branch->is_active)
-                                                    >
-                                                </div>
+                                                @productCan('automotive_service.access.branches.manage', 'automotive_service')
+                                                    <div class="form-check form-switch d-inline-flex justify-content-end">
+                                                        <input
+                                                            class="form-check-input"
+                                                            type="checkbox"
+                                                            name="branches[]"
+                                                            value="{{ $branch->id }}"
+                                                            @checked($row['is_enabled'])
+                                                            @disabled(! $branch->is_active)
+                                                        >
+                                                    </div>
+                                                @else
+                                                    <span class="badge bg-light text-muted border">{{ __('access.read_only') }}</span>
+                                                @endproductCan
                                             </td>
                                         </tr>
                                     @empty

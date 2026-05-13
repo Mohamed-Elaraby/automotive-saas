@@ -234,4 +234,9 @@ return [
     'assigned' => 'معين',
     'current_branch_eligible' => 'مؤهل كسياق فرع حالي',
     'granted' => 'ممنوح',
+    'read_only' => 'قراءة فقط',
+    'not_available' => 'غير متاح',
+    'access_action_not_available' => 'هذا الإجراء غير متاح حسب صلاحياتك الحالية.',
+    'missing_permission' => 'الصلاحية المفقودة',
+    'you_do_not_have_permission_to_manage_roles' => 'ليست لديك صلاحية إدارة الأدوار.',
 ];

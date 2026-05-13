@@ -13,12 +13,16 @@
                     <a href="{{ route('automotive.admin.access.users.index') }}" class="btn btn-outline-white d-inline-flex align-items-center">
                         <i class="isax isax-arrow-left me-1"></i>{{ __('access.back_to_users') }}
                     </a>
-                    <a href="{{ route('automotive.admin.access.users.roles.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
-                        <i class="isax isax-shield-tick me-1"></i>{{ __('access.assign_roles') }}
-                    </a>
-                    <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-primary d-inline-flex align-items-center">
-                        <i class="isax isax-layer me-1"></i>{{ __('access.manage_product_access') }}
-                    </a>
+                    @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                        <a href="{{ route('automotive.admin.access.users.roles.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
+                            <i class="isax isax-shield-tick me-1"></i>{{ __('access.assign_roles') }}
+                        </a>
+                    @endproductCan
+                    @productCan('automotive_service.access.users.manage', 'automotive_service')
+                        <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-primary d-inline-flex align-items-center">
+                            <i class="isax isax-layer me-1"></i>{{ __('access.manage_product_access') }}
+                        </a>
+                    @endproductCan
                 </div>
             </div>
 
@@ -46,16 +50,20 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-center flex-wrap gap-2">
-                            <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
-                                <i class="isax isax-buildings me-1"></i>{{ __('access.manage_branch_access') }}
-                            </a>
+                            @productCan('automotive_service.access.branches.manage', 'automotive_service')
+                                <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center">
+                                    <i class="isax isax-buildings me-1"></i>{{ __('access.manage_branch_access') }}
+                                </a>
+                            @endproductCan
                             @if($isOwner)
+                                @ownerAccess
                                 <form method="POST" action="{{ route('automotive.admin.access.users.owner.sync', $user) }}">
                                     @csrf
                                     <button type="submit" class="btn btn-outline-white d-inline-flex align-items-center">
                                         <i class="isax isax-refresh me-1"></i>{{ __('access.sync_owner_access') }}
                                     </button>
                                 </form>
+                                @endownerAccess
                             @endif
                         </div>
                     </div>
@@ -140,7 +148,9 @@
                                         <td>{{ $product['consumes_seat'] ? __('access.yes') : __('access.no') }}</td>
                                         <td><span class="badge bg-light text-dark border">{{ $product['access_source'] }}</span></td>
                                         <td class="text-end">
-                                            <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-outline-white btn-sm">{{ __('access.manage_product_access') }}</a>
+                                            @productCan('automotive_service.access.users.manage', 'automotive_service')
+                                                <a href="{{ route('automotive.admin.access.users.products.edit', $user) }}" class="btn btn-outline-white btn-sm">{{ __('access.manage_product_access') }}</a>
+                                            @endproductCan
                                         </td>
                                     </tr>
                                 @endforeach
@@ -154,7 +164,9 @@
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0">{{ $productKey }}</h6>
-                                <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white btn-sm">{{ __('access.manage_branch_access') }}</a>
+                                @productCan('automotive_service.access.branches.manage', 'automotive_service')
+                                    <a href="{{ route('automotive.admin.access.users.branches.edit', $user) }}" class="btn btn-outline-white btn-sm">{{ __('access.manage_branch_access') }}</a>
+                                @endproductCan
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
@@ -192,9 +204,11 @@
 
                 <div class="tab-pane" id="roles">
                     <div class="d-flex justify-content-end mb-2">
-                        <a href="{{ route('automotive.admin.access.users.roles.edit', $user) }}" class="btn btn-primary btn-sm d-inline-flex align-items-center">
-                            <i class="isax isax-shield-tick me-1"></i>{{ __('access.assign_roles') }}
-                        </a>
+                        @productCan('automotive_service.access.roles.manage', 'automotive_service')
+                            <a href="{{ route('automotive.admin.access.users.roles.edit', $user) }}" class="btn btn-primary btn-sm d-inline-flex align-items-center">
+                                <i class="isax isax-shield-tick me-1"></i>{{ __('access.assign_roles') }}
+                            </a>
+                        @endproductCan
                     </div>
                     <div class="table-responsive">
                         <table class="table table-nowrap">

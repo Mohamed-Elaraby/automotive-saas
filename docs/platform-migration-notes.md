@@ -143,6 +143,22 @@ Next enforcement packages:
 - Package 16: Backend Route/Controller Permission Enforcement
 - Package 17: Branch-Scoped Data Filtering
 
+## Package 15 Access Migration Notes
+
+Menu and button visibility now uses `AccessVisibilityService` instead of ad hoc Blade checks.
+
+Migration rules:
+
+- use product-scoped permission keys in UI checks
+- prefer `@productCan('automotive_service.module.action', 'automotive_service')`
+- use `@branchCan` only for branch-scoped action checks with a known/current branch
+- do not treat hidden UI as security enforcement
+- keep backend protection work for Package 16
+
+The service uses request-level caches only. Do not add route cache or persistent permission visibility cache until invalidation is designed.
+
+Workspace Owner remains an implicit full-access user for visibility. Owner Sync and owner-only actions must stay guarded by owner visibility, not by ordinary role assignment.
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation
