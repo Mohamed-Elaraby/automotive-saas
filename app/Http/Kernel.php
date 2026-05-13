@@ -81,5 +81,6 @@ class Kernel extends HttpKernel
         'tenant.product.permission' => \App\Http\Middleware\EnsureTenantUserHasProductPermission::class,
         'tenant.access.manage' => \App\Http\Middleware\EnsureTenantUserCanManageAccess::class,
         'tenant.branch.context' => \App\Http\Middleware\EnsureValidBranchContext::class,
+        'marketing.locale' => \App\Http\Middleware\SetMarketingLocale::class,
     ];
 }

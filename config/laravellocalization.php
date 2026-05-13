@@ -28,6 +28,7 @@ return [
         'workspace/webhooks/*',
         'automotive/webhooks/*',
         'webhooks/*',
+        'sitemap.xml',
     ],
 
     'httpMethodsIgnored' => ['POST', 'PUT', 'PATCH', 'DELETE'],

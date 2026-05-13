@@ -41,6 +41,14 @@ use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 $localizedRouteMiddleware = ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'];
 
+/*
+|--------------------------------------------------------------------------
+| Marketing website routes (loaded first so /en and /ar match here before
+| LaravelLocalization's auto-redirect group below).
+|--------------------------------------------------------------------------
+*/
+require base_path('routes/marketing.php');
+
 Route::prefix('ar')
     ->middleware($localizedRouteMiddleware)
     ->group(function (): void {
