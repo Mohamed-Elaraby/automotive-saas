@@ -1,5 +1,116 @@
 # Platform Access Control UI
 
+## Package 14: User Access Profile + Effective Permissions
+
+The user-centered access profile is available at:
+
+```text
+/workspace/admin/access/users/{user}
+```
+
+Route names are registered under:
+
+```text
+automotive.admin.access.users.show
+automotive.admin.access.users.roles.edit
+automotive.admin.access.users.roles.update
+```
+
+### User Access Profile
+
+The profile combines:
+
+- user identity and status
+- Workspace Owner and current-login badges
+- product access summary
+- branch access summary
+- role summary
+- effective permission summary
+- seat impact
+- access warnings
+- activity placeholder for Package 18 audit logs
+
+Tabs:
+
+- Overview
+- Products
+- Branches
+- Roles
+- Effective Permissions
+- Access Warnings
+- Activity
+
+### Role Assignment Per Product
+
+Package 14 intentionally uses one active role per user per product. The data model can support multiple assignments, but the UI keeps the assignment model predictable while effective permissions are being introduced.
+
+Rules:
+
+- a user cannot be assigned a product role without product access
+- a user cannot be assigned a role from another product
+- updates are idempotent
+- owner role changes are protected from self-lockout
+
+### Effective Permissions
+
+`EffectiveUserAccessService` calculates and explains access through:
+
+- product subscription state
+- product access records
+- owner implicit access
+- branch access records
+- product roles
+- product permissions
+
+Explanation sources include:
+
+- `role`
+- `owner_implicit`
+- `blocked_no_product_access`
+- `blocked_no_branch_access`
+- `blocked_missing_role`
+- `blocked_inactive_subscription`
+- `blocked_missing_permission`
+
+This package displays effective access only. Package 15 and Package 16 will enforce menu/button visibility and backend route/controller permissions.
+
+### Access Warnings
+
+The profile reports warnings for states such as:
+
+- product access without branch access
+- product access without role
+- role assigned while product access is revoked
+- branch assigned while the product branch is disabled
+- no product access
+- inactive subscription
+- owner missing explicit owner_sync records
+
+Owner missing explicit records is informational because the Workspace Owner still has implicit access.
+
+### Theme Reuse
+
+The old theme pages reviewed for Package 14 were:
+
+- `resources/views/users.blade.php`
+- `resources/views/profile.blade.php`
+- `resources/views/roles-permissions.blade.php`
+- `resources/views/permission.blade.php`
+- `resources/views/ui-nav-tabs.blade.php`
+- `resources/views/ui-cards.blade.php`
+- existing scoped views under `resources/views/automotive/admin/access`
+
+Reused design details:
+
+- page header actions
+- user profile card structure
+- solid primary tabs
+- metric cards
+- badges
+- table and action button styling
+- permission accordion/table matrix styling
+- empty and placeholder states
+
 ## Package 13: Roles & Permission Matrix UI
 
 The product-scoped role management UI is available at:

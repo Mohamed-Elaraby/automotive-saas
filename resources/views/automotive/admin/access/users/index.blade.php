@@ -75,6 +75,8 @@
                             <th>{{ __('tenant.email') }}</th>
                             <th>{{ __('access.enabled_products') }}</th>
                             <th>{{ __('access.branch_access') }}</th>
+                            <th>{{ __('access.roles') }}</th>
+                            <th>{{ __('access.access_warnings') }}</th>
                             <th>{{ __('tenant.status') }}</th>
                             <th class="no-sort"></th>
                         </tr>
@@ -83,6 +85,8 @@
                         @forelse($users as $user)
                             @php($products = $userAccessSummary[$user->id] ?? [])
                             @php($branchSummary = $userBranchAccessSummary[$user->id] ?? ['count' => 0, 'product_keys' => []])
+                            @php($roleSummary = $userRoleSummary[$user->id] ?? ['count' => 0, 'product_keys' => []])
+                            @php($warningCount = (int) ($userWarningSummary[$user->id] ?? 0))
                             @php($isOwner = in_array((int) $user->id, $ownerUserIds ?? [], true))
                             <tr>
                                 <td>
@@ -130,11 +134,28 @@
                                     @endif
                                 </td>
                                 <td>
+                                    <div class="fw-semibold">{{ $roleSummary['count'] }} {{ __('access.roles') }}</div>
+                                    @foreach($roleSummary['product_keys'] as $productKey)
+                                        <span class="badge bg-light text-muted border me-1">{{ $productKey }}</span>
+                                    @endforeach
+                                    @if($isOwner && (int) $roleSummary['count'] === 0)
+                                        <span class="badge bg-primary-transparent text-primary border">{{ __('access.owner_implicit_roles') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge {{ $warningCount > 0 ? 'bg-warning-transparent text-warning' : 'bg-success-transparent text-success' }} border">
+                                        {{ $warningCount }}
+                                    </span>
+                                </td>
+                                <td>
                                     <span class="badge badge-soft-success d-inline-flex align-items-center">
                                         {{ __('tenant.active') }} <i class="isax isax-tick-circle ms-1"></i>
                                     </span>
                                 </td>
                                 <td class="text-end">
+                                    <a href="{{ route('automotive.admin.access.users.show', $user) }}" class="btn btn-outline-white d-inline-flex align-items-center me-2">
+                                        <i class="isax isax-eye me-1"></i>{{ __('access.view_access_profile') }}
+                                    </a>
                                     @if($isOwner)
                                         <form method="POST" action="{{ route('automotive.admin.access.users.owner.sync', $user) }}" class="d-inline">
                                             @csrf
@@ -153,7 +174,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">{{ __('tenant.no_users_found') }}</td>
+                                <td colspan="8" class="text-center text-muted py-4">{{ __('tenant.no_users_found') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

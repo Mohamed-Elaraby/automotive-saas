@@ -22,6 +22,7 @@ use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowControl
 use App\Http\Controllers\Core\DocumentController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
 use App\Http\Controllers\Automotive\Admin\ProductRoleController;
+use App\Http\Controllers\Automotive\Admin\UserAccessProfileController;
 use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
 use App\Http\Controllers\Automotive\Admin\StockTransferController;
 use App\Http\Controllers\Automotive\Admin\UserController;
@@ -83,10 +84,13 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                 ->group(function () {
                     Route::get('/', [AccessControlController::class, 'index'])->name('index');
                     Route::get('/users', [AccessControlController::class, 'users'])->name('users.index');
+                    Route::get('/users/{user}', [UserAccessProfileController::class, 'show'])->name('users.show');
                     Route::get('/users/{user}/products', [AccessControlController::class, 'editUserProducts'])->name('users.products.edit');
                     Route::put('/users/{user}/products', [AccessControlController::class, 'updateUserProducts'])->name('users.products.update');
                     Route::get('/users/{user}/branches', [AccessControlController::class, 'editUserBranches'])->name('users.branches.edit');
                     Route::put('/users/{user}/branches', [AccessControlController::class, 'updateUserBranches'])->name('users.branches.update');
+                    Route::get('/users/{user}/roles', [UserAccessProfileController::class, 'editRoles'])->name('users.roles.edit');
+                    Route::put('/users/{user}/roles', [UserAccessProfileController::class, 'updateRoles'])->name('users.roles.update');
                     Route::post('/users/{user}/owner-sync', [AccessControlController::class, 'syncOwnerAccess'])->name('users.owner.sync');
                     Route::get('/roles', [ProductRoleController::class, 'index'])->name('roles.index');
                     Route::get('/roles/create', [ProductRoleController::class, 'create'])->name('roles.create');

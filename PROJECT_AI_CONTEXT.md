@@ -129,8 +129,59 @@ Package 13 verification:
 - `php artisan test tests/Feature/Automotive/Admin/RolePermissionMatrixTest.php`
   - result: 12 passed, 38 assertions
 
+## 1.1.3) Package 14 Completed - User Access Profile + Effective Permissions - 2026-05-13
+
+Package 14 added a user-centered access profile under:
+- `/workspace/admin/access/users/{user}`
+- route namespace: `automotive.admin.access.users.*`
+
+Implemented scope:
+- tabbed User Access Profile with:
+  - Overview
+  - Products
+  - Branches
+  - Roles
+  - Effective Permissions
+  - Access Warnings
+  - Activity placeholder for Package 18 audit logs
+- role assignment page:
+  - `/workspace/admin/access/users/{user}/roles`
+  - one active role per user per product for now
+  - product-scoped validation prevents assigning roles from another product
+  - role assignment requires product access, except owner implicit access handling
+- effective access calculation service:
+  - `EffectiveUserAccessService`
+  - calculates products, branches, roles, permissions, permission explanations, and warnings
+- role assignment service:
+  - `UserRoleAssignmentService`
+  - updates role assignments transactionally
+  - prevents owner self-lockout by requiring the Workspace Owner to retain automotive access-management capability
+- user list improvements:
+  - View Access Profile action
+  - roles count
+  - warnings count
+  - owner no longer appears as missing product access
+
+Owner behavior:
+- Workspace Owner shows Owner Access, Implicit Full Access, and Does not consume product seat.
+- Missing explicit owner_sync records are informational warnings only.
+- Sync Owner Access remains available and idempotent.
+
+Effective permission explanation sources:
+- `role`
+- `owner_implicit`
+- `blocked_no_product_access`
+- `blocked_no_branch_access`
+- `blocked_missing_role`
+- `blocked_inactive_subscription`
+- `blocked_missing_permission`
+
+Package 14 verification:
+- `php artisan test tests/Feature/Automotive/Admin/UserAccessProfileTest.php`
+  - result: 12 passed, 31 assertions
+
 Next package:
-- Package 14: User Access Profile + Effective Permissions
+- Package 15: Menu/Button Visibility Enforcement
 
 ## 1.1.1) Product-Scoped Architecture Refactor Roadmap - 2026-05-06
 

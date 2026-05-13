@@ -120,6 +120,29 @@ php artisan db:seed --class=TenantProductPermissionCatalogSeeder
 
 Package 14 should consume these role and permission assignments to show per-user effective access across owner access, product access, branch access, role permissions, and branch context.
 
+## Package 14 Access Migration Notes
+
+The User Access Profile is now the read model for a tenant user's access state:
+
+- `EffectiveUserAccessService` calculates product access, branch access, roles, effective permissions, permission explanations, and warnings.
+- `UserRoleAssignmentService` updates tenant user product-role assignments transactionally.
+- `UserAccessProfileController` owns profile display and role assignment routes.
+
+Role assignment policy for this stage:
+
+- one active role per user per product
+- no role assignment without product access
+- no cross-product role assignment
+- Workspace Owner must retain access-management capability
+
+This is a UI/read-model package. It does not replace route/controller enforcement yet.
+
+Next enforcement packages:
+
+- Package 15: Menu/Button Visibility Enforcement
+- Package 16: Backend Route/Controller Permission Enforcement
+- Package 17: Branch-Scoped Data Filtering
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation

@@ -10,9 +10,11 @@ use App\Models\TenantProductBranch;
 use App\Models\TenantProductSubscription;
 use App\Models\TenantUserProductAccess;
 use App\Models\TenantUserProductBranch;
+use App\Models\TenantUserProductRole;
 use App\Models\User;
 use App\Services\Tenancy\ProductBranchAccessService;
 use App\Services\Tenancy\ProductEntitlementService;
+use App\Services\Tenancy\EffectiveUserAccessService;
 use App\Services\Tenancy\TenantUserProductAccessService;
 use App\Services\Tenancy\WorkspaceOwnerAccessService;
 use Illuminate\Contracts\View\View;
@@ -29,7 +31,8 @@ class AccessControlController extends Controller
         protected ProductEntitlementService $entitlements,
         protected TenantUserProductAccessService $productAccess,
         protected ProductBranchAccessService $branchAccess,
-        protected WorkspaceOwnerAccessService $ownerAccess
+        protected WorkspaceOwnerAccessService $ownerAccess,
+        protected EffectiveUserAccessService $effectiveAccess
     ) {
     }
 
@@ -53,6 +56,8 @@ class AccessControlController extends Controller
             'seatUsageRows' => $this->seatUsageRows($subscriptions, $tenantId),
             'userAccessSummary' => $this->userAccessSummary($tenantId),
             'userBranchAccessSummary' => $this->userBranchAccessSummary($tenantId),
+            'userRoleSummary' => $this->userRoleSummary($tenantId),
+            'userWarningSummary' => $this->userWarningSummary(),
             'ownerUserIds' => [1],
             'quickLinks' => $this->quickLinks(),
             'currentUserId' => auth('automotive_admin')->id(),
@@ -428,6 +433,35 @@ class AccessControlController extends Controller
             ->map(fn (Collection $rows): array => [
                 'count' => $rows->count(),
                 'product_keys' => $rows->pluck('product_key')->unique()->values()->all(),
+            ])
+            ->all();
+    }
+
+    private function userRoleSummary(string $tenantId): array
+    {
+        if (! Schema::hasTable('tenant_user_product_roles')) {
+            return [];
+        }
+
+        return TenantUserProductRole::query()
+            ->where('tenant_id', $tenantId)
+            ->active()
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn (Collection $rows): array => [
+                'count' => $rows->count(),
+                'product_keys' => $rows->pluck('product_key')->unique()->values()->all(),
+            ])
+            ->all();
+    }
+
+    private function userWarningSummary(): array
+    {
+        return User::query()
+            ->orderBy('id')
+            ->get()
+            ->mapWithKeys(fn (User $user): array => [
+                $user->id => $this->effectiveAccess->accessWarningsForUser($user)->count(),
             ])
             ->all();
     }
