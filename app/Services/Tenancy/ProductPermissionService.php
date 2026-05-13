@@ -256,7 +256,14 @@ class ProductPermissionService
     {
         $parts = explode('.', $permissionKey);
 
-        return $parts[1] ?? null;
+        if (count($parts) <= 2) {
+            return $parts[1] ?? null;
+        }
+
+        array_shift($parts);
+        array_pop($parts);
+
+        return implode('.', $parts) ?: null;
     }
 
     protected function tablesExist(): bool

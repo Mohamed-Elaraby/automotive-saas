@@ -83,6 +83,55 @@ Current deployment/cache rule:
 - Never use:
   - `php artisan route:cache`
 
+## 1.1.2) Package 13 Completed - Roles & Permission Matrix UI - 2026-05-13
+
+Package 13 added the product-scoped role administration UI under:
+- `/workspace/admin/access/roles`
+- route namespace: `automotive.admin.access.roles.*`
+
+Implemented scope:
+- roles index with search, product/status filters, system/template badges, users count, permissions count, status, created date, permissions/edit/duplicate/delete actions
+- create/edit role screens using the scoped layout `automotive.admin.layouts.adminLayout.mainlayout`
+- permission matrix screen grouped by module, with search, select all, clear all, module select/clear, read-only/manager/full-access presets, selected count, dangerous permission warnings, reset, save, and back actions
+- role deletion protections:
+  - Tenant Owner cannot be deleted
+  - system roles cannot be deleted
+  - roles assigned to active users cannot be deleted
+  - active roles require at least one permission
+  - Tenant Owner keeps critical access-control permissions
+- idempotent tenant permission catalog seeder:
+  - `TenantProductPermissionCatalogSeeder`
+  - service-backed by `ProductPermissionCatalogService`
+- editable default templates:
+  - Tenant Owner
+  - Automotive Owner
+  - Automotive Branch Manager
+  - Automotive Service Advisor
+  - Automotive Technician
+  - Automotive Accountant
+  - Automotive Inventory Keeper
+  - Automotive Viewer
+
+Permission naming convention:
+- product-scoped permission keys must include product, module, and action context
+- examples:
+  - `automotive_service.work_orders.view`
+  - `automotive_service.estimates.approve`
+  - `automotive_service.reports.export`
+  - `automotive_service.access.roles.manage`
+
+Services/controllers added:
+- `App\Http\Controllers\Automotive\Admin\ProductRoleController`
+- `App\Services\Tenancy\ProductRoleManagementService`
+- `App\Services\Tenancy\ProductPermissionCatalogService`
+
+Package 13 verification:
+- `php artisan test tests/Feature/Automotive/Admin/RolePermissionMatrixTest.php`
+  - result: 12 passed, 38 assertions
+
+Next package:
+- Package 14: User Access Profile + Effective Permissions
+
 ## 1.1.1) Product-Scoped Architecture Refactor Roadmap - 2026-05-06
 
 Current new architecture directive:

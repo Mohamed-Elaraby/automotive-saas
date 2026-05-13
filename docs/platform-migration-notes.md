@@ -84,6 +84,42 @@ Never run:
 php artisan route:cache
 ```
 
+## Package 13 Access Migration Notes
+
+Product-scoped roles and permissions are now managed through the Package 13 UI and services:
+
+- `product_roles`
+- `product_permissions`
+- `product_role_permission`
+- `tenant_user_product_roles`
+- `ProductPermissionService`
+- `ProductRoleManagementService`
+- `ProductPermissionCatalogService`
+
+Permission keys must remain explicit and product-scoped:
+
+```text
+{product_key}.{module}.{action}
+```
+
+Examples:
+
+```text
+automotive_service.work_orders.view
+automotive_service.invoices.approve
+automotive_service.access.roles.manage
+```
+
+Do not migrate legacy product-specific role columns by deleting them yet. Keep existing legacy user fields as compatibility data until Package 14 introduces User Access Profile + Effective Permissions.
+
+The Package 13 catalog seeder is idempotent and safe to rerun inside tenant context:
+
+```bash
+php artisan db:seed --class=TenantProductPermissionCatalogSeeder
+```
+
+Package 14 should consume these role and permission assignments to show per-user effective access across owner access, product access, branch access, role permissions, and branch context.
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation

@@ -27,8 +27,10 @@ class EnsureTenantUserCanManageAccess
             return $next($request);
         }
 
-        if ($this->permissions->can($user, 'automotive_service', 'automotive.access.manage', null, (string) $tenant->id)) {
-            return $next($request);
+        foreach (['automotive.access.manage', 'automotive_service.access.manage', 'automotive_service.access.roles.manage'] as $permissionKey) {
+            if ($this->permissions->can($user, 'automotive_service', $permissionKey, null, (string) $tenant->id)) {
+                return $next($request);
+            }
         }
 
         abort(403, 'User does not have access-control management permission.');

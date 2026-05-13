@@ -21,6 +21,7 @@ use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceSettingsControl
 use App\Http\Controllers\Automotive\Admin\Maintenance\MaintenanceWorkflowController;
 use App\Http\Controllers\Core\DocumentController;
 use App\Http\Controllers\Automotive\Admin\ProductController;
+use App\Http\Controllers\Automotive\Admin\ProductRoleController;
 use App\Http\Controllers\Automotive\Admin\StockMovementReportController;
 use App\Http\Controllers\Automotive\Admin\StockTransferController;
 use App\Http\Controllers\Automotive\Admin\UserController;
@@ -87,7 +88,15 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     Route::get('/users/{user}/branches', [AccessControlController::class, 'editUserBranches'])->name('users.branches.edit');
                     Route::put('/users/{user}/branches', [AccessControlController::class, 'updateUserBranches'])->name('users.branches.update');
                     Route::post('/users/{user}/owner-sync', [AccessControlController::class, 'syncOwnerAccess'])->name('users.owner.sync');
-                    Route::get('/roles', [AccessControlController::class, 'roles'])->name('roles.index');
+                    Route::get('/roles', [ProductRoleController::class, 'index'])->name('roles.index');
+                    Route::get('/roles/create', [ProductRoleController::class, 'create'])->name('roles.create');
+                    Route::post('/roles', [ProductRoleController::class, 'store'])->name('roles.store');
+                    Route::get('/roles/{role}/edit', [ProductRoleController::class, 'edit'])->name('roles.edit');
+                    Route::put('/roles/{role}', [ProductRoleController::class, 'update'])->name('roles.update');
+                    Route::delete('/roles/{role}', [ProductRoleController::class, 'destroy'])->name('roles.destroy');
+                    Route::post('/roles/{role}/duplicate', [ProductRoleController::class, 'duplicate'])->name('roles.duplicate');
+                    Route::get('/roles/{role}/permissions', [ProductRoleController::class, 'editPermissions'])->name('roles.permissions.edit');
+                    Route::put('/roles/{role}/permissions', [ProductRoleController::class, 'updatePermissions'])->name('roles.permissions.update');
                     Route::get('/branches', [AccessControlController::class, 'branches'])->name('branches.index');
                     Route::get('/products', [AccessControlController::class, 'products'])->name('products.index');
                     Route::get('/products/{productKey}/branches', [AccessControlController::class, 'productBranches'])->name('products.branches.index');
