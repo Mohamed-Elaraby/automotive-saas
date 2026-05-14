@@ -6049,6 +6049,44 @@ Verification target:
 Never run:
 - `php artisan route:cache`
 
+## Package 16 - Backend Route/Controller Permission Enforcement - 2026-05-14
+
+Completed scope:
+- hardened the `tenant.product.permission` middleware alias backed by `EnsureTenantUserHasProductPermission`
+- applied backend permission middleware to Access Control routes for dashboard, users, product access, branch access, role assignment, roles, permission matrix, and product branch activation
+- preserved safe branch-context selector/switch/clear routes so branch selection remains usable outside access-management screens
+- added controller-level authorization checks for direct POST/PUT/DELETE mutations:
+  - product access grant/revoke
+  - branch assignment
+  - product branch enable/disable
+  - role create/update/delete/duplicate
+  - permission matrix update
+  - user role assignment
+- kept Workspace Owner implicit access as a first-class backend authorization path
+- blocked revoked product access and missing current-branch access for branch-required protected routes
+
+Middleware usage:
+
+```php
+->middleware('tenant.product.permission:automotive_service,automotive_service.access.roles.manage')
+->middleware('tenant.product.permission:automotive_service,automotive_service.access.users.manage')
+->middleware('tenant.product.permission:automotive_service,automotive_service.access.branches.manage')
+```
+
+Multiple acceptable permissions can be separated with `|`.
+Branch-required checks use a third argument such as `current_branch`.
+
+Important boundary:
+- Package 15 hides menus/buttons for UX only.
+- Package 16 blocks direct URL and forged form access at the backend.
+- Package 17 still needs branch-scoped data filtering for operational records.
+
+Verification target:
+- `php artisan test tests/Feature/Automotive/Admin/BackendPermissionEnforcementTest.php`
+
+Never run:
+- `php artisan route:cache`
+
 ## Phase 2 Package 12 - Branch Access UI and Branch Context - 2026-05-07
 
 Package completed:

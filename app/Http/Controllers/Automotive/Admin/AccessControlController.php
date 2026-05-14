@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\Tenancy\ProductBranchAccessService;
 use App\Services\Tenancy\ProductEntitlementService;
 use App\Services\Tenancy\EffectiveUserAccessService;
+use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\TenantUserProductAccessService;
 use App\Services\Tenancy\WorkspaceOwnerAccessService;
 use Illuminate\Contracts\View\View;
@@ -32,7 +33,8 @@ class AccessControlController extends Controller
         protected TenantUserProductAccessService $productAccess,
         protected ProductBranchAccessService $branchAccess,
         protected WorkspaceOwnerAccessService $ownerAccess,
-        protected EffectiveUserAccessService $effectiveAccess
+        protected EffectiveUserAccessService $effectiveAccess,
+        protected ProductPermissionService $permissions
     ) {
     }
 
@@ -102,6 +104,8 @@ class AccessControlController extends Controller
 
     public function updateUserProducts(Request $request, User $user): RedirectResponse
     {
+        $this->authorizeProductPermission('automotive_service.access.users.manage');
+
         $tenantId = (string) tenant()->id;
         $subscriptions = $this->subscriptions($tenantId);
         $allowedProductKeys = $subscriptions
@@ -184,6 +188,8 @@ class AccessControlController extends Controller
 
     public function updateProductBranches(Request $request, string $productKey): RedirectResponse
     {
+        $this->authorizeProductPermission('automotive_service.access.branches.manage');
+
         $tenantId = (string) tenant()->id;
         $branchIds = Branch::query()->pluck('id')->map(fn ($id): int => (int) $id);
         $requestedBranchIds = collect($request->input('branches', []))
@@ -251,6 +257,8 @@ class AccessControlController extends Controller
 
     public function updateUserBranches(Request $request, User $user): RedirectResponse
     {
+        $this->authorizeProductPermission('automotive_service.access.branches.manage');
+
         $tenantId = (string) tenant()->id;
         $activeProductKeys = TenantUserProductAccess::query()
             ->where('tenant_id', $tenantId)
@@ -351,6 +359,14 @@ class AccessControlController extends Controller
             ->where('tenant_id', $tenantId)
             ->orderBy('product_key')
             ->get();
+    }
+
+    private function authorizeProductPermission(string $permissionKey): void
+    {
+        $tenantId = (string) tenant()->id;
+        $user = auth('automotive_admin')->user();
+
+        abort_unless($user && $this->permissions->can($user, 'automotive_service', $permissionKey, null, $tenantId), 403);
     }
 
     private function primaryProductKey(Collection $subscriptions): string

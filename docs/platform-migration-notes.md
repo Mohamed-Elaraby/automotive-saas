@@ -159,6 +159,36 @@ The service uses request-level caches only. Do not add route cache or persistent
 
 Workspace Owner remains an implicit full-access user for visibility. Owner Sync and owner-only actions must stay guarded by owner visibility, not by ordinary role assignment.
 
+## Package 16 Access Migration Notes
+
+Access Control routes now use backend permission enforcement through the `tenant.product.permission` middleware.
+
+Migration rules:
+
+- apply product-scoped permission keys to new protected tenant admin routes
+- use `automotive_service.access.users.manage` for product-access user management
+- use `automotive_service.access.branches.manage` for branch assignment and product branch activation
+- use `automotive_service.access.roles.manage` for role CRUD, user role assignment, and Permission Matrix updates
+- keep branch-context selector/switch routes usable for authenticated users that need branch selection
+- keep owner-only actions, such as Sync Owner Access, protected by owner checks in addition to ordinary middleware
+
+Example:
+
+```php
+Route::post('/roles', [ProductRoleController::class, 'store'])
+    ->middleware('tenant.product.permission:automotive_service,automotive_service.access.roles.manage');
+```
+
+For branch-required checks, pass the current-branch mode:
+
+```php
+tenant.product.permission:automotive_service,automotive_service.work_orders.view,current_branch
+```
+
+Package 16 does not replace Package 15 UI visibility. It adds server-side protection against direct URLs and forged POST/PUT/DELETE requests.
+
+Package 17 must continue this migration by applying branch-scoped data filtering to operational records and queries.
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation

@@ -78,34 +78,39 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     Route::post('/clear', [BranchContextController::class, 'clear'])->name('clear');
                 });
 
+            $accessDashboardPermission = 'tenant.product.permission:automotive_service,automotive_service.access.manage|automotive_service.access.users.manage|automotive_service.access.roles.manage|automotive_service.access.branches.manage|automotive_service.products.manage';
+            $usersManagePermission = 'tenant.product.permission:automotive_service,automotive_service.access.users.manage';
+            $branchesManagePermission = 'tenant.product.permission:automotive_service,automotive_service.access.branches.manage';
+            $rolesManagePermission = 'tenant.product.permission:automotive_service,automotive_service.access.roles.manage';
+            $productsManagePermission = 'tenant.product.permission:automotive_service,automotive_service.products.manage|automotive_service.access.branches.manage';
+
             Route::prefix('access')
-                ->middleware('tenant.access.manage')
                 ->name('access.')
-                ->group(function () {
-                    Route::get('/', [AccessControlController::class, 'index'])->name('index');
-                    Route::get('/users', [AccessControlController::class, 'users'])->name('users.index');
-                    Route::get('/users/{user}', [UserAccessProfileController::class, 'show'])->name('users.show');
-                    Route::get('/users/{user}/products', [AccessControlController::class, 'editUserProducts'])->name('users.products.edit');
-                    Route::put('/users/{user}/products', [AccessControlController::class, 'updateUserProducts'])->name('users.products.update');
-                    Route::get('/users/{user}/branches', [AccessControlController::class, 'editUserBranches'])->name('users.branches.edit');
-                    Route::put('/users/{user}/branches', [AccessControlController::class, 'updateUserBranches'])->name('users.branches.update');
-                    Route::get('/users/{user}/roles', [UserAccessProfileController::class, 'editRoles'])->name('users.roles.edit');
-                    Route::put('/users/{user}/roles', [UserAccessProfileController::class, 'updateRoles'])->name('users.roles.update');
-                    Route::post('/users/{user}/owner-sync', [AccessControlController::class, 'syncOwnerAccess'])->name('users.owner.sync');
-                    Route::get('/roles', [ProductRoleController::class, 'index'])->name('roles.index');
-                    Route::get('/roles/create', [ProductRoleController::class, 'create'])->name('roles.create');
-                    Route::post('/roles', [ProductRoleController::class, 'store'])->name('roles.store');
-                    Route::get('/roles/{role}/edit', [ProductRoleController::class, 'edit'])->name('roles.edit');
-                    Route::put('/roles/{role}', [ProductRoleController::class, 'update'])->name('roles.update');
-                    Route::delete('/roles/{role}', [ProductRoleController::class, 'destroy'])->name('roles.destroy');
-                    Route::post('/roles/{role}/duplicate', [ProductRoleController::class, 'duplicate'])->name('roles.duplicate');
-                    Route::get('/roles/{role}/permissions', [ProductRoleController::class, 'editPermissions'])->name('roles.permissions.edit');
-                    Route::put('/roles/{role}/permissions', [ProductRoleController::class, 'updatePermissions'])->name('roles.permissions.update');
-                    Route::get('/branches', [AccessControlController::class, 'branches'])->name('branches.index');
-                    Route::get('/products', [AccessControlController::class, 'products'])->name('products.index');
-                    Route::get('/products/{productKey}/branches', [AccessControlController::class, 'productBranches'])->name('products.branches.index');
-                    Route::put('/products/{productKey}/branches', [AccessControlController::class, 'updateProductBranches'])->name('products.branches.update');
-                    Route::get('/diagnostics', [AccessControlController::class, 'diagnostics'])->name('diagnostics.index');
+                ->group(function () use ($accessDashboardPermission, $usersManagePermission, $branchesManagePermission, $rolesManagePermission, $productsManagePermission) {
+                    Route::get('/', [AccessControlController::class, 'index'])->middleware($accessDashboardPermission)->name('index');
+                    Route::get('/users', [AccessControlController::class, 'users'])->middleware($usersManagePermission)->name('users.index');
+                    Route::get('/users/{user}', [UserAccessProfileController::class, 'show'])->middleware($usersManagePermission)->name('users.show');
+                    Route::get('/users/{user}/products', [AccessControlController::class, 'editUserProducts'])->middleware($usersManagePermission)->name('users.products.edit');
+                    Route::put('/users/{user}/products', [AccessControlController::class, 'updateUserProducts'])->middleware($usersManagePermission)->name('users.products.update');
+                    Route::get('/users/{user}/branches', [AccessControlController::class, 'editUserBranches'])->middleware($branchesManagePermission)->name('users.branches.edit');
+                    Route::put('/users/{user}/branches', [AccessControlController::class, 'updateUserBranches'])->middleware($branchesManagePermission)->name('users.branches.update');
+                    Route::get('/users/{user}/roles', [UserAccessProfileController::class, 'editRoles'])->middleware($rolesManagePermission)->name('users.roles.edit');
+                    Route::put('/users/{user}/roles', [UserAccessProfileController::class, 'updateRoles'])->middleware($rolesManagePermission)->name('users.roles.update');
+                    Route::post('/users/{user}/owner-sync', [AccessControlController::class, 'syncOwnerAccess'])->middleware($usersManagePermission)->name('users.owner.sync');
+                    Route::get('/roles', [ProductRoleController::class, 'index'])->middleware($rolesManagePermission)->name('roles.index');
+                    Route::get('/roles/create', [ProductRoleController::class, 'create'])->middleware($rolesManagePermission)->name('roles.create');
+                    Route::post('/roles', [ProductRoleController::class, 'store'])->middleware($rolesManagePermission)->name('roles.store');
+                    Route::get('/roles/{role}/edit', [ProductRoleController::class, 'edit'])->middleware($rolesManagePermission)->name('roles.edit');
+                    Route::put('/roles/{role}', [ProductRoleController::class, 'update'])->middleware($rolesManagePermission)->name('roles.update');
+                    Route::delete('/roles/{role}', [ProductRoleController::class, 'destroy'])->middleware($rolesManagePermission)->name('roles.destroy');
+                    Route::post('/roles/{role}/duplicate', [ProductRoleController::class, 'duplicate'])->middleware($rolesManagePermission)->name('roles.duplicate');
+                    Route::get('/roles/{role}/permissions', [ProductRoleController::class, 'editPermissions'])->middleware($rolesManagePermission)->name('roles.permissions.edit');
+                    Route::put('/roles/{role}/permissions', [ProductRoleController::class, 'updatePermissions'])->middleware($rolesManagePermission)->name('roles.permissions.update');
+                    Route::get('/branches', [AccessControlController::class, 'branches'])->middleware($branchesManagePermission)->name('branches.index');
+                    Route::get('/products', [AccessControlController::class, 'products'])->middleware($productsManagePermission)->name('products.index');
+                    Route::get('/products/{productKey}/branches', [AccessControlController::class, 'productBranches'])->middleware($branchesManagePermission)->name('products.branches.index');
+                    Route::put('/products/{productKey}/branches', [AccessControlController::class, 'updateProductBranches'])->middleware($branchesManagePermission)->name('products.branches.update');
+                    Route::get('/diagnostics', [AccessControlController::class, 'diagnostics'])->middleware($accessDashboardPermission)->name('diagnostics.index');
                 });
 
             Route::get('/users', [UserController::class, 'index'])->name('users.index');

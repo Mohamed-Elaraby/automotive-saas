@@ -272,6 +272,58 @@ Package boundary:
 - Package 15 hides UI elements for UX.
 - Package 16 must enforce backend routes/controllers for security.
 
+## Package 16 Backend Permission Enforcement
+
+Package 16 adds backend authorization for the Access Control management surface. UI visibility is no longer the only protection for these routes.
+
+Protected areas:
+
+- Access Control dashboard and diagnostics
+- access users index/profile
+- product access grant/revoke
+- branch assignment
+- product branch enable/disable
+- user role assignment
+- role CRUD and duplication
+- role Permission Matrix edit/update
+
+Middleware:
+
+```php
+->middleware('tenant.product.permission:automotive_service,automotive_service.access.roles.manage')
+->middleware('tenant.product.permission:automotive_service,automotive_service.access.users.manage')
+->middleware('tenant.product.permission:automotive_service,automotive_service.access.branches.manage')
+```
+
+The middleware checks the authenticated `automotive_admin` user, active or trialing product subscription, product access, product-scoped permission, Workspace Owner implicit access, and branch access when a current branch is required.
+
+Multiple acceptable permission keys can be separated with `|`:
+
+```php
+tenant.product.permission:automotive_service,automotive_service.access.manage|automotive_service.access.roles.manage
+```
+
+Branch-required actions can pass a third argument:
+
+```php
+tenant.product.permission:automotive_service,automotive_service.work_orders.view,current_branch
+```
+
+Safe branch-context selector routes remain available to authenticated tenant users that need branch selection:
+
+- `automotive.admin.access.branch-context.select`
+- `automotive.admin.access.branch-context.store`
+- `automotive.admin.access.branch-context.switch`
+- `automotive.admin.access.branch-context.clear`
+
+Controller-level guards were also added around direct mutation methods so forbidden POST/PUT/DELETE requests do not change data if a route is called manually.
+
+Package boundary:
+
+- Package 15 controls menu/button visibility for UX.
+- Package 16 enforces Access Control backend routes and controller mutations.
+- Package 17 will add branch-scoped data filtering for operational records.
+
 ## Package 12.1 Hotfix Notes
 
 ### Admin Session Isolation

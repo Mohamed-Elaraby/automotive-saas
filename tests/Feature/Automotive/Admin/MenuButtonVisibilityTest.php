@@ -122,8 +122,7 @@ class MenuButtonVisibilityTest extends TestCase
 
         $this->actingAs($user, 'automotive_admin')
             ->get("http://{$domain}/workspace/admin/access/roles")
-            ->assertOk()
-            ->assertDontSee('New Role', false);
+            ->assertForbidden();
     }
 
     public function test_user_with_roles_manage_permission_can_see_create_role_button(): void
@@ -153,9 +152,7 @@ class MenuButtonVisibilityTest extends TestCase
 
         $this->actingAs($user, 'automotive_admin')
             ->get("http://{$domain}/workspace/admin/access/products/automotive_service/branches")
-            ->assertOk()
-            ->assertDontSee('name="branches[]"', false)
-            ->assertSee('Read only', false);
+            ->assertForbidden();
     }
 
     public function test_owner_can_see_sync_owner_access_action(): void
@@ -178,7 +175,7 @@ class MenuButtonVisibilityTest extends TestCase
 
         tenancy()->initialize($tenant);
         $this->tenantUser('owner@example.test');
-        $user = $this->userWithPermissions('access-manager@example.test', ['automotive_service.access.manage']);
+        $user = $this->userWithPermissions('access-manager@example.test', ['automotive_service.access.users.manage']);
         tenancy()->end();
 
         $this->actingAs($user, 'automotive_admin')

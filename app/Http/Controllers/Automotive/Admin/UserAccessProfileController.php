@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Automotive\Admin\UpdateUserProductRolesRequest;
 use App\Models\User;
 use App\Services\Tenancy\EffectiveUserAccessService;
+use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\UserRoleAssignmentService;
 use App\Services\Tenancy\WorkspaceOwnerAccessService;
 use Illuminate\Contracts\View\View;
@@ -17,7 +18,8 @@ class UserAccessProfileController extends Controller
     public function __construct(
         protected EffectiveUserAccessService $effectiveAccess,
         protected UserRoleAssignmentService $roleAssignments,
-        protected WorkspaceOwnerAccessService $ownerAccess
+        protected WorkspaceOwnerAccessService $ownerAccess,
+        protected ProductPermissionService $permissions
     ) {
     }
 
@@ -45,6 +47,11 @@ class UserAccessProfileController extends Controller
 
     public function updateRoles(UpdateUserProductRolesRequest $request, User $user): RedirectResponse
     {
+        $tenantId = (string) tenant()->id;
+        $actor = auth('automotive_admin')->user();
+
+        abort_unless($actor && $this->permissions->can($actor, 'automotive_service', 'automotive_service.access.roles.manage', null, $tenantId), 403);
+
         try {
             $this->roleAssignments->syncUserProductRoles($user, $request->validated('roles') ?? []);
         } catch (RuntimeException $exception) {

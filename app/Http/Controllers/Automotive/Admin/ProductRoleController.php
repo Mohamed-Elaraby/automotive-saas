@@ -7,6 +7,7 @@ use App\Http\Requests\Automotive\Admin\StoreProductRoleRequest;
 use App\Http\Requests\Automotive\Admin\UpdateProductRoleRequest;
 use App\Http\Requests\Automotive\Admin\UpdateRolePermissionsRequest;
 use App\Models\ProductRole;
+use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\ProductRoleManagementService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,8 @@ use RuntimeException;
 class ProductRoleController extends Controller
 {
     public function __construct(
-        protected ProductRoleManagementService $roles
+        protected ProductRoleManagementService $roles,
+        protected ProductPermissionService $permissions
     ) {
     }
 
@@ -45,6 +47,8 @@ class ProductRoleController extends Controller
 
     public function store(StoreProductRoleRequest $request): RedirectResponse
     {
+        $this->authorizeRolesManage();
+
         try {
             $role = $this->roles->createRole($request->validated());
         } catch (RuntimeException $exception) {
@@ -69,6 +73,8 @@ class ProductRoleController extends Controller
 
     public function update(UpdateProductRoleRequest $request, ProductRole $role): RedirectResponse
     {
+        $this->authorizeRolesManage();
+
         try {
             $this->roles->updateRole($role, $request->validated());
         } catch (RuntimeException $exception) {
@@ -82,6 +88,8 @@ class ProductRoleController extends Controller
 
     public function destroy(ProductRole $role): RedirectResponse
     {
+        $this->authorizeRolesManage();
+
         try {
             $this->roles->deleteRole($role);
         } catch (RuntimeException $exception) {
@@ -95,6 +103,8 @@ class ProductRoleController extends Controller
 
     public function duplicate(ProductRole $role): RedirectResponse
     {
+        $this->authorizeRolesManage();
+
         $copy = $this->roles->duplicateRole($role);
 
         return redirect()
@@ -120,6 +130,8 @@ class ProductRoleController extends Controller
 
     public function updatePermissions(UpdateRolePermissionsRequest $request, ProductRole $role): RedirectResponse
     {
+        $this->authorizeRolesManage();
+
         try {
             $this->roles->syncRolePermissions($role, $request->validated('permissions') ?? []);
         } catch (RuntimeException $exception) {
@@ -134,5 +146,13 @@ class ProductRoleController extends Controller
     protected function authorizeTenantRole(ProductRole $role): void
     {
         abort_unless((string) $role->tenant_id === (string) tenant()->id, 404);
+    }
+
+    protected function authorizeRolesManage(): void
+    {
+        $tenantId = (string) tenant()->id;
+        $user = auth('automotive_admin')->user();
+
+        abort_unless($user && $this->permissions->can($user, 'automotive_service', 'automotive_service.access.roles.manage', null, $tenantId), 403);
     }
 }
