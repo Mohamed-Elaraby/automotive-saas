@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureTenantUserHasProductPermission;
 use App\Models\AccessAuditLog;
 use App\Services\Tenancy\AccessAuditService;
 use App\Services\Tenancy\AccessDiagnosticsService;
+use App\Services\Tenancy\AccessControlRouteInspector;
 use App\Services\Tenancy\AccessVisibilityService;
 use App\Services\Tenancy\BranchScopeService;
 use App\Services\Tenancy\EffectiveUserAccessService;
@@ -15,32 +16,12 @@ use App\Services\Tenancy\UserRoleAssignmentService;
 use Database\Seeders\TenantAccessControlDemoSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Route;
 
 class AccessControlAcceptanceCommand extends Command
 {
     protected $signature = 'platform:access-control-acceptance';
 
     protected $description = 'Run lightweight static acceptance checks for Phase 2 Access Control UI and enforcement';
-
-    protected array $requiredRoutes = [
-        'automotive.admin.access.index',
-        'automotive.admin.access.users.index',
-        'automotive.admin.access.users.show',
-        'automotive.admin.access.users.products.edit',
-        'automotive.admin.access.users.branches.edit',
-        'automotive.admin.access.users.roles.edit',
-        'automotive.admin.access.roles.index',
-        'automotive.admin.access.roles.create',
-        'automotive.admin.access.roles.edit',
-        'automotive.admin.access.roles.permissions.edit',
-        'automotive.admin.access.products.index',
-        'automotive.admin.access.products.branches.index',
-        'automotive.admin.access.audit.index',
-        'automotive.admin.access.diagnostics.index',
-        'automotive.admin.access.branch-context.select',
-        'automotive.admin.access.branch-context.switch',
-    ];
 
     protected array $requiredClasses = [
         EnsureTenantUserHasProductPermission::class,
@@ -55,6 +36,12 @@ class AccessControlAcceptanceCommand extends Command
         AccessAuditLog::class,
         TenantAccessControlDemoSeeder::class,
     ];
+
+    public function __construct(
+        protected AccessControlRouteInspector $routeInspector
+    ) {
+        parent::__construct();
+    }
 
     protected array $requiredViews = [
         'automotive.admin.access.index',
@@ -77,10 +64,8 @@ class AccessControlAcceptanceCommand extends Command
     {
         $failures = [];
 
-        foreach ($this->requiredRoutes as $routeName) {
-            if (! Route::has($routeName)) {
-                $failures[] = "Missing route: {$routeName}";
-            }
+        foreach ($this->routeInspector->missingRouteNames() as $routeName) {
+            $failures[] = "Missing route: {$routeName}";
         }
 
         foreach ($this->requiredClasses as $class) {

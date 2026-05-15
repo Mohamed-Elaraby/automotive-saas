@@ -10,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\TenantProductSubscription;
 use App\Models\User;
 use App\Services\Tenancy\BranchScopeService;
+use App\Services\Tenancy\AccessControlRouteInspector;
 use App\Services\Tenancy\EffectiveUserAccessService;
 use App\Services\Tenancy\ProductPermissionService;
 use Database\Seeders\TenantAccessControlDemoSeeder;
@@ -17,7 +18,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Stancl\Tenancy\Database\Models\Domain;
 use Tests\TestCase;
@@ -27,25 +27,6 @@ class AccessControlFinalAcceptanceTest extends TestCase
     use RefreshDatabase;
 
     protected array $tenantDatabaseFiles = [];
-
-    protected array $coreRouteNames = [
-        'automotive.admin.access.index',
-        'automotive.admin.access.users.index',
-        'automotive.admin.access.users.show',
-        'automotive.admin.access.users.products.edit',
-        'automotive.admin.access.users.branches.edit',
-        'automotive.admin.access.users.roles.edit',
-        'automotive.admin.access.roles.index',
-        'automotive.admin.access.roles.create',
-        'automotive.admin.access.roles.edit',
-        'automotive.admin.access.roles.permissions.edit',
-        'automotive.admin.access.products.index',
-        'automotive.admin.access.products.branches.index',
-        'automotive.admin.access.audit.index',
-        'automotive.admin.access.diagnostics.index',
-        'automotive.admin.access.branch-context.select',
-        'automotive.admin.access.branch-context.switch',
-    ];
 
     protected function setUp(): void
     {
@@ -75,9 +56,9 @@ class AccessControlFinalAcceptanceTest extends TestCase
 
     public function test_all_core_access_control_route_names_exist(): void
     {
-        foreach ($this->coreRouteNames as $routeName) {
-            $this->assertTrue(Route::has($routeName), "Missing route [{$routeName}].");
-        }
+        $missingRoutes = app(AccessControlRouteInspector::class)->missingRouteNames();
+
+        $this->assertSame([], $missingRoutes, 'Missing routes: ' . implode(', ', $missingRoutes));
     }
 
     public function test_all_core_access_control_pages_render_for_workspace_owner(): void
