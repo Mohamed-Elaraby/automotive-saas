@@ -12,6 +12,7 @@ use App\Models\Maintenance\MaintenanceWarranty;
 use App\Models\Maintenance\VehicleCheckIn;
 use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\MaintenanceDocumentService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,22 +21,27 @@ use Throwable;
 
 class MaintenanceDocumentController extends Controller
 {
-    public function __construct(protected MaintenanceDocumentService $documents)
+    public function __construct(
+        protected MaintenanceDocumentService $documents,
+        protected BranchScopeService $branchScope
+    )
     {
     }
 
     public function index(): View
     {
+        $user = auth('automotive_admin')->user();
+
         return view('automotive.admin.maintenance.documents.index', [
-            'documents' => $this->documents->recent(),
-            'checkIns' => VehicleCheckIn::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'workOrders' => WorkOrder::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'estimates' => MaintenanceEstimate::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'approvalRecords' => MaintenanceApprovalRecord::query()->with(['estimate', 'customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'invoices' => MaintenanceInvoice::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'receipts' => MaintenanceReceipt::query()->with(['invoice', 'customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'deliveries' => MaintenanceDelivery::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
-            'warranties' => MaintenanceWarranty::query()->with(['customer', 'vehicle'])->latest('id')->limit(50)->get(),
+            'documents' => $this->documents->recent(50, $user),
+            'checkIns' => VehicleCheckIn::query()->with(['customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'workOrders' => WorkOrder::query()->with(['customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'estimates' => MaintenanceEstimate::query()->with(['customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'approvalRecords' => MaintenanceApprovalRecord::query()->with(['estimate', 'customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'invoices' => MaintenanceInvoice::query()->with(['customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'receipts' => MaintenanceReceipt::query()->with(['invoice', 'customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'deliveries' => MaintenanceDelivery::query()->with(['customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
+            'warranties' => MaintenanceWarranty::query()->with(['customer', 'vehicle'])->visibleToUser($user, 'automotive_service')->latest('id')->limit(50)->get(),
         ]);
     }
 
@@ -53,16 +59,20 @@ class MaintenanceDocumentController extends Controller
             'generated_by' => auth('automotive_admin')->id(),
         ];
 
-        $document = match ($validated['document_type']) {
-            'maintenance_check_in' => $this->documents->generateCheckIn(VehicleCheckIn::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_work_order' => $this->documents->generateWorkOrder(WorkOrder::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_estimate' => $this->documents->generateEstimate(MaintenanceEstimate::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_approval_certificate' => $this->documents->generateApprovalCertificate(MaintenanceApprovalRecord::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_invoice' => $this->documents->generateInvoice(MaintenanceInvoice::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_receipt' => $this->documents->generateReceipt(MaintenanceReceipt::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_delivery_report' => $this->documents->generateDelivery(MaintenanceDelivery::query()->findOrFail($validated['entity_id']), $options),
-            'maintenance_warranty_certificate' => $this->documents->generateWarranty(MaintenanceWarranty::query()->findOrFail($validated['entity_id']), $options),
+        [$documentable, $generator] = match ($validated['document_type']) {
+            'maintenance_check_in' => [VehicleCheckIn::query()->findOrFail($validated['entity_id']), 'generateCheckIn'],
+            'maintenance_work_order' => [WorkOrder::query()->findOrFail($validated['entity_id']), 'generateWorkOrder'],
+            'maintenance_estimate' => [MaintenanceEstimate::query()->findOrFail($validated['entity_id']), 'generateEstimate'],
+            'maintenance_approval_certificate' => [MaintenanceApprovalRecord::query()->findOrFail($validated['entity_id']), 'generateApprovalCertificate'],
+            'maintenance_invoice' => [MaintenanceInvoice::query()->findOrFail($validated['entity_id']), 'generateInvoice'],
+            'maintenance_receipt' => [MaintenanceReceipt::query()->findOrFail($validated['entity_id']), 'generateReceipt'],
+            'maintenance_delivery_report' => [MaintenanceDelivery::query()->findOrFail($validated['entity_id']), 'generateDelivery'],
+            'maintenance_warranty_certificate' => [MaintenanceWarranty::query()->findOrFail($validated['entity_id']), 'generateWarranty'],
         };
+
+        $this->assertDocumentableBranch($documentable);
+
+        $document = $this->documents->{$generator}($documentable, $options);
 
         return redirect()
             ->route('automotive.admin.maintenance.documents.index')
@@ -71,6 +81,8 @@ class MaintenanceDocumentController extends Controller
 
     public function generateCheckIn(Request $request, VehicleCheckIn $checkIn): RedirectResponse
     {
+        $this->assertDocumentableBranch($checkIn);
+
         $validated = $request->validate([
             'language' => ['required', 'in:en,ar'],
         ]);
@@ -102,6 +114,8 @@ class MaintenanceDocumentController extends Controller
 
     public function generateEstimate(Request $request, MaintenanceEstimate $estimate): RedirectResponse
     {
+        $this->assertDocumentableBranch($estimate);
+
         $validated = $request->validate([
             'language' => ['required', 'in:en,ar'],
         ]);
@@ -119,6 +133,8 @@ class MaintenanceDocumentController extends Controller
 
     public function generateEstimateApproval(Request $request, MaintenanceEstimate $estimate): RedirectResponse
     {
+        $this->assertDocumentableBranch($estimate);
+
         $validated = $request->validate([
             'language' => ['required', 'in:en,ar'],
         ]);
@@ -138,6 +154,8 @@ class MaintenanceDocumentController extends Controller
 
     public function generateInvoice(Request $request, MaintenanceInvoice $invoice): RedirectResponse
     {
+        $this->assertDocumentableBranch($invoice);
+
         $validated = $request->validate([
             'language' => ['required', 'in:en,ar'],
         ]);
@@ -155,6 +173,8 @@ class MaintenanceDocumentController extends Controller
 
     public function generateReceipt(Request $request, MaintenanceReceipt $receipt): RedirectResponse
     {
+        $this->assertDocumentableBranch($receipt);
+
         $validated = $request->validate([
             'language' => ['required', 'in:en,ar'],
         ]);
@@ -168,5 +188,14 @@ class MaintenanceDocumentController extends Controller
         return redirect()
             ->route('automotive.admin.maintenance.integrations.index')
             ->with('success', __('maintenance.messages.document_generated') . ' ' . $document->document_number);
+    }
+
+    protected function assertDocumentableBranch(object $documentable): void
+    {
+        $branchId = $documentable->branch_id ?? $documentable->workOrder?->branch_id ?? null;
+
+        if ($branchId) {
+            $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $branchId);
+        }
     }
 }

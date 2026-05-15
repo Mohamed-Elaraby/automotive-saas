@@ -3,6 +3,7 @@
 namespace App\Models\Maintenance;
 
 use App\Models\Branch;
+use App\Models\Concerns\HasBranchScope;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class MaintenanceInvoice extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'invoice_number',
         'branch_id',

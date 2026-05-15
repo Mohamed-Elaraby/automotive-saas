@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBranchScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class TenantNotification extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'tenant_id',
         'product_key',

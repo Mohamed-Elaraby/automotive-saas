@@ -5,22 +5,31 @@ namespace App\Services\Automotive\Maintenance;
 use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceEstimateLine;
 use App\Models\Maintenance\MaintenanceServiceCatalogItem;
+use App\Models\User;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class EstimateService
 {
-    public function __construct(protected MaintenanceNumberService $numberService)
+    public function __construct(
+        protected MaintenanceNumberService $numberService,
+        protected BranchScopeService $branchScope
+    )
     {
     }
 
-    public function recent(int $limit = 25): Collection
+    public function recent(int $limit = 25, ?User $user = null): Collection
     {
-        return MaintenanceEstimate::query()
+        $query = MaintenanceEstimate::query()
             ->with(['branch', 'customer', 'vehicle', 'lines'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function create(array $data): MaintenanceEstimate

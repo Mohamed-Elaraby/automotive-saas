@@ -3,6 +3,8 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceNotification;
+use App\Models\User;
+use App\Services\Tenancy\BranchScopeService;
 use App\Services\Tenancy\NotificationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +14,8 @@ use Throwable;
 class MaintenanceNotificationService
 {
     public function __construct(
-        protected NotificationService $notifications
+        protected NotificationService $notifications,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -61,24 +64,32 @@ class MaintenanceNotificationService
         ]);
     }
 
-    public function unread(int $limit = 25): Collection
+    public function unread(int $limit = 25, ?User $user = null): Collection
     {
-        return MaintenanceNotification::query()
+        $query = MaintenanceNotification::query()
             ->with(['branch', 'user'])
             ->whereNull('read_at')
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranchesOrGlobal($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
-    public function streamSince(?int $lastId = null, int $limit = 50): Collection
+    public function streamSince(?int $lastId = null, int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceNotification::query()
+        $query = MaintenanceNotification::query()
             ->with('branch')
             ->when($lastId, fn ($query) => $query->where('id', '>', $lastId))
-            ->orderBy('id')
-            ->limit($limit)
-            ->get();
+            ->orderBy('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranchesOrGlobal($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function streamFor(?int $lastId = null, array $scope = [], int $limit = 50): Collection

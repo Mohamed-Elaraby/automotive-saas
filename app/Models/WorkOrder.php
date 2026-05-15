@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBranchScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkOrder extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'branch_id',
         'customer_id',

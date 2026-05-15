@@ -4,7 +4,9 @@ namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceInspection;
 use App\Models\Maintenance\MaintenanceInspectionTemplate;
+use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +15,8 @@ class InspectionWorkflowService
     public function __construct(
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -56,13 +59,17 @@ class InspectionWorkflowService
         });
     }
 
-    public function recentInspections(int $limit = 50): Collection
+    public function recentInspections(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceInspection::query()
+        $query = MaintenanceInspection::query()
             ->with(['branch', 'workOrder', 'vehicle', 'customer', 'assignee'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function createInspection(array $data): MaintenanceInspection

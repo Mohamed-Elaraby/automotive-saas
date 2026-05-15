@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\StockItem;
 use App\Models\StockTransfer;
 use App\Services\Inventory\StockTransferService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,24 +16,29 @@ use Illuminate\Validation\ValidationException;
 class StockTransferController extends Controller
 {
     public function __construct(
-        protected StockTransferService $stockTransferService
+        protected StockTransferService $stockTransferService,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-public function index()
+public function index(Request $request)
 {
+    $branchIds = $this->branchScope->visibleBranchIds($request->user('automotive_admin'), 'automotive_service');
     $transfers = StockTransfer::query()
         ->with(['fromBranch', 'toBranch', 'creator'])
+        ->where(function ($query) use ($branchIds): void {
+            $query->whereIn('from_branch_id', $branchIds)->orWhereIn('to_branch_id', $branchIds);
+        })
         ->latest('id')
         ->get();
 
     return view('automotive.admin.stock-transfers.index', compact('transfers'));
 }
 
-public function create()
+public function create(Request $request)
 {
     $branches = Branch::query()
-        ->where('is_active', true)
+        ->whereIn('id', $this->branchScope->visibleBranchIds($request->user('automotive_admin'), 'automotive_service'))
         ->orderBy('name')
         ->get();
 
@@ -68,6 +74,9 @@ public function store(Request $request)
         'items.*.quantity' => ['required', 'numeric', 'gt:0'],
     ]);
 
+    $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $data['from_branch_id']);
+    $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $data['to_branch_id']);
+
     $reference = 'TRF-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4));
 
     $transfer = DB::transaction(function () use ($data, $reference) {
@@ -99,6 +108,12 @@ public function store(Request $request)
 
 public function show(StockTransfer $stockTransfer)
 {
+    $user = request()->user('automotive_admin');
+    $canAccess = $this->branchScope->canAccessBranch($user, 'automotive_service', (int) $stockTransfer->from_branch_id)
+        || $this->branchScope->canAccessBranch($user, 'automotive_service', (int) $stockTransfer->to_branch_id);
+
+    abort_unless($canAccess, 403);
+
     $stockTransfer->load([
         'fromBranch',
         'toBranch',
@@ -111,6 +126,12 @@ public function show(StockTransfer $stockTransfer)
 
 public function post(StockTransfer $stockTransfer)
 {
+    $user = request()->user('automotive_admin');
+    $canAccess = $this->branchScope->canAccessBranch($user, 'automotive_service', (int) $stockTransfer->from_branch_id)
+        || $this->branchScope->canAccessBranch($user, 'automotive_service', (int) $stockTransfer->to_branch_id);
+
+    abort_unless($canAccess, 403);
+
     try {
         $this->stockTransferService->postTransfer($stockTransfer);
 

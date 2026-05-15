@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBranchScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'branch_id',
         'product_id',

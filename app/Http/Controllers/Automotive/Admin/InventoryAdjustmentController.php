@@ -7,31 +7,36 @@ use App\Models\Branch;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Services\Inventory\InventoryAdjustmentService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class InventoryAdjustmentController extends Controller
 {
     public function __construct(
-        protected InventoryAdjustmentService $inventoryAdjustmentService
+        protected InventoryAdjustmentService $inventoryAdjustmentService,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-public function index()
+public function index(Request $request)
 {
     $movements = StockMovement::query()
         ->with(['branch', 'product', 'creator'])
         ->whereIn('type', ['opening', 'adjustment_in', 'adjustment_out'])
-        ->latest('id')
-        ->get();
+        ->latest('id');
+
+    $this->branchScope->applyAllowedBranches($movements, $request->user('automotive_admin'), 'automotive_service');
+
+    $movements = $movements->get();
 
     return view('automotive.admin.inventory-adjustments.index', compact('movements'));
 }
 
-public function create()
+public function create(Request $request)
 {
     $branches = Branch::query()
-        ->where('is_active', true)
+        ->whereIn('id', $this->branchScope->visibleBranchIds($request->user('automotive_admin'), 'automotive_service'))
         ->orderBy('name')
         ->get();
 
@@ -52,6 +57,8 @@ public function store(Request $request)
         'quantity' => ['required', 'numeric', 'gt:0'],
         'notes' => ['nullable', 'string', 'max:2000'],
     ]);
+
+    $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $data['branch_id']);
 
     $data['created_by'] = auth('automotive_admin')->id();
 

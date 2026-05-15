@@ -3,6 +3,7 @@
 namespace App\Models\Maintenance;
 
 use App\Models\Branch;
+use App\Models\Concerns\HasBranchScope;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MaintenanceEstimate extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'estimate_number',
         'branch_id',

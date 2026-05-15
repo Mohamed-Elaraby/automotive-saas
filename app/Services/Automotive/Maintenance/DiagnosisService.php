@@ -3,7 +3,9 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceDiagnosisRecord;
+use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -11,17 +13,22 @@ class DiagnosisService
 {
     public function __construct(
         protected MaintenanceNumberService $numbers,
-        protected MaintenanceTimelineService $timeline
+        protected MaintenanceTimelineService $timeline,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function recent(int $limit = 50): Collection
+    public function recent(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceDiagnosisRecord::query()
+        $query = MaintenanceDiagnosisRecord::query()
             ->with(['branch', 'workOrder', 'inspection', 'vehicle', 'customer', 'technician'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function create(array $data): MaintenanceDiagnosisRecord

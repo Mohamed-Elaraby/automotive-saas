@@ -324,6 +324,63 @@ Package boundary:
 - Package 16 enforces Access Control backend routes and controller mutations.
 - Package 17 will add branch-scoped data filtering for operational records.
 
+## Package 17 Branch-Scoped Data Filtering
+
+Package 17 adds branch-level data visibility for Automotive workspace records. Users should only see records in branches enabled for the product and assigned to them.
+
+Core service:
+
+- `BranchScopeService`
+
+Responsibilities:
+
+- resolve allowed branch ids for a user and product
+- resolve the current branch from branch context
+- assert direct branch access for detail/mutation actions
+- apply allowed-branch filters to Eloquent queries
+- apply current-branch filters for branch-context-specific dashboards/lists
+
+Reusable model scope trait:
+
+- `HasBranchScope`
+- `visibleToUser(...)`
+- `visibleToUserOrGlobal(...)`
+- `forAllowedBranches(...)`
+- `forCurrentBranch(...)`
+
+Covered flows:
+
+- Maintenance check-ins, estimates, documents, approvals, deliveries, warranties, complaints, notifications
+- Maintenance workflow records: inspections, diagnosis, technician jobs, QC, workshop board snapshots
+- Workshop work orders and part consumption
+- Inventory adjustments, inventory reports, stock movement reports, stock transfers
+- Tenant attachments and tenant notifications with `product_key` and `branch_id`
+- Maintenance reporting/export counts
+
+Owner behavior:
+
+- Workspace Owner keeps implicit branch visibility for all enabled active branches under subscribed products.
+- Owner does not require explicit branch assignment records to pass branch-scoped queries.
+
+Branch context behavior:
+
+- List/report pages that are branch-context-specific use the current branch when selected.
+- Broader operational lists use all allowed branches when no current branch is required.
+- Branch selector and switch routes remain unchanged.
+
+Central entity policy:
+
+- Customers, suppliers, and employees are central entities.
+- Package 17 does not delete or duplicate central entities.
+- Transaction-level visibility is enforced through branch-scoped records such as work orders and check-ins.
+- Broader global-versus-transaction entity policy can be expanded after audit diagnostics in Package 18.
+
+Package boundary:
+
+- Package 16 blocks forbidden backend actions.
+- Package 17 scopes visible data inside allowed backend areas.
+- Package 18 will add access audit logs and diagnostics.
+
 ## Package 12.1 Hotfix Notes
 
 ### Admin Session Isolation

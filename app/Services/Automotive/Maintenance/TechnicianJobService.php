@@ -3,7 +3,9 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceWorkOrderJob;
+use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -12,20 +14,26 @@ class TechnicianJobService
     public function __construct(
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function recentJobs(int $limit = 100): Collection
+    public function recentJobs(int $limit = 100, ?User $user = null): Collection
     {
-        return MaintenanceWorkOrderJob::query()
+        $query = MaintenanceWorkOrderJob::query()
             ->with(['workOrder.customer', 'workOrder.vehicle', 'workOrder.branch', 'technician', 'serviceCatalogItem'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->whereHas('workOrder', function ($workOrderQuery) use ($user): void {
+                if ($user) {
+                    $this->branchScope->applyAllowedBranches($workOrderQuery, $user, 'automotive_service', 'work_orders.branch_id');
+                }
+            })
+            ->latest('id');
+
+        return $query->limit($limit)->get();
     }
 
-    public function boardData(): array
+    public function boardData(?User $user = null): array
     {
         $columns = [
             'waiting' => ['open', 'waiting_inspection'],
@@ -43,9 +51,13 @@ class TechnicianJobService
         $workOrders = WorkOrder::query()
             ->with(['branch', 'customer', 'vehicle', 'maintenanceJobs.technician'])
             ->whereIn('status', collect($columns)->flatten()->all())
-            ->latest('id')
-            ->limit(200)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($workOrders, $user, 'automotive_service');
+        }
+
+        $workOrders = $workOrders->limit(200)->get();
 
         return collect($columns)
             ->mapWithKeys(fn (array $statuses, string $column) => [
@@ -54,9 +66,9 @@ class TechnicianJobService
             ->all();
     }
 
-    public function boardSnapshot(): array
+    public function boardSnapshot(?User $user = null): array
     {
-        return collect($this->boardData())
+        return collect($this->boardData($user))
             ->map(fn ($orders) => $orders->map(fn (WorkOrder $workOrder): array => [
                 'id' => $workOrder->id,
                 'number' => $workOrder->work_order_number,

@@ -3,6 +3,7 @@
 namespace App\Services\Tenancy;
 
 use App\Models\TenantAttachment;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -15,7 +16,8 @@ use Illuminate\Validation\ValidationException;
 class AttachmentService
 {
     public function __construct(
-        protected ProductEntitlementService $entitlements
+        protected ProductEntitlementService $entitlements,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -68,6 +70,19 @@ class AttachmentService
             ->when($productKey, fn ($query) => $query->where('product_key', $productKey))
             ->latest('id')
             ->get();
+    }
+
+    public function listForEntityVisibleToUser(Model $attachable, User $user, ?string $productKey = null): Collection
+    {
+        $productKey = $productKey ?: 'automotive_service';
+        $query = TenantAttachment::query()
+            ->where('attachable_type', $attachable::class)
+            ->where('attachable_id', $attachable->getKey())
+            ->where('product_key', $productKey);
+
+        $this->branchScope->applyAllowedBranchesOrGlobal($query, $user, $productKey);
+
+        return $query->latest('id')->get();
     }
 
     public function validateAttachment(UploadedFile $file, string $productKey): void

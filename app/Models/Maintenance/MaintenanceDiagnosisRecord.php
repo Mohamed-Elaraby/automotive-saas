@@ -3,6 +3,7 @@
 namespace App\Models\Maintenance;
 
 use App\Models\Branch;
+use App\Models\Concerns\HasBranchScope;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MaintenanceDiagnosisRecord extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'diagnosis_number',
         'branch_id',

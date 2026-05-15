@@ -5,7 +5,10 @@ namespace App\Services\Automotive\Maintenance;
 use App\Models\Maintenance\MaintenanceDelivery;
 use App\Models\Maintenance\MaintenanceWarranty;
 use App\Models\Maintenance\MaintenanceWarrantyClaim;
+use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Tenancy\BranchScopeService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -15,17 +18,22 @@ class DeliveryWarrantyService
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
         protected MaintenanceNotificationService $notifications,
-        protected MaintenanceAuditService $audit
+        protected MaintenanceAuditService $audit,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function deliveries(int $limit = 50): Collection
+    public function deliveries(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceDelivery::query()
+        $query = MaintenanceDelivery::query()
             ->with(['branch', 'workOrder', 'customer', 'vehicle', 'deliverer'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function createDelivery(array $data): MaintenanceDelivery
@@ -134,13 +142,17 @@ class DeliveryWarrantyService
         });
     }
 
-    public function warranties(int $limit = 50): Collection
+    public function warranties(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceWarranty::query()
+        $query = MaintenanceWarranty::query()
             ->with(['workOrder', 'serviceCatalogItem', 'customer', 'vehicle'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function createWarranty(array $data): MaintenanceWarranty
@@ -166,13 +178,19 @@ class DeliveryWarrantyService
         });
     }
 
-    public function claims(int $limit = 50): Collection
+    public function claims(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceWarrantyClaim::query()
+        $query = MaintenanceWarrantyClaim::query()
             ->with(['warranty', 'originalWorkOrder', 'customer', 'vehicle'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $query->whereHas('originalWorkOrder', function (Builder $workOrderQuery) use ($user): void {
+                $this->branchScope->applyAllowedBranches($workOrderQuery, $user, 'automotive_service', 'work_orders.branch_id');
+            });
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function createClaim(array $data): MaintenanceWarrantyClaim

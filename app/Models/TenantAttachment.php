@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasBranchScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class TenantAttachment extends Model
 {
+    use HasBranchScope;
+
     protected $table = 'tenant_attachments';
 
     protected $fillable = [

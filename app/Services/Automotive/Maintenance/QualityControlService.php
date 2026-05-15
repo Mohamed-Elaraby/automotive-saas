@@ -3,7 +3,9 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceQcRecord;
+use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -12,17 +14,22 @@ class QualityControlService
     public function __construct(
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function recent(int $limit = 50): Collection
+    public function recent(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceQcRecord::query()
+        $query = MaintenanceQcRecord::query()
             ->with(['branch', 'workOrder.customer', 'workOrder.vehicle', 'vehicle', 'inspector', 'items'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function create(array $data): MaintenanceQcRecord

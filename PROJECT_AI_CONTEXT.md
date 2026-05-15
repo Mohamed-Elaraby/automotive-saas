@@ -6087,6 +6087,42 @@ Verification target:
 Never run:
 - `php artisan route:cache`
 
+## Package 17 - Branch-Scoped Data Filtering - 2026-05-15
+
+Completed scope:
+- added `BranchScopeService` as the central query and branch assertion service
+- added reusable branch query scopes through `HasBranchScope`
+- applied branch filtering to high-risk Automotive workspace flows:
+  - maintenance check-ins
+  - maintenance estimates
+  - work orders and workshop operations
+  - technician jobs and workshop board snapshots
+  - inspections, diagnosis, QC
+  - delivery, warranty, complaints, approvals
+  - maintenance documents
+  - maintenance and tenant attachments
+  - maintenance and tenant notifications
+  - inventory adjustments, inventory reports, stock movements, stock transfers
+  - maintenance reporting and exports
+- added direct record protection for branch-scoped detail and mutation actions
+- kept Workspace Owner branch behavior implicit: owner can see enabled active branches for subscribed products
+- current branch context is used where a dashboard/list is branch-context-specific; otherwise queries use all allowed branches
+
+Branch policy:
+- branch-scoped transaction records must be filtered by allowed product branches
+- disabled product branches and revoked user branch access remove visibility
+- central customer/supplier/employee records are not deleted or duplicated by branch filtering
+- transaction-level customer visibility is enforced through branch-scoped transactions; broader central entity policy remains a later hardening area
+
+Verification target:
+- `php artisan test tests/Feature/Automotive/Admin/BranchScopedDataFilteringTest.php`
+
+Next package:
+- Package 18: Access Audit Logs + Diagnostics
+
+Never run:
+- `php artisan route:cache`
+
 ## Phase 2 Package 12 - Branch Access UI and Branch Context - 2026-05-07
 
 Package completed:

@@ -16,6 +16,7 @@ use App\Services\Automotive\Maintenance\DiagnosisService;
 use App\Services\Automotive\Maintenance\InspectionWorkflowService;
 use App\Services\Automotive\Maintenance\QualityControlService;
 use App\Services\Automotive\Maintenance\TechnicianJobService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,14 +28,15 @@ class MaintenanceWorkflowController extends Controller
         protected InspectionWorkflowService $inspections,
         protected TechnicianJobService $jobs,
         protected DiagnosisService $diagnosis,
-        protected QualityControlService $qc
+        protected QualityControlService $qc,
+        protected BranchScopeService $branchScope
     ) {
     }
 
     public function board(): View
     {
         return view('automotive.admin.maintenance.board', [
-            'columns' => $this->jobs->boardData(),
+            'columns' => $this->jobs->boardData(auth('automotive_admin')->user()),
         ]);
     }
 
@@ -42,7 +44,7 @@ class MaintenanceWorkflowController extends Controller
     {
         return response()->json([
             'ok' => true,
-            'columns' => $this->jobs->boardSnapshot(),
+            'columns' => $this->jobs->boardSnapshot(auth('automotive_admin')->user()),
             'generated_at' => now()->toIso8601String(),
         ]);
     }
@@ -77,7 +79,7 @@ class MaintenanceWorkflowController extends Controller
     public function inspectionsIndex(): View
     {
         return view('automotive.admin.maintenance.inspections.index', $this->workflowContext() + [
-            'inspections' => $this->inspections->recentInspections(),
+            'inspections' => $this->inspections->recentInspections(50, auth('automotive_admin')->user()),
             'templates' => MaintenanceInspectionTemplate::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
@@ -98,6 +100,8 @@ class MaintenanceWorkflowController extends Controller
             'internal_notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $validated['branch_id']);
+
         $inspection = $this->inspections->createInspection($validated + [
             'created_by' => auth('automotive_admin')->id(),
             'started_by' => auth('automotive_admin')->id(),
@@ -110,6 +114,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function inspectionsShow(MaintenanceInspection $inspection): View
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $inspection->branch_id);
+
         return view('automotive.admin.maintenance.inspections.show', [
             'inspection' => $inspection->load(['branch', 'workOrder', 'vehicle', 'customer', 'assignee', 'items.photo']),
         ]);
@@ -117,6 +123,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function inspectionItemsUpdate(Request $request, MaintenanceInspection $inspection): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $inspection->branch_id);
+
         $validated = $request->validate([
             'items' => ['required', 'array'],
             'items.*.result' => ['required', 'in:good,needs_attention,urgent,not_checked,not_applicable'],
@@ -133,6 +141,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function inspectionsComplete(Request $request, MaintenanceInspection $inspection): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $inspection->branch_id);
+
         $validated = $request->validate([
             'summary' => ['nullable', 'string', 'max:5000'],
             'customer_visible_notes' => ['nullable', 'string', 'max:5000'],
@@ -149,7 +159,7 @@ class MaintenanceWorkflowController extends Controller
     public function jobsIndex(): View
     {
         return view('automotive.admin.maintenance.jobs.index', $this->workflowContext() + [
-            'jobs' => $this->jobs->recentJobs(),
+            'jobs' => $this->jobs->recentJobs(100, auth('automotive_admin')->user()),
             'serviceItems' => MaintenanceServiceCatalogItem::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
@@ -168,6 +178,9 @@ class MaintenanceWorkflowController extends Controller
             'internal_notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $workOrder = WorkOrder::query()->findOrFail((int) $validated['work_order_id']);
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $workOrder->branch_id);
+
         $job = $this->jobs->create($validated + [
             'created_by' => auth('automotive_admin')->id(),
         ]);
@@ -179,6 +192,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function jobsShow(MaintenanceWorkOrderJob $job): View
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $job->workOrder?->branch_id);
+
         return view('automotive.admin.maintenance.jobs.show', [
             'job' => $job->load(['workOrder.customer', 'workOrder.vehicle', 'workOrder.branch', 'technician', 'serviceCatalogItem', 'timeLogs.technician', 'attachments']),
         ]);
@@ -186,6 +201,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function jobsStart(MaintenanceWorkOrderJob $job): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $job->workOrder?->branch_id);
+
         $this->jobs->start($job, auth('automotive_admin')->id());
 
         return back()->with('success', __('maintenance.messages.job_started'));
@@ -193,6 +210,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function jobsPause(Request $request, MaintenanceWorkOrderJob $job): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $job->workOrder?->branch_id);
+
         $validated = $request->validate(['note' => ['nullable', 'string', 'max:2000']]);
 
         $this->jobs->pause($job, auth('automotive_admin')->id(), $validated['note'] ?? null);
@@ -202,6 +221,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function jobsResume(MaintenanceWorkOrderJob $job): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $job->workOrder?->branch_id);
+
         $this->jobs->resume($job, auth('automotive_admin')->id());
 
         return back()->with('success', __('maintenance.messages.job_resumed'));
@@ -209,6 +230,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function jobsComplete(Request $request, MaintenanceWorkOrderJob $job): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $job->workOrder?->branch_id);
+
         $validated = $request->validate(['note' => ['nullable', 'string', 'max:2000']]);
 
         $this->jobs->complete($job, auth('automotive_admin')->id(), $validated['note'] ?? null);
@@ -218,6 +241,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function jobsBlocker(Request $request, MaintenanceWorkOrderJob $job): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $job->workOrder?->branch_id);
+
         $validated = $request->validate(['note' => ['required', 'string', 'max:2000']]);
 
         $this->jobs->blocker($job, auth('automotive_admin')->id(), $validated['note']);
@@ -228,8 +253,12 @@ class MaintenanceWorkflowController extends Controller
     public function diagnosisIndex(): View
     {
         return view('automotive.admin.maintenance.diagnosis.index', $this->workflowContext() + [
-            'diagnosisRecords' => $this->diagnosis->recent(),
-            'inspections' => MaintenanceInspection::query()->latest('id')->limit(100)->get(),
+            'diagnosisRecords' => $this->diagnosis->recent(50, auth('automotive_admin')->user()),
+            'inspections' => MaintenanceInspection::query()
+                ->visibleToUser(auth('automotive_admin')->user(), 'automotive_service')
+                ->latest('id')
+                ->limit(100)
+                ->get(),
         ]);
     }
 
@@ -254,6 +283,8 @@ class MaintenanceWorkflowController extends Controller
             'diagnosed_by' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $validated['branch_id']);
+
         $this->diagnosis->create($validated + [
             'created_by' => auth('automotive_admin')->id(),
         ]);
@@ -264,7 +295,7 @@ class MaintenanceWorkflowController extends Controller
     public function qcIndex(): View
     {
         return view('automotive.admin.maintenance.qc.index', $this->workflowContext() + [
-            'qcRecords' => $this->qc->recent(),
+            'qcRecords' => $this->qc->recent(50, auth('automotive_admin')->user()),
         ]);
     }
 
@@ -275,6 +306,9 @@ class MaintenanceWorkflowController extends Controller
             'qc_inspector_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
+        $workOrder = WorkOrder::query()->findOrFail((int) $validated['work_order_id']);
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $workOrder->branch_id);
+
         $this->qc->create($validated + [
             'created_by' => auth('automotive_admin')->id(),
         ]);
@@ -284,6 +318,8 @@ class MaintenanceWorkflowController extends Controller
 
     public function qcComplete(Request $request, MaintenanceQcRecord $qcRecord): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $qcRecord->branch_id);
+
         $validated = $request->validate([
             'result' => ['required', 'in:passed,failed,rework_required'],
             'items' => ['nullable', 'array'],
@@ -303,9 +339,17 @@ class MaintenanceWorkflowController extends Controller
     protected function workflowContext(): array
     {
         return [
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'branches' => Branch::query()
+                ->whereIn('id', $this->branchScope->visibleBranchIds(auth('automotive_admin')->user(), 'automotive_service'))
+                ->orderBy('name')
+                ->get(),
             'users' => User::query()->orderBy('name')->get(),
-            'workOrders' => WorkOrder::query()->with(['branch', 'customer', 'vehicle'])->latest('id')->limit(150)->get(),
+            'workOrders' => WorkOrder::query()
+                ->with(['branch', 'customer', 'vehicle'])
+                ->visibleToUser(auth('automotive_admin')->user(), 'automotive_service')
+                ->latest('id')
+                ->limit(150)
+                ->get(),
             'vehicles' => Vehicle::query()->with('customer')->latest('id')->limit(150)->get(),
         ];
     }

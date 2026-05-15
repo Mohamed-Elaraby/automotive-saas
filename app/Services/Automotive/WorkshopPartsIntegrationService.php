@@ -4,7 +4,9 @@ namespace App\Services\Automotive;
 
 use App\Models\Inventory;
 use App\Models\StockMovement;
+use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Tenancy\BranchScopeService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\WorkspaceProductFamilyResolver;
@@ -18,7 +20,8 @@ class WorkshopPartsIntegrationService
         protected TenantWorkspaceProductService $tenantWorkspaceProductService,
         protected WorkspaceManifestService $workspaceManifestService,
         protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
-        protected WorkshopWorkOrderService $workshopWorkOrderService
+        protected WorkshopWorkOrderService $workshopWorkOrderService,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -29,9 +32,9 @@ class WorkshopPartsIntegrationService
         return $this->workspaceManifestService->hasAccessibleFamily($workspaceProducts, 'parts_inventory');
     }
 
-    public function getAvailableStockSnapshot(int $limit = 12): Collection
+    public function getAvailableStockSnapshot(int $limit = 12, ?User $user = null): Collection
     {
-        return Inventory::query()
+        $query = Inventory::query()
             ->join('products', 'products.id', '=', 'inventories.product_id')
             ->join('branches', 'branches.id', '=', 'inventories.branch_id')
             ->where('inventories.quantity', '>', 0)
@@ -46,14 +49,18 @@ class WorkshopPartsIntegrationService
                 'branches.name as branch_name',
                 'branches.code as branch_code',
             ])
-            ->orderByDesc('inventories.quantity')
-            ->limit($limit)
-            ->get();
+            ->orderByDesc('inventories.quantity');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service', 'inventories.branch_id');
+        }
+
+        return $query->limit($limit)->get();
     }
 
-    public function getRecentWorkshopConsumptions(int $limit = 8): Collection
+    public function getRecentWorkshopConsumptions(int $limit = 8, ?User $user = null): Collection
     {
-        return StockMovement::query()
+        $query = StockMovement::query()
             ->leftJoin('work_orders', function ($join) {
                 $join->on('work_orders.id', '=', 'stock_movements.reference_id')
                     ->where('stock_movements.reference_type', '=', WorkOrder::class);
@@ -78,9 +85,13 @@ class WorkshopPartsIntegrationService
                 'work_orders.work_order_number',
                 'work_orders.title as work_order_title',
             ])
-            ->latest('stock_movements.id')
-            ->limit($limit)
-            ->get();
+            ->latest('stock_movements.id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service', 'stock_movements.branch_id');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function consumePart(array $data): StockMovement

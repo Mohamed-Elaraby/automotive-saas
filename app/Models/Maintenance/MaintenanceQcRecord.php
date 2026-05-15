@@ -3,6 +3,7 @@
 namespace App\Models\Maintenance;
 
 use App\Models\Branch;
+use App\Models\Concerns\HasBranchScope;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MaintenanceQcRecord extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'qc_number',
         'branch_id',

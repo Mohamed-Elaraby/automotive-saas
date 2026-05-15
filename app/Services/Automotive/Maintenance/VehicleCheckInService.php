@@ -7,6 +7,8 @@ use App\Models\Customer;
 use App\Models\Maintenance\VehicleCheckIn;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
+use App\Models\User;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -16,29 +18,44 @@ class VehicleCheckInService
     public function __construct(
         protected MaintenanceNumberService $numberService,
         protected MaintenanceTimelineService $timelineService,
-        protected VehicleConditionMapService $conditionMapService
+        protected VehicleConditionMapService $conditionMapService,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function dashboardData(): array
+    public function dashboardData(?User $user = null): array
     {
+        $checkInQuery = VehicleCheckIn::query();
+        $todayCheckInQuery = VehicleCheckIn::query()->whereDate('checked_in_at', now()->toDateString());
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($checkInQuery, $user, 'automotive_service');
+            $this->branchScope->applyAllowedBranches($todayCheckInQuery, $user, 'automotive_service');
+        }
+
         return [
-            'active_branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'active_branches' => $user
+                ? Branch::query()->whereIn('id', $this->branchScope->visibleBranchIds($user, 'automotive_service'))->orderBy('name')->get()
+                : Branch::query()->where('is_active', true)->orderBy('name')->get(),
             'customers' => Customer::query()->orderBy('name')->limit(100)->get(),
             'vehicles' => Vehicle::query()->with('customer')->latest('id')->limit(100)->get(),
-            'recent_check_ins' => $this->recentCheckIns(12),
-            'open_check_ins_count' => VehicleCheckIn::query()->whereIn('status', ['checked_in', 'in_progress'])->count(),
-            'today_check_ins_count' => VehicleCheckIn::query()->whereDate('checked_in_at', now()->toDateString())->count(),
+            'recent_check_ins' => $this->recentCheckIns(12, $user),
+            'open_check_ins_count' => $checkInQuery->whereIn('status', ['checked_in', 'in_progress'])->count(),
+            'today_check_ins_count' => $todayCheckInQuery->count(),
         ];
     }
 
-    public function recentCheckIns(int $limit = 25): Collection
+    public function recentCheckIns(int $limit = 25, ?User $user = null): Collection
     {
-        return VehicleCheckIn::query()
+        $query = VehicleCheckIn::query()
             ->with(['branch', 'customer', 'vehicle', 'serviceAdvisor', 'workOrder'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function create(array $data): VehicleCheckIn

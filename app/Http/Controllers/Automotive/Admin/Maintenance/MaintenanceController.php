@@ -17,6 +17,7 @@ use App\Services\Automotive\Maintenance\ServiceCatalogService;
 use App\Services\Automotive\Maintenance\MaintenanceAttachmentService;
 use App\Services\Automotive\Maintenance\VehicleCheckInService;
 use App\Services\Automotive\Maintenance\VinOcrService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,23 +30,26 @@ class MaintenanceController extends Controller
         protected ServiceCatalogService $serviceCatalogService,
         protected EstimateService $estimateService,
         protected MaintenanceAttachmentService $attachmentService,
-        protected VinOcrService $vinOcrService
+        protected VinOcrService $vinOcrService,
+        protected BranchScopeService $branchScope
     ) {
     }
 
     public function index(): View
     {
+        $user = auth('automotive_admin')->user();
+
         return view('automotive.admin.maintenance.index', [
-            'dashboard' => $this->checkInService->dashboardData(),
+            'dashboard' => $this->checkInService->dashboardData($user),
             'serviceItems' => $this->serviceCatalogService->list(8),
-            'estimates' => $this->estimateService->recent(8),
+            'estimates' => $this->estimateService->recent(8, $user),
         ]);
     }
 
     public function checkInsIndex(): View
     {
         return view('automotive.admin.maintenance.check-ins.index', [
-            'checkIns' => $this->checkInService->recentCheckIns(50),
+            'checkIns' => $this->checkInService->recentCheckIns(50, auth('automotive_admin')->user()),
         ]);
     }
 
@@ -99,6 +103,8 @@ class MaintenanceController extends Controller
             'condition_items.*.internal_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $validated['branch_id']);
+
         $checkIn = $this->checkInService->create($validated + [
             'created_by' => auth('automotive_admin')->id(),
             'service_advisor_id' => auth('automotive_admin')->id(),
@@ -111,6 +117,8 @@ class MaintenanceController extends Controller
 
     public function checkInsShow(VehicleCheckIn $checkIn): View
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $checkIn->branch_id);
+
         $checkIn->load([
             'branch',
             'customer',
@@ -135,6 +143,8 @@ class MaintenanceController extends Controller
 
     public function saveCheckInSignatures(Request $request, VehicleCheckIn $checkIn): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $checkIn->branch_id);
+
         $validated = $request->validate([
             'customer_signature' => ['nullable', 'string', 'max:300000'],
             'service_advisor_signature' => ['nullable', 'string', 'max:300000'],
@@ -151,6 +161,8 @@ class MaintenanceController extends Controller
 
     public function verifyVin(Request $request, VehicleCheckIn $checkIn): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $checkIn->branch_id);
+
         $validated = $request->validate([
             'vin_number' => ['required', 'string', 'max:255'],
             'vin_verification_method' => ['required', 'in:manual,ocr'],
@@ -167,6 +179,8 @@ class MaintenanceController extends Controller
 
     public function captureVin(Request $request, VehicleCheckIn $checkIn): JsonResponse
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $checkIn->branch_id);
+
         $validated = $request->validate([
             'vin_photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
@@ -237,7 +251,7 @@ class MaintenanceController extends Controller
     public function estimatesIndex(): View
     {
         return view('automotive.admin.maintenance.estimates.index', [
-            'estimates' => $this->estimateService->recent(50),
+            'estimates' => $this->estimateService->recent(50, auth('automotive_admin')->user()),
         ]);
     }
 
@@ -245,8 +259,13 @@ class MaintenanceController extends Controller
     {
         return view('automotive.admin.maintenance.estimates.create', $this->formContext() + [
             'serviceItems' => $this->serviceCatalogService->list(),
-            'checkIns' => $this->checkInService->recentCheckIns(100),
-            'workOrders' => WorkOrder::query()->with(['customer', 'vehicle'])->latest('id')->limit(100)->get(),
+            'checkIns' => $this->checkInService->recentCheckIns(100, auth('automotive_admin')->user()),
+            'workOrders' => WorkOrder::query()
+                ->with(['customer', 'vehicle'])
+                ->visibleToUser(auth('automotive_admin')->user(), 'automotive_service')
+                ->latest('id')
+                ->limit(100)
+                ->get(),
         ]);
     }
 
@@ -274,6 +293,8 @@ class MaintenanceController extends Controller
             'lines.*.notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $validated['branch_id']);
+
         $estimate = $this->estimateService->create($validated + [
             'created_by' => auth('automotive_admin')->id(),
         ]);
@@ -285,6 +306,8 @@ class MaintenanceController extends Controller
 
     public function estimatesShow(MaintenanceEstimate $estimate): View
     {
+        $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $estimate->branch_id);
+
         $estimate->load(['branch', 'customer', 'vehicle', 'checkIn', 'workOrder', 'lines.serviceCatalogItem', 'approvals']);
 
         return view('automotive.admin.maintenance.estimates.show', [
@@ -312,7 +335,10 @@ class MaintenanceController extends Controller
         $vehicles = Vehicle::query()->with('customer')->latest('id')->limit(200)->get();
 
         return [
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'branches' => Branch::query()
+                ->whereIn('id', $this->branchScope->visibleBranchIds(auth('automotive_admin')->user(), 'automotive_service'))
+                ->orderBy('name')
+                ->get(),
             'customers' => $customers,
             'vehicles' => $vehicles,
             'customerOptions' => $customers->map(fn (Customer $customer): array => [

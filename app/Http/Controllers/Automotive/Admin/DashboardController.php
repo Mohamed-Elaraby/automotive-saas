@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\WorkspaceProductFamilyResolver;
 use App\Services\Tenancy\AccessVisibilityService;
+use App\Services\Tenancy\BranchScopeService;
 use App\Services\Tenancy\TenantPlanService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -26,7 +27,8 @@ class DashboardController extends Controller
         protected WorkspaceModuleCatalogService $workspaceModuleCatalogService,
         protected WorkspaceIntegrationCatalogService $workspaceIntegrationCatalogService,
         protected WorkspaceProductFamilyResolver $workspaceProductFamilyResolver,
-        protected AccessVisibilityService $accessVisibility
+        protected AccessVisibilityService $accessVisibility,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -68,30 +70,60 @@ public function index(Request $request): View
     $recentMovements = collect();
 
     if ($focusedWorkspaceProductFamily === 'parts_inventory') {
-        $inventoriesCount = Inventory::query()->count();
-        $stockTransfersCount = StockTransfer::query()->count();
-        $stockMovementsCount = StockMovement::query()->count();
+        $inventoryCountQuery = Inventory::query();
+        $stockMovementCountQuery = StockMovement::query();
+
+        if ($adminUser) {
+            $this->branchScope->applyCurrentBranch($inventoryCountQuery, $adminUser, 'automotive_service');
+            $this->branchScope->applyCurrentBranch($stockMovementCountQuery, $adminUser, 'automotive_service');
+        }
+
+        $inventoriesCount = $inventoryCountQuery->count();
+        $stockTransfersCount = $adminUser
+            ? StockTransfer::query()
+                ->where(function ($query) use ($adminUser): void {
+                    $branchIds = $this->branchScope->visibleBranchIds($adminUser, 'automotive_service');
+                    $query->whereIn('from_branch_id', $branchIds)->orWhereIn('to_branch_id', $branchIds);
+                })
+                ->count()
+            : StockTransfer::query()->count();
+        $stockMovementsCount = $stockMovementCountQuery->count();
 
         $lowStockItems = Inventory::query()
             ->with(['product', 'branch'])
             ->whereHas('product', function ($query) {
                 $query->whereColumn('inventories.quantity', '<=', 'products.min_stock_alert');
             })
-            ->orderBy('quantity')
-            ->limit(5)
-            ->get();
+            ->orderBy('quantity');
 
-        $recentTransfers = StockTransfer::query()
+        if ($adminUser) {
+            $this->branchScope->applyCurrentBranch($lowStockItems, $adminUser, 'automotive_service');
+        }
+
+        $lowStockItems = $lowStockItems->limit(5)->get();
+
+        $recentTransfersQuery = StockTransfer::query()
             ->with(['fromBranch', 'toBranch'])
-            ->latest()
-            ->limit(5)
-            ->get();
+            ->latest();
+
+        if ($adminUser) {
+            $branchIds = $this->branchScope->visibleBranchIds($adminUser, 'automotive_service');
+            $recentTransfersQuery->where(function ($query) use ($branchIds): void {
+                $query->whereIn('from_branch_id', $branchIds)->orWhereIn('to_branch_id', $branchIds);
+            });
+        }
+
+        $recentTransfers = $recentTransfersQuery->limit(5)->get();
 
         $recentMovements = StockMovement::query()
             ->with(['branch', 'product'])
-            ->latest()
-            ->limit(6)
-            ->get();
+            ->latest();
+
+        if ($adminUser) {
+            $this->branchScope->applyCurrentBranch($recentMovements, $adminUser, 'automotive_service');
+        }
+
+        $recentMovements = $recentMovements->limit(6)->get();
     }
 
     return view('automotive.admin.dashboard.index', compact(

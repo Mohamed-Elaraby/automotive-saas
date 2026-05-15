@@ -5,6 +5,8 @@ namespace App\Services\Automotive\Maintenance;
 use App\Models\Maintenance\MaintenanceApprovalRecord;
 use App\Models\Maintenance\MaintenanceEstimate;
 use App\Models\Maintenance\MaintenanceLostSale;
+use App\Models\User;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,18 +16,23 @@ class ApprovalWorkflowService
     public function __construct(
         protected MaintenanceTimelineService $timeline,
         protected MaintenanceNotificationService $notifications,
-        protected MaintenanceAuditService $audit
+        protected MaintenanceAuditService $audit,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function pending(int $limit = 50): Collection
+    public function pending(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceEstimate::query()
+        $query = MaintenanceEstimate::query()
             ->with(['branch', 'customer', 'vehicle', 'workOrder', 'lines'])
             ->whereIn('status', ['draft', 'sent', 'viewed'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function send(MaintenanceEstimate $estimate, array $data): MaintenanceEstimate
@@ -270,21 +277,29 @@ class ApprovalWorkflowService
         });
     }
 
-    public function approvals(int $limit = 50): Collection
+    public function approvals(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceApprovalRecord::query()
+        $query = MaintenanceApprovalRecord::query()
             ->with(['estimate', 'workOrder', 'customer', 'vehicle', 'approver'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
-    public function lostSales(int $limit = 50): Collection
+    public function lostSales(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceLostSale::query()
+        $query = MaintenanceLostSale::query()
             ->with(['estimate', 'estimateLine', 'customer', 'vehicle', 'advisor'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models\Maintenance;
 
 use App\Models\Branch;
+use App\Models\Concerns\HasBranchScope;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class VehicleCheckIn extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'check_in_number',
         'appointment_id',

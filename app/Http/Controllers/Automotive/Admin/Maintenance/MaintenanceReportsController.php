@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Maintenance\MaintenanceServiceCatalogItem;
 use App\Services\Automotive\Maintenance\MaintenanceAdvancedOperationsService;
 use App\Services\Automotive\Maintenance\MaintenanceReportingService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,19 +17,22 @@ class MaintenanceReportsController extends Controller
 {
     public function __construct(
         protected MaintenanceReportingService $reports,
-        protected MaintenanceAdvancedOperationsService $advanced
+        protected MaintenanceAdvancedOperationsService $advanced,
+        protected BranchScopeService $branchScope
     ) {
     }
 
     public function index(): View
     {
+        $user = auth('automotive_admin')->user();
+
         return view('automotive.admin.maintenance.reports.index', [
-            'dashboard' => $this->reports->dashboard(),
-            'technicians' => $this->reports->technicianProductivity(),
-            'advisors' => $this->reports->advisorPerformance(),
-            'branches' => $this->reports->branchPerformance(),
-            'topServices' => $this->reports->topServices(),
-            'financial' => $this->reports->financialSummary(),
+            'dashboard' => $this->reports->dashboard($user),
+            'technicians' => $this->reports->technicianProductivity($user),
+            'advisors' => $this->reports->advisorPerformance($user),
+            'branches' => $this->reports->branchPerformance($user),
+            'topServices' => $this->reports->topServices($user),
+            'financial' => $this->reports->financialSummary($user),
         ]);
     }
 
@@ -41,7 +45,10 @@ class MaintenanceReportsController extends Controller
             'preventiveReminders' => $this->advanced->preventiveReminders(),
             'healthScores' => $this->advanced->healthScores(),
             'recommendations' => $this->advanced->recommendations(),
-            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'branches' => Branch::query()
+                ->whereIn('id', $this->branchScope->visibleBranchIds(auth('automotive_admin')->user(), 'automotive_service'))
+                ->orderBy('name')
+                ->get(),
             'serviceItems' => MaintenanceServiceCatalogItem::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
@@ -60,6 +67,10 @@ class MaintenanceReportsController extends Controller
             'description' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        if (! empty($validated['branch_id'])) {
+            $this->branchScope->assertCanAccessBranch(auth('automotive_admin')->user(), 'automotive_service', (int) $validated['branch_id']);
+        }
+
         $this->advanced->createPreventiveRule($validated);
 
         return back()->with('success', __('maintenance.messages.preventive_rule_created'));
@@ -77,7 +88,7 @@ class MaintenanceReportsController extends Controller
 
     public function export(string $report): StreamedResponse
     {
-        $rows = $this->reports->exportRows($report);
+        $rows = $this->reports->exportRows($report, auth('automotive_admin')->user());
         $filename = 'maintenance-' . $report . '-' . now()->format('Ymd-His') . '.csv';
 
         return response()->streamDownload(function () use ($rows) {

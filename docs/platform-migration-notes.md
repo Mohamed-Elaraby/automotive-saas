@@ -189,6 +189,41 @@ Package 16 does not replace Package 15 UI visibility. It adds server-side protec
 
 Package 17 must continue this migration by applying branch-scoped data filtering to operational records and queries.
 
+## Package 17 Access Migration Notes
+
+Branch-scoped data filtering now uses `BranchScopeService`.
+
+Migration rules:
+
+- use `BranchScopeService` for branch assertions and query filtering
+- use `visibleToUser(...)` on branch-bearing models that include `HasBranchScope`
+- use `visibleToUserOrGlobal(...)` for records where `branch_id = null` means global product-level visibility, such as product-wide notifications
+- use current branch context for branch-specific dashboards/lists
+- use all allowed branches for operational lists that are intended to show a user's full accessible workload
+- do not branch-filter central entities directly unless the business policy is explicit
+
+Covered branch-scoped records include:
+
+- work orders
+- vehicle check-ins
+- estimates
+- inspections
+- diagnosis records
+- QC records
+- delivery/warranty/complaint records
+- maintenance documents
+- maintenance and tenant attachments
+- maintenance and tenant notifications
+- stock movements, inventory rows, and stock transfers
+
+Central entity policy:
+
+- customers, suppliers, and employees remain central
+- transaction-level visibility is enforced through branch-scoped records
+- Package 18 should add audit/diagnostic visibility for denied branch access and suspicious direct-record attempts
+
+Do not use route cache during this migration.
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation

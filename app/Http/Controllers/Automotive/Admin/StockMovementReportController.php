@@ -6,22 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\StockItem;
 use App\Models\StockMovement;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StockMovementReportController extends Controller
 {
+    public function __construct(
+        protected BranchScopeService $branchScope
+    ) {
+    }
+
     public function index(Request $request): View
     {
-        $branchId = $request->input('branch_id');
+        $user = $request->user('automotive_admin');
+        $branchId = $request->input('branch_id') ? (int) $request->input('branch_id') : null;
         $productId = $request->input('product_id');
         $type = $request->input('type');
         $search = trim((string) $request->input('search'));
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
+        $branchId = $branchId ?: $this->branchScope->currentBranchIdForUser($user, 'automotive_service');
+
+        if ($branchId) {
+            $this->branchScope->assertCanAccessBranch($user, 'automotive_service', (int) $branchId);
+        }
 
         $branches = Branch::query()
-            ->where('is_active', true)
+            ->whereIn('id', $this->branchScope->visibleBranchIds($user, 'automotive_service'))
             ->orderBy('name')
             ->get();
 
@@ -40,6 +52,8 @@ class StockMovementReportController extends Controller
 
         $query = StockMovement::query()
             ->with(['branch', 'product', 'creator']);
+
+        $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
 
         if ($branchId) {
             $query->where('branch_id', $branchId);

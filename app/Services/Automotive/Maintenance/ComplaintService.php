@@ -3,6 +3,8 @@
 namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceComplaint;
+use App\Models\User;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -11,17 +13,22 @@ class ComplaintService
     public function __construct(
         protected MaintenanceNumberService $numbers,
         protected MaintenanceTimelineService $timeline,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function recent(int $limit = 50): Collection
+    public function recent(int $limit = 50, ?User $user = null): Collection
     {
-        return MaintenanceComplaint::query()
+        $query = MaintenanceComplaint::query()
             ->with(['branch', 'workOrder', 'customer', 'vehicle', 'assignee'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranchesOrGlobal($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function create(array $data): MaintenanceComplaint

@@ -4,6 +4,7 @@ namespace App\Services\Tenancy;
 
 use App\Models\NotificationTemplate;
 use App\Models\TenantNotification;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -13,7 +14,8 @@ class NotificationService
     public const CHANNELS = ['in_app', 'email', 'whatsapp', 'sms', 'webhook'];
 
     public function __construct(
-        protected ProductEntitlementService $entitlements
+        protected ProductEntitlementService $entitlements,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -65,6 +67,18 @@ class NotificationService
         $notification->forceFill(['archived_at' => now()])->save();
 
         return $notification->refresh();
+    }
+
+    public function visibleForUser(User $user, string $productKey, int $limit = 50): Collection
+    {
+        $query = TenantNotification::query()
+            ->active()
+            ->forProduct($productKey)
+            ->latest('id');
+
+        $this->branchScope->applyAllowedBranchesOrGlobal($query, $user, $productKey);
+
+        return $query->limit($limit)->get();
     }
 
     public function channelEnabledForPlan(string $productKey, string $channel): bool

@@ -9,6 +9,7 @@ use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Services\Automotive\Maintenance\MaintenanceAttachmentService;
 use App\Services\Automotive\Maintenance\MaintenanceNotificationService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,8 @@ class MaintenanceAttachmentController extends Controller
 {
     public function __construct(
         protected MaintenanceAttachmentService $attachmentService,
-        protected MaintenanceNotificationService $notifications
+        protected MaintenanceNotificationService $notifications,
+        protected BranchScopeService $branchScope
     )
     {
     }
@@ -40,8 +42,14 @@ class MaintenanceAttachmentController extends Controller
             'job' => MaintenanceWorkOrderJob::query()->findOrFail($validated['attachable_id']),
         };
 
+        $branchId = $attachable->branch_id ?? $attachable->workOrder?->branch_id ?? ($validated['branch_id'] ?? null);
+
+        if ($branchId) {
+            $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $branchId);
+        }
+
         $attachment = $this->attachmentService->store($attachable, $request->file('photo'), [
-            'branch_id' => $validated['branch_id'] ?? null,
+            'branch_id' => $branchId,
             'category' => $validated['category'],
             'notes' => $validated['notes'] ?? null,
             'uploaded_by' => auth('automotive_admin')->id(),

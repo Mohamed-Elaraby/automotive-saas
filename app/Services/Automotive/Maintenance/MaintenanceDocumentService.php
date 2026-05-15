@@ -10,24 +10,33 @@ use App\Models\Maintenance\MaintenanceInvoice;
 use App\Models\Maintenance\MaintenanceReceipt;
 use App\Models\Maintenance\MaintenanceWarranty;
 use App\Models\Maintenance\VehicleCheckIn;
+use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\Core\Documents\DocumentGenerationService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Database\Eloquent\Collection;
 
 class MaintenanceDocumentService
 {
-    public function __construct(protected DocumentGenerationService $documents)
+    public function __construct(
+        protected DocumentGenerationService $documents,
+        protected BranchScopeService $branchScope
+    )
     {
     }
 
-    public function recent(int $limit = 50): Collection
+    public function recent(int $limit = 50, ?User $user = null): Collection
     {
-        return GeneratedDocument::query()
+        $query = GeneratedDocument::query()
             ->with(['branch', 'generator'])
             ->where('product_code', 'maintenance')
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranchesOrGlobal($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
     public function generateCheckIn(VehicleCheckIn $checkIn, array $options): GeneratedDocument

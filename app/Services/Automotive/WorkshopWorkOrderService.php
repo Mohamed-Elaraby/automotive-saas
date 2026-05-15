@@ -9,7 +9,9 @@ use App\Models\StockMovement;
 use App\Models\Vehicle;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderLine;
+use App\Models\User;
 use App\Services\Tenancy\CentralCustomerService;
+use App\Services\Tenancy\BranchScopeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -18,34 +20,49 @@ use Illuminate\Validation\ValidationException;
 class WorkshopWorkOrderService
 {
     public function __construct(
-        protected CentralCustomerService $centralCustomers
+        protected CentralCustomerService $centralCustomers,
+        protected BranchScopeService $branchScope
     ) {
     }
 
-    public function getActiveBranches(): Collection
+    public function getActiveBranches(?User $user = null): Collection
     {
-        return Branch::query()
+        $query = Branch::query()
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        if ($user) {
+            $query->whereIn('id', $this->branchScope->visibleBranchIds($user, 'automotive_service'));
+        }
+
+        return $query->get();
     }
 
-    public function getRecentWorkOrders(int $limit = 8): Collection
+    public function getRecentWorkOrders(int $limit = 8, ?User $user = null): Collection
     {
-        return WorkOrder::query()
+        $query = WorkOrder::query()
             ->with(['branch', 'creator', 'customer', 'vehicle'])
-            ->latest('id')
-            ->limit($limit)
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->limit($limit)->get();
     }
 
-    public function getOpenWorkOrders(): Collection
+    public function getOpenWorkOrders(?User $user = null): Collection
     {
-        return WorkOrder::query()
+        $query = WorkOrder::query()
             ->with(['branch', 'customer', 'vehicle'])
             ->whereIn('status', ['open', 'in_progress'])
-            ->latest('id')
-            ->get();
+            ->latest('id');
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->get();
     }
 
     public function getCustomers(): Collection
@@ -63,11 +80,17 @@ class WorkshopWorkOrderService
             ->get();
     }
 
-    public function getWorkOrderById(int $id): ?WorkOrder
+    public function getWorkOrderById(int $id, ?User $user = null): ?WorkOrder
     {
-        return WorkOrder::query()
+        $query = WorkOrder::query()
             ->with(['branch', 'creator', 'customer', 'vehicle'])
-            ->find($id);
+            ->whereKey($id);
+
+        if ($user) {
+            $this->branchScope->applyAllowedBranches($query, $user, 'automotive_service');
+        }
+
+        return $query->first();
     }
 
     public function getWorkOrderLines(WorkOrder $workOrder): Collection

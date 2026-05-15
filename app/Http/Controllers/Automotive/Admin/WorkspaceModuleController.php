@@ -26,6 +26,7 @@ use App\Services\Automotive\WorkshopWorkOrderService;
 use App\Services\Tenancy\WorkspaceIntegrationCatalogService;
 use App\Services\Tenancy\WorkspaceIntegrationContractService;
 use App\Services\Tenancy\WorkspaceIntegrationHandoffService;
+use App\Services\Tenancy\BranchScopeService;
 use App\Services\Tenancy\WorkspaceManifestService;
 use App\Services\Tenancy\TenantWorkspaceProductService;
 use App\Services\Tenancy\WorkspaceModuleCatalogService;
@@ -49,7 +50,8 @@ class WorkspaceModuleController extends Controller
         protected WorkshopWorkOrderService $workshopWorkOrderService,
         protected WorkOrderAccountingHandoffService $workOrderAccountingHandoffService,
         protected AccountingRuntimeService $accountingRuntimeService,
-        protected AccountingPermissionService $accountingPermissionService
+        protected AccountingPermissionService $accountingPermissionService,
+        protected BranchScopeService $branchScope
     ) {
     }
 
@@ -58,18 +60,19 @@ class WorkspaceModuleController extends Controller
         return $this->showManifestModule(
             $request,
             'workshop-operations',
-            function () {
+            function () use ($request) {
                 $tenantId = (string) tenant()->id;
+                $user = $request->user('automotive_admin');
 
                 return [
                     'has_connected_parts_workspace' => $this->workshopPartsIntegrationService->hasConnectedPartsWorkspace($tenantId),
-                    'active_branches' => $this->workshopWorkOrderService->getActiveBranches(),
+                    'active_branches' => $this->workshopWorkOrderService->getActiveBranches($user),
                     'customers' => $this->workshopWorkOrderService->getCustomers(),
                     'vehicles' => $this->workshopWorkOrderService->getVehicles(),
-                    'open_work_orders' => $this->workshopWorkOrderService->getOpenWorkOrders(),
-                    'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(),
-                    'available_stock_items' => $this->workshopPartsIntegrationService->getAvailableStockSnapshot(),
-                    'recent_workshop_consumptions' => $this->workshopPartsIntegrationService->getRecentWorkshopConsumptions(),
+                    'open_work_orders' => $this->workshopWorkOrderService->getOpenWorkOrders($user),
+                    'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(8, $user),
+                    'available_stock_items' => $this->workshopPartsIntegrationService->getAvailableStockSnapshot(12, $user),
+                    'recent_workshop_consumptions' => $this->workshopPartsIntegrationService->getRecentWorkshopConsumptions(8, $user),
                     'recent_accounting_events' => $this->workshopWorkOrderService->getRecentAccountingEvents(6),
                 ];
             }
@@ -104,7 +107,7 @@ class WorkspaceModuleController extends Controller
             $request,
             'workshop-work-orders',
             fn () => [
-                'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(25),
+                'recent_work_orders' => $this->workshopWorkOrderService->getRecentWorkOrders(25, $request->user('automotive_admin')),
             ]
         );
     }
@@ -119,6 +122,8 @@ class WorkspaceModuleController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $validated['branch_id']);
 
         $this->workshopWorkOrderService->createWorkOrder([
             'branch_id' => $validated['branch_id'],
@@ -189,6 +194,10 @@ class WorkspaceModuleController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $workOrder = WorkOrder::query()->findOrFail((int) $validated['work_order_id']);
+        $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $workOrder->branch_id);
+        $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $validated['branch_id']);
+
         try {
             $this->workshopPartsIntegrationService->consumePart($validated + [
                 'created_by' => auth('automotive_admin')->id(),
@@ -207,6 +216,8 @@ class WorkspaceModuleController extends Controller
 
     public function showWorkOrder(Request $request, WorkOrder $workOrder): View
     {
+        $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $workOrder->branch_id);
+
         $workspaceProducts = $this->tenantWorkspaceProductService->getWorkspaceProducts((string) tenant()->id);
         $focusedWorkspaceProduct = $this->tenantWorkspaceProductService->resolveFocusedProduct(
             $workspaceProducts,
@@ -234,6 +245,8 @@ class WorkspaceModuleController extends Controller
 
     public function storeWorkOrderLaborLine(Request $request, WorkOrder $workOrder): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $workOrder->branch_id);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:255'],
@@ -260,6 +273,8 @@ class WorkspaceModuleController extends Controller
 
     public function updateWorkOrderStatus(Request $request, WorkOrder $workOrder): RedirectResponse
     {
+        $this->branchScope->assertCanAccessBranch($request->user('automotive_admin'), 'automotive_service', (int) $workOrder->branch_id);
+
         $validated = $request->validate([
             'workspace_product' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'in:open,in_progress,completed'],

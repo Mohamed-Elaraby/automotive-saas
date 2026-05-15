@@ -3,6 +3,7 @@
 namespace App\Models\Maintenance;
 
 use App\Models\Branch;
+use App\Models\Concerns\HasBranchScope;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class MaintenanceReceipt extends Model
 {
+    use HasBranchScope;
+
     protected $fillable = [
         'receipt_number',
         'branch_id',
