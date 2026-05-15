@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\Tenancy\BranchContextService;
+use App\Services\Tenancy\AccessAuditService;
 use App\Services\Tenancy\ProductPermissionService;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,7 +13,8 @@ class EnsureTenantUserHasProductPermission
 {
     public function __construct(
         protected ProductPermissionService $permissions,
-        protected BranchContextService $branchContext
+        protected BranchContextService $branchContext,
+        protected AccessAuditService $audit
     ) {
     }
 
@@ -28,6 +30,7 @@ class EnsureTenantUserHasProductPermission
         $branchId = $this->resolveBranchId($request, $user, $productKey, $branchMode);
 
         if ($this->requiresBranch($branchMode) && $branchId === null) {
+            $this->logForbidden($request, $user, $productKey, $permissionKey, $branchId, 'missing_branch_context');
             abort(403, 'A valid branch context is required for this action.');
         }
 
@@ -36,6 +39,8 @@ class EnsureTenantUserHasProductPermission
                 return $next($request);
             }
         }
+
+        $this->logForbidden($request, $user, $productKey, $permissionKey, $branchId, 'missing_product_permission');
 
         abort(403, 'User does not have the required product permission.');
     }
@@ -70,5 +75,19 @@ class EnsureTenantUserHasProductPermission
     protected function requiresBranch(string $branchMode): bool
     {
         return in_array($branchMode, ['current_branch', 'branch_required'], true);
+    }
+
+    protected function logForbidden(Request $request, mixed $user, string $productKey, string $permissionKey, ?int $branchId, string $reason): void
+    {
+        if (! $user || ! $request->routeIs('automotive.admin.access.*')) {
+            return;
+        }
+
+        $this->audit->logForbiddenAction($user, $productKey, $permissionKey, $branchId, [
+            'route_name' => $request->route()?->getName(),
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'reason' => $reason,
+        ]);
     }
 }

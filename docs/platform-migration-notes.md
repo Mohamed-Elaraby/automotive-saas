@@ -224,6 +224,34 @@ Central entity policy:
 
 Do not use route cache during this migration.
 
+## Package 18 Access Audit and Diagnostics Notes
+
+Package 18 introduces tenant-side access audit logs and diagnostics for Access Control flows.
+
+Migration steps:
+
+- run central migrations if needed with `php artisan migrate`
+- run tenant migrations with `php artisan tenants:migrate`
+- do not run `php artisan route:cache`
+
+New tenant table:
+
+- `access_audit_logs`
+
+Primary integration points:
+
+- product access grant/revoke
+- branch access grant/revoke
+- user role assignment/removal
+- role CRUD and duplication
+- role permission matrix updates
+- owner access sync
+- authenticated forbidden Access Control middleware denials
+
+Diagnostics routes are protected by the existing Access Control management middleware. The diagnostics service checks subscription, product access, branch access, roles, permissions, owner implicit access, and product-permission route middleware.
+
+Package 18 does not audit every operational SaaS module. Product-module audit trails can be added after Package 19 using the same `AccessAuditService` pattern or a module-specific audit service where domain records need richer lifecycle events.
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation

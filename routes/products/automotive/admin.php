@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Automotive\Admin\Auth\AuthController;
 use App\Http\Controllers\Automotive\Admin\AccessControlController;
+use App\Http\Controllers\Automotive\Admin\AccessAuditController;
+use App\Http\Controllers\Automotive\Admin\AccessDiagnosticsController;
 use App\Http\Controllers\Automotive\Admin\BillingController;
 use App\Http\Controllers\Automotive\Admin\BranchController;
 use App\Http\Controllers\Automotive\Admin\BranchContextController;
@@ -110,7 +112,11 @@ $registerWorkspaceAdminRoutes = function (string $homePrefix, string $adminPrefi
                     Route::get('/products', [AccessControlController::class, 'products'])->middleware($productsManagePermission)->name('products.index');
                     Route::get('/products/{productKey}/branches', [AccessControlController::class, 'productBranches'])->middleware($branchesManagePermission)->name('products.branches.index');
                     Route::put('/products/{productKey}/branches', [AccessControlController::class, 'updateProductBranches'])->middleware($branchesManagePermission)->name('products.branches.update');
-                    Route::get('/diagnostics', [AccessControlController::class, 'diagnostics'])->middleware($accessDashboardPermission)->name('diagnostics.index');
+                    Route::get('/audit', [AccessAuditController::class, 'index'])->middleware($accessDashboardPermission)->name('audit.index');
+                    Route::get('/diagnostics', [AccessDiagnosticsController::class, 'index'])->middleware($accessDashboardPermission)->name('diagnostics.index');
+                    Route::get('/diagnostics/users/{user}', [AccessDiagnosticsController::class, 'user'])->middleware($accessDashboardPermission)->name('diagnostics.user');
+                    Route::get('/diagnostics/permission', [AccessDiagnosticsController::class, 'permission'])->middleware($accessDashboardPermission)->name('diagnostics.permission');
+                    Route::get('/diagnostics/route', [AccessDiagnosticsController::class, 'route'])->middleware($accessDashboardPermission)->name('diagnostics.route');
                 });
 
             Route::get('/users', [UserController::class, 'index'])->name('users.index');

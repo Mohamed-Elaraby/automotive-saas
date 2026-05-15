@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\Tenancy\ProductBranchAccessService;
 use App\Services\Tenancy\ProductEntitlementService;
 use App\Services\Tenancy\EffectiveUserAccessService;
+use App\Services\Tenancy\AccessAuditService;
 use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\TenantUserProductAccessService;
 use App\Services\Tenancy\WorkspaceOwnerAccessService;
@@ -34,7 +35,8 @@ class AccessControlController extends Controller
         protected ProductBranchAccessService $branchAccess,
         protected WorkspaceOwnerAccessService $ownerAccess,
         protected EffectiveUserAccessService $effectiveAccess,
-        protected ProductPermissionService $permissions
+        protected ProductPermissionService $permissions,
+        protected AccessAuditService $audit
     ) {
     }
 
@@ -125,6 +127,13 @@ class AccessControlController extends Controller
         }
 
         try {
+            $currentActiveProducts = TenantUserProductAccess::query()
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $user->id)
+                ->whereIn('product_key', $allowedProductKeys)
+                ->active()
+                ->pluck('product_key');
+
             DB::transaction(function () use ($user, $tenantId, $allowedProductKeys, $requestedProducts): void {
                 foreach ($requestedProducts as $productKey) {
                     $this->productAccess->assertCanGrantAccess($user, $productKey, $tenantId);
@@ -142,6 +151,14 @@ class AccessControlController extends Controller
                     $this->productAccess->revokeAccess($user, $productKey);
                 }
             });
+
+            foreach ($requestedProducts->diff($currentActiveProducts) as $productKey) {
+                $this->audit->logProductAccessGranted($user, $productKey, null, ['source' => 'access_control_ui']);
+            }
+
+            foreach ($currentActiveProducts->diff($requestedProducts) as $productKey) {
+                $this->audit->logProductAccessRevoked($user, $productKey, null, ['source' => 'access_control_ui']);
+            }
         } catch (RuntimeException $exception) {
             $message = str_contains($exception->getMessage(), 'No available seats')
                 ? __('access.seat_limit_reached')
@@ -163,6 +180,7 @@ class AccessControlController extends Controller
         abort_unless($this->isPrimaryWorkspaceOwner(auth('automotive_admin')->user()), 403);
 
         $summary = $this->ownerAccess->syncOwnerAccess($user);
+        $this->audit->logOwnerAccessSynced($user, $summary);
 
         return back()->with('success', __('access.owner_access_synced', $summary));
     }
@@ -228,6 +246,29 @@ class AccessControlController extends Controller
                     $this->branchAccess->disableBranch((int) $branchId, $productKey);
                 }
             });
+
+            foreach ($requestedBranchIds->diff($currentEnabledIds) as $branchId) {
+                $this->audit->log([
+                    'product_key' => $productKey,
+                    'branch_id' => (int) $branchId,
+                    'action' => 'product_branch.enabled',
+                    'event_key' => 'product_branch.enabled',
+                    'new_values' => ['is_enabled' => true],
+                    'metadata' => ['source' => 'access_control_ui'],
+                ]);
+            }
+
+            foreach ($currentEnabledIds->diff($requestedBranchIds) as $branchId) {
+                $this->audit->log([
+                    'product_key' => $productKey,
+                    'branch_id' => (int) $branchId,
+                    'action' => 'product_branch.disabled',
+                    'event_key' => 'product_branch.disabled',
+                    'old_values' => ['is_enabled' => true],
+                    'new_values' => ['is_enabled' => false],
+                    'metadata' => ['source' => 'access_control_ui'],
+                ]);
+            }
         } catch (RuntimeException $exception) {
             $message = str_contains($exception->getMessage(), 'No available branches')
                 ? __('access.branch_limit_reached')
@@ -276,6 +317,14 @@ class AccessControlController extends Controller
         }
 
         try {
+            $currentByProduct = TenantUserProductBranch::query()
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $user->id)
+                ->enabled()
+                ->get()
+                ->groupBy('product_key')
+                ->map(fn (Collection $rows): Collection => $rows->pluck('branch_id')->map(fn ($id): int => (int) $id));
+
             DB::transaction(function () use ($user, $tenantId, $activeProductKeys, $requested): void {
                 foreach ($activeProductKeys as $productKey) {
                     $enabledBranchIds = $this->branchAccess
@@ -310,6 +359,21 @@ class AccessControlController extends Controller
                     }
                 }
             });
+
+            foreach ($activeProductKeys as $productKey) {
+                $requestedBranchIds = collect($requested->get($productKey, []))
+                    ->map(fn ($id): int => (int) $id)
+                    ->values();
+                $currentBranchIds = $currentByProduct[$productKey] ?? collect();
+
+                foreach ($requestedBranchIds->diff($currentBranchIds) as $branchId) {
+                    $this->audit->logBranchAccessGranted($user, $productKey, (int) $branchId, ['source' => 'access_control_ui']);
+                }
+
+                foreach ($currentBranchIds->diff($requestedBranchIds) as $branchId) {
+                    $this->audit->logBranchAccessRevoked($user, $productKey, (int) $branchId, ['source' => 'access_control_ui']);
+                }
+            }
         } catch (RuntimeException) {
             return back()
                 ->withErrors(['branches' => __('access.invalid_branch_assignment')])
@@ -349,6 +413,7 @@ class AccessControlController extends Controller
                 ->all(),
             'quickLinks' => $this->quickLinks(),
             'primaryProductKey' => $primaryProductKey,
+            'recentAuditLogs' => $this->audit->paginate([], 5),
         ]);
     }
 
@@ -656,6 +721,13 @@ class AccessControlController extends Controller
                 'description' => __('access.diagnostics_card_hint'),
                 'icon' => 'isax-search-status',
                 'route' => 'automotive.admin.access.diagnostics.index',
+            ],
+            [
+                'key' => 'audit',
+                'label' => 'Audit Logs',
+                'description' => 'Review recent access changes and blocked actions.',
+                'icon' => 'isax-document-text',
+                'route' => 'automotive.admin.access.audit.index',
             ],
         ];
     }

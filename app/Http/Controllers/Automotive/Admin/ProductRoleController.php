@@ -7,6 +7,7 @@ use App\Http\Requests\Automotive\Admin\StoreProductRoleRequest;
 use App\Http\Requests\Automotive\Admin\UpdateProductRoleRequest;
 use App\Http\Requests\Automotive\Admin\UpdateRolePermissionsRequest;
 use App\Models\ProductRole;
+use App\Services\Tenancy\AccessAuditService;
 use App\Services\Tenancy\ProductPermissionService;
 use App\Services\Tenancy\ProductRoleManagementService;
 use Illuminate\Contracts\View\View;
@@ -18,7 +19,8 @@ class ProductRoleController extends Controller
 {
     public function __construct(
         protected ProductRoleManagementService $roles,
-        protected ProductPermissionService $permissions
+        protected ProductPermissionService $permissions,
+        protected AccessAuditService $audit
     ) {
     }
 
@@ -51,6 +53,7 @@ class ProductRoleController extends Controller
 
         try {
             $role = $this->roles->createRole($request->validated());
+            $this->audit->logRoleChanged('role.created', $role, [], $role->only(['id', 'product_key', 'name', 'is_active']), ['source' => 'roles_ui']);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['name' => $exception->getMessage()])->withInput();
         }
@@ -76,7 +79,9 @@ class ProductRoleController extends Controller
         $this->authorizeRolesManage();
 
         try {
+            $oldValues = $role->only(['product_key', 'name', 'description', 'is_active', 'metadata']);
             $this->roles->updateRole($role, $request->validated());
+            $this->audit->logRoleChanged('role.updated', $role->refresh(), $oldValues, $role->only(['product_key', 'name', 'description', 'is_active', 'metadata']), ['source' => 'roles_ui']);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['name' => $exception->getMessage()])->withInput();
         }
@@ -91,7 +96,17 @@ class ProductRoleController extends Controller
         $this->authorizeRolesManage();
 
         try {
+            $oldValues = $role->only(['id', 'product_key', 'name', 'description', 'is_active', 'metadata']);
             $this->roles->deleteRole($role);
+            $this->audit->log([
+                'product_key' => $oldValues['product_key'] ?? null,
+                'subject_type' => ProductRole::class,
+                'subject_id' => $oldValues['id'] ?? null,
+                'action' => 'role.deleted',
+                'event_key' => 'role.deleted',
+                'old_values' => $oldValues,
+                'metadata' => ['source' => 'roles_ui'],
+            ]);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['role' => $exception->getMessage()]);
         }
@@ -106,6 +121,7 @@ class ProductRoleController extends Controller
         $this->authorizeRolesManage();
 
         $copy = $this->roles->duplicateRole($role);
+        $this->audit->logRoleChanged('role.duplicated', $copy, ['source_role_id' => $role->id], $copy->only(['id', 'product_key', 'name']), ['source' => 'roles_ui']);
 
         return redirect()
             ->route('automotive.admin.access.roles.edit', $copy)
@@ -133,7 +149,10 @@ class ProductRoleController extends Controller
         $this->authorizeRolesManage();
 
         try {
-            $this->roles->syncRolePermissions($role, $request->validated('permissions') ?? []);
+            $oldPermissions = $role->permissions()->pluck('permission_key')->all();
+            $newPermissions = $request->validated('permissions') ?? [];
+            $this->roles->syncRolePermissions($role, $newPermissions);
+            $this->audit->logRolePermissionsUpdated($role->refresh(), $oldPermissions, $newPermissions, ['source' => 'permission_matrix_ui']);
         } catch (RuntimeException $exception) {
             return back()->withErrors(['permissions' => $exception->getMessage()])->withInput();
         }

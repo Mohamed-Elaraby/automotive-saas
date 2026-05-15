@@ -13,6 +13,9 @@
                     <a href="{{ route('automotive.admin.access.diagnostics.index') }}" class="btn btn-outline-white d-inline-flex align-items-center">
                         <i class="isax isax-search-status me-1"></i>{{ __('access.open_diagnostics') }}
                     </a>
+                    <a href="{{ route('automotive.admin.access.audit.index') }}" class="btn btn-outline-white d-inline-flex align-items-center">
+                        <i class="isax isax-document-text me-1"></i>Audit Logs
+                    </a>
                     <a href="{{ route('automotive.admin.users.index') }}" class="btn btn-primary d-flex align-items-center">
                         <i class="isax isax-profile-2user me-1"></i>{{ __('access.manage_workspace_users') }}
                     </a>
@@ -38,6 +41,46 @@
                     </div>
                 @endforeach
             </div>
+
+            @if(isset($recentAuditLogs) && $recentAuditLogs->count())
+                <div class="card mb-3">
+                    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <h5 class="card-title mb-0">Recent Access Activity</h5>
+                            <p class="mb-0 text-muted small">Latest access-control changes and blocked actions.</p>
+                        </div>
+                        <a href="{{ route('automotive.admin.access.audit.index') }}" class="btn btn-outline-white btn-sm d-inline-flex align-items-center">
+                            <i class="isax isax-document-text me-1"></i>View Audit Logs
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive table-nowrap">
+                            <table class="table border mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Action</th>
+                                        <th>Actor</th>
+                                        <th>Target</th>
+                                        <th>Product</th>
+                                        <th>When</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($recentAuditLogs as $log)
+                                        <tr>
+                                            <td><span class="badge bg-light text-dark">{{ $log->event_key }}</span></td>
+                                            <td>{{ $log->actor?->name ?? 'System' }}</td>
+                                            <td>{{ $log->targetUser?->name ?? '-' }}</td>
+                                            <td>{{ $log->product_key ?? '-' }}</td>
+                                            <td>{{ $log->created_at?->diffForHumans() }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="row">
                 @include('automotive.admin.access.partials._metric-card', [

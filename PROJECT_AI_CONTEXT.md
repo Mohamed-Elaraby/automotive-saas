@@ -6012,6 +6012,41 @@ Deployment reminder:
 - run tenant migrations with `php artisan tenants:migrate`
 - do not run `php artisan route:cache`
 
+## Phase 2 Access Control UI & Enforcement - Package 18 - 2026-05-15
+
+Package completed:
+- added tenant migration for `access_audit_logs`
+- added `AccessAuditLog` model
+- added `AccessAuditService` for safe best-effort access-control audit writes
+- added `AccessDiagnosticsService` for product, branch, permission, route, and owner access explanations
+- added Access Audit Logs UI under `automotive.admin.access.audit.index`
+- added Access Diagnostics UI under `automotive.admin.access.diagnostics.*`
+- integrated audit logging into:
+  - product access grant/revoke
+  - branch access grant/revoke
+  - user role assignment/removal
+  - role create/update/delete/duplicate
+  - role permission matrix updates
+  - owner access sync
+  - authenticated forbidden Access Control middleware denials
+- updated Access Control dashboard with Audit Logs/Diagnostics links and recent audit activity
+- added `tests/Feature/Automotive/Admin/AccessAuditAndDiagnosticsTest.php`
+- updated access-control documentation and migration notes
+
+Important architecture notes:
+- Package 15 hides UI actions for UX only.
+- Package 16 enforces protected backend routes and controller actions.
+- Package 17 scopes branch-bearing data visibility.
+- Package 18 records access-control changes and explains allow/deny decisions.
+- Audit logging must not break the primary action if an audit insert fails.
+- Diagnostics reason codes include owner implicit access, missing/revoked product access, inactive subscription, missing branch access, disabled product branch, missing role, missing permission, route not found, and allowed.
+- Workspace Owner implicit access remains authoritative and does not require explicit product or branch records.
+- Tenant migrations are required before audit logging can persist records.
+- `php artisan route:cache` was not used and must not be used.
+
+Next package:
+- Package 19 - Final UI Acceptance, Cleanup, Docs, Production Validation
+
 ## Package 15 - Menu/Button Visibility Enforcement - 2026-05-13
 
 Completed scope:

@@ -381,6 +381,81 @@ Package boundary:
 - Package 17 scopes visible data inside allowed backend areas.
 - Package 18 will add access audit logs and diagnostics.
 
+## Package 18 - Access Audit Logs + Diagnostics
+
+Package 18 adds tenant-side traceability for Access Control changes and diagnostics for product, branch, route, permission, and owner access decisions.
+
+Audit foundation:
+
+- tenant table: `access_audit_logs`
+- model: `AccessAuditLog`
+- service: `AccessAuditService`
+
+Audited Access Control events:
+
+- `product_access.granted`
+- `product_access.revoked`
+- `branch_access.granted`
+- `branch_access.revoked`
+- `role.assigned`
+- `role.removed`
+- `role.created`
+- `role.updated`
+- `role.deleted`
+- `role.duplicated`
+- `role_permissions.updated`
+- `owner_access.synced`
+- `forbidden_action.blocked`
+- `permission.denied` as a reserved event key for future explicit permission denial records
+
+Audit writes are safe best-effort writes. A failed audit insert is logged internally and must not break the primary access-control action. Audit metadata must not include passwords, tokens, secrets, or other sensitive values.
+
+Diagnostics foundation:
+
+- service: `AccessDiagnosticsService`
+- UI routes:
+  - `automotive.admin.access.diagnostics.index`
+  - `automotive.admin.access.diagnostics.user`
+  - `automotive.admin.access.diagnostics.permission`
+  - `automotive.admin.access.diagnostics.route`
+
+Diagnostics explain:
+
+- subscription status
+- product access state
+- branch access state
+- current branch context where relevant
+- assigned product roles
+- requested permission existence and grant source
+- owner implicit access
+- final allow/deny result
+- reason code
+- suggested fix
+
+Audit UI route:
+
+- `automotive.admin.access.audit.index`
+
+The Access Control dashboard links to Audit Logs and Diagnostics and shows recent audit activity. The UI uses the scoped Automotive admin layout:
+
+```blade
+@extends('automotive.admin.layouts.adminLayout.mainlayout')
+```
+
+Package boundaries:
+
+- Package 15 hides or disables UI controls for UX only.
+- Package 16 enforces backend route/controller permissions.
+- Package 17 scopes branch-bearing data queries.
+- Package 18 records access-control changes and explains access decisions.
+- Package 19 will finish UI acceptance, cleanup, docs, and production validation.
+
+Do not run:
+
+```bash
+php artisan route:cache
+```
+
 ## Package 12.1 Hotfix Notes
 
 ### Admin Session Isolation
