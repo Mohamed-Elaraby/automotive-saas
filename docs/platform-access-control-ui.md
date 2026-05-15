@@ -456,6 +456,134 @@ Do not run:
 php artisan route:cache
 ```
 
+## Package 19 - Final UI Acceptance, Cleanup, Docs, Production Validation
+
+Package 19 closes Phase 2 Access Control UI & Enforcement as a production-ready stage.
+
+Phase 2 package summary:
+
+- Package 10: Access Control UI Foundation
+- Package 11: Product Access & Seat Management UI
+- Package 12: Branch Access UI + Branch Context
+- Package 12.1: Session Isolation + Plan Limit Sync + Owner Access Improvements
+- Package 13: Roles & Permission Matrix UI
+- Package 14: User Access Profile + Effective Permissions
+- Package 15: Menu/Button Visibility Enforcement
+- Package 16: Backend Route/Controller Permission Enforcement
+- Package 17: Branch-Scoped Data Filtering
+- Package 18: Access Audit Logs + Diagnostics
+- Package 19: Final UI Acceptance, Cleanup, Docs, Production Validation
+
+Final user access management flow:
+
+1. Workspace Owner opens Access Control.
+2. Owner reviews product subscriptions and seat usage.
+3. Owner grants product access to tenant users.
+4. Owner enables product branches within branch entitlement limits.
+5. Owner grants branch access to users.
+6. Owner assigns one active product role per user/product.
+7. Owner reviews the User Access Profile and Effective Permissions.
+8. Owner validates warnings, audit logs, and diagnostics.
+
+Owner access behavior:
+
+- Workspace Owner has implicit product, branch, role-management, diagnostics, and audit visibility for subscribed products.
+- Owner does not consume product seats by default.
+- Sync Owner Access creates explicit compatibility records but does not replace implicit owner access.
+- Owner self-lockout and last-owner protections remain required.
+
+Product access and seat behavior:
+
+- Non-owner users require active product access for product-scoped permissions.
+- Seat usage excludes owner access records when `metadata.consumes_seat = false`.
+- Demo/acceptance seeders respect current seat limits and skip unsafe grants if limits are exhausted.
+
+Branch access and branch context:
+
+- Product branches must be enabled before user branch access is granted.
+- Branch enabling respects current plan/add-on branch limits.
+- Branch context controls current branch workflows, while allowed-branch lists control broader operational visibility.
+- Branch selector/switch routes remain available to authenticated users with eligible branches.
+
+Roles and Permission Matrix:
+
+- Product roles and permissions are scoped by `product_key`.
+- Permission keys use explicit product/module/action naming, such as `automotive_service.work_orders.view`.
+- Permission Matrix updates are audited and protected by backend permission middleware.
+
+Effective permissions:
+
+- Effective permissions combine product access, branch access, product roles, owner implicit access, and subscription state.
+- The User Access Profile explains granted and blocked permissions.
+
+Menu/button visibility:
+
+- Package 15 visibility helpers hide or disable menus/actions for UX.
+- UI visibility is not the security boundary.
+
+Backend enforcement:
+
+- Package 16 `tenant.product.permission` middleware blocks forbidden direct URLs and forged POST/PUT/DELETE requests.
+- Destructive actions retain controller/service protections.
+
+Branch-scoped data filtering:
+
+- Package 17 `BranchScopeService` and model scopes filter branch-bearing operational data.
+- Central customers, suppliers, and employees remain central; transaction-level visibility is branch-scoped.
+
+Audit logs and diagnostics:
+
+- Package 18 `AccessAuditService` records access-control changes and forbidden Access Control middleware denials.
+- `AccessDiagnosticsService` explains product, branch, route, permission, role, and owner decisions.
+
+Demo seeder:
+
+```bash
+php artisan db:seed --class=TenantAccessControlDemoSeeder
+```
+
+Run it inside a tenant context. The seeder creates demo branches, users, product access, branch access, and role assignments idempotently. If a tenant's branch or seat limits are lower than the demo dataset, it keeps existing data safe and only applies records allowed by current entitlements.
+
+Acceptance command:
+
+```bash
+php artisan platform:access-control-acceptance
+```
+
+This is a lightweight static command for route, class, view, docs, migration, seeder, and deploy-workflow checks. It does not replace feature tests or browser QA.
+
+Production verification commands:
+
+```bash
+php artisan migrate --force
+php artisan tenants:migrate --force
+php artisan route:clear
+php artisan config:clear
+php artisan view:clear
+php artisan cache:clear
+php artisan route:list --name=automotive.admin.access --except-vendor
+```
+
+Manual UI testing checklist:
+
+- See `docs/access-control-ui-acceptance-checklist.md`
+
+Known backlog after Phase 2:
+
+- central customer/supplier/employee advanced global permission policy
+- broader product-module audit logging outside Access Control
+- advanced user-level permission overrides if desired later
+- import/export permission hardening
+- fine-grained report permissions
+- performance optimization or persistent permission cache if needed
+- browser/E2E tests if tooling is added
+- multi-product UI replication for spareparts/accounting/inventory
+
+No route cache policy:
+
+- Do not run `php artisan route:cache`.
+- Use `php artisan route:clear` during deployment cleanup.
+
 ## Package 12.1 Hotfix Notes
 
 ### Admin Session Isolation

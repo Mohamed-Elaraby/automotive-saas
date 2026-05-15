@@ -9,6 +9,7 @@ use App\Console\Commands\Billing\RepairTenantProductSubscriptionMirrorsCommand;
 use App\Console\Commands\Billing\SyncStripePlanPricesCommand;
 use App\Console\Commands\Billing\VerifyBillingPlanPricesCommand;
 use App\Console\Commands\Notifications\CleanupNotificationsCommand;
+use App\Console\Commands\Tenancy\AccessControlAcceptanceCommand;
 use App\Console\Commands\Tenancy\DiagnoseWorkspaceRoutingCommand;
 use App\Console\Commands\Tenancy\GrantTenantOwnerCommand;
 use App\Console\Commands\Tenancy\NormalizeWorkspaceDomainsCommand;
@@ -27,6 +28,7 @@ class Kernel extends ConsoleKernel
         VerifyBillingPlanPricesCommand::class,
         SyncStripePlanPricesCommand::class,
         CleanupNotificationsCommand::class,
+        AccessControlAcceptanceCommand::class,
         DiagnoseWorkspaceRoutingCommand::class,
         GrantTenantOwnerCommand::class,
         NormalizeWorkspaceDomainsCommand::class,

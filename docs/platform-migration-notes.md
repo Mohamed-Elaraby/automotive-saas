@@ -252,6 +252,31 @@ Diagnostics routes are protected by the existing Access Control management middl
 
 Package 18 does not audit every operational SaaS module. Product-module audit trails can be added after Package 19 using the same `AccessAuditService` pattern or a module-specific audit service where domain records need richer lifecycle events.
 
+## Package 19 Final Acceptance Notes
+
+Package 19 closes Phase 2 Access Control UI & Enforcement.
+
+Migration and production validation:
+
+- run `php artisan migrate --force`
+- run `php artisan tenants:migrate --force`
+- run `php artisan route:clear`
+- run `php artisan config:clear`
+- run `php artisan view:clear`
+- run `php artisan cache:clear`
+- do not run `php artisan route:cache`
+
+New optional acceptance assets:
+
+- `TenantAccessControlDemoSeeder`
+- `platform:access-control-acceptance`
+- `AccessControlFinalAcceptanceTest`
+- `docs/access-control-ui-acceptance-checklist.md`
+
+The demo seeder is tenant-side and idempotent. It seeds demo branches, users, product access, branch access, and role assignments for acceptance walkthroughs. It respects product subscription, seat limits, and branch limits by using the existing access services.
+
+Package 19 does not introduce new access-control behavior beyond final acceptance and validation. Remaining backlog is documented in `docs/platform-access-control-ui.md`.
+
 ## Package 12.1 Access Hotfix Notes
 
 ### Session isolation

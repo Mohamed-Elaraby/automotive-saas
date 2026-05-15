@@ -6047,6 +6047,40 @@ Important architecture notes:
 Next package:
 - Package 19 - Final UI Acceptance, Cleanup, Docs, Production Validation
 
+## Phase 2 Access Control UI & Enforcement - Package 19 - 2026-05-15
+
+Package completed:
+- added `TenantAccessControlDemoSeeder` for idempotent tenant demo/acceptance data
+- added `platform:access-control-acceptance` lightweight static verification command
+- added `AccessControlFinalAcceptanceTest`
+- added final manual acceptance checklist at `docs/access-control-ui-acceptance-checklist.md`
+- finalized Phase 2 documentation in:
+  - `docs/platform-access-control-ui.md`
+  - `docs/platform-migration-notes.md`
+- verified scoped access views avoid the legacy `layout.mainlayout`
+- verified scoped access views avoid raw `url(...)` access links
+
+Phase 2 Access Control UI & Enforcement packages 10-19 are now complete as an implementation stage.
+
+Production validation remains required on the target environment:
+- run tenant migrations
+- run the exact targeted feature tests listed in the final Package 19 report
+- run route lists
+- run browser acceptance flows using the checklist
+
+Known backlog after Phase 2:
+- central customer/supplier/employee advanced global permission policy
+- broader product-module audit logging outside Access Control
+- advanced user-level permission overrides if desired later
+- import/export permission hardening
+- fine-grained report permissions
+- permission cache optimization if needed
+- browser/E2E tests if tooling is added
+- multi-product UI replication for spareparts/accounting/inventory
+
+Critical rule:
+- `php artisan route:cache` was not used and must not be used.
+
 ## Package 15 - Menu/Button Visibility Enforcement - 2026-05-13
 
 Completed scope:
