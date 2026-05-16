@@ -6081,6 +6081,49 @@ Known backlog after Phase 2:
 Critical rule:
 - `php artisan route:cache` was not used and must not be used.
 
+## Access Control Demo Users Seeder - 2026-05-16
+
+Updated tenant-side seeder:
+- `TenantAccessControlDemoSeeder`
+
+Purpose:
+- prepares realistic browser-QA users for Phase 2 Access Control UI & Enforcement
+- uses product key `automotive_service`
+- creates/fetches demo branches:
+  - Dubai Branch
+  - Ajman Branch
+  - Abu Dhabi Branch
+- creates/fetches demo users:
+  - `demo.owner@seven-scapital.test`
+  - `demo.manager@seven-scapital.test`
+  - `demo.advisor@seven-scapital.test`
+  - `demo.technician@seven-scapital.test`
+  - `demo.accountant@seven-scapital.test`
+  - `demo.viewer@seven-scapital.test`
+  - `demo.missing-branch@seven-scapital.test`
+- default password for newly created demo users: `password`
+
+Seeder behavior:
+- idempotent
+- does not overwrite existing demo user passwords
+- respects product seat limits through `TenantUserProductAccessService`
+- respects product branch limits through `ProductBranchAccessService`
+- reports all created/found/skipped users, branches, product access, branch access, role assignments, and owner sync status
+- does not hardcode a tenant id
+
+Owner caveat:
+- current owner logic treats tenant user id `1` as Workspace Owner
+- on an empty tenant DB, the demo owner is created first and becomes id `1`
+- on a non-empty tenant DB with an existing id `1`, the seeder does not mutate that owner into the demo owner and reports the skipped implicit-owner setup
+
+Run:
+```bash
+php artisan tenants:seed --class=TenantAccessControlDemoSeeder
+```
+
+Focused test file:
+- `tests/Feature/Automotive/Admin/TenantAccessControlDemoSeederTest.php`
+
 ## Package 15 - Menu/Button Visibility Enforcement - 2026-05-13
 
 Completed scope:

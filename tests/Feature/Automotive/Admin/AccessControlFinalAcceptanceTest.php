@@ -67,7 +67,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
 
         tenancy()->initialize($tenant);
         $owner = User::query()->orderBy('id')->firstOrFail();
-        $target = User::query()->where('email', 'viewer@example.test')->firstOrFail();
+        $target = User::query()->where('email', 'demo.viewer@seven-scapital.test')->firstOrFail();
         $role = ProductRole::query()->where('name', 'Automotive Viewer')->firstOrFail();
         tenancy()->end();
 
@@ -127,7 +127,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
         [$tenant] = $this->prepareSeededTenantWorkspace();
 
         tenancy()->initialize($tenant);
-        $manager = User::query()->where('email', 'branch.manager@example.test')->firstOrFail();
+        $manager = User::query()->where('email', 'demo.manager@seven-scapital.test')->firstOrFail();
         $allowedIds = app(BranchScopeService::class)->allowedBranchIdsForUser($manager, 'automotive_service');
 
         $this->assertNotEmpty($allowedIds);
@@ -140,7 +140,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
         [$tenant] = $this->prepareSeededTenantWorkspace();
 
         tenancy()->initialize($tenant);
-        $advisor = User::query()->where('email', 'service.advisor@example.test')->firstOrFail();
+        $advisor = User::query()->where('email', 'demo.advisor@seven-scapital.test')->firstOrFail();
         $profile = app(EffectiveUserAccessService::class)->profile($advisor);
 
         $this->assertGreaterThan(0, $profile['summary']['product_count']);
@@ -154,7 +154,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
         [$tenant] = $this->prepareSeededTenantWorkspace();
 
         tenancy()->initialize($tenant);
-        $technician = User::query()->where('email', 'technician@example.test')->firstOrFail();
+        $technician = User::query()->where('email', 'demo.technician@seven-scapital.test')->firstOrFail();
 
         $this->assertTrue(app(ProductPermissionService::class)->can($technician, 'automotive_service', 'automotive_service.jobs.edit'));
         $this->assertFalse(app(ProductPermissionService::class)->can($technician, 'automotive_service', 'automotive_service.invoices.view'));
@@ -166,7 +166,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
         [$tenant] = $this->prepareSeededTenantWorkspace();
 
         tenancy()->initialize($tenant);
-        $accountant = User::query()->where('email', 'accountant@example.test')->firstOrFail();
+        $accountant = User::query()->where('email', 'demo.accountant@seven-scapital.test')->firstOrFail();
 
         $this->assertTrue(app(ProductPermissionService::class)->can($accountant, 'automotive_service', 'automotive_service.invoices.view'));
         $this->assertTrue(app(ProductPermissionService::class)->can($accountant, 'automotive_service', 'automotive_service.payments.reconcile'));
@@ -178,7 +178,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
         [$tenant, $domain] = $this->prepareSeededTenantWorkspace();
 
         tenancy()->initialize($tenant);
-        $viewer = User::query()->where('email', 'viewer@example.test')->firstOrFail();
+        $viewer = User::query()->where('email', 'demo.viewer@seven-scapital.test')->firstOrFail();
 
         $this->assertTrue(app(ProductPermissionService::class)->can($viewer, 'automotive_service', 'automotive_service.reports.view'));
         $this->assertFalse(app(ProductPermissionService::class)->can($viewer, 'automotive_service', 'automotive_service.reports.export'));
@@ -214,7 +214,7 @@ class AccessControlFinalAcceptanceTest extends TestCase
         [$tenant] = $this->prepareSeededTenantWorkspace();
 
         tenancy()->initialize($tenant);
-        $viewer = User::query()->where('email', 'viewer@example.test')->firstOrFail();
+        $viewer = User::query()->where('email', 'demo.viewer@seven-scapital.test')->firstOrFail();
         $allowedIds = app(BranchScopeService::class)->allowedBranchIdsForUser($viewer, 'automotive_service');
         $forbiddenBranch = Branch::query()->whereNotIn('id', $allowedIds)->first();
 
@@ -328,11 +328,11 @@ class AccessControlFinalAcceptanceTest extends TestCase
         return [
             'branches' => Branch::query()->whereIn('code', ['DXB-DEMO', 'AJM-DEMO', 'AUH-DEMO'])->count(),
             'users' => User::query()->whereIn('email', [
-                'branch.manager@example.test',
-                'service.advisor@example.test',
-                'technician@example.test',
-                'accountant@example.test',
-                'viewer@example.test',
+                'demo.manager@seven-scapital.test',
+                'demo.advisor@seven-scapital.test',
+                'demo.technician@seven-scapital.test',
+                'demo.accountant@seven-scapital.test',
+                'demo.viewer@seven-scapital.test',
             ])->count(),
             'roles' => ProductRole::query()->where('product_key', 'automotive_service')->count(),
         ];

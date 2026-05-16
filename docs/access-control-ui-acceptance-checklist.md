@@ -8,6 +8,24 @@ Do not run:
 php artisan route:cache
 ```
 
+Optional demo users can be seeded per tenant:
+
+```bash
+php artisan tenants:seed --class=TenantAccessControlDemoSeeder
+```
+
+Demo login credentials:
+
+- Demo Workspace Owner: `demo.owner@seven-scapital.test` / `password`
+- Demo Branch Manager: `demo.manager@seven-scapital.test` / `password`
+- Demo Service Advisor: `demo.advisor@seven-scapital.test` / `password`
+- Demo Technician: `demo.technician@seven-scapital.test` / `password`
+- Demo Accountant: `demo.accountant@seven-scapital.test` / `password`
+- Demo Viewer: `demo.viewer@seven-scapital.test` / `password`
+- Demo Missing Branch User: `demo.missing-branch@seven-scapital.test` / `password`
+
+If the tenant already has a different primary owner at user id `1`, the demo owner account is still created but implicit Workspace Owner access remains with the existing primary owner.
+
 ## Workspace Owner
 
 - Login expectation: Workspace Owner can log in to the tenant workspace.

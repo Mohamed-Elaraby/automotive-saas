@@ -539,10 +539,35 @@ Audit logs and diagnostics:
 Demo seeder:
 
 ```bash
-php artisan db:seed --class=TenantAccessControlDemoSeeder
+php artisan tenants:seed --class=TenantAccessControlDemoSeeder
 ```
 
-Run it inside a tenant context. The seeder creates demo branches, users, product access, branch access, and role assignments idempotently. If a tenant's branch or seat limits are lower than the demo dataset, it keeps existing data safe and only applies records allowed by current entitlements.
+The seeder creates demo branches, users, product access, branch access, and role assignments idempotently for each selected tenant. If a tenant's branch or seat limits are lower than the demo dataset, it keeps existing data safe and reports skipped grants.
+
+Demo login users:
+
+- Demo Workspace Owner: `demo.owner@seven-scapital.test` / `password`
+- Demo Branch Manager: `demo.manager@seven-scapital.test` / `password`
+- Demo Service Advisor: `demo.advisor@seven-scapital.test` / `password`
+- Demo Technician: `demo.technician@seven-scapital.test` / `password`
+- Demo Accountant: `demo.accountant@seven-scapital.test` / `password`
+- Demo Viewer: `demo.viewer@seven-scapital.test` / `password`
+- Demo Missing Branch User: `demo.missing-branch@seven-scapital.test` / `password`
+
+Owner note:
+
+- Current owner detection treats tenant user id `1` as Workspace Owner.
+- On an empty tenant database, the demo owner is created first and receives id `1`.
+- On a non-empty tenant where id `1` already belongs to another user, the seeder does not mutate that owner into the demo owner. It reports that demo owner implicit access was skipped.
+
+Demo branch mapping:
+
+- Branch Manager: Dubai + Ajman when enabled, otherwise first enabled branch
+- Service Advisor: Dubai when enabled, otherwise first enabled branch
+- Technician: Dubai when enabled, otherwise first enabled branch
+- Accountant: Dubai + Ajman when enabled, otherwise first enabled branch
+- Viewer: first enabled branch
+- Missing Branch User: product access only, no branch access, when seats allow
 
 Acceptance command:
 
