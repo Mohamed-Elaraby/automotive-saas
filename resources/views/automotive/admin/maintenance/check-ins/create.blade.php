@@ -138,11 +138,26 @@
                                             <button type="button" class="btn btn-primary" id="vinCaptureButton">
                                                 <i class="isax isax-camera me-1"></i>Capture VIN Photo
                                             </button>
+                                            <button type="button" class="btn btn-outline-light" id="vinUploadButton">
+                                                <i class="isax isax-document-upload me-1"></i>Upload VIN Photo
+                                            </button>
                                             <button type="button" class="btn btn-outline-light" id="vinManualButton">Manual VIN Entry</button>
                                         </div>
                                     </div>
 
                                     <input type="file" class="d-none" id="vinPhotoInput" accept="image/*" capture="environment">
+                                    <div id="vinCameraWrap" class="d-none mb-3" data-vin-camera>
+                                        <div class="vin-camera-box">
+                                            <video id="vinCameraPreview" playsinline autoplay muted></video>
+                                            <canvas id="vinCameraCanvas" class="d-none"></canvas>
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2 mt-2">
+                                            <button type="button" class="btn btn-success" id="vinCameraCaptureButton">
+                                                <i class="isax isax-camera me-1"></i>Capture Photo
+                                            </button>
+                                            <button type="button" class="btn btn-outline-light" id="vinCameraCancelButton">Cancel Camera</button>
+                                        </div>
+                                    </div>
                                     <div id="vinImagePreviewWrap" class="d-none mb-3">
                                         <div class="vin-preview-box">
                                             <img src="" alt="VIN photo preview" id="vinImagePreview">
@@ -367,6 +382,8 @@
         .vehicle-map [data-area]:hover,
         .vehicle-map [data-area].active { fill: #fde68a; stroke: #d97706; }
         .condition-pill { border: 1px solid #e5e7eb; border-radius: 8px; padding: .75rem; margin-bottom: .5rem; background: #fff; }
+        .vin-camera-box { border: 1px solid #e5e7eb; border-radius: 8px; background: #0f172a; overflow: hidden; max-width: 520px; }
+        .vin-camera-box video { display: block; width: 100%; max-height: 320px; object-fit: cover; background: #0f172a; }
         .vin-preview-box { border: 1px solid #e5e7eb; border-radius: 8px; background: #f8fafc; padding: .5rem; max-width: 420px; }
         .vin-preview-box img { display: block; width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; }
         .vin-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
@@ -407,10 +424,18 @@
             const vinSearchResult = document.getElementById('vinSearchResult');
             const vinImagePreview = document.getElementById('vinImagePreview');
             const vinImagePreviewWrap = document.getElementById('vinImagePreviewWrap');
+            const vinCameraWrap = document.getElementById('vinCameraWrap');
+            const vinCameraPreview = document.getElementById('vinCameraPreview');
+            const vinCameraCanvas = document.getElementById('vinCameraCanvas');
+            const vinCaptureButton = document.getElementById('vinCaptureButton');
+            const vinUploadButton = document.getElementById('vinUploadButton');
+            const vinCameraCaptureButton = document.getElementById('vinCameraCaptureButton');
+            const vinCameraCancelButton = document.getElementById('vinCameraCancelButton');
             const conditions = [];
             let currentStep = 1;
             let vinCaptureInFlight = false;
             let vinSearchInFlight = false;
+            let vinCameraStream = null;
 
             const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({
                 '&': '&amp;',
@@ -504,6 +529,71 @@
             const setSearchStatus = (message, type = 'light') => {
                 vinSearchStatus.className = `badge bg-${type} ${type === 'light' ? 'text-dark border' : ''}`;
                 vinSearchStatus.textContent = message;
+            };
+
+            const setVinCaptureBusy = busy => {
+                vinCaptureButton.disabled = busy;
+                vinUploadButton.disabled = busy;
+                vinCameraCaptureButton.disabled = busy;
+                document.getElementById('vinRetakeButton').disabled = busy;
+            };
+
+            const stopVinCamera = () => {
+                if (vinCameraStream) {
+                    vinCameraStream.getTracks().forEach(track => track.stop());
+                    vinCameraStream = null;
+                }
+
+                vinCameraPreview.srcObject = null;
+                vinCameraWrap.classList.add('d-none');
+            };
+
+            const openVinCamera = async () => {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    setVinStatus('Camera access is unavailable or blocked. Upload a VIN photo or enter manually.', 'warning');
+                    return;
+                }
+
+                try {
+                    stopVinCamera();
+                    setVinStatus('Opening camera...', 'primary');
+                    vinCameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: { ideal: 'environment' },
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                        },
+                        audio: false,
+                    });
+                    vinCameraPreview.srcObject = vinCameraStream;
+                    vinCameraWrap.classList.remove('d-none');
+                    await vinCameraPreview.play();
+                    setVinStatus('Camera ready - align VIN and capture photo', 'success');
+                } catch (error) {
+                    stopVinCamera();
+                    setVinStatus('Camera access is unavailable or blocked. You can upload a VIN photo or enter the VIN manually.', 'warning');
+                }
+            };
+
+            const captureVinCameraPhoto = () => {
+                if (!vinCameraStream || !vinCameraPreview.videoWidth) {
+                    setVinStatus('Camera is not ready. Try opening it again or upload a VIN photo.', 'warning');
+                    return;
+                }
+
+                vinCameraCanvas.width = vinCameraPreview.videoWidth;
+                vinCameraCanvas.height = vinCameraPreview.videoHeight;
+                vinCameraCanvas.getContext('2d').drawImage(vinCameraPreview, 0, 0);
+
+                vinCameraCanvas.toBlob(blob => {
+                    if (!blob) {
+                        setVinStatus('Could not capture photo. Try again or upload a VIN photo.', 'danger');
+                        return;
+                    }
+
+                    stopVinCamera();
+                    uploadVinPhoto(blob, 'vin-camera-capture.jpg');
+                }, 'image/jpeg', 0.92);
             };
 
             const renderNotFoundVin = response => {
@@ -674,17 +764,18 @@
                 }
             };
 
-            const uploadVinPhoto = async file => {
+            const uploadVinPhoto = async (file, filename = 'vin-photo.jpg') => {
                 if (!file || vinCaptureInFlight) return;
 
                 vinCaptureInFlight = true;
+                setVinCaptureBusy(true);
                 setVinStatus('Analyzing VIN photo...', 'primary');
                 vinConfidenceBadge.classList.add('d-none');
                 vinImagePreview.src = URL.createObjectURL(file);
                 vinImagePreviewWrap.classList.remove('d-none');
 
                 const formData = new FormData();
-                formData.append('vin_photo', file);
+                formData.append('vin_photo', file, filename);
 
                 try {
                     const response = await fetch(vinCaptureUrl, {
@@ -717,6 +808,7 @@
                     vinSearchResult.innerHTML = `<div class="alert alert-warning mb-0">${escapeHtml(error.message || 'OCR unavailable. Enter VIN manually.')}</div>`;
                 } finally {
                     vinCaptureInFlight = false;
+                    setVinCaptureBusy(false);
                 }
             };
 
@@ -764,13 +856,21 @@
             customerSelect.addEventListener('change', event => selectCustomer(event.target.value));
             vehicleSelect.addEventListener('change', event => selectVehicle(event.target.value));
             conditionAreaSelect.addEventListener('change', event => setSelectedArea(event.target.value));
-            document.getElementById('vinCaptureButton').addEventListener('click', () => vinPhotoInput.click());
+            vinCaptureButton.addEventListener('click', openVinCamera);
+            vinUploadButton.addEventListener('click', () => vinPhotoInput.click());
+            vinCameraCaptureButton.addEventListener('click', captureVinCameraPhoto);
+            vinCameraCancelButton.addEventListener('click', () => {
+                stopVinCamera();
+                setVinStatus('Camera cancelled. Upload a VIN photo or enter manually.', 'light');
+            });
             document.getElementById('vinManualButton').addEventListener('click', () => {
+                stopVinCamera();
                 vinInput.focus();
                 setVinStatus('Manual entry active', 'light');
             });
-            document.getElementById('vinRetakeButton').addEventListener('click', () => vinPhotoInput.click());
+            document.getElementById('vinRetakeButton').addEventListener('click', openVinCamera);
             document.getElementById('vinClearButton').addEventListener('click', () => {
+                stopVinCamera();
                 vinInput.value = '';
                 vinConfirmed.checked = false;
                 vinPhotoInput.value = '';
@@ -786,6 +886,11 @@
             vinInput.addEventListener('input', () => {
                 vinConfirmed.checked = false;
                 setSearchStatus('Waiting for VIN confirmation', 'light');
+            });
+
+            window.addEventListener('beforeunload', stopVinCamera);
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) stopVinCamera();
             });
 
             document.querySelectorAll('.vehicle-map [data-area]').forEach(part => {
