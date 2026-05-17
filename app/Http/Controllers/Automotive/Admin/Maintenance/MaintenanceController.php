@@ -208,16 +208,38 @@ class MaintenanceController extends Controller
         ]);
     }
 
+    public function captureVinDraft(Request $request): JsonResponse
+    {
+        abort_if($this->branchScope->visibleBranchIds(auth('automotive_admin')->user(), 'automotive_service') === [], 403);
+
+        $request->validate([
+            'vin_photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        $analysis = $this->vinOcrService->analyzeUploadedFile($request->file('vin_photo'));
+
+        return response()->json([
+            'ok' => true,
+            'attachment' => null,
+            'analysis' => $analysis,
+            'message' => $analysis['detected_vin']
+                ? __('maintenance.vin_detected_confirm', ['vin' => $analysis['detected_vin']])
+                : __('maintenance.vin_ocr_unavailable_manual'),
+        ]);
+    }
+
     public function searchVin(Request $request): JsonResponse
     {
+        abort_if($this->branchScope->visibleBranchIds(auth('automotive_admin')->user(), 'automotive_service') === [], 403);
+
         $validated = $request->validate([
             'vin' => ['required', 'string', 'max:255'],
         ]);
 
-        return response()->json([
-            'ok' => true,
-            'vehicles' => $this->vinOcrService->searchVehicles($validated['vin']),
-        ]);
+        return response()->json($this->vinOcrService->searchVehicleSummary(
+            $validated['vin'],
+            auth('automotive_admin')->user()
+        ));
     }
 
     public function serviceCatalogIndex(): View

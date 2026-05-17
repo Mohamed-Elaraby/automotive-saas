@@ -4,12 +4,18 @@ namespace App\Services\Automotive\Maintenance;
 
 use App\Models\Maintenance\MaintenanceAttachment;
 use App\Models\Vehicle;
+use App\Models\User;
+use App\Services\Tenancy\BranchScopeService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Symfony\Component\Process\Process;
 
 class VinOcrService
 {
-    public function __construct(protected MaintenanceAttachmentService $attachments)
+    public function __construct(
+        protected MaintenanceAttachmentService $attachments,
+        protected BranchScopeService $branchScope
+    )
     {
     }
 
@@ -29,6 +35,22 @@ class VinOcrService
         ];
     }
 
+    public function analyzeUploadedFile(UploadedFile $file): array
+    {
+        $text = $this->runTesseractPath($file->getRealPath());
+        $candidates = $this->extractCandidates($text);
+        $best = $candidates[0] ?? null;
+
+        return [
+            'ocr_available' => $text !== null,
+            'raw_text' => $text,
+            'detected_vin' => $best,
+            'confidence_score' => $best ? $this->confidenceFor($best, $text ?? '') : null,
+            'candidates' => $candidates,
+            'vehicle_matches' => [],
+        ];
+    }
+
     public function searchVehicles(string $vin): Collection
     {
         $normalized = $this->normalizeVin($vin);
@@ -39,8 +61,10 @@ class VinOcrService
 
         return Vehicle::query()
             ->with('customer')
-            ->where('vin', 'like', '%' . $normalized . '%')
-            ->orWhere('vin', 'like', '%' . str_replace(['0', '1', '5', '8', '2'], ['O', 'I', 'S', 'B', 'Z'], $normalized) . '%')
+            ->where(function ($query) use ($normalized): void {
+                $query->where('vin', 'like', '%' . $normalized . '%')
+                    ->orWhere('vin', 'like', '%' . str_replace(['0', '1', '5', '8', '2'], ['O', 'I', 'S', 'B', 'Z'], $normalized) . '%');
+            })
             ->latest('id')
             ->limit(10)
             ->get()
@@ -56,10 +80,105 @@ class VinOcrService
             ]);
     }
 
+    public function searchVehicleSummary(string $vin, ?User $user = null): array
+    {
+        $normalized = $this->normalizeVin($vin);
+
+        if ($normalized === '') {
+            return [
+                'found' => false,
+                'message' => 'No vehicle found for this VIN.',
+                'normalized_vin' => $normalized,
+            ];
+        }
+
+        $vehicle = Vehicle::query()
+            ->with([
+                'customer',
+                'checkIns' => fn ($query) => $query->with(['branch', 'workOrder'])->latest('checked_in_at')->latest('id'),
+                'workOrders' => fn ($query) => $query->latest('opened_at')->latest('id'),
+            ])
+            ->where(function ($query) use ($normalized): void {
+                $query->where('vin', $normalized)
+                    ->orWhere('vin', 'like', '%' . $normalized . '%')
+                    ->orWhere('vin', 'like', '%' . str_replace(['0', '1', '5', '8', '2'], ['O', 'I', 'S', 'B', 'Z'], $normalized) . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        if (! $vehicle) {
+            return [
+                'found' => false,
+                'message' => 'No vehicle found for this VIN.',
+                'normalized_vin' => $normalized,
+            ];
+        }
+
+        $lastCheckIn = $vehicle->checkIns->first();
+        $lastWorkOrder = $vehicle->workOrders->first() ?: $lastCheckIn?->workOrder;
+        $lastBranchId = $lastCheckIn?->branch_id ?: $lastWorkOrder?->branch_id;
+        $canViewBranchHistory = ! $user || ! $lastBranchId
+            ? true
+            : $this->branchScope->canAccessBranch($user, 'automotive_service', (int) $lastBranchId);
+
+        return [
+            'found' => true,
+            'normalized_vin' => $normalized,
+            'restricted_history' => ! $canViewBranchHistory,
+            'vehicle' => [
+                'id' => $vehicle->id,
+                'vehicle_number' => $vehicle->vehicle_number,
+                'vin' => $vehicle->vin,
+                'plate_number' => $vehicle->plate_number,
+                'make' => $vehicle->make,
+                'model' => $vehicle->model,
+                'year' => $vehicle->year,
+                'trim' => $vehicle->trim,
+                'color' => $vehicle->color,
+                'odometer' => $vehicle->odometer,
+                'fuel_type' => $vehicle->fuel_type,
+                'transmission' => $vehicle->transmission,
+            ],
+            'customer' => [
+                'id' => $vehicle->customer?->id,
+                'name' => $vehicle->customer?->name,
+                'phone' => $canViewBranchHistory ? $vehicle->customer?->phone : null,
+                'email' => $canViewBranchHistory ? $vehicle->customer?->email : null,
+                'customer_type' => $vehicle->customer?->customer_type,
+                'company_name' => $vehicle->customer?->company_name,
+            ],
+            'branch' => $canViewBranchHistory ? [
+                'id' => $lastCheckIn?->branch?->id,
+                'name' => $lastCheckIn?->branch?->name,
+            ] : null,
+            'history' => [
+                'last_check_in_at' => $canViewBranchHistory ? $lastCheckIn?->checked_in_at?->toDateTimeString() : null,
+                'last_check_in_number' => $canViewBranchHistory ? $lastCheckIn?->check_in_number : null,
+                'last_work_order_number' => $canViewBranchHistory ? $lastWorkOrder?->work_order_number : null,
+                'last_status' => $canViewBranchHistory ? ($lastWorkOrder?->status ?: $lastCheckIn?->status) : null,
+                'total_visits' => $canViewBranchHistory ? $vehicle->checkIns->count() : null,
+                'open_work_order' => $canViewBranchHistory && $vehicle->workOrders->contains(fn ($workOrder): bool => in_array($workOrder->status, ['open', 'in_progress'], true)),
+            ],
+            'actions' => [
+                'use_for_check_in' => true,
+                'profile_url' => route('automotive.admin.maintenance.vehicles.profile', $vehicle),
+                'start_check_in_url' => route('automotive.admin.maintenance.check-ins.create', ['vehicle_id' => $vehicle->id]),
+            ],
+        ];
+    }
+
+    public function normalize(string $vin): string
+    {
+        return $this->normalizeVin($vin);
+    }
+
     protected function runTesseract(MaintenanceAttachment $attachment): ?string
     {
-        $path = $this->attachments->absolutePath($attachment);
+        return $this->runTesseractPath($this->attachments->absolutePath($attachment));
+    }
 
+    protected function runTesseractPath(?string $path): ?string
+    {
         if (! $path || ! is_file($path) || ! $this->tesseractAvailable()) {
             return null;
         }

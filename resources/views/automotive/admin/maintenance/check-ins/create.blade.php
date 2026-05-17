@@ -126,23 +126,75 @@
                 <div class="card maintenance-wizard-panel d-none" data-wizard-panel="2">
                     <div class="card-header"><h5 class="card-title mb-0">{{ __('maintenance.vin_verification') }}</h5></div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-7">
-                                <div class="mb-3">
-                                    <label class="form-label">{{ __('maintenance.vin_number') }}</label>
-                                    <input type="text" name="vin_number" class="form-control text-uppercase" value="{{ old('vin_number') }}" maxlength="40" id="vinInput">
+                        <div class="row g-3">
+                            <div class="col-xl-7">
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                                        <div>
+                                            <h6 class="mb-1">Step 1 - Capture or enter VIN / chassis</h6>
+                                            <p class="text-muted small mb-0">OCR is only a suggestion. The VIN must be reviewed and confirmed by the advisor before search.</p>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-primary" id="vinCaptureButton">
+                                                <i class="isax isax-camera me-1"></i>Capture VIN Photo
+                                            </button>
+                                            <button type="button" class="btn btn-outline-light" id="vinManualButton">Manual VIN Entry</button>
+                                        </div>
+                                    </div>
+
+                                    <input type="file" class="d-none" id="vinPhotoInput" accept="image/*" capture="environment">
+                                    <div id="vinImagePreviewWrap" class="d-none mb-3">
+                                        <div class="vin-preview-box">
+                                            <img src="" alt="VIN photo preview" id="vinImagePreview">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">VIN / Chassis Number</label>
+                                        <input type="text" name="vin_number" class="form-control text-uppercase" value="{{ old('vin_number') }}" maxlength="40" id="vinInput" autocomplete="off">
+                                        <div class="form-text">Compare this value with the physical VIN on the vehicle. Edit it manually if OCR is wrong.</div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+                                        <span class="badge bg-light text-dark border" id="vinOcrStatus">OCR not run</span>
+                                        <span class="badge bg-light text-dark border d-none" id="vinConfidenceBadge"></span>
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-success" id="vinConfirmButton">
+                                            <i class="isax isax-tick-circle me-1"></i>Confirm VIN
+                                        </button>
+                                        <button type="button" class="btn btn-outline-light" id="vinRetakeButton">Retake Photo</button>
+                                        <button type="button" class="btn btn-outline-danger" id="vinClearButton">Clear</button>
+                                    </div>
+
+                                    <div class="form-check form-switch mt-3 mb-0">
+                                        <input class="form-check-input" type="checkbox" name="vin_confirmed" value="1" id="vinConfirmed" @checked(old('vin_confirmed'))>
+                                        <label class="form-check-label" for="vinConfirmed">{{ __('maintenance.vin_confirmed_manual') }}</label>
+                                    </div>
                                 </div>
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" name="vin_confirmed" value="1" id="vinConfirmed" @checked(old('vin_confirmed'))>
-                                    <label class="form-check-label" for="vinConfirmed">{{ __('maintenance.vin_confirmed_manual') }}</label>
+
+                                <div class="border rounded p-3">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                        <h6 class="mb-0">Step 3 - Tenant-wide vehicle lookup</h6>
+                                        <span class="badge bg-light text-dark border" id="vinSearchStatus">Waiting for VIN confirmation</span>
+                                    </div>
+                                    <div id="vinSearchResult">
+                                        <div class="text-muted small">Confirm the VIN to search existing vehicles across this tenant.</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-lg-5">
+                            <div class="col-xl-5">
                                 <div class="border rounded p-3 bg-light h-100">
                                     <div class="fw-semibold mb-2">{{ __('maintenance.vin_confirmation_checklist') }}</div>
                                     <div class="small text-muted mb-1">{{ __('maintenance.vin_check_17_chars') }}</div>
                                     <div class="small text-muted mb-1">{{ __('maintenance.vin_check_human_confirmation') }}</div>
                                     <div class="small text-muted">{{ __('maintenance.vin_check_ocr_confusion') }}</div>
+                                    <hr>
+                                    <div class="fw-semibold mb-2">Available actions after lookup</div>
+                                    <div class="small text-muted mb-1">Use an existing vehicle for a new check-in.</div>
+                                    <div class="small text-muted mb-1">Open vehicle profile/history.</div>
+                                    <div class="small text-muted">Continue as a new vehicle when no match is found.</div>
                                 </div>
                             </div>
                         </div>
@@ -315,7 +367,13 @@
         .vehicle-map [data-area]:hover,
         .vehicle-map [data-area].active { fill: #fde68a; stroke: #d97706; }
         .condition-pill { border: 1px solid #e5e7eb; border-radius: 8px; padding: .75rem; margin-bottom: .5rem; background: #fff; }
+        .vin-preview-box { border: 1px solid #e5e7eb; border-radius: 8px; background: #f8fafc; padding: .5rem; max-width: 420px; }
+        .vin-preview-box img { display: block; width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; }
+        .vin-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+        .vin-result-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: .75rem; background: #fff; }
+        .vin-result-label { color: #64748b; font-size: .75rem; margin-bottom: .25rem; }
         @media (max-width: 991.98px) { .maintenance-wizard-steps { grid-template-columns: 1fr; } }
+        @media (max-width: 767.98px) { .vin-result-grid { grid-template-columns: 1fr; } }
     </style>
 @endpush
 
@@ -325,6 +383,9 @@
             const customerOptions = @json($customerOptions);
             const vehicleOptions = @json($vehicleOptions);
             const vehicleAreas = @json($vehicleAreas);
+            const vinCaptureUrl = @json(route('automotive.admin.maintenance.check-ins.capture-vin-draft'));
+            const vinSearchUrl = @json(route('automotive.admin.maintenance.vehicles.search-vin'));
+            const csrfToken = @json(csrf_token());
             const panels = [...document.querySelectorAll('[data-wizard-panel]')];
             const stepButtons = [...document.querySelectorAll('[data-wizard-go]')];
             const prevButton = document.getElementById('wizardPrev');
@@ -337,8 +398,19 @@
             const conditionAreaSelect = document.getElementById('conditionAreaSelect');
             const conditionItemsList = document.getElementById('conditionItemsList');
             const conditionItemsInputs = document.getElementById('conditionItemsInputs');
+            const vinPhotoInput = document.getElementById('vinPhotoInput');
+            const vinInput = document.getElementById('vinInput');
+            const vinConfirmed = document.getElementById('vinConfirmed');
+            const vinOcrStatus = document.getElementById('vinOcrStatus');
+            const vinConfidenceBadge = document.getElementById('vinConfidenceBadge');
+            const vinSearchStatus = document.getElementById('vinSearchStatus');
+            const vinSearchResult = document.getElementById('vinSearchResult');
+            const vinImagePreview = document.getElementById('vinImagePreview');
+            const vinImagePreviewWrap = document.getElementById('vinImagePreviewWrap');
             const conditions = [];
             let currentStep = 1;
+            let vinCaptureInFlight = false;
+            let vinSearchInFlight = false;
 
             const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({
                 '&': '&amp;',
@@ -357,9 +429,11 @@
                 submitButton.classList.toggle('d-none', currentStep !== 5);
             };
 
-            const fillField = (name, value) => {
+            const normalizeVin = value => String(value || '').toUpperCase().replace(/[\s\-_.:\n\r\t]/g, '').replace(/[^A-Z0-9]/g, '');
+
+            const fillField = (name, value, force = false) => {
                 const input = document.querySelector(`[name="${name}"]`);
-                if (input && !input.value && value !== null && value !== undefined) {
+                if (input && (force || !input.value) && value !== null && value !== undefined) {
                     input.value = value;
                 }
             };
@@ -422,6 +496,230 @@
                 fillField('transmission', vehicle.transmission);
             };
 
+            const setVinStatus = (message, type = 'light') => {
+                vinOcrStatus.className = `badge bg-${type} ${type === 'light' ? 'text-dark border' : ''}`;
+                vinOcrStatus.textContent = message;
+            };
+
+            const setSearchStatus = (message, type = 'light') => {
+                vinSearchStatus.className = `badge bg-${type} ${type === 'light' ? 'text-dark border' : ''}`;
+                vinSearchStatus.textContent = message;
+            };
+
+            const renderNotFoundVin = response => {
+                vinSearchResult.innerHTML = `
+                    <div class="alert alert-info mb-0">
+                        <div class="fw-semibold">No existing vehicle found for this VIN.</div>
+                        <div class="small">You can continue creating a new vehicle using VIN <strong>${escapeHtml(response.normalized_vin || vinInput.value)}</strong>.</div>
+                        <button type="button" class="btn btn-sm btn-primary mt-2" id="vinContinueNew">Continue as new vehicle</button>
+                    </div>
+                `;
+            };
+
+            const renderFoundVin = response => {
+                const vehicle = response.vehicle || {};
+                const customer = response.customer || {};
+                const branch = response.branch || {};
+                const history = response.history || {};
+                const actions = response.actions || {};
+                const vehicleTitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(' ') || vehicle.vehicle_number || 'Existing vehicle';
+                const restricted = response.restricted_history
+                    ? '<div class="alert alert-warning py-2 mb-3">Some previous branch history is restricted by your branch access.</div>'
+                    : '';
+                const openWarning = history.open_work_order
+                    ? '<div class="alert alert-warning py-2 mb-3">This vehicle has an open work order. Review before starting a new check-in.</div>'
+                    : '';
+
+                vinSearchResult.innerHTML = `
+                    <div class="card border mb-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+                                <div>
+                                    <h6 class="mb-1">${escapeHtml(vehicleTitle)}</h6>
+                                    <div class="text-muted small">${escapeHtml(vehicle.vin || response.normalized_vin || '')}</div>
+                                </div>
+                                <span class="badge bg-success">Existing vehicle found</span>
+                            </div>
+                            ${restricted}
+                            ${openWarning}
+                            <div class="vin-result-grid mb-3">
+                                <div class="vin-result-item"><div class="vin-result-label">Plate</div><strong>${escapeHtml(vehicle.plate_number || '-')}</strong></div>
+                                <div class="vin-result-item"><div class="vin-result-label">Customer</div><strong>${escapeHtml(customer.name || '-')}</strong><div class="small text-muted">${escapeHtml(customer.phone || '')}</div></div>
+                                <div class="vin-result-item"><div class="vin-result-label">Last branch</div><strong>${escapeHtml(branch.name || '-')}</strong></div>
+                                <div class="vin-result-item"><div class="vin-result-label">Last visit</div><strong>${escapeHtml(history.last_check_in_at || '-')}</strong></div>
+                                <div class="vin-result-item"><div class="vin-result-label">Last work order</div><strong>${escapeHtml(history.last_work_order_number || '-')}</strong><div class="small text-muted">${escapeHtml(history.last_status || '')}</div></div>
+                                <div class="vin-result-item"><div class="vin-result-label">Total visits</div><strong>${escapeHtml(history.total_visits ?? '-')}</strong></div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-primary" id="vinUseExisting">Use this vehicle for new check-in</button>
+                                ${actions.profile_url ? `<a class="btn btn-outline-light" href="${escapeHtml(actions.profile_url)}" target="_blank" rel="noopener">View vehicle profile/history</a>` : ''}
+                                <button type="button" class="btn btn-outline-light" id="vinStartInspection">Start inspection/check-in</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('vinUseExisting')?.addEventListener('click', () => useVehicleFromVin(response, false));
+                document.getElementById('vinStartInspection')?.addEventListener('click', () => useVehicleFromVin(response, true));
+            };
+
+            const useVehicleFromVin = (response, goNext = false) => {
+                const vehicle = response.vehicle || {};
+                const customer = response.customer || {};
+
+                if (vehicle.id) {
+                    if (!vehicleOptions.find(item => String(item.id) === String(vehicle.id))) {
+                        vehicleOptions.unshift({
+                            id: vehicle.id,
+                            customer_id: customer.id,
+                            customer_name: customer.name,
+                            make: vehicle.make,
+                            model: vehicle.model,
+                            year: vehicle.year,
+                            trim: vehicle.trim,
+                            color: vehicle.color,
+                            plate_number: vehicle.plate_number,
+                            plate_source: vehicle.plate_source,
+                            plate_country: vehicle.plate_country,
+                            vin: vehicle.vin,
+                            odometer: vehicle.odometer,
+                            fuel_type: vehicle.fuel_type,
+                            transmission: vehicle.transmission,
+                            search: [vehicle.vehicle_number, vehicle.plate_number, vehicle.vin, vehicle.make, vehicle.model, customer.name, customer.phone].filter(Boolean).join(' ').toLowerCase(),
+                        });
+                    }
+                    filterVehicles();
+                    vehicleSelect.value = vehicle.id;
+                }
+
+                if (customer.id) {
+                    if (!customerOptions.find(item => String(item.id) === String(customer.id))) {
+                        customerOptions.unshift({
+                            id: customer.id,
+                            name: customer.name,
+                            phone: customer.phone,
+                            email: customer.email,
+                            customer_type: customer.customer_type,
+                            company_name: customer.company_name,
+                            search: [customer.name, customer.phone, customer.email, customer.company_name].filter(Boolean).join(' ').toLowerCase(),
+                        });
+                    }
+                    filterCustomers();
+                    customerSelect.value = customer.id;
+                }
+
+                fillField('customer_name', customer.name, true);
+                fillField('customer_phone', customer.phone, true);
+                fillField('customer_email', customer.email, true);
+                fillField('company_name', customer.company_name, true);
+                fillField('make', vehicle.make, true);
+                fillField('model', vehicle.model, true);
+                fillField('year', vehicle.year, true);
+                fillField('trim', vehicle.trim, true);
+                fillField('color', vehicle.color, true);
+                fillField('plate_number', vehicle.plate_number, true);
+                fillField('vin_number', vehicle.vin || response.normalized_vin, true);
+                fillField('odometer', vehicle.odometer, false);
+                fillField('fuel_type', vehicle.fuel_type, false);
+                fillField('transmission', vehicle.transmission, false);
+
+                const typeSelect = document.querySelector('[name="customer_type"]');
+                if (typeSelect && customer.customer_type) typeSelect.value = customer.customer_type;
+
+                setSearchStatus('Existing vehicle selected', 'success');
+                if (goNext) setStep(3);
+            };
+
+            const searchConfirmedVin = async () => {
+                if (vinSearchInFlight) return;
+
+                const vin = normalizeVin(vinInput.value);
+                if (!vin) {
+                    vinSearchResult.innerHTML = '<div class="alert alert-warning mb-0">Enter or capture a VIN before confirming.</div>';
+                    setSearchStatus('VIN required', 'warning');
+                    return;
+                }
+
+                vinInput.value = vin;
+                vinConfirmed.checked = true;
+                vinSearchInFlight = true;
+                setSearchStatus('Searching vehicle history...', 'primary');
+                vinSearchResult.innerHTML = '<div class="text-muted small">Searching vehicle history...</div>';
+
+                try {
+                    const response = await fetch(vinSearchUrl + '?vin=' + encodeURIComponent(vin), {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                    });
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'VIN search failed.');
+                    }
+
+                    if (payload.found) {
+                        setSearchStatus('Vehicle found', 'success');
+                        renderFoundVin(payload);
+                    } else {
+                        setSearchStatus('No match', 'info');
+                        renderNotFoundVin(payload);
+                    }
+                } catch (error) {
+                    setSearchStatus('Search failed', 'danger');
+                    vinSearchResult.innerHTML = `<div class="alert alert-danger mb-0">${escapeHtml(error.message || 'Unable to search VIN.')}</div>`;
+                } finally {
+                    vinSearchInFlight = false;
+                }
+            };
+
+            const uploadVinPhoto = async file => {
+                if (!file || vinCaptureInFlight) return;
+
+                vinCaptureInFlight = true;
+                setVinStatus('Analyzing VIN photo...', 'primary');
+                vinConfidenceBadge.classList.add('d-none');
+                vinImagePreview.src = URL.createObjectURL(file);
+                vinImagePreviewWrap.classList.remove('d-none');
+
+                const formData = new FormData();
+                formData.append('vin_photo', file);
+
+                try {
+                    const response = await fetch(vinCaptureUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: formData,
+                    });
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'VIN OCR failed.');
+                    }
+
+                    const analysis = payload.analysis || {};
+                    if (analysis.detected_vin) {
+                        vinInput.value = analysis.detected_vin;
+                        setVinStatus('OCR suggestion ready - please verify', 'success');
+                        if (analysis.confidence_score) {
+                            vinConfidenceBadge.textContent = `OCR confidence ${analysis.confidence_score}%`;
+                            vinConfidenceBadge.classList.remove('d-none');
+                        }
+                    } else {
+                        setVinStatus(analysis.ocr_available ? 'No VIN detected - enter manually' : 'OCR unavailable - enter manually', 'warning');
+                    }
+                } catch (error) {
+                    setVinStatus('OCR failed - enter manually', 'danger');
+                    vinSearchResult.innerHTML = `<div class="alert alert-warning mb-0">${escapeHtml(error.message || 'OCR unavailable. Enter VIN manually.')}</div>`;
+                } finally {
+                    vinCaptureInFlight = false;
+                }
+            };
+
             const setSelectedArea = area => {
                 conditionAreaSelect.value = area;
                 document.querySelectorAll('.vehicle-map [data-area]').forEach(part => {
@@ -466,6 +764,29 @@
             customerSelect.addEventListener('change', event => selectCustomer(event.target.value));
             vehicleSelect.addEventListener('change', event => selectVehicle(event.target.value));
             conditionAreaSelect.addEventListener('change', event => setSelectedArea(event.target.value));
+            document.getElementById('vinCaptureButton').addEventListener('click', () => vinPhotoInput.click());
+            document.getElementById('vinManualButton').addEventListener('click', () => {
+                vinInput.focus();
+                setVinStatus('Manual entry active', 'light');
+            });
+            document.getElementById('vinRetakeButton').addEventListener('click', () => vinPhotoInput.click());
+            document.getElementById('vinClearButton').addEventListener('click', () => {
+                vinInput.value = '';
+                vinConfirmed.checked = false;
+                vinPhotoInput.value = '';
+                vinImagePreview.src = '';
+                vinImagePreviewWrap.classList.add('d-none');
+                vinConfidenceBadge.classList.add('d-none');
+                setVinStatus('OCR not run', 'light');
+                setSearchStatus('Waiting for VIN confirmation', 'light');
+                vinSearchResult.innerHTML = '<div class="text-muted small">Confirm the VIN to search existing vehicles across this tenant.</div>';
+            });
+            document.getElementById('vinConfirmButton').addEventListener('click', searchConfirmedVin);
+            vinPhotoInput.addEventListener('change', event => uploadVinPhoto(event.target.files[0]));
+            vinInput.addEventListener('input', () => {
+                vinConfirmed.checked = false;
+                setSearchStatus('Waiting for VIN confirmation', 'light');
+            });
 
             document.querySelectorAll('.vehicle-map [data-area]').forEach(part => {
                 part.addEventListener('click', () => setSelectedArea(part.dataset.area));
@@ -499,9 +820,17 @@
 
             document.addEventListener('click', event => {
                 const removeIndex = event.target?.dataset?.conditionRemove;
-                if (removeIndex === undefined) return;
-                conditions.splice(Number(removeIndex), 1);
-                renderConditions();
+                if (removeIndex !== undefined) {
+                    conditions.splice(Number(removeIndex), 1);
+                    renderConditions();
+                    return;
+                }
+
+                if (event.target?.id === 'vinContinueNew') {
+                    vinConfirmed.checked = true;
+                    setSearchStatus('Continuing as new vehicle', 'info');
+                    setStep(3);
+                }
             });
 
             if (customerSelect.value) selectCustomer(customerSelect.value);
