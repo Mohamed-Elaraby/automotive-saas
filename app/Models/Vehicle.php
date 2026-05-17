@@ -21,6 +21,10 @@ class Vehicle extends Model
         'vin_verified_at',
         'vin_verified_by',
         'vin_verification_method',
+        'vin_source',
+        'vin_ocr_status',
+        'vin_ocr_confidence',
+        'vin_unreadable_reason',
         'vin_confidence_score',
         'vin_source_image_id',
         'odometer',
@@ -36,6 +40,7 @@ class Vehicle extends Model
     protected $casts = [
         'vin_verified_at' => 'datetime',
         'vin_confidence_score' => 'decimal:2',
+        'vin_ocr_confidence' => 'decimal:2',
         'last_service_date' => 'date',
         'next_service_due_at' => 'date',
     ];

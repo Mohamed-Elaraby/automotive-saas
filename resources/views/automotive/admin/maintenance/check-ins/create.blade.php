@@ -132,7 +132,7 @@
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                                         <div>
                                             <h6 class="mb-1">Step 1 - Capture or enter VIN / chassis</h6>
-                                            <p class="text-muted small mb-0">OCR is only a suggestion. The VIN must be reviewed and confirmed by the advisor before search.</p>
+                                            <p class="text-muted small mb-0">OCR is only a suggestion. Capture the VIN photo as evidence, then manually verify the final VIN before search.</p>
                                         </div>
                                         <div class="d-flex gap-2 flex-wrap">
                                             <button type="button" class="btn btn-primary" id="vinCaptureButton" data-vin-open-camera>
@@ -146,9 +146,16 @@
                                     </div>
 
                                     <input type="file" class="d-none" id="vinPhotoInput" accept="image/*" capture="environment">
+                                    <input type="hidden" name="vin_source_image_id" id="vinSourceImageId" value="{{ old('vin_source_image_id') }}">
+                                    <input type="hidden" name="vin_ocr_status" id="vinOcrStatusInput" value="{{ old('vin_ocr_status') }}">
+                                    <input type="hidden" name="vin_ocr_confidence" id="vinOcrConfidenceInput" value="{{ old('vin_ocr_confidence') }}">
+                                    <input type="hidden" name="vin_verification_method" id="vinVerificationMethod" value="{{ old('vin_verification_method', 'manual') }}">
                                     <div id="vinCameraAlert" class="alert alert-warning d-none vin-camera-alert" data-vin-camera-alert>
                                         <div id="vinCameraAlertMessage"></div>
                                         <div id="vinCameraErrorName" class="small text-muted mt-1 d-none" data-vin-camera-error-name></div>
+                                    </div>
+                                    <div class="alert alert-light border small mb-3" data-vin-evidence-guidance>
+                                        For better OCR, fill the frame with the VIN, avoid glare, and keep the camera steady. If OCR cannot read it, the photo still acts as evidence and manual VIN entry is valid.
                                     </div>
                                     <div id="vinCameraWrap" class="d-none mb-3" data-vin-camera>
                                         <div class="vin-camera-box">
@@ -172,6 +179,45 @@
                                         <label class="form-label">VIN / Chassis Number</label>
                                         <input type="text" name="vin_number" class="form-control text-uppercase" value="{{ old('vin_number') }}" maxlength="40" id="vinInput" autocomplete="off">
                                         <div class="form-text">Compare this value with the physical VIN on the vehicle. Edit it manually if OCR is wrong.</div>
+                                    </div>
+
+                                    <div id="vinEvidenceStatus" class="alert alert-light border d-none" data-vin-evidence-status></div>
+                                    <div id="vinCandidates" class="d-none mb-3" data-vin-candidates></div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">VIN Source</label>
+                                            <select name="vin_source" id="vinSource" class="form-select" data-vin-source>
+                                                <option value="">Select VIN source</option>
+                                                @foreach([
+                                                    'physical_vehicle' => 'Physical vehicle',
+                                                    'registration_card' => 'Registration card',
+                                                    'customer_document' => 'Customer document',
+                                                    'previous_record' => 'Previous record',
+                                                    'other' => 'Other',
+                                                ] as $value => $label)
+                                                    <option value="{{ $value }}" @selected(old('vin_source') === $value)>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3 {{ old('vin_unreadable_reason') ? '' : 'd-none' }}" id="vinUnreadableReasonWrap" data-vin-unreadable-reason-wrap>
+                                            <label class="form-label">Why was VIN entered manually?</label>
+                                            <select name="vin_unreadable_reason" id="vinUnreadableReason" class="form-select" data-vin-unreadable-reason>
+                                                <option value="">Select reason</option>
+                                                @foreach([
+                                                    'dirty_windshield' => 'Dirty windshield',
+                                                    'damaged_vin_plate' => 'Damaged VIN plate',
+                                                    'flooded_vehicle' => 'Flooded vehicle',
+                                                    'accident_damage' => 'Accident damage',
+                                                    'poor_lighting' => 'Poor lighting',
+                                                    'vin_not_accessible' => 'VIN not accessible',
+                                                    'customer_document_used' => 'Customer document used',
+                                                    'other' => 'Other',
+                                                ] as $value => $label)
+                                                    <option value="{{ $value }}" @selected(old('vin_unreadable_reason') === $value)>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
@@ -429,6 +475,15 @@
             const vinSearchResult = document.getElementById('vinSearchResult');
             const vinImagePreview = document.getElementById('vinImagePreview');
             const vinImagePreviewWrap = document.getElementById('vinImagePreviewWrap');
+            const vinSourceImageId = document.getElementById('vinSourceImageId');
+            const vinOcrStatusInput = document.getElementById('vinOcrStatusInput');
+            const vinOcrConfidenceInput = document.getElementById('vinOcrConfidenceInput');
+            const vinVerificationMethod = document.getElementById('vinVerificationMethod');
+            const vinSource = document.getElementById('vinSource');
+            const vinUnreadableReason = document.getElementById('vinUnreadableReason');
+            const vinUnreadableReasonWrap = document.getElementById('vinUnreadableReasonWrap');
+            const vinEvidenceStatus = document.getElementById('vinEvidenceStatus');
+            const vinCandidates = document.getElementById('vinCandidates');
             const vinCameraWrap = document.getElementById('vinCameraWrap');
             const vinCameraPreview = document.getElementById('vinCameraPreview');
             const vinCameraCanvas = document.getElementById('vinCameraCanvas');
@@ -439,6 +494,7 @@
             const vinUploadButton = document.getElementById('vinUploadButton');
             const vinCameraCaptureButton = document.getElementById('vinCameraCaptureButton');
             const vinCameraCancelButton = document.getElementById('vinCameraCancelButton');
+            const vinConfirmButton = document.getElementById('vinConfirmButton');
             const conditions = [];
             let currentStep = 1;
             let vinCaptureInFlight = false;
@@ -534,6 +590,45 @@
             const setVinStatus = (message, type = 'light') => {
                 vinOcrStatus.className = `badge bg-${type} ${type === 'light' ? 'text-dark border' : ''}`;
                 vinOcrStatus.textContent = message;
+            };
+
+            const setVinEvidenceStatus = (message, type = 'light') => {
+                vinEvidenceStatus.className = `alert alert-${type} border`;
+                vinEvidenceStatus.textContent = message;
+                vinEvidenceStatus.classList.remove('d-none');
+            };
+
+            const setManualVinReasonVisible = visible => {
+                vinUnreadableReasonWrap.classList.toggle('d-none', !visible);
+                if (!visible) {
+                    vinUnreadableReason.value = '';
+                }
+                updateVinConfirmState();
+            };
+
+            const updateVinConfirmState = () => {
+                const hasVin = normalizeVin(vinInput.value) !== '';
+                const hasSource = vinSource.value !== '';
+                const reasonRequired = !vinUnreadableReasonWrap.classList.contains('d-none');
+                const hasReason = !reasonRequired || vinUnreadableReason.value !== '';
+                vinConfirmButton.disabled = !(hasVin && vinConfirmed.checked && hasSource && hasReason);
+            };
+
+            const renderVinCandidates = candidates => {
+                const uniqueCandidates = [...new Set(candidates || [])].filter(Boolean);
+                if (!uniqueCandidates.length) {
+                    vinCandidates.classList.add('d-none');
+                    vinCandidates.innerHTML = '';
+                    return;
+                }
+
+                vinCandidates.classList.remove('d-none');
+                vinCandidates.innerHTML = `
+                    <div class="fw-semibold small mb-2">Possible VIN candidates</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        ${uniqueCandidates.map(candidate => `<button type="button" class="btn btn-sm btn-outline-light" data-vin-candidate="${escapeHtml(candidate)}">${escapeHtml(candidate)}</button>`).join('')}
+                    </div>
+                `;
             };
 
             const clearVinCameraAlert = () => {
@@ -834,8 +929,25 @@
                     return;
                 }
 
+                if (!vinConfirmed.checked) {
+                    vinSearchResult.innerHTML = '<div class="alert alert-warning mb-0">Tick "I manually verified this VIN before saving" before confirming.</div>';
+                    setSearchStatus('Manual verification required', 'warning');
+                    return;
+                }
+
+                if (!vinSource.value) {
+                    vinSearchResult.innerHTML = '<div class="alert alert-warning mb-0">Select the VIN source before confirming.</div>';
+                    setSearchStatus('VIN source required', 'warning');
+                    return;
+                }
+
+                if (!vinUnreadableReasonWrap.classList.contains('d-none') && !vinUnreadableReason.value) {
+                    vinSearchResult.innerHTML = '<div class="alert alert-warning mb-0">Select why manual VIN entry was needed.</div>';
+                    setSearchStatus('Manual reason required', 'warning');
+                    return;
+                }
+
                 vinInput.value = vin;
-                vinConfirmed.checked = true;
                 vinSearchInFlight = true;
                 setSearchStatus('Searching vehicle history...', 'primary');
                 vinSearchResult.innerHTML = '<div class="text-muted small">Searching vehicle history...</div>';
@@ -880,6 +992,7 @@
 
                 const formData = new FormData();
                 formData.append('vin_photo', file, filename);
+                formData.append('branch_id', document.querySelector('[name="branch_id"]')?.value || '');
 
                 try {
                     const response = await fetch(vinCaptureUrl, {
@@ -897,20 +1010,38 @@
                     }
 
                     const analysis = payload.analysis || {};
-                    if (analysis.detected_vin) {
-                        vinInput.value = analysis.detected_vin;
+                    const attachment = payload.attachment || {};
+                    if (attachment.id) {
+                        vinSourceImageId.value = attachment.id;
+                    }
+                    vinOcrStatusInput.value = analysis.ocr_status || (analysis.detected_vin ? 'detected' : 'not_detected');
+                    vinOcrConfidenceInput.value = analysis.vin_ocr_confidence || analysis.confidence_score || '';
+                    renderVinCandidates(analysis.candidates || []);
+
+                    if (analysis.detected_vin || analysis.extracted_vin) {
+                        vinInput.value = analysis.detected_vin || analysis.extracted_vin;
+                        vinVerificationMethod.value = 'ocr_confirmed';
+                        setManualVinReasonVisible(false);
                         setVinStatus('OCR suggestion ready - please verify', 'success');
-                        if (analysis.confidence_score) {
-                            vinConfidenceBadge.textContent = `OCR confidence ${analysis.confidence_score}%`;
+                        setVinEvidenceStatus(payload.message || 'Possible VIN detected. Please compare with the physical VIN before confirming.', 'success');
+                        if (analysis.confidence_score || analysis.vin_ocr_confidence) {
+                            vinConfidenceBadge.textContent = `OCR confidence ${analysis.confidence_score || analysis.vin_ocr_confidence}%`;
                             vinConfidenceBadge.classList.remove('d-none');
                         }
                     } else {
+                        vinVerificationMethod.value = 'manual';
+                        setManualVinReasonVisible(true);
                         setVinStatus(analysis.ocr_available ? 'No VIN detected - enter manually' : 'OCR unavailable - enter manually', 'warning');
+                        setVinEvidenceStatus(payload.message || 'No VIN detected. The photo was saved as evidence. Please enter the VIN manually.', 'warning');
                     }
                 } catch (error) {
+                    vinVerificationMethod.value = 'manual';
+                    vinOcrStatusInput.value = 'failed';
+                    setManualVinReasonVisible(true);
                     setVinStatus('OCR failed - enter manually', 'danger');
                     vinSearchResult.innerHTML = `<div class="alert alert-warning mb-0">${escapeHtml(error.message || 'OCR unavailable. Enter VIN manually.')}</div>`;
                 } finally {
+                    updateVinConfirmState();
                     vinCaptureInFlight = false;
                     setVinCaptureBusy(false);
                 }
@@ -971,6 +1102,8 @@
             document.getElementById('vinManualButton').addEventListener('click', () => {
                 stopVinCamera();
                 clearVinCameraAlert();
+                vinVerificationMethod.value = 'manual';
+                setManualVinReasonVisible(true);
                 vinInput.focus();
                 setVinStatus('Manual entry active', 'light');
             });
@@ -987,16 +1120,38 @@
                 vinImagePreview.src = '';
                 vinImagePreviewWrap.classList.add('d-none');
                 vinConfidenceBadge.classList.add('d-none');
+                vinSourceImageId.value = '';
+                vinOcrStatusInput.value = '';
+                vinOcrConfidenceInput.value = '';
+                vinVerificationMethod.value = 'manual';
+                vinSource.value = '';
+                setManualVinReasonVisible(false);
+                vinEvidenceStatus.classList.add('d-none');
+                vinCandidates.classList.add('d-none');
+                vinCandidates.innerHTML = '';
                 setVinStatus('OCR not run', 'light');
                 setSearchStatus('Waiting for VIN confirmation', 'light');
                 vinSearchResult.innerHTML = '<div class="text-muted small">Confirm the VIN to search existing vehicles across this tenant.</div>';
             });
-            document.getElementById('vinConfirmButton').addEventListener('click', searchConfirmedVin);
+            vinConfirmButton.addEventListener('click', searchConfirmedVin);
             vinPhotoInput.addEventListener('change', event => uploadVinPhoto(event.target.files[0]));
             vinInput.addEventListener('input', () => {
                 vinConfirmed.checked = false;
                 setSearchStatus('Waiting for VIN confirmation', 'light');
+                updateVinConfirmState();
             });
+            vinConfirmed.addEventListener('change', updateVinConfirmState);
+            vinSource.addEventListener('change', updateVinConfirmState);
+            vinUnreadableReason.addEventListener('change', updateVinConfirmState);
+            vinCandidates.addEventListener('click', event => {
+                const candidate = event.target?.dataset?.vinCandidate;
+                if (!candidate) return;
+                vinInput.value = candidate;
+                vinConfirmed.checked = false;
+                setVinStatus('Candidate selected - please verify', 'success');
+                updateVinConfirmState();
+            });
+            updateVinConfirmState();
 
             window.addEventListener('beforeunload', stopVinCamera);
             window.addEventListener('pagehide', stopVinCamera);

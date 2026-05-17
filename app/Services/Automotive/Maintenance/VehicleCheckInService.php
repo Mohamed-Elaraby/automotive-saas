@@ -89,8 +89,13 @@ class VehicleCheckInService
             if (! empty($data['vin_confirmed']) && ! empty($checkIn->vin_number)) {
                 $this->verifyVin($checkIn, [
                     'vin_number' => $checkIn->vin_number,
-                    'vin_verification_method' => 'manual',
-                    'vin_confidence_score' => null,
+                    'vin_verification_method' => $data['vin_verification_method'] ?? 'manual',
+                    'vin_source' => $data['vin_source'] ?? null,
+                    'vin_ocr_status' => $data['vin_ocr_status'] ?? null,
+                    'vin_ocr_confidence' => $data['vin_ocr_confidence'] ?? null,
+                    'vin_unreadable_reason' => $data['vin_unreadable_reason'] ?? null,
+                    'vin_confidence_score' => $data['vin_confidence_score'] ?? $data['vin_ocr_confidence'] ?? null,
+                    'vin_source_image_id' => $data['vin_source_image_id'] ?? null,
                     'verified_by' => $data['created_by'] ?? null,
                 ]);
             }
@@ -143,7 +148,11 @@ class VehicleCheckInService
             'vin_verified_at' => now(),
             'vin_verified_by' => $verifiedBy,
             'vin_verification_method' => $data['vin_verification_method'] ?? 'manual',
-            'vin_confidence_score' => $data['vin_confidence_score'] ?? null,
+            'vin_source' => $data['vin_source'] ?? null,
+            'vin_ocr_status' => $data['vin_ocr_status'] ?? null,
+            'vin_ocr_confidence' => $data['vin_ocr_confidence'] ?? $data['vin_confidence_score'] ?? null,
+            'vin_unreadable_reason' => $data['vin_unreadable_reason'] ?? null,
+            'vin_confidence_score' => $data['vin_confidence_score'] ?? $data['vin_ocr_confidence'] ?? null,
             'vin_source_image_id' => $data['vin_source_image_id'] ?? $checkIn->vin_source_image_id,
         ])->save();
 
@@ -152,13 +161,24 @@ class VehicleCheckInService
             'vin_verified_at' => $checkIn->vin_verified_at,
             'vin_verified_by' => $verifiedBy,
             'vin_verification_method' => $checkIn->vin_verification_method,
+            'vin_source' => $checkIn->vin_source,
+            'vin_ocr_status' => $checkIn->vin_ocr_status,
+            'vin_ocr_confidence' => $checkIn->vin_ocr_confidence,
+            'vin_unreadable_reason' => $checkIn->vin_unreadable_reason,
             'vin_confidence_score' => $checkIn->vin_confidence_score,
             'vin_source_image_id' => $checkIn->vin_source_image_id,
             'odometer' => $checkIn->odometer ?: $checkIn->vehicle->odometer,
         ])->save();
 
         $this->timelineService->recordForCheckIn($checkIn, 'vehicle.vin_confirmed', 'VIN confirmed manually', [
-            'payload' => ['vin' => $vin, 'method' => $checkIn->vin_verification_method],
+            'payload' => [
+                'vin' => $vin,
+                'method' => $checkIn->vin_verification_method,
+                'source' => $checkIn->vin_source,
+                'ocr_status' => $checkIn->vin_ocr_status,
+                'unreadable_reason' => $checkIn->vin_unreadable_reason,
+                'source_image_id' => $checkIn->vin_source_image_id,
+            ],
             'created_by' => $verifiedBy,
         ]);
 

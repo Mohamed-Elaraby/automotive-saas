@@ -22,34 +22,39 @@ class VinOcrService
     public function analyze(MaintenanceAttachment $attachment): array
     {
         $text = $this->runTesseract($attachment);
-        $candidates = $this->extractCandidates($text);
-        $best = $candidates[0] ?? null;
 
-        return [
-            'ocr_available' => $text !== null,
-            'raw_text' => $text,
-            'detected_vin' => $best,
-            'normalized_vin' => $best,
-            'confidence_score' => $best ? $this->confidenceFor($best, $text ?? '') : null,
-            'candidates' => $candidates,
-            'vehicle_matches' => $best ? $this->searchVehicles($best)->values()->all() : [],
-        ];
+        return $this->analyzeText($text, true);
     }
 
     public function analyzeUploadedFile(UploadedFile $file): array
     {
         $text = $this->runTesseractPath($file->getRealPath());
+
+        return $this->analyzeText($text, false);
+    }
+
+    public function analyzeText(?string $text, bool $includeVehicleMatches = false): array
+    {
         $candidates = $this->extractCandidates($text);
         $best = $candidates[0] ?? null;
+        $ocrStatus = match (true) {
+            $text === null => 'unavailable',
+            $best !== null => 'detected',
+            default => 'not_detected',
+        };
+        $confidence = $best ? $this->confidenceFor($best, $text ?? '') : null;
 
         return [
             'ocr_available' => $text !== null,
+            'ocr_status' => $ocrStatus,
             'raw_text' => $text,
             'detected_vin' => $best,
+            'extracted_vin' => $best,
             'normalized_vin' => $best,
-            'confidence_score' => $best ? $this->confidenceFor($best, $text ?? '') : null,
+            'confidence_score' => $confidence,
+            'vin_ocr_confidence' => $confidence,
             'candidates' => $candidates,
-            'vehicle_matches' => [],
+            'vehicle_matches' => $includeVehicleMatches && $best ? $this->searchVehicles($best)->values()->all() : [],
         ];
     }
 
@@ -199,17 +204,43 @@ class VinOcrService
             return null;
         }
 
-        $process = new Process(['tesseract', $path, 'stdout', '--psm', '7']);
-        $process->setTimeout(20);
-        $process->run();
-
-        if (! $process->isSuccessful()) {
-            return null;
+        $paths = [$path];
+        $temporaryPath = $this->preprocessImageForOcr($path);
+        if ($temporaryPath) {
+            $paths[] = $temporaryPath;
         }
 
-        $text = trim($process->getOutput());
+        $outputs = [];
 
-        return $text !== '' ? $text : null;
+        try {
+            foreach ($paths as $ocrPath) {
+                foreach ([7, 6, 11, 13] as $psm) {
+                    $process = new Process([
+                        'tesseract',
+                        $ocrPath,
+                        'stdout',
+                        '--psm',
+                        (string) $psm,
+                        '-c',
+                        'tessedit_char_whitelist=ABCDEFGHJKLMNPRSTUVWXYZ0123456789',
+                    ]);
+                    $process->setTimeout(20);
+                    $process->run();
+
+                    if ($process->isSuccessful()) {
+                        $outputs[] = trim($process->getOutput());
+                    }
+                }
+            }
+        } finally {
+            if ($temporaryPath && is_file($temporaryPath)) {
+                @unlink($temporaryPath);
+            }
+        }
+
+        $text = trim(implode("\n", array_filter($outputs)));
+
+        return $text;
     }
 
     protected function tesseractAvailable(): bool
@@ -228,12 +259,29 @@ class VinOcrService
         }
 
         $normalized = $this->normalizeVin($text);
-        preg_match_all('/[A-HJ-NPR-Z0-9]{10,20}/', $normalized, $matches);
+        preg_match_all('/[A-HJ-NPR-Z0-9]{17}/', $normalized, $standardMatches);
+        preg_match_all('/[A-Z0-9]{12,25}/', $normalized, $flexibleMatches);
 
-        return collect($matches[0] ?? [])
+        $cleanedCandidate = strlen($normalized) >= 10 && strlen($normalized) <= 25 ? [$normalized] : [];
+
+        return collect([
+                ...($standardMatches[0] ?? []),
+                ...($flexibleMatches[0] ?? []),
+                ...$cleanedCandidate,
+            ])
             ->map(fn (string $candidate): string => $this->normalizeVin($candidate))
             ->filter(fn (string $candidate): bool => strlen($candidate) >= 10)
-            ->sortByDesc(fn (string $candidate): int => strlen($candidate) === 17 ? 100 : strlen($candidate))
+            ->sortByDesc(function (string $candidate): int {
+                if (strlen($candidate) === 17 && preg_match('/^[A-HJ-NPR-Z0-9]{17}$/', $candidate)) {
+                    return 300;
+                }
+
+                if (strlen($candidate) >= 12 && strlen($candidate) <= 25) {
+                    return 200 + strlen($candidate);
+                }
+
+                return strlen($candidate);
+            })
             ->unique()
             ->values()
             ->all();
@@ -274,12 +322,62 @@ class VinOcrService
 
     protected function confidenceFor(string $candidate, string $rawText): int
     {
-        $score = strlen($candidate) === 17 ? 85 : 60;
+        $score = strlen($candidate) === 17 && preg_match('/^[A-HJ-NPR-Z0-9]{17}$/', $candidate) ? 88 : 70;
+
+        if (strlen($candidate) < 12) {
+            $score = 45;
+        }
 
         if (preg_match('/VIN|CHASSIS|FRAME/i', $rawText)) {
             $score += 5;
         }
 
         return min(95, $score);
+    }
+
+    protected function preprocessImageForOcr(string $path): ?string
+    {
+        if (! extension_loaded('gd') || ! function_exists('imagecreatefromstring')) {
+            return null;
+        }
+
+        $contents = @file_get_contents($path);
+        if ($contents === false) {
+            return null;
+        }
+
+        $image = @imagecreatefromstring($contents);
+        if (! $image) {
+            return null;
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $scale = $width < 1400 ? 2 : 1;
+        $targetWidth = max($width * $scale, $width);
+        $targetHeight = max($height * $scale, $height);
+        $processed = imagecreatetruecolor($targetWidth, $targetHeight);
+
+        imagecopyresampled($processed, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
+        imagefilter($processed, IMG_FILTER_GRAYSCALE);
+        imagefilter($processed, IMG_FILTER_CONTRAST, -25);
+        imagefilter($processed, IMG_FILTER_SMOOTH, -4);
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'vin-ocr-');
+        if (! $temporaryPath) {
+            imagedestroy($image);
+            imagedestroy($processed);
+
+            return null;
+        }
+
+        $jpegPath = $temporaryPath . '.jpg';
+        @unlink($temporaryPath);
+
+        imagejpeg($processed, $jpegPath, 95);
+        imagedestroy($image);
+        imagedestroy($processed);
+
+        return is_file($jpegPath) ? $jpegPath : null;
     }
 }

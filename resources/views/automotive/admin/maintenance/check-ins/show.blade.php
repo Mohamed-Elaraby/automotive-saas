@@ -46,12 +46,47 @@
                                 @csrf
                                 <input type="hidden" name="vin_source_image_id" id="vinSourceImageId">
                                 <input type="hidden" name="vin_confidence_score" id="vinConfidenceScore">
+                                <input type="hidden" name="vin_ocr_confidence" id="vinOcrConfidence">
+                                <input type="hidden" name="vin_ocr_status" id="vinOcrStatus" value="{{ old('vin_ocr_status', $checkIn->vin_ocr_status) }}">
                                 <div class="mb-3"><label class="form-label">{{ __('maintenance.vin_number') }}</label><input type="text" name="vin_number" class="form-control text-uppercase" value="{{ old('vin_number', $checkIn->vin_number ?: $checkIn->vehicle?->vin) }}" required></div>
                                 <div class="mb-3">
                                     <label class="form-label">{{ __('maintenance.method') }}</label>
                                     <select name="vin_verification_method" class="form-select">
-                                        <option value="manual">{{ __('maintenance.manual') }}</option>
-                                        <option value="ocr">{{ __('maintenance.ocr') }}</option>
+                                        <option value="manual" @selected(old('vin_verification_method', $checkIn->vin_verification_method ?: 'manual') === 'manual')>{{ __('maintenance.manual') }}</option>
+                                        <option value="ocr_confirmed" @selected(old('vin_verification_method', $checkIn->vin_verification_method) === 'ocr_confirmed')>{{ __('maintenance.ocr') }}</option>
+                                        <option value="previous_record" @selected(old('vin_verification_method', $checkIn->vin_verification_method) === 'previous_record')>Previous record</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">VIN Source</label>
+                                    <select name="vin_source" class="form-select" required>
+                                        @foreach([
+                                            'physical_vehicle' => 'Physical vehicle',
+                                            'registration_card' => 'Registration card',
+                                            'customer_document' => 'Customer document',
+                                            'previous_record' => 'Previous record',
+                                            'other' => 'Other',
+                                        ] as $value => $label)
+                                            <option value="{{ $value }}" @selected(old('vin_source', $checkIn->vin_source ?: 'physical_vehicle') === $value)>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Manual/unreadable reason</label>
+                                    <select name="vin_unreadable_reason" class="form-select">
+                                        <option value="">Not applicable</option>
+                                        @foreach([
+                                            'dirty_windshield' => 'Dirty windshield',
+                                            'damaged_vin_plate' => 'Damaged VIN plate',
+                                            'flooded_vehicle' => 'Flooded vehicle',
+                                            'accident_damage' => 'Accident damage',
+                                            'poor_lighting' => 'Poor lighting',
+                                            'vin_not_accessible' => 'VIN not accessible',
+                                            'customer_document_used' => 'Customer document used',
+                                            'other' => 'Other',
+                                        ] as $value => $label)
+                                            <option value="{{ $value }}" @selected(old('vin_unreadable_reason', $checkIn->vin_unreadable_reason) === $value)>{{ $label }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <button type="submit" class="btn btn-primary">{{ __('maintenance.confirm_vin') }}</button>
@@ -433,7 +468,9 @@
 
                 if (response.analysis.detected_vin) {
                     document.querySelector('#vinConfirmForm input[name="vin_number"]').value = response.analysis.detected_vin;
-                    document.querySelector('#vinConfirmForm select[name="vin_verification_method"]').value = 'ocr';
+                    document.querySelector('#vinConfirmForm select[name="vin_verification_method"]').value = 'ocr_confirmed';
+                    document.getElementById('vinOcrStatus').value = response.analysis.ocr_status || 'detected';
+                    document.getElementById('vinOcrConfidence').value = response.analysis.vin_ocr_confidence || response.analysis.confidence_score || '';
                     document.getElementById('vinConfidenceScore').value = response.analysis.confidence_score || '';
                 }
 
