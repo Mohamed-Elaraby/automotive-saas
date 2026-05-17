@@ -61,11 +61,15 @@ class VinOcrService
             return collect();
         }
 
+        $variants = $this->vinSearchVariants($normalized);
+
         return Vehicle::query()
             ->with('customer')
-            ->where(function ($query) use ($normalized): void {
-                $query->where('vin', 'like', '%' . $normalized . '%')
-                    ->orWhere('vin', 'like', '%' . str_replace(['0', '1', '5', '8', '2'], ['O', 'I', 'S', 'B', 'Z'], $normalized) . '%');
+            ->where(function ($query) use ($variants): void {
+                foreach ($variants as $index => $variant) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $query->{$method}('vin', 'like', '%' . $variant . '%');
+                }
             })
             ->latest('id')
             ->limit(10)
@@ -94,16 +98,26 @@ class VinOcrService
             ];
         }
 
+        $variants = $this->vinSearchVariants($normalized);
+
         $vehicle = Vehicle::query()
             ->with([
                 'customer',
                 'checkIns' => fn ($query) => $query->with(['branch', 'workOrder'])->latest('checked_in_at')->latest('id'),
                 'workOrders' => fn ($query) => $query->latest('opened_at')->latest('id'),
             ])
-            ->where(function ($query) use ($normalized): void {
-                $query->where('vin', $normalized)
-                    ->orWhere('vin', 'like', '%' . $normalized . '%')
-                    ->orWhere('vin', 'like', '%' . str_replace(['0', '1', '5', '8', '2'], ['O', 'I', 'S', 'B', 'Z'], $normalized) . '%');
+            ->where(function ($query) use ($variants): void {
+                foreach ($variants as $index => $variant) {
+                    if ($index === 0) {
+                        $query->where('vin', $variant)
+                            ->orWhere('vin', 'like', '%' . $variant . '%');
+
+                        continue;
+                    }
+
+                    $query->orWhere('vin', $variant)
+                        ->orWhere('vin', 'like', '%' . $variant . '%');
+                }
             })
             ->latest('id')
             ->first();
@@ -229,7 +243,21 @@ class VinOcrService
     {
         $value = strtoupper($value);
         $value = str_replace([' ', '-', '_', '.', ':', "\n", "\r", "\t"], '', $value);
-        $value = strtr($value, [
+
+        return preg_replace('/[^A-Z0-9]/', '', $value) ?? '';
+    }
+
+    protected function vinSearchVariants(string $normalized): array
+    {
+        $digitToLetter = strtr($normalized, [
+            '0' => 'O',
+            '1' => 'I',
+            '5' => 'S',
+            '8' => 'B',
+            '2' => 'Z',
+        ]);
+
+        $letterToDigit = strtr($normalized, [
             'O' => '0',
             'I' => '1',
             'S' => '5',
@@ -237,7 +265,11 @@ class VinOcrService
             'Z' => '2',
         ]);
 
-        return preg_replace('/[^A-Z0-9]/', '', $value) ?? '';
+        return collect([$normalized, $digitToLetter, $letterToDigit])
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     protected function confidenceFor(string $candidate, string $rawText): int

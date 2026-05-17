@@ -66,7 +66,7 @@ class VinTenantWideLookupTest extends TestCase
         tenancy()->end();
 
         $this->actingAs($owner, 'automotive_admin')
-            ->getJson("http://{$domain}/workspace/admin/maintenance/vehicles/search-vin?vin=jtdkb20u777777777")
+            ->getJson($this->maintenanceVinSearchUrl($domain, 'jtdkb20u777777777'))
             ->assertOk()
             ->assertJsonPath('found', true)
             ->assertJsonPath('normalized_vin', 'JTDKB20U777777777')
@@ -95,7 +95,7 @@ class VinTenantWideLookupTest extends TestCase
         tenancy()->end();
 
         $this->actingAs($owner, 'automotive_admin')
-            ->getJson("http://{$domainOne}/workspace/admin/maintenance/vehicles/search-vin?vin=1HGCM82633A004352")
+            ->getJson($this->maintenanceVinSearchUrl($domainOne, '1HGCM82633A004352'))
             ->assertOk()
             ->assertJsonPath('found', false)
             ->assertJsonPath('normalized_vin', '1HGCM82633A004352');
@@ -111,7 +111,7 @@ class VinTenantWideLookupTest extends TestCase
         tenancy()->end();
 
         $this->actingAs($owner, 'automotive_admin')
-            ->getJson("http://{$domain}/workspace/admin/maintenance/vehicles/search-vin?vin= missing vin ")
+            ->getJson($this->maintenanceVinSearchUrl($domain, ' missing vin '))
             ->assertOk()
             ->assertJsonPath('found', false)
             ->assertJsonPath('normalized_vin', 'MISSINGVIN');
@@ -132,13 +132,20 @@ class VinTenantWideLookupTest extends TestCase
         tenancy()->end();
 
         $this->actingAs($advisor, 'automotive_admin')
-            ->getJson("http://{$domain}/workspace/admin/maintenance/vehicles/search-vin?vin=WDBUF56X78B123456")
+            ->getJson($this->maintenanceVinSearchUrl($domain, 'WDBUF56X78B123456'))
             ->assertOk()
             ->assertJsonPath('found', true)
             ->assertJsonPath('restricted_history', true)
             ->assertJsonPath('branch', null)
             ->assertJsonPath('history.last_check_in_at', null)
             ->assertJsonPath('customer.phone', null);
+    }
+
+    protected function maintenanceVinSearchUrl(string $domain, string $vin): string
+    {
+        return 'http://' . $domain . '/workspace/admin/maintenance/vehicles/search-vin?' . http_build_query([
+            'vin' => $vin,
+        ]);
     }
 
     protected function prepareTenantWorkspace(string $prefix = 'tenant-vin-lookup-'): array
