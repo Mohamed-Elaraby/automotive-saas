@@ -35,26 +35,33 @@ class VinOcrService
 
     public function analyzeText(?string $text, bool $includeVehicleMatches = false): array
     {
-        $candidates = $this->extractCandidates($text);
+        $candidateAnalysis = $this->extractCandidates($text);
+        $candidates = $candidateAnalysis['candidates'];
+        $rejectedCandidates = $candidateAnalysis['rejected_candidates'];
         $best = $candidates[0] ?? null;
+        $confidence = $best ? $this->confidenceFor($best, $text ?? '') : null;
+        $safeCandidate = $best && $confidence >= 65;
         $ocrStatus = match (true) {
             $text === null => 'unavailable',
-            $best !== null => 'detected',
+            $safeCandidate => 'detected',
+            $rejectedCandidates !== [] => 'low_confidence',
             default => 'not_detected',
         };
-        $confidence = $best ? $this->confidenceFor($best, $text ?? '') : null;
+        $extractedVin = $safeCandidate ? $best : null;
 
         return [
             'ocr_available' => $text !== null,
             'ocr_status' => $ocrStatus,
             'raw_text' => $text,
-            'detected_vin' => $best,
-            'extracted_vin' => $best,
-            'normalized_vin' => $best,
-            'confidence_score' => $confidence,
-            'vin_ocr_confidence' => $confidence,
+            'detected_vin' => $extractedVin,
+            'extracted_vin' => $extractedVin,
+            'normalized_vin' => $extractedVin,
+            'confidence_score' => $safeCandidate ? $confidence : null,
+            'vin_ocr_confidence' => $safeCandidate ? $confidence : null,
             'candidates' => $candidates,
-            'vehicle_matches' => $includeVehicleMatches && $best ? $this->searchVehicles($best)->values()->all() : [],
+            'rejected_candidates' => $rejectedCandidates,
+            'message' => $this->messageForStatus($ocrStatus),
+            'vehicle_matches' => $includeVehicleMatches && $safeCandidate ? $this->searchVehicles($best)->values()->all() : [],
         ];
     }
 
@@ -255,36 +262,62 @@ class VinOcrService
     protected function extractCandidates(?string $text): array
     {
         if (! $text) {
-            return [];
+            return [
+                'candidates' => [],
+                'rejected_candidates' => [],
+            ];
         }
 
-        $normalized = $this->normalizeVin($text);
-        preg_match_all('/[A-HJ-NPR-Z0-9]{17}/', $normalized, $standardMatches);
-        preg_match_all('/[A-Z0-9]{12,25}/', $normalized, $flexibleMatches);
+        $tokens = $this->ocrTokens($text);
+        $rawCandidates = [];
 
-        $cleanedCandidate = strlen($normalized) >= 10 && strlen($normalized) <= 25 ? [$normalized] : [];
+        foreach ($tokens as $token) {
+            if (strlen($token) >= 12 && strlen($token) <= 25) {
+                $rawCandidates[] = $token;
+            }
+        }
 
-        return collect([
-                ...($standardMatches[0] ?? []),
-                ...($flexibleMatches[0] ?? []),
-                ...$cleanedCandidate,
-            ])
-            ->map(fn (string $candidate): string => $this->normalizeVin($candidate))
-            ->filter(fn (string $candidate): bool => strlen($candidate) >= 10)
-            ->sortByDesc(function (string $candidate): int {
-                if (strlen($candidate) === 17 && preg_match('/^[A-HJ-NPR-Z0-9]{17}$/', $candidate)) {
-                    return 300;
+        $tokenCount = count($tokens);
+        for ($start = 0; $start < $tokenCount; $start++) {
+            $joined = '';
+            for ($end = $start; $end < min($tokenCount, $start + 4); $end++) {
+                $joined .= $tokens[$end];
+                $length = strlen($joined);
+
+                if ($length >= 12 && $length <= 25) {
+                    $rawCandidates[] = $joined;
                 }
 
-                if (strlen($candidate) >= 12 && strlen($candidate) <= 25) {
-                    return 200 + strlen($candidate);
+                if ($length > 25) {
+                    break;
                 }
+            }
+        }
 
-                return strlen($candidate);
-            })
-            ->unique()
-            ->values()
-            ->all();
+        $accepted = [];
+        $rejected = [];
+
+        foreach (array_values(array_unique($rawCandidates)) as $candidate) {
+            $normalized = $this->normalizeVin($candidate);
+            if ($this->isSafeCandidate($normalized)) {
+                $accepted[] = $normalized;
+            } elseif ($normalized !== '' && strlen($normalized) >= 8) {
+                $rejected[] = [
+                    'value' => $normalized,
+                    'reason' => $this->candidateRejectionReason($normalized),
+                ];
+            }
+        }
+
+        usort($accepted, fn (string $left, string $right): int => $this->confidenceFor($right, $text) <=> $this->confidenceFor($left, $text));
+
+        return [
+            'candidates' => array_values(array_unique($accepted)),
+            'rejected_candidates' => collect($rejected)
+                ->unique('value')
+                ->values()
+                ->all(),
+        ];
     }
 
     protected function normalizeVin(string $value): string
@@ -293,6 +326,89 @@ class VinOcrService
         $value = str_replace([' ', '-', '_', '.', ':', "\n", "\r", "\t"], '', $value);
 
         return preg_replace('/[^A-Z0-9]/', '', $value) ?? '';
+    }
+
+    protected function ocrTokens(string $text): array
+    {
+        $text = strtoupper($text);
+        $text = preg_replace('/\b(VIN\s*NUMBER|CHASSIS\s*NUMBER|FRAME\s*NUMBER|SERIAL\s*NUMBER|VIN|CHASSIS|FRAME|SERIAL)\b/i', ' ', $text) ?? $text;
+        preg_match_all('/[A-Z0-9]+/', $text, $matches);
+
+        return collect($matches[0] ?? [])
+            ->map(fn (string $token): string => $this->normalizeVin($token))
+            ->filter(fn (string $token): bool => $token !== '' && ! $this->isOcrLabel($token))
+            ->values()
+            ->all();
+    }
+
+    protected function isOcrLabel(string $token): bool
+    {
+        return in_array($token, [
+            'VIN',
+            'VINNUMBER',
+            'CHASSIS',
+            'CHASSISNUMBER',
+            'FRAME',
+            'FRAMENUMBER',
+            'SERIAL',
+            'SERIALNUMBER',
+        ], true);
+    }
+
+    protected function isSafeCandidate(string $candidate): bool
+    {
+        $length = strlen($candidate);
+
+        if ($length < 12 || $length > 25) {
+            return false;
+        }
+
+        if (! preg_match('/^[A-Z0-9]+$/', $candidate)) {
+            return false;
+        }
+
+        if (! preg_match('/[A-Z]/', $candidate) || ! preg_match('/\d/', $candidate)) {
+            return false;
+        }
+
+        if (strlen(preg_replace('/\D/', '', $candidate) ?? '') < 4) {
+            return false;
+        }
+
+        if (strlen(preg_replace('/[^A-Z]/', '', $candidate) ?? '') > ($length - 4)) {
+            return false;
+        }
+
+        if (preg_match('/(VIN|CHASSIS|FRAME|SERIAL)/', $candidate)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function candidateRejectionReason(string $candidate): string
+    {
+        if (! preg_match('/^[A-Z0-9]+$/', $candidate)) {
+            return 'not_alphanumeric';
+        }
+
+        if (strlen($candidate) < 12 || strlen($candidate) > 25) {
+            return 'invalid_length';
+        }
+
+        if (! preg_match('/[A-Z]/', $candidate) || ! preg_match('/\d/', $candidate)) {
+            return 'missing_letter_or_digit';
+        }
+
+        if (strlen(preg_replace('/\D/', '', $candidate) ?? '') < 4) {
+            return 'too_few_digits';
+        }
+
+        if (preg_match('/(VIN|CHASSIS|FRAME|SERIAL)/', $candidate)) {
+            return 'label_contamination';
+        }
+
+        return 'low_quality';
     }
 
     protected function vinSearchVariants(string $normalized): array
@@ -333,6 +449,17 @@ class VinOcrService
         }
 
         return min(95, $score);
+    }
+
+    protected function messageForStatus(string $status): string
+    {
+        return match ($status) {
+            'detected' => 'Possible VIN detected. Please compare it with the physical VIN before confirming.',
+            'low_confidence' => 'OCR found low-confidence text. Please enter the VIN manually from the vehicle or documents.',
+            'unavailable' => 'OCR is unavailable. The photo was saved as evidence. Please enter the VIN manually.',
+            'failed' => 'OCR failed. The photo was saved as evidence. Please enter the VIN manually.',
+            default => 'No reliable VIN detected. The photo was saved as evidence. Please enter the VIN manually.',
+        };
     }
 
     protected function preprocessImageForOcr(string $path): ?string

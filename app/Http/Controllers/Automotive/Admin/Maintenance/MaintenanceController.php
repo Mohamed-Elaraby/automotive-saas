@@ -81,7 +81,7 @@ class MaintenanceController extends Controller
             'vin_confirmed' => ['nullable', 'boolean'],
             'vin_verification_method' => ['nullable', 'in:ocr_confirmed,manual,previous_record'],
             'vin_source' => ['required_if:vin_confirmed,1', 'nullable', 'in:physical_vehicle,registration_card,customer_document,previous_record,other'],
-            'vin_ocr_status' => ['nullable', 'in:detected,not_detected,unavailable,failed'],
+            'vin_ocr_status' => ['nullable', 'in:detected,low_confidence,not_detected,unavailable,failed'],
             'vin_ocr_confidence' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'vin_unreadable_reason' => ['nullable', 'in:dirty_windshield,damaged_vin_plate,flooded_vehicle,accident_damage,poor_lighting,vin_not_accessible,customer_document_used,other'],
             'vin_source_image_id' => ['nullable', 'integer', 'exists:maintenance_attachments,id'],
@@ -173,7 +173,7 @@ class MaintenanceController extends Controller
             'vin_number' => ['required', 'string', 'max:255'],
             'vin_verification_method' => ['required', 'in:ocr_confirmed,manual,previous_record'],
             'vin_source' => ['required', 'in:physical_vehicle,registration_card,customer_document,previous_record,other'],
-            'vin_ocr_status' => ['nullable', 'in:detected,not_detected,unavailable,failed'],
+            'vin_ocr_status' => ['nullable', 'in:detected,low_confidence,not_detected,unavailable,failed'],
             'vin_ocr_confidence' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'vin_unreadable_reason' => ['nullable', 'in:dirty_windshield,damaged_vin_plate,flooded_vehicle,accident_damage,poor_lighting,vin_not_accessible,customer_document_used,other'],
             'vin_confidence_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -203,9 +203,11 @@ class MaintenanceController extends Controller
         ]);
 
         $analysis = $this->vinOcrService->analyze($attachment);
+        $analysis['evidence_attachment_id'] = $attachment->id;
 
         return response()->json([
             'ok' => true,
+            'evidence_attachment_id' => $attachment->id,
             'attachment' => [
                 'id' => $attachment->id,
                 'url' => $this->attachmentService->publicUrl($attachment),
@@ -240,9 +242,11 @@ class MaintenanceController extends Controller
         ]);
 
         $analysis = $this->vinOcrService->analyzeUploadedFile($request->file('vin_photo'));
+        $analysis['evidence_attachment_id'] = $attachment->id;
 
         return response()->json([
             'ok' => true,
+            'evidence_attachment_id' => $attachment->id,
             'attachment' => [
                 'id' => $attachment->id,
                 'url' => $this->attachmentService->publicUrl($attachment),
@@ -441,6 +445,7 @@ class MaintenanceController extends Controller
         }
 
         return match ($analysis['ocr_status'] ?? null) {
+            'low_confidence' => 'No reliable VIN detected. The photo was saved as evidence. Please enter the VIN manually.',
             'unavailable' => 'OCR is unavailable. The photo was saved as evidence. Please enter the VIN manually.',
             'failed' => 'OCR failed. The photo was saved as evidence. Please enter the VIN manually.',
             default => 'No VIN detected. The photo was saved as evidence. Please enter the VIN manually.',

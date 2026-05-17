@@ -454,6 +454,8 @@
             const vinCaptureUrl = @json(route('automotive.admin.maintenance.check-ins.capture-vin-draft'));
             const vinSearchUrl = @json(route('automotive.admin.maintenance.vehicles.search-vin'));
             const csrfToken = @json(csrf_token());
+            const vinLowConfidenceMessage = 'OCR found low-confidence text. Please enter the VIN manually from the vehicle or documents.';
+            const vinNoReliableMessage = 'No reliable VIN detected. The photo was saved as evidence. Please enter the VIN manually.';
             const panels = [...document.querySelectorAll('[data-wizard-panel]')];
             const stepButtons = [...document.querySelectorAll('[data-wizard-go]')];
             const prevButton = document.getElementById('wizardPrev');
@@ -1018,7 +1020,7 @@
                     vinOcrConfidenceInput.value = analysis.vin_ocr_confidence || analysis.confidence_score || '';
                     renderVinCandidates(analysis.candidates || []);
 
-                    if (analysis.detected_vin || analysis.extracted_vin) {
+                    if ((analysis.detected_vin || analysis.extracted_vin) && analysis.ocr_status === 'detected') {
                         vinInput.value = analysis.detected_vin || analysis.extracted_vin;
                         vinVerificationMethod.value = 'ocr_confirmed';
                         setManualVinReasonVisible(false);
@@ -1031,8 +1033,8 @@
                     } else {
                         vinVerificationMethod.value = 'manual';
                         setManualVinReasonVisible(true);
-                        setVinStatus(analysis.ocr_available ? 'No VIN detected - enter manually' : 'OCR unavailable - enter manually', 'warning');
-                        setVinEvidenceStatus(payload.message || 'No VIN detected. The photo was saved as evidence. Please enter the VIN manually.', 'warning');
+                        setVinStatus(analysis.ocr_status === 'low_confidence' ? 'Low-confidence OCR - enter manually' : (analysis.ocr_available ? 'No VIN detected - enter manually' : 'OCR unavailable - enter manually'), 'warning');
+                        setVinEvidenceStatus(payload.message || (analysis.ocr_status === 'low_confidence' ? vinLowConfidenceMessage : vinNoReliableMessage), 'warning');
                     }
                 } catch (error) {
                     vinVerificationMethod.value = 'manual';

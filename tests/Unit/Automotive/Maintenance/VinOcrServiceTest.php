@@ -29,6 +29,17 @@ class VinOcrServiceTest extends TestCase
         $this->assertContains('AAJ3030150S100354', $analysis['candidates']);
     }
 
+    public function test_ocr_parsing_rejects_label_contamination_candidates(): void
+    {
+        $vin = $this->service()->analyzeText('VIN JTDKB20U777777777');
+        $chassis = $this->service()->analyzeText('Chassis AAJ3030150S100354');
+
+        $this->assertSame('JTDKB20U777777777', $vin['extracted_vin']);
+        $this->assertNotContains('NJTDKB20U77777777', $vin['candidates']);
+        $this->assertSame('AAJ3030150S100354', $chassis['extracted_vin']);
+        $this->assertNotContains('SAAJ3030150S10035', $chassis['candidates']);
+    }
+
     public function test_ocr_parsing_ignores_spaces_and_dashes(): void
     {
         $spaced = $this->service()->analyzeText('AAJ 3030150 S100354');
@@ -65,6 +76,17 @@ class VinOcrServiceTest extends TestCase
         $this->assertSame('not_detected', $analysis['ocr_status']);
         $this->assertNull($analysis['extracted_vin']);
         $this->assertSame([], $analysis['candidates']);
+    }
+
+    public function test_low_quality_ocr_noise_is_not_auto_suggested(): void
+    {
+        foreach (['DASH GLASS 123', 'WIND SCREEN REFLECTION', 'ABC DEF GHI 123'] as $text) {
+            $analysis = $this->service()->analyzeText($text);
+
+            $this->assertContains($analysis['ocr_status'], ['not_detected', 'low_confidence']);
+            $this->assertNull($analysis['extracted_vin']);
+            $this->assertSame([], $analysis['candidates']);
+        }
     }
 
     protected function service(): VinOcrService

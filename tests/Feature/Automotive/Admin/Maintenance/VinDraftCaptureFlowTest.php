@@ -90,6 +90,8 @@ class VinDraftCaptureFlowTest extends TestCase
             ->assertSee('data-vin-evidence-guidance', false)
             ->assertSee('OCR is only a suggestion', false)
             ->assertSee('photo still acts as evidence', false)
+            ->assertSee('No reliable VIN detected', false)
+            ->assertSee('OCR found low-confidence text', false)
             ->assertSee('data-vin-camera', false)
             ->assertSee('data-vin-open-camera', false)
             ->assertSee('data-vin-video-preview', false)
@@ -139,6 +141,7 @@ class VinDraftCaptureFlowTest extends TestCase
                     'confidence_score' => 90,
                     'vin_ocr_confidence' => 90,
                     'candidates' => ['JTDKB20U777777777'],
+                    'rejected_candidates' => [],
                     'vehicle_matches' => [],
                 ]);
         });
@@ -182,6 +185,7 @@ class VinDraftCaptureFlowTest extends TestCase
                     'confidence_score' => null,
                     'vin_ocr_confidence' => null,
                     'candidates' => [],
+                    'rejected_candidates' => [],
                     'vehicle_matches' => [],
                 ]);
         });
@@ -221,6 +225,7 @@ class VinDraftCaptureFlowTest extends TestCase
                     'confidence_score' => null,
                     'vin_ocr_confidence' => null,
                     'candidates' => [],
+                    'rejected_candidates' => [],
                     'vehicle_matches' => [],
                 ]);
         });
@@ -235,6 +240,47 @@ class VinDraftCaptureFlowTest extends TestCase
             ->assertJsonPath('analysis.ocr_status', 'not_detected')
             ->assertJsonPath('analysis.detected_vin', null)
             ->assertSee('No VIN detected. The photo was saved as evidence. Please enter the VIN manually.');
+    }
+
+    public function test_draft_vin_capture_low_confidence_response_does_not_auto_suggest_vin(): void
+    {
+        [$tenant, $domain] = $this->prepareTenantWorkspace();
+
+        tenancy()->initialize($tenant);
+        $owner = $this->ownerUser();
+        $this->enableBranch('Dubai Branch');
+        tenancy()->end();
+
+        $this->mock(VinOcrService::class, function ($mock): void {
+            $mock->shouldReceive('analyzeUploadedFile')
+                ->once()
+                ->andReturn([
+                    'ocr_available' => true,
+                    'ocr_status' => 'low_confidence',
+                    'raw_text' => 'DASH GLASS 123',
+                    'detected_vin' => null,
+                    'extracted_vin' => null,
+                    'normalized_vin' => null,
+                    'confidence_score' => null,
+                    'vin_ocr_confidence' => null,
+                    'candidates' => [],
+                    'rejected_candidates' => [
+                        ['value' => 'DASHGLASS123', 'reason' => 'too_few_digits'],
+                    ],
+                    'vehicle_matches' => [],
+                ]);
+        });
+
+        $this->actingAs($owner, 'automotive_admin')
+            ->postJson("http://{$domain}/workspace/admin/maintenance/check-ins/capture-vin", [
+                'vin_photo' => UploadedFile::fake()->image('vin.jpg', 800, 400),
+            ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('analysis.ocr_status', 'low_confidence')
+            ->assertJsonPath('analysis.extracted_vin', null)
+            ->assertJsonPath('analysis.candidates', [])
+            ->assertSee('No reliable VIN detected. The photo was saved as evidence. Please enter the VIN manually.');
     }
 
     protected function prepareTenantWorkspace(): array
